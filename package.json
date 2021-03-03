@@ -1,0 +1,10 @@
+{
+  "name": "pptx-automizer",
+  "version": "0.0.1",
+  "description": "A template based pptx generator",
+  "main": "index.js",
+  "repository": "https://github.com/singerla/pptx-automizer",
+  "author": "Thomas Singer",
+  "license": "MIT",
+  "private": false
+}
