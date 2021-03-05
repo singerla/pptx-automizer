@@ -2,9 +2,32 @@
   "name": "pptx-automizer",
   "version": "0.0.1",
   "description": "A template based pptx generator",
-  "main": "index.js",
+  "main": "dist/app.js",
   "repository": "https://github.com/singerla/pptx-automizer",
   "author": "Thomas Singer",
   "license": "MIT",
-  "private": false
+  "private": false,
+  "scripts": {
+    "build": "tsc",
+    "start": "tsc && node dist/app.js",
+    "dev": "nodemon -e ts --exec 'ts-node' src/index.ts",
+    "test": "npx jest"
+  },
+  "devDependencies": {
+    "@types/jest": "^26.0.20",
+    "@types/supertest": "^2.0.10",
+    "@types/xmldom": "^0.1.30",
+    "jest": "^26.6.3",
+    "nodemon": "^2.0.7",
+    "supertest": "^6.1.3",
+    "ts-jest": "^26.5.2",
+    "ts-node": "^9.1.1",
+    "tslint": "^6.1.3",
+    "typescript": "^4.2.2"
+  },
+  "dependencies": {
+    "jszip": "^3.6.0",
+    "node-stream-zip": "^1.13.2",
+    "xmldom": "^0.4.0"
+  }
 }
