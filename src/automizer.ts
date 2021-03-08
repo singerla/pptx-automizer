@@ -1,18 +1,19 @@
 import {
-	IPresentationProps, PresSlide, PresTemplate
+	IPresentationProps, PresTemplate, RootPresTemplate,
 } from './types/interfaces'
 
-import fs from 'fs'
 
 import Template from './template'
 import Slide from './slide'
 import FileHelper from './helper/file'
 import XmlHelper from './helper/xml'
+import JSZip from 'jszip'
+
 
 export default class Automizer implements IPresentationProps {
 
-	private _rootTemplate: PresTemplate
-	public get rootTemplate(): PresTemplate {
+	private _rootTemplate: RootPresTemplate
+	public get rootTemplate(): RootPresTemplate {
 		return this._rootTemplate
 	}
 
@@ -23,11 +24,10 @@ export default class Automizer implements IPresentationProps {
 
   constructor() {
     this._templates = []
-    this._rootTemplate = <PresTemplate> {}
   }
 
   public importRootTemplate(location: string): this {
-    let newTemplate = Template.import(location)
+    let newTemplate = Template.importRoot(location)
     this._rootTemplate = newTemplate
     return this
   }
@@ -37,10 +37,16 @@ export default class Automizer implements IPresentationProps {
     this._templates.push(newTemplate)
   }
 
-	public template(name): PresTemplate {
+	public template(name: string): PresTemplate {
 		return this._templates.find(template => template.name === name)
 	}
 
+	/**
+	 * Search imported templates for given name and make a certain slide available
+	 * @param {string} name - Name of template; must be imported by Automizer.importTemplate()
+	 * @param {number} slideNumber - Number of slide in template presentation
+	 * @return {Slide} Imported slide as an instance of Slide
+	 */
   public addSlide(name: string, slideNumber: number): Slide {
     let template = this.template(name)
     
@@ -55,33 +61,20 @@ export default class Automizer implements IPresentationProps {
     return newSlide
   }
 
-  async write(location: string) {
+  async write(location: string): Promise<void> {
     let rootArchive = await this._rootTemplate.archive
-    let presentationXml = await XmlHelper.getXmlFromArchive(rootArchive, 'ppt/presentation.xml')
-    let slideCount = presentationXml.getElementsByTagName('p:sldId').length
+    let slideCount = await this._rootTemplate.countSlides()
 
     for(let i in this._rootTemplate.slides) {
-      ++slideCount
-      
+      slideCount = this._rootTemplate.incrementSlideCounter()
+
       let slide = this._rootTemplate.slides[i]
       let slidePath = `ppt/slides/slide${slide.number}.xml`
-      let slideTemplate = slide.template.archive
+      let slideArchive = await slide.template.archive
 
-
-      for(let m in slide.modifications) {
-        let callback = slide.modifications[m]
-        let archive = await slideTemplate
-        let slideXml = await XmlHelper.getXmlFromArchive(archive, slidePath)
-        callback(slideXml)
-        await XmlHelper.writeXmlToArchive(archive, slidePath, slideXml)
-      }
-
-      await this.copyFiles(slideTemplate, slide.number, rootArchive, slideCount)
-
-      let relId = await XmlHelper.getNextRelId(rootArchive, 'ppt/_rels/presentation.xml.rels')
-      await this.appendRel(rootArchive, relId, slideCount)
-      await this.appendToSlideList(rootArchive, relId)
-      await this.appendToContentType(rootArchive, slideCount)
+      await this.applyModifications(slide.modifications, slideArchive, slidePath)
+      await this.copySlideFiles(slideArchive, slide.number, rootArchive, slideCount)
+      await this.addContentToPresentation(rootArchive, slideCount)
     }
 
     let content = await rootArchive.generateAsync({type: "nodebuffer"})
@@ -89,8 +82,26 @@ export default class Automizer implements IPresentationProps {
     FileHelper.writeOutputFile(location, content)
   }
   
-  async copyFiles(sourceArchive, sourceSlide, targetArchive, targetSlide) {
-     FileHelper.zipCopy(
+  async addContentToPresentation(rootArchive: JSZip, slideCount: number): Promise<HTMLElement[]> {
+    let relId = await XmlHelper.getNextRelId(rootArchive, 'ppt/_rels/presentation.xml.rels')
+    let promises = [
+      XmlHelper.appendToSlideRel(rootArchive, relId, slideCount),
+      XmlHelper.appendToSlideList(rootArchive, relId),
+      XmlHelper.appendToContentType(rootArchive, slideCount)
+    ]
+    return Promise.all(promises)
+  }
+
+  async applyModifications(modifications: Function[], template: JSZip, path: string) {
+    for(let m in modifications) {
+      let xml = await XmlHelper.getXmlFromArchive(template, path)
+      modifications[m](xml)
+      await XmlHelper.writeXmlToArchive(template, path, xml)
+    }
+  }
+
+  async copySlideFiles(sourceArchive: JSZip, sourceSlide: number, targetArchive: JSZip, targetSlide: string): Promise<void> {
+    FileHelper.zipCopy(
       sourceArchive, `ppt/slides/slide${sourceSlide}.xml`, 
       targetArchive, `ppt/slides/slide${targetSlide}.xml`
     )
@@ -100,45 +111,4 @@ export default class Automizer implements IPresentationProps {
       targetArchive, `ppt/slides/_rels/slide${targetSlide}.xml.rels`
     )
   }
-
-  async appendRel(rootArchive, relId: string, slideCount: number) {
-    return XmlHelper.append({
-      archive: rootArchive,
-      file: `ppt/_rels/presentation.xml.rels`,
-      parent: (xml) => xml.getElementsByTagName('Relationships')[0],
-      tag: 'Relationship',
-      attributes: {
-        Id: relId,
-        Type: `http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide`,
-        Target: `slides/slide${slideCount}.xml`
-      }
-    })
-  }
-
-  async appendToSlideList(rootArchive, relId: string) {
-    return XmlHelper.append({
-      archive: rootArchive,
-      file: `ppt/presentation.xml`,
-      parent: (xml) => xml.getElementsByTagName('p:sldIdLst')[0],
-      tag: 'p:sldId',
-      attributes: {
-        id: (xml) => XmlHelper.getMaxId(xml.getElementsByTagName('p:sldId'), 'id', true),
-        'r:id': relId
-      }
-    })
-  }
-
-  async appendToContentType(rootArchive, slideCount: number) {
-    return XmlHelper.append({
-      archive: rootArchive,
-      file: `[Content_Types].xml`,
-      parent: (xml) => xml.getElementsByTagName('Types')[0],
-      tag: 'Override',
-      attributes: {
-        PartName: `/ppt/slides/slide${slideCount}.xml`,
-        ContentType: `application/vnd.openxmlformats-officedocument.presentationml.slide+xml`
-      }
-    })
-  }
-
 } 

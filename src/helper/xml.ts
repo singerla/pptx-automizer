@@ -1,28 +1,27 @@
 import { DOMParser, XMLSerializer } from 'xmldom'
-import { IArchive } from '../types/interfaces'
 import FileHelper from './file'
 import { XMLElement } from '../types/xml'
+import JSZip from 'jszip'
+import {
+	RelationshipAttribute, SlideListAttribute, OverrideAttribute
+} from '../types/xml'
 
 export default class XmlHelper {
 
-  static getXmlFromArchive(archive: IArchive, file: string) {
-    return FileHelper.extractFromArchive(archive, file)
-      .then(XmlHelper.parseXmlDocument)
-  }
-  
-  static parseXmlDocument(xmlDocument: any) {
+  static async getXmlFromArchive(archive: JSZip, file: string): Promise<Document> {
+    let xmlDocument = await FileHelper.extractFromArchive(archive, file)
     const dom = new DOMParser()
     return dom.parseFromString(xmlDocument)
   }
-
-  static async writeXmlToArchive(archive: IArchive, file: string, xml: any) {
+  
+  static async writeXmlToArchive(archive: JSZip, file: string, xml: any): Promise<JSZip> {
     let s = new XMLSerializer()
     let xmlBuffer = s.serializeToString(xml)
     
     return archive.file(file, xmlBuffer)
   }
 
-  static async append(element: XMLElement): Promise<void> {
+  static async append(element: XMLElement): Promise<HTMLElement> {
     let xml = await XmlHelper.getXmlFromArchive(element.archive, element.file)
 
     let newElement = xml.createElement(element.tag)
@@ -35,6 +34,8 @@ export default class XmlHelper {
     parent.appendChild(newElement)
 
     XmlHelper.writeXmlToArchive(element.archive, element.file, xml)
+
+    return newElement
   }
 
   static async getNextRelId(rootArchive, file): Promise<string> {
@@ -59,6 +60,57 @@ export default class XmlHelper {
       case 'boolean' : return ++max
       default: return max
     }
+  }
+
+
+  /**
+   * Slide related xml helpers
+   */
+  static async countSlides(presentation: JSZip): Promise<number> {
+    let presentationXml = await XmlHelper.getXmlFromArchive(presentation, 'ppt/presentation.xml')
+    let slideCount = presentationXml.getElementsByTagName('p:sldId').length
+
+    return slideCount
+  }
+
+  static appendToSlideRel(rootArchive: JSZip, relId: string, slideCount: number): Promise<HTMLElement> {
+    return XmlHelper.append({
+      archive: rootArchive,
+      file: `ppt/_rels/presentation.xml.rels`,
+      parent: (xml: HTMLElement) => xml.getElementsByTagName('Relationships')[0],
+      tag: 'Relationship',
+      attributes: <RelationshipAttribute> {
+        Id: relId,
+        Type: `http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide`,
+        Target: `slides/slide${slideCount}.xml`
+      }
+    })
+  }
+
+  static appendToSlideList(rootArchive: JSZip, relId: string): Promise<HTMLElement> {
+    return XmlHelper.append({
+      archive: rootArchive,
+      file: `ppt/presentation.xml`,
+      parent: (xml: HTMLElement) => xml.getElementsByTagName('p:sldIdLst')[0],
+      tag: 'p:sldId',
+      attributes: <SlideListAttribute> {
+        id: (xml: HTMLElement) => XmlHelper.getMaxId(xml.getElementsByTagName('p:sldId'), 'id', true),
+        'r:id': relId
+      }
+    })
+  }
+
+  static appendToContentType(rootArchive: JSZip, slideCount: number): Promise<HTMLElement> {
+    return XmlHelper.append({
+      archive: rootArchive,
+      file: `[Content_Types].xml`,
+      parent: (xml: HTMLElement) => xml.getElementsByTagName('Types')[0],
+      tag: 'Override',
+      attributes: <OverrideAttribute> {
+        PartName: `/ppt/slides/slide${slideCount}.xml`,
+        ContentType: `application/vnd.openxmlformats-officedocument.presentationml.slide+xml`
+      }
+    })
   }
 
 }

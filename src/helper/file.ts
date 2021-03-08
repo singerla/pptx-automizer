@@ -1,42 +1,36 @@
-
 import fs from 'fs'
 import JSZip from 'jszip'
 
-export default class FileHelper  {
-  static readFile(location) {
+export default class FileHelper {
+
+  static readFile(location:string): Promise<Buffer> {
     return fs.promises.readFile(location)
   }
 
-  static extractWorkbook(archive) {
-    return archive.files['xl/workbook.xml'].async('string')
-  }
-
-  static extractFromArchive(archive, file) {
+  static extractFromArchive(archive: JSZip, file: string): Promise<string> {
     return archive.files[file].async('string')
   }
 
-  static extractFileContent(file) {
+
+  static extractFileContent(file: any): Promise<JSZip>{
     const zip = new JSZip();
     return zip.loadAsync(file)
   }
 
-  static getWorksheet(worksheetNumber: number) {
-    let suffix = (worksheetNumber > 0) ? worksheetNumber : ''
-    let worksheetPath = `ppt/embeddings/Microsoft_Excel_Worksheet${suffix}.xlsx`
-
-    return (archive) => {
-      return archive.files[worksheetPath].async('arraybuffer')
-    }
+	/**
+	 * Copies a file from one archive to another. The new file can have a different name to the origin.
+	 * @param {string} sourceArchive - Source archive
+	 * @param {string} sourceFile - file path and name inside source archive
+   * @param {string} targetArchive - Target archive
+	 * @param {string} targetFile - file path and name inside target archive
+	 * @return {JSZip} targetArchive as an instance of JSZip
+	 */
+  static async zipCopy(sourceArchive: JSZip, sourceFile:string, targetArchive: JSZip, targetFile?:string): Promise<JSZip> {
+    let content = sourceArchive.files[sourceFile].async('nodebuffer')
+    return targetArchive.file(targetFile || sourceFile, content)
   }
 
-  static async zipCopy(sourceArchive, sourceFile, targetArchive, targetFile) {
-    let archive = await sourceArchive
-    let content = archive.files[sourceFile].async('nodebuffer')
-    
-    return targetArchive.file(targetFile, content)
-  }
-  
-  static writeOutputFile(location, content) {
+  static writeOutputFile(location: string, content: Buffer): void {
     fs.writeFile(location, content, function(err: { message: any }) {
       if(err) {
         throw new Error(`Error writing output: ${err.message}`)

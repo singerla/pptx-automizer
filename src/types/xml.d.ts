@@ -1,4 +1,4 @@
-export type RelationAttribute = {
+export type RelationshipAttribute = {
   Id: string
   Type: string
   Target: string
@@ -19,5 +19,5 @@ export type XMLElement = {
   parent: any
   file: string
   tag: string
-  attributes: OverrideAttribute | SlideListAttribute | RelationAttribute
+  attributes: OverrideAttribute | SlideListAttribute | RelationshipAttribute
 }

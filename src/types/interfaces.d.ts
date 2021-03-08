@@ -1,26 +1,6 @@
+import JSZip from "jszip";
 
-export type FILE_TYPE = 'local' | 'remote' | 'browser'
-
-export interface File {
-  type: FILE_TYPE
-  location: string
-}
-
-export interface ISlideRel {
-	Target: string
-	fileName?: string
-	data: any[] | string
-	path?: string
-	extn?: string
-	globalId?: number
-	rId: number
-}
-
-export interface SlideBaseProps {
-
-}
-
-export interface PresSlide extends SlideBaseProps {
+export interface PresSlide {
 	template: PresTemplate
 	number: number
 	modifications: Function[]
@@ -28,24 +8,23 @@ export interface PresSlide extends SlideBaseProps {
 }
 
 export interface IPresentationProps {
-	rootTemplate: PresTemplate
+	rootTemplate: RootPresTemplate
 	templates: PresTemplate[]
 }
 
-export interface IArchive {
-	files: Function[]
-	file: Function
-	commment: any
-	root: string
-	clone: Function
-	generateAsync: Function
+export interface ITemplate {
+	location: string
+	file: Promise<Buffer>
+	archive: Promise<JSZip>
+	countSlides: Function
+	incrementSlideCounter: Function
 }
 
-export interface PresTemplate {
-	location: string
-	name: string
-	file: any
-	archive: IArchive
-	worksheet: any
+export interface RootPresTemplate extends ITemplate {
+	slideCount: number
 	slides: PresSlide[]
+}
+
+export interface PresTemplate extends ITemplate {
+	name: string
 }

@@ -14,6 +14,7 @@ async function main() {
 
   let slide = pres.addSlide('slideTpl', 1)
 
+  
   slide.modify(slide => {
     slide.getElementsByTagName('p:sp')[1]
       .getElementsByTagName('a:t')[0]
@@ -29,8 +30,10 @@ async function main() {
       .data = 'mod2'
   })
 
+for(let i=0; i<=10; i++) {
   pres.addSlide('arrows', 2)
   pres.addSlide('arrows', 1)
+}
 
   // slide.addChart('graphTpl', 0)
 

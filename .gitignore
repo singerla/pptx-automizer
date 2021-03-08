@@ -3,3 +3,6 @@ node_modules/
 pptx/
 out/
 dist/
+
+### Editor
+workspace.code-workspace
