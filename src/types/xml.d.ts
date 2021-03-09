@@ -1,3 +1,8 @@
+export type DefaultAttribute = {
+  Extension: string
+  ContentType: string
+}
+
 export type RelationshipAttribute = {
   Id: string
   Type: string
@@ -16,8 +21,14 @@ export type OverrideAttribute = {
 
 export type XMLElement = {
   archive: any
+  clause?: Function
   parent: any
   file: string
   tag: string
-  attributes: OverrideAttribute | SlideListAttribute | RelationshipAttribute
+  attributes: DefaultAttribute | OverrideAttribute | SlideListAttribute | RelationshipAttribute
+}
+
+export type Target = {
+  file: string
+  number: number
 }

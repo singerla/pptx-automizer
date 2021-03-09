@@ -1,10 +1,13 @@
 import JSZip from "jszip";
 
-export interface PresSlide {
+export interface ISlide {
+  append()
+  setTarget: Function
 	template: PresTemplate
-	number: number
+	sourceArchive: JSZip
+	sourceNumber: number
 	modifications: Function[]
-	addChart: Function
+	modify: Function
 }
 
 export interface IPresentationProps {
@@ -13,6 +16,7 @@ export interface IPresentationProps {
 }
 
 export interface ITemplate {
+  slideCount: number;
 	location: string
 	file: Promise<Buffer>
 	archive: Promise<JSZip>
@@ -21,10 +25,25 @@ export interface ITemplate {
 }
 
 export interface RootPresTemplate extends ITemplate {
+  appendSlide(slide: ISlide)
+	appendShape: Function
 	slideCount: number
-	slides: PresSlide[]
+	slides: ISlide[]
 }
 
 export interface PresTemplate extends ITemplate {
 	name: string
+}
+
+
+export interface IShape {
+	sourceArchive: JSZip
+	targetArchive: JSZip
+}
+
+export interface IChart extends IShape {
+  append: Function
+  setTarget: Function
+	sourceNumber: number
+	targetNumber: number
 }

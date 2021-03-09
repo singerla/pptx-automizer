@@ -3,7 +3,9 @@ import FileHelper from './file'
 import { XMLElement } from '../types/xml'
 import JSZip from 'jszip'
 import {
-	RelationshipAttribute, SlideListAttribute, OverrideAttribute
+  DefaultAttribute,
+	RelationshipAttribute, SlideListAttribute, OverrideAttribute,
+  Target
 } from '../types/xml'
 
 export default class XmlHelper {
@@ -21,9 +23,19 @@ export default class XmlHelper {
     return archive.file(file, xmlBuffer)
   }
 
+  static async appendIf(element: XMLElement): Promise<HTMLElement | boolean> {
+    let xml = await XmlHelper.getXmlFromArchive(element.archive, element.file)
+    
+    if(element.clause !== undefined) {
+      if(!element.clause(xml)) return false
+    }
+
+    return XmlHelper.append(element)
+  }
+
   static async append(element: XMLElement): Promise<HTMLElement> {
     let xml = await XmlHelper.getXmlFromArchive(element.archive, element.file)
-
+    
     let newElement = xml.createElement(element.tag)
     for(let attribute in element.attributes) {
       let value = element.attributes[attribute]
@@ -62,6 +74,38 @@ export default class XmlHelper {
     }
   }
 
+  static async getTargetsFromRelationships(archive: JSZip, path: string, prefix: string, suffix?: string): Promise<Target[]>{
+    let xml = await XmlHelper.getXmlFromArchive(archive, path)
+    let targets = xml.getElementsByTagName('Relationship')
+    let ret = []
+    for(let i in targets) {
+      let element = targets[i]
+      if(element.getAttribute !== undefined) {
+        let target = element.getAttribute('Target')
+        if(target.indexOf(prefix) === 0) {
+          let fileNumber = Number(target.replace(prefix, '').replace(suffix || '.xml', ''))
+          ret.push(<Target>{
+            file: target,
+            number: fileNumber
+          })
+        }
+      }
+    }
+    return ret
+  }
+
+  static findByAttribute(xml: HTMLElement, tagName: string, attributeName: string, attributeValue: string): Boolean {
+    let elements = xml.getElementsByTagName(tagName)
+    for(let i in elements) {
+      let element = elements[i]
+      if(element.getAttribute !== undefined) {
+        if(element.getAttribute(attributeName) === attributeValue) {
+          return true
+        }
+      }
+    }
+    return false
+  }
 
   /**
    * Slide related xml helpers
@@ -101,16 +145,21 @@ export default class XmlHelper {
   }
 
   static appendToContentType(rootArchive: JSZip, slideCount: number): Promise<HTMLElement> {
-    return XmlHelper.append({
-      archive: rootArchive,
+    return XmlHelper.append(
+      XmlHelper.createContentTypeChild(rootArchive, {
+        PartName: `/ppt/slides/slide${slideCount}.xml`,
+        ContentType: `application/vnd.openxmlformats-officedocument.presentationml.slide+xml`
+      })
+    )
+  }
+
+  static createContentTypeChild(archive: JSZip, attributes: OverrideAttribute | DefaultAttribute): XMLElement {
+    return {
+      archive: archive,
       file: `[Content_Types].xml`,
       parent: (xml: HTMLElement) => xml.getElementsByTagName('Types')[0],
       tag: 'Override',
-      attributes: <OverrideAttribute> {
-        PartName: `/ppt/slides/slide${slideCount}.xml`,
-        ContentType: `application/vnd.openxmlformats-officedocument.presentationml.slide+xml`
-      }
-    })
+      attributes: attributes
+    }
   }
-
 }

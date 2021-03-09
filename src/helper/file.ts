@@ -8,6 +8,9 @@ export default class FileHelper {
   }
 
   static extractFromArchive(archive: JSZip, file: string): Promise<string> {
+    if(archive.files[file] === undefined) {
+      throw new Error('Archived file not found: ' + file)
+    }
     return archive.files[file].async('string')
   }
 
@@ -26,6 +29,10 @@ export default class FileHelper {
 	 * @return {JSZip} targetArchive as an instance of JSZip
 	 */
   static async zipCopy(sourceArchive: JSZip, sourceFile:string, targetArchive: JSZip, targetFile?:string): Promise<JSZip> {
+    if(sourceArchive.files[sourceFile] === undefined) {
+      throw new Error('File not found: ' + sourceFile)
+    }
+
     let content = sourceArchive.files[sourceFile].async('nodebuffer')
     return targetArchive.file(targetFile || sourceFile, content)
   }

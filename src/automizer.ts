@@ -1,3 +1,5 @@
+import JSZip from 'jszip'
+
 import {
 	IPresentationProps, PresTemplate, RootPresTemplate,
 } from './types/interfaces'
@@ -5,10 +7,10 @@ import {
 
 import Template from './template'
 import Slide from './slide'
+import Chart from './chart'
+
 import FileHelper from './helper/file'
 import XmlHelper from './helper/xml'
-import JSZip from 'jszip'
-
 
 export default class Automizer implements IPresentationProps {
 
@@ -66,49 +68,13 @@ export default class Automizer implements IPresentationProps {
     let slideCount = await this._rootTemplate.countSlides()
 
     for(let i in this._rootTemplate.slides) {
-      slideCount = this._rootTemplate.incrementSlideCounter()
-
       let slide = this._rootTemplate.slides[i]
-      let slidePath = `ppt/slides/slide${slide.number}.xml`
-      let slideArchive = await slide.template.archive
-
-      await this.applyModifications(slide.modifications, slideArchive, slidePath)
-      await this.copySlideFiles(slideArchive, slide.number, rootArchive, slideCount)
-      await this.addContentToPresentation(rootArchive, slideCount)
+      await this._rootTemplate.appendSlide(slide)
     }
 
     let content = await rootArchive.generateAsync({type: "nodebuffer"})
 
     FileHelper.writeOutputFile(location, content)
   }
-  
-  async addContentToPresentation(rootArchive: JSZip, slideCount: number): Promise<HTMLElement[]> {
-    let relId = await XmlHelper.getNextRelId(rootArchive, 'ppt/_rels/presentation.xml.rels')
-    let promises = [
-      XmlHelper.appendToSlideRel(rootArchive, relId, slideCount),
-      XmlHelper.appendToSlideList(rootArchive, relId),
-      XmlHelper.appendToContentType(rootArchive, slideCount)
-    ]
-    return Promise.all(promises)
-  }
 
-  async applyModifications(modifications: Function[], template: JSZip, path: string) {
-    for(let m in modifications) {
-      let xml = await XmlHelper.getXmlFromArchive(template, path)
-      modifications[m](xml)
-      await XmlHelper.writeXmlToArchive(template, path, xml)
-    }
-  }
-
-  async copySlideFiles(sourceArchive: JSZip, sourceSlide: number, targetArchive: JSZip, targetSlide: string): Promise<void> {
-    FileHelper.zipCopy(
-      sourceArchive, `ppt/slides/slide${sourceSlide}.xml`, 
-      targetArchive, `ppt/slides/slide${targetSlide}.xml`
-    )
-
-    FileHelper.zipCopy(
-      sourceArchive, `ppt/slides/_rels/slide${sourceSlide}.xml.rels`, 
-      targetArchive, `ppt/slides/_rels/slide${targetSlide}.xml.rels`
-    )
-  }
 } 

@@ -1,7 +1,7 @@
 import {
-  PresSlide,
-  ITemplate,
- PresTemplate, RootPresTemplate
+  ISlide,
+  ITemplate, IChart,
+  PresTemplate, RootPresTemplate
 } from './types/interfaces'
 
 import FileHelper from './helper/file'
@@ -13,7 +13,7 @@ class Template implements ITemplate {
   file: Promise<Buffer>
   archive: Promise<JSZip>
   name: string
-  slides: PresSlide[]
+  slides: ISlide[]
   slideCount: number
 
   constructor(location: string) {
@@ -26,6 +26,7 @@ class Template implements ITemplate {
 
   static importRoot(location: string): RootPresTemplate {
     let newTemplate = new Template(location)
+    newTemplate.countSlides()
 
     return newTemplate
   }
@@ -40,6 +41,18 @@ class Template implements ITemplate {
     return newTemplate
   }
 
+  async appendSlide(slide: ISlide): Promise<void> {
+    this.incrementSlideCounter()
+
+    slide.setTarget(await this.archive, this)
+    await slide.append()
+  }
+
+  async appendShape(shape: IChart): Promise<void> {
+    shape.setTarget(await this.archive, shape.sourceNumber)
+    await shape.append()
+  }
+
   async countSlides(): Promise<number> {
     this.slideCount = await XmlHelper.countSlides(await this.archive)
 
@@ -48,7 +61,7 @@ class Template implements ITemplate {
 
   incrementSlideCounter(): number {
     this.slideCount ++
-    
+
     return this.slideCount;
   }
 }
