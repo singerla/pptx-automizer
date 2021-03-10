@@ -15,11 +15,11 @@ Although, most other shape types are already supported, such as connection shape
 ## Install
 You can add this package to your own project using npm:
 ```
-yarn add pptx-generator
+yarn add pptx-automizer
 ```
 or
 ```
-npm install pptx-generator
+npm install pptx-automizer
 ```
 
 ## Example
