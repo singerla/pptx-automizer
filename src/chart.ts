@@ -11,21 +11,28 @@ import {
 } from './types/xml'
 
 
-export default class Chart implements IChart {
-  sourceNumber: number
-  targetNumber: number
-
+export default class Chart implements IChart {  
   sourceArchive: JSZip
   targetArchive: JSZip
+  sourceNumber: number
+  targetNumber: number
+  sourceWorksheet: number | string
+  targetWorksheet: number | string
+  targetSlide: this
+  targetSlideNumber: number
+  sourceRid: any
 
-  constructor(relsXmlInfo: Target, sourceArchive: JSZip) {
+  constructor(relsXmlInfo: Target, sourceArchive: JSZip, targetSlideNumber: number) {
     this.sourceNumber = relsXmlInfo.number
+    this.sourceRid = relsXmlInfo.rId
     this.sourceArchive = sourceArchive
+    this.targetSlideNumber = targetSlideNumber
   }
 
   setTarget(archive: JSZip, number: number) {
     this.targetArchive = archive
     this.targetNumber = number
+    // this.targetNumber = this.sourceNumber
   }
 
   async append() {
@@ -40,8 +47,12 @@ export default class Chart implements IChart {
     let worksheets = await XmlHelper.getTargetsFromRelationships(this.sourceArchive, wbRelsPath, '../embeddings/Microsoft_Excel_Worksheet', '.xlsx')
     let worksheet = worksheets[0]
 
-    let number = (worksheet.number === 0) ? '' : worksheet.number
-    this.copyWorksheetFile(number, number)
+    this.sourceWorksheet = (worksheet.number === 0) ? '' : worksheet.number
+    this.targetWorksheet = this.targetNumber
+    
+    this.copyWorksheetFile()
+    this.editTargetWorksheetRel()
+    this.editTargetChartRel()
   }
 
   async appendTypes() {
@@ -73,10 +84,54 @@ export default class Chart implements IChart {
     )
   }
 
-  async copyWorksheetFile(sourceWorksheet: number | string, targetWorksheet: number|string): Promise<void> {
+  async editTargetChartRel() {
+    let targetRelFile = `ppt/slides/_rels/slide${this.targetSlideNumber}.xml.rels`
+    let relXml = await XmlHelper.getXmlFromArchive(this.targetArchive, targetRelFile)
+    let relations = relXml.getElementsByTagName('Relationship')
+
+    for(let i in relations) {
+      let element = relations[i]
+      if(element.getAttribute) {
+        let rId = element.getAttribute('Id')
+        if(rId === this.sourceRid) {
+          element.setAttribute('Target', `../charts/chart${this.targetNumber}.xml`)
+        }
+      }
+    }
+
+    XmlHelper.writeXmlToArchive(this.targetArchive, targetRelFile, relXml)
+  }
+
+  async editTargetWorksheetRel() {
+    let targetRelFile = `ppt/charts/_rels/chart${this.targetNumber}.xml.rels`
+    let relXml = await XmlHelper.getXmlFromArchive(this.targetArchive, targetRelFile)
+    let relations = relXml.getElementsByTagName('Relationship')
+
+    for(let i in relations) {
+      let element = relations[i]
+      if(element.getAttribute) {
+        let type = element.getAttribute('Type')
+        switch(type) {
+          case "http://schemas.openxmlformats.org/officeDocument/2006/relationships/package":
+            element.setAttribute('Target', `../embeddings/Microsoft_Excel_Worksheet${this.targetWorksheet}.xlsx`)
+            break
+          case "http://schemas.microsoft.com/office/2011/relationships/chartColorStyle":
+            element.setAttribute('Target', `colors${this.targetNumber}.xml`)
+            break
+          case "http://schemas.microsoft.com/office/2011/relationships/chartStyle":
+            element.setAttribute('Target', `style${this.targetNumber}.xml`)
+            break
+        }
+      }
+    }
+    
+    XmlHelper.writeXmlToArchive(this.targetArchive, targetRelFile, relXml)
+  }
+
+  async copyWorksheetFile(): Promise<void> {
     FileHelper.zipCopy(
-      this.sourceArchive, `ppt/embeddings/Microsoft_Excel_Worksheet${sourceWorksheet}.xlsx`, 
-      this.targetArchive, `ppt/embeddings/Microsoft_Excel_Worksheet${targetWorksheet}.xlsx`
+      this.sourceArchive, `ppt/embeddings/Microsoft_Excel_Worksheet${this.sourceWorksheet}.xlsx`, 
+      this.targetArchive, `ppt/embeddings/Microsoft_Excel_Worksheet${this.targetWorksheet}.xlsx`,
     )
   }
 

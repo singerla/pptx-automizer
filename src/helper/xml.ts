@@ -3,9 +3,7 @@ import FileHelper from './file'
 import { XMLElement } from '../types/xml'
 import JSZip from 'jszip'
 import {
-  DefaultAttribute,
-	RelationshipAttribute, SlideListAttribute, OverrideAttribute,
-  Target
+  DefaultAttribute, OverrideAttribute, Target
 } from '../types/xml'
 
 export default class XmlHelper {
@@ -84,8 +82,10 @@ export default class XmlHelper {
         let target = element.getAttribute('Target')
         if(target.indexOf(prefix) === 0) {
           let fileNumber = Number(target.replace(prefix, '').replace(suffix || '.xml', ''))
+          let rid = element.getAttribute('Id')
           ret.push(<Target>{
             file: target,
+            rId: rid,
             number: fileNumber
           })
         }
@@ -107,50 +107,28 @@ export default class XmlHelper {
     return false
   }
 
-  /**
-   * Slide related xml helpers
-   */
   static async countSlides(presentation: JSZip): Promise<number> {
     let presentationXml = await XmlHelper.getXmlFromArchive(presentation, 'ppt/presentation.xml')
     let slideCount = presentationXml.getElementsByTagName('p:sldId').length
-
     return slideCount
   }
 
-  static appendToSlideRel(rootArchive: JSZip, relId: string, slideCount: number): Promise<HTMLElement> {
-    return XmlHelper.append({
-      archive: rootArchive,
-      file: `ppt/_rels/presentation.xml.rels`,
-      parent: (xml: HTMLElement) => xml.getElementsByTagName('Relationships')[0],
-      tag: 'Relationship',
-      attributes: <RelationshipAttribute> {
-        Id: relId,
-        Type: `http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide`,
-        Target: `slides/slide${slideCount}.xml`
-      }
-    })
-  }
+  static async countCharts(presentation: JSZip): Promise<number> {
+    let contentTypesXml = await XmlHelper.getXmlFromArchive(presentation, '[Content_Types].xml')
+    let overrides = contentTypesXml.getElementsByTagName('Override')
+    let chartCount = 0
 
-  static appendToSlideList(rootArchive: JSZip, relId: string): Promise<HTMLElement> {
-    return XmlHelper.append({
-      archive: rootArchive,
-      file: `ppt/presentation.xml`,
-      parent: (xml: HTMLElement) => xml.getElementsByTagName('p:sldIdLst')[0],
-      tag: 'p:sldId',
-      attributes: <SlideListAttribute> {
-        id: (xml: HTMLElement) => XmlHelper.getMaxId(xml.getElementsByTagName('p:sldId'), 'id', true),
-        'r:id': relId
+    for(let i in overrides) {
+      let override = overrides[i]
+      if(override.getAttribute) {
+        let contentType = override.getAttribute('ContentType')
+        if(contentType === `application/vnd.openxmlformats-officedocument.drawingml.chart+xml`) {
+          chartCount++
+        }
       }
-    })
-  }
+    }
 
-  static appendToContentType(rootArchive: JSZip, slideCount: number): Promise<HTMLElement> {
-    return XmlHelper.append(
-      XmlHelper.createContentTypeChild(rootArchive, {
-        PartName: `/ppt/slides/slide${slideCount}.xml`,
-        ContentType: `application/vnd.openxmlformats-officedocument.presentationml.slide+xml`
-      })
-    )
+    return chartCount
   }
 
   static createContentTypeChild(archive: JSZip, attributes: OverrideAttribute | DefaultAttribute): XMLElement {

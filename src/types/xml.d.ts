@@ -31,4 +31,5 @@ export type XMLElement = {
 export type Target = {
   file: string
   number: number
+  rId?: string
 }

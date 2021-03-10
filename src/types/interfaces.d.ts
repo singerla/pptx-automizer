@@ -1,9 +1,8 @@
 import JSZip from "jszip";
 
 export interface ISlide {
-  append()
-  setTarget: Function
-	template: PresTemplate
+  append(): Promise<void>
+  setTarget(archive: JSZip, targetTemplate: RootPresTemplate): void
 	sourceArchive: JSZip
 	sourceNumber: number
 	modifications: Function[]
@@ -25,7 +24,8 @@ export interface ITemplate {
 }
 
 export interface RootPresTemplate extends ITemplate {
-  appendSlide(slide: ISlide)
+  countCharts();
+  appendSlide(slide: ISlide): Promise<void>
 	appendShape: Function
 	slideCount: number
 	slides: ISlide[]

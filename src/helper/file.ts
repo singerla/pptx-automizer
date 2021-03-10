@@ -1,5 +1,5 @@
 import fs from 'fs'
-import JSZip from 'jszip'
+import JSZip, { JSZipFileOptions } from 'jszip'
 
 export default class FileHelper {
 
@@ -20,19 +20,46 @@ export default class FileHelper {
     return zip.loadAsync(file)
   }
 
+  static extractAllForecefully(filePath: string): void {
+    fs.readFile(filePath, function(err, data) {
+      if (!err) {
+        var path = require('path');
+        let dir = filePath + '.unzip'
+        fs.rmdirSync(dir, { recursive: true })
+        fs.mkdirSync(dir)
+        var zip = new JSZip()
+        zip.loadAsync(data).then(function(contents) {
+          Object.keys(zip.files).forEach(function (filename) {
+            let subDir = path.dirname(contents.files[filename].name)
+            if(!fs.existsSync(subDir)) {
+              fs.mkdirSync(dir + '/' + subDir, { recursive: true })
+            }
+          })
+
+          Object.keys(zip.files).forEach(function (filename) {
+            zip.files[filename].async('string').then(function (fileData) {
+              if(contents.files[filename].dir === false) {
+                fs.writeFileSync(dir + '/' + filename, fileData)
+              }
+            })
+          })
+        })
+      }
+    })
+  }
+
 	/**
 	 * Copies a file from one archive to another. The new file can have a different name to the origin.
-	 * @param {string} sourceArchive - Source archive
+	 * @param {JSZip} sourceArchive - Source archive
 	 * @param {string} sourceFile - file path and name inside source archive
-   * @param {string} targetArchive - Target archive
+   * @param {JSZip} targetArchive - Target archive
 	 * @param {string} targetFile - file path and name inside target archive
 	 * @return {JSZip} targetArchive as an instance of JSZip
 	 */
-  static async zipCopy(sourceArchive: JSZip, sourceFile:string, targetArchive: JSZip, targetFile?:string): Promise<JSZip> {
+  static async zipCopy(sourceArchive: JSZip, sourceFile:string, targetArchive: JSZip, targetFile?:string, mode?:any): Promise<JSZip> {
     if(sourceArchive.files[sourceFile] === undefined) {
       throw new Error('File not found: ' + sourceFile)
     }
-
     let content = sourceArchive.files[sourceFile].async('nodebuffer')
     return targetArchive.file(targetFile || sourceFile, content)
   }
