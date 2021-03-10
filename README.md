@@ -9,7 +9,8 @@ Please note that this project is *work in progress*. At the moment, it is *not* 
 * images
 * links
 * notes
-Although, most other shape types are already supported, such as charts.
+
+Although, most other shape types are already supported, such as connection shapes or charts.
 
 ## Install
 Clone this repository and run
