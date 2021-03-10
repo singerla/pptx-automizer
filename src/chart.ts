@@ -3,12 +3,8 @@ import FileHelper from './helper/file'
 import XmlHelper from './helper/xml'
 
 import {
-	IChart
-} from './types/interfaces'
-
-import {
-	Target
-} from './types/xml'
+	IChart, Target
+} from './types'
 
 
 export default class Chart implements IChart {  

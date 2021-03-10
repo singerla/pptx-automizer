@@ -1,10 +1,10 @@
 import { DOMParser, XMLSerializer } from 'xmldom'
 import FileHelper from './file'
-import { XMLElement } from '../types/xml'
+import { XMLElement } from '../types'
 import JSZip from 'jszip'
 import {
   DefaultAttribute, OverrideAttribute, Target
-} from '../types/xml'
+} from '../types'
 
 export default class XmlHelper {
 

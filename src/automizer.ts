@@ -1,7 +1,7 @@
 
 import {
 	IPresentationProps, PresTemplate, RootPresTemplate,
-} from './types/interfaces'
+} from './types'
 
 
 import Template from './template'

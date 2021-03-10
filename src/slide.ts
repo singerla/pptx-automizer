@@ -2,11 +2,11 @@ import JSZip from 'jszip'
 import Chart from './chart'
 import FileHelper from './helper/file'
 import XmlHelper from './helper/xml'
-import {
-	ISlide, RootPresTemplate, PresTemplate
-} from './types/interfaces'
-import { RelationshipAttribute, SlideListAttribute } from './types/xml'
 
+import { 
+  ISlide, RootPresTemplate, PresTemplate,
+  RelationshipAttribute, SlideListAttribute 
+} from './types'
 
 export default class Slide implements ISlide {
   sourceTemplate: PresTemplate

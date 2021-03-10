@@ -2,7 +2,7 @@ import {
   ISlide,
   ITemplate, IChart,
   PresTemplate, RootPresTemplate
-} from './types/interfaces'
+} from './types'
 
 import FileHelper from './helper/file'
 import XmlHelper from './helper/xml'
