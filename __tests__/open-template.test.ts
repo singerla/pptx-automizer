@@ -1,9 +1,7 @@
-// import { Presentation } from "../src/template"
+import Automizer from "../src/index"
 
-// test("open pptx template file", () => {
-//   const myTemplate = new Presentation(`${__dirname}/../pptx/Presentation.pptx`)
+test("open pptx template file", () => {
+  const automizer = new Automizer()
 
-//   expect(myTemplate).toBeInstanceOf(Presentation)
-
-//   myTemplate.read()
-// });
+  expect(automizer).toBeInstanceOf(Automizer)
+});
