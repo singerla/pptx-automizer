@@ -1,8 +1,8 @@
 # pptx-automizer
-This is a pptx generator for Node.js based on templates. It can read pptx files and merge them into another presentation. Compared to other pptx libraries (such as [PptxGenJS](https://github.com/gitbrent/PptxGenJS), [officegen](https://github.com/Ziv-Barber/officegen) or [node-pptx](https://github.com/heavysixer/node-pptx)), <code>pptx-automizer</code> will not write files from scratch, but edit and merge existing pptx files. Any type of shape can be styled within PowerPoint itself and will be copied 1:1 into the output presentation.
+This is a pptx generator for Node.js based on templates. It can read pptx files and insert selected slides into another presentation. Compared to other pptx libraries (such as [PptxGenJS](https://github.com/gitbrent/PptxGenJS), [officegen](https://github.com/Ziv-Barber/officegen) or [node-pptx](https://github.com/heavysixer/node-pptx)), *pptx-automizer* will not write files from scratch, but edit and merge existing pptx files. Any type of shape can be styled within PowerPoint itself and will be copied 1:1 into the output presentation.
 
 ## Requirements
-Currently, this generator requires a [Node.js server](https://nodejs.org/en/download/package-manager/) environment.
+This generator can only be used on the server-side and requires a [Node.js](https://nodejs.org/en/download/package-manager/) environment.
 
 ## Limitations
 Please note that this project is *work in progress*. At the moment, it is *not* possible to handle slides containing:
@@ -13,22 +13,23 @@ Please note that this project is *work in progress*. At the moment, it is *not* 
 Although, most other shape types are already supported, such as connection shapes or charts.
 
 ## Install
-Clone this repository and run
+You can add this package to your own project using npm:
 ```
-yarn install
+yarn add pptx-generator
 ```
-to install the dependencies.
+or
+```
+npm install pptx-generator
+```
 
 ## Example
-This repository contains some example files. You can find the example below in <code>src/index.ts</code>
 ```js
-// Here is the entry:
-import Automizer from "../src/automizer"
+import Automizer from "pptx-automizer"
 const automizer = new Automizer
 
 // First, lets set some preferences
-const templateFolder = `${__dirname}/../__tests__/pptx-templates/`
-const outputFolder = `${__dirname}/../__tests__/pptx-output/`
+const templateFolder = `my/pptx/templates/`
+const outputFolder = `my/pptx/output/`
 
 // Let's start and import a root template. All slides will be appended to 
 // any existing slide in RootTemplate.pptx
@@ -49,6 +50,3 @@ for(let i=0; i<=10; i++) {
 // Finally, we want to write the output file.
 pres.write(`${outputFolder}myPresentation.pptx`)
 ```
-
-This will start your test drive:
-<code>yarn dev</code>
