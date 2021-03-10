@@ -1,46 +1,26 @@
+// Here is the entry:
 import Automizer from "../src/automizer"
-import FileHelper from "./helper/file"
+const automizer = new Automizer
 
-let textMod = (slide: any) => {
-  slide.getElementsByTagName('p:sp')[1]
-    .getElementsByTagName('a:t')[0]
-    .firstChild
-    .data = 'Test 123 2'
+// First, lets set some preferences
+const templateFolder = `${__dirname}/../__tests__/pptx-templates/`
+const outputFolder = `${__dirname}/../__tests__/pptx-output/`
+
+// Let's start and import a root template. All slides will be appended to 
+// any existing slide in RootTemplate.pptx
+let pres = automizer.importRootTemplate(`${templateFolder}RootTemplate.pptx`)
+  // We want to make two files available and give them a handy label.
+  .importTemplate(`${templateFolder}SlideWithShapes.pptx`, 'shapes')
+  .importTemplate(`${templateFolder}SlideWithGraph.pptx`, 'graph')
+
+// addSlide takes two arguments: The first will specify the source presentation
+// where your template should come from, the second will set the slide number.
+pres.addSlide('graph', 1)
+
+// You can also loop through something and add slides in a batch.
+for(let i=0; i<=10; i++) {
+  pres.addSlide('shapes', 1)
 }
 
-async function main() {
-  const automize = new Automizer
-  
-  let pres = automize.importRootTemplate('pptx/Presentation.pptx')
-    .importTemplate('pptx/Graph-Test.pptx', 'graphTpl')
-    .importTemplate('pptx/Graph-Test2.pptx', 'graphTpl2')
-    .importTemplate('pptx/Graph-Test3.pptx', 'graphTpl3')
-    .importTemplate('pptx/Slide-Test.pptx', 'slideTpl')
-    .importTemplate('pptx/Slide-Test3.pptx', 'arrows')
-  // .importTemplate('pptx/Slide-Test2.pptx', 'slideTpl2')
-  
-  pres.addSlide('slideTpl', 1)
-    .modify(textMod)
-    
-  for(let i=0; i<=10; i++) {
-    pres.addSlide('arrows', 1)
-  }
-
-
-  pres.addSlide('graphTpl', 1)
-  
-  for(let i=0; i<=10; i++) {
-    pres.addSlide('arrows', 2)
-    pres.addSlide('graphTpl3', 2)
-  }
-
-  pres.addSlide('graphTpl2', 1)
-
-  pres.addSlide('graphTpl3', 2)
-
-  pres.write('out/Test-out.pptx')
-}
-
-main()
-
-FileHelper.extractAllForecefully('out/Test-out.pptx')
+// Finally, we want to write the output file.
+pres.write(`${outputFolder}myPresentation.pptx`)
