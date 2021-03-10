@@ -28,25 +28,21 @@ import Automizer from "pptx-automizer"
 const automizer = new Automizer
 
 // First, lets set some preferences
-const templateFolder = `my/pptx/templates/`
-const outputFolder = `my/pptx/output/`
+const templateFolder = `my/pptx/templates`
+const outputFolder = `my/pptx/output`
 
 // Let's start and import a root template. All slides will be appended to 
-// any existing slide in RootTemplate.pptx
-let pres = automizer.importRootTemplate(`${templateFolder}RootTemplate.pptx`)
+// any existing slides in RootTemplate.pptx
+let pres = automizer.importRootTemplate(`${templateFolder}/RootTemplate.pptx`)
   // We want to make two files available and give them a handy label.
-  .importTemplate(`${templateFolder}SlideWithShapes.pptx`, 'shapes')
-  .importTemplate(`${templateFolder}SlideWithGraph.pptx`, 'graph')
+  .importTemplate(`${templateFolder}/SlideWithShapes.pptx`, 'shapes')
+  .importTemplate(`${templateFolder}/SlideWithGraph.pptx`, 'graph')
 
-// addSlide takes two arguments: The first will specify the source presentation
-// where your template should come from, the second will set the slide number.
+// addSlide takes two arguments: The first will specify the source presentation's
+// label to take the template from, the second will set the slide number to require.
 pres.addSlide('graph', 1)
-
-// You can also loop through something and add slides in a batch.
-for(let i=0; i<=10; i++) {
-  pres.addSlide('shapes', 1)
-}
+  .addSlide('shapes', 1)
 
 // Finally, we want to write the output file.
-pres.write(`${outputFolder}myPresentation.pptx`)
+pres.write(`${outputFolder}/myPresentation.pptx`)
 ```

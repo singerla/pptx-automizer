@@ -1,3 +1,3 @@
-import Automizer from "../src/automizer"
+import Automizer from "./automizer"
 
 export default Automizer
