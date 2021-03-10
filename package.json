@@ -1,6 +1,6 @@
 {
   "name": "pptx-automizer",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A template based pptx generator",
   "repository": {
     "type": "git",
@@ -16,7 +16,8 @@
     "test": "npx jest"
   },
   "files": [
-    "dist", "README"
+    "dist",
+    "README"
   ],
   "main": "dist/index.js",
   "types": "dist/index.d.js",
