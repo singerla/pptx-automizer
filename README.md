@@ -5,15 +5,11 @@ This is a pptx generator for Node.js based on templates. It can read pptx files 
 This generator can only be used on the server-side and requires a [Node.js](https://nodejs.org/en/download/package-manager/) environment.
 
 ## Limitations
-Please note that this project is *work in progress*. At the moment, it is *not* possible to handle slides containing:
-* images
-* links
-* notes
-
-Although, most other shape types are already supported, such as connection shapes or charts.
+Please note that this project is *work in progress*. At the moment, you might encounter difficulties for special shape types that require internal relations.
+Although, most shape types are already supported, such as connection shapes or charts.
 
 ## Install
-You can add this package to your own project using npm:
+You can add this package to your own project using npm or yarn:
 ```
 yarn add pptx-automizer
 ```
@@ -25,24 +21,27 @@ npm install pptx-automizer
 ## Example
 ```js
 import Automizer from "pptx-automizer"
-const automizer = new Automizer
 
-// First, lets set some preferences
-const templateFolder = `my/pptx/templates`
-const outputFolder = `my/pptx/output`
+// First, let's set some preferences
+const automizer = new Automizer({
+  templateDir: `my/pptx/templates`,
+  outputDir: `my/pptx/output`
+})
 
-// Let's start and import a root template. All slides will be appended to 
-// any existing slides in RootTemplate.pptx
-let pres = automizer.importRootTemplate(`${templateFolder}/RootTemplate.pptx`)
+// Now start and import a root template. All slides will be appended to 
+// any existing slide in RootTemplate.pptx
+let pres = automizer.importRootTemplate(`RootTemplate.pptx`)
   // We want to make two files available and give them a handy label.
-  .importTemplate(`${templateFolder}/SlideWithShapes.pptx`, 'shapes')
-  .importTemplate(`${templateFolder}/SlideWithGraph.pptx`, 'graph')
+  .importTemplate(`SlideWithShapes.pptx`, 'shapes')
+  .importTemplate(`SlideWithGraph.pptx`, 'graph')
+  .importTemplate(`SlideWithImages.pptx`, 'images')
 
 // addSlide takes two arguments: The first will specify the source presentation's
 // label to take the template from, the second will set the slide number to require.
 pres.addSlide('graph', 1)
   .addSlide('shapes', 1)
+  .addSlide('images', 2)
 
 // Finally, we want to write the output file.
-pres.write(`${outputFolder}/myPresentation.pptx`)
+pres.write(`myPresentation.pptx`)
 ```
