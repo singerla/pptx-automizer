@@ -2,8 +2,8 @@ import Automizer from "../src/automizer"
 
 test("create presentation and append slides with images", async () => {
   const automizer = new Automizer({
-    templateDir: `${__dirname}/../__tests__/pptx-templates`,
-    outputDir: `${__dirname}/../__tests__/pptx-output`
+    templateDir: `${__dirname}/pptx-templates`,
+    outputDir: `${__dirname}/pptx-output`
   })
 
   let pres = automizer.importRootTemplate(`RootTemplateWithCharts.pptx`)
