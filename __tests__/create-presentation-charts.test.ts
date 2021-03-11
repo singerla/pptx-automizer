@@ -1,16 +1,14 @@
 import Automizer from "../src/automizer"
 
-test("create presentation and add basic slide", async () => {
+test("create presentation and append charts to existing charts", async () => {
   const templateFolder = `${__dirname}/../__tests__/pptx-templates/`
   const outputFolder = `${__dirname}/../__tests__/pptx-output/`
   
   const automizer = new Automizer()
-  let pres = automizer.importRootTemplate(`${templateFolder}RootTemplate.pptx`)
-    .importTemplate(`${templateFolder}SlideWithShapes.pptx`, 'shapes')
+  let pres = automizer.importRootTemplate(`${templateFolder}RootTemplateWithCharts.pptx`)
+    .importTemplate(`${templateFolder}SlideWithCharts.pptx`, 'charts')
 
-  for(let i=0; i<=10; i++) {
-    pres.addSlide('shapes', 1)
-  }
+  pres.addSlide('charts', 1)
 
   await pres.write(`${outputFolder}myPresentation.pptx`)
 
