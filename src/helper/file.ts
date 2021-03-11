@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import JSZip, { JSZipFileOptions } from 'jszip'
+import { AutomizerSummary, IPresentationProps } from '../types'
 
 export default class FileHelper {
 
@@ -29,10 +30,6 @@ export default class FileHelper {
     return extension
   }
 
-  static async countImages(presentation: JSZip): Promise<number> {
-    let files = await presentation.file(/ppt\/media\/image/)
-    return files.length
-  }
 	/**
 	 * Copies a file from one archive to another. The new file can have a different name to the origin.
 	 * @param {JSZip} sourceArchive - Source archive
@@ -49,12 +46,18 @@ export default class FileHelper {
     return targetArchive.file(targetFile || sourceFile, content)
   }
 
-  static writeOutputFile(location: string, content: Buffer): string {
+  static writeOutputFile(location: string, content: Buffer, automizer: IPresentationProps): AutomizerSummary {
     fs.writeFile(location, content, function(err: { message: any }) {
       if(err) {
         throw new Error(`Error writing output: ${err.message}`)
       }
     })
-    return `Finished: ${location}`
+
+    return {
+      status: 'finished',
+      file: location,
+      templates: automizer.templates.length,
+      slides: automizer.rootTemplate.slideCount
+    }
   }
 }

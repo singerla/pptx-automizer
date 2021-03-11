@@ -1,22 +1,33 @@
 import JSZip from "jszip";
 
+
 type AutomizerParams = {
 	templateDir?: string
 	outputDir?: string
 }
 
+type AutomizerSummary = {
+	status: string
+	file: string
+	templates: number
+	slides: number
+}
+
 export interface ISlide {
   append(): Promise<void>
   setTarget(archive: JSZip, targetTemplate: RootPresTemplate): void
+  addElement(presName: string, slideNumber: number, selector: Function | string): void
 	sourceArchive: JSZip
 	sourceNumber: number
 	modifications: Function[]
+	toAppend: any[]
 	modify: Function
 }
 
 export interface IPresentationProps {
 	rootTemplate: RootPresTemplate
 	templates: PresTemplate[]
+	template(name: string): PresTemplate
 	params: AutomizerParams
 }
 
@@ -25,13 +36,13 @@ export interface ITemplate {
 	location: string
 	file: Promise<Buffer>
 	archive: Promise<JSZip>
-	countSlides: Function
-	incrementSlideCounter: Function
 }
 
 export interface RootPresTemplate extends ITemplate {
+	countSlides(): Promise<number>
   countImages(): Promise<number>
 	countCharts(): Promise<number>
+	incrementSlideCounter(): number
   incrementChartCounter(): number
   incrementImageCounter(): number
   appendSlide(slide: ISlide): Promise<void>

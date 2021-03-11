@@ -5,8 +5,8 @@ test("create presentation and add basic slide", async () => {
     templateDir: `${__dirname}/pptx-templates`,
     outputDir: `${__dirname}/pptx-output`
   })
-  let pres = automizer.importRootTemplate(`RootTemplate.pptx`)
-    .importTemplate(`SlideWithShapes.pptx`, 'shapes')
+  let pres = automizer.load(`RootTemplate.pptx`)
+    .load(`SlideWithShapes.pptx`, 'shapes')
 
   for(let i=0; i<=10; i++) {
     pres.addSlide('shapes', 1)

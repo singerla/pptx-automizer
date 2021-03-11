@@ -6,8 +6,8 @@ test("create presentation and append charts to existing charts", async () => {
     outputDir: `${__dirname}/pptx-output`
   })
 
-  let pres = automizer.importRootTemplate(`RootTemplateWithCharts.pptx`)
-    .importTemplate(`SlideWithCharts.pptx`, 'charts')
+  let pres = automizer.load(`RootTemplateWithCharts.pptx`)
+    .load(`SlideWithCharts.pptx`, 'charts')
 
   pres.addSlide('charts', 1)
 

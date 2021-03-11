@@ -7,6 +7,7 @@ import {
 import FileHelper from './helper/file'
 import XmlHelper from './helper/xml'
 import JSZip from 'jszip'
+import CountHelper from './helper/count'
 
 class Template implements ITemplate {
   /**
@@ -48,8 +49,13 @@ class Template implements ITemplate {
   chartCount: number
   imageCount: number
 
-  constructor(location: string) {
+  constructor(location: string, name?: string) {
     this.location = location
+
+    if(name !== undefined) {
+      this.name = name
+    }
+
     this.file = FileHelper.readFile(location)
     this.archive = FileHelper.extractFileContent(this.file)
     this.slides = []
@@ -59,16 +65,13 @@ class Template implements ITemplate {
     this.imageCount = 0
   }
 
-  static importRoot(location: string): RootPresTemplate {
-    let newTemplate = new Template(location)
-    return newTemplate
-  }
-
-  static import(location: string, name?:string): PresTemplate {
-    let newTemplate = new Template(location)
+  static import(location: string, name?:string): PresTemplate | RootPresTemplate {
+    let newTemplate: PresTemplate | RootPresTemplate
 
     if(name) {
-      newTemplate.name = name
+      newTemplate = <PresTemplate> new Template(location, name)
+    } else {
+      newTemplate = <RootPresTemplate> new Template(location)
     }
 
     return newTemplate
@@ -81,7 +84,7 @@ class Template implements ITemplate {
   }
   
   async countSlides(): Promise<number> {
-    let slideCount = await XmlHelper.countSlides(await this.archive)
+    let slideCount = await CountHelper.countSlides(await this.archive)
     this.slideCount = slideCount
     return this.slideCount
   }
@@ -97,7 +100,7 @@ class Template implements ITemplate {
   }
 
   async countCharts(): Promise<number> {
-    this.chartCount = await XmlHelper.countCharts(await this.archive)
+    this.chartCount = await CountHelper.countCharts(await this.archive)
     return this.chartCount
   }
 
@@ -111,7 +114,7 @@ class Template implements ITemplate {
   }
 
   async countImages(): Promise<number> {
-    this.imageCount = await FileHelper.countImages(await this.archive)
+    this.imageCount = await CountHelper.countImages(await this.archive)
     return this.imageCount
   }
 

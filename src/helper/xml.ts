@@ -123,28 +123,17 @@ export default class XmlHelper {
     return false
   }
 
-  static async countSlides(presentation: JSZip): Promise<number> {
-    let presentationXml = await XmlHelper.getXmlFromArchive(presentation, 'ppt/presentation.xml')
-    let slideCount = presentationXml.getElementsByTagName('p:sldId').length
-    return slideCount
-  }
-
-  static async countCharts(presentation: JSZip): Promise<number> {
-    let contentTypesXml = await XmlHelper.getXmlFromArchive(presentation, '[Content_Types].xml')
-    let overrides = contentTypesXml.getElementsByTagName('Override')
-    let chartCount = 0
-
-    for(let i in overrides) {
-      let override = overrides[i]
-      if(override.getAttribute) {
-        let contentType = override.getAttribute('ContentType')
-        if(contentType === `application/vnd.openxmlformats-officedocument.drawingml.chart+xml`) {
-          chartCount++
-        }
+  static async findByElementName(archive: JSZip, path: string, name: string): Promise<any> {
+    let slideXml = await XmlHelper.getXmlFromArchive(archive, path)
+    let names = slideXml.getElementsByTagName('p:cNvPr')
+    
+    for(let i in names) {
+      if(names[i].getAttribute && names[i].getAttribute('name') === name) {
+        return names[i].parentNode.parentNode
       }
     }
 
-    return chartCount
+    return null
   }
 
   static createContentTypeChild(archive: JSZip, attributes: OverrideAttribute | DefaultAttribute): XMLElement {

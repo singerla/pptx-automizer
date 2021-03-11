@@ -7,7 +7,7 @@ import XmlHelper from './helper/xml'
 
 import { 
   ISlide, RootPresTemplate, PresTemplate,
-  RelationshipAttribute, SlideListAttribute 
+  RelationshipAttribute, SlideListAttribute, IPresentationProps 
 } from './types'
 
 export default class Slide implements ISlide {
@@ -20,16 +20,42 @@ export default class Slide implements ISlide {
   sourcePath: string
   targetPath: string
   modifications: Function[]
+  toAppend: any[]
   relsPath: string
+  rootTemplate: RootPresTemplate
+  root: IPresentationProps
 
   constructor(params: any) {
     this.sourceTemplate = params.template
     this.sourceNumber = params.number
     this.modifications = []
+    this.toAppend = []
   }
 
   modify(callback: Function): void {
     this.modifications.push(callback)
+  }
+
+  async addElement(presName: string, slideNumber: number, selector: string, callback?: Function | Function[]): Promise<this> {
+    let template = this.root.template(presName)
+    let sourcePath = `ppt/slides/slide${slideNumber}.xml`
+    let archive = await template.archive
+    let sourceElement = await XmlHelper.findByElementName(archive, sourcePath, selector)
+    
+    if(sourceElement) {
+      let appendElement = sourceElement.cloneNode(true)
+      if(callback !== undefined) {
+        if(callback instanceof Array) {
+          callback.forEach(cb => cb(appendElement))
+        } else {
+          callback(appendElement)
+        }
+      }
+      
+      this.toAppend.push(appendElement)
+    }
+
+    return this
   }
 
   setTarget(archive: JSZip, targetTemplate: RootPresTemplate) {
@@ -45,17 +71,29 @@ export default class Slide implements ISlide {
   async append() {
     this.sourceArchive = await this.sourceTemplate.archive
     
-    await this.applyModifications()
     await this.copySlideFiles()
     await this.copyRelatedContent()
     await this.addSlideToPresentation()
+    await this.appendImportedElements()
+    await this.applyModifications()
+  }
+
+  async appendImportedElements() {
+    let slideXml = await XmlHelper.getXmlFromArchive(this.targetArchive, this.targetPath)
+    let tree = slideXml.getElementsByTagName('p:spTree')[0]
+
+    this.toAppend.forEach(element => {
+      tree.appendChild(element)
+    })
+
+    await XmlHelper.writeXmlToArchive(this.targetArchive, this.targetPath, slideXml)
   }
 
   async applyModifications(): Promise<void> {
     for(let m in this.modifications) {
-      let xml = await XmlHelper.getXmlFromArchive(this.sourceArchive, this.sourcePath)
+      let xml = await XmlHelper.getXmlFromArchive(this.targetArchive, this.targetPath)
       this.modifications[m](xml)
-      await XmlHelper.writeXmlToArchive(this.sourceArchive, this.sourcePath, xml)
+      await XmlHelper.writeXmlToArchive(this.targetArchive, this.targetPath, xml)
     }
   }
 

@@ -1,6 +1,7 @@
 
 import {
   AutomizerParams,
+  AutomizerSummary,
 	IPresentationProps, PresTemplate, RootPresTemplate,
 } from './types'
 
@@ -17,25 +18,65 @@ export default class Automizer implements IPresentationProps {
 	outputDir: string
   params: AutomizerParams
 
+  /**
+   * Parameters for Automizer constructor.
+   * @param {string} templateDir - optional: prefix for all templates to load.
+   * @param {string} outputDir - optional: prefix for all output files.
+   */
   constructor(params?: AutomizerParams) {
     this.templates = []
     this.params = params
-
+    
     this.templateDir = (params?.templateDir) ? params.templateDir + '/' : ''
     this.outputDir = (params?.outputDir) ? params.outputDir + '/' : ''
   }
 
-  public importRootTemplate(location: string): this {
+	/**
+	 * Load a pptx file. 
+	 * @param {string} location - Filename or path to the template. Will be prefixed with 'templateDir'
+	 * @param {string} name - Optional: A short name for the template. If skipped, the template will be set as RootTemplate.
+	 * @return {Slide} Instance of Automizer
+	 */
+  public load(location: string, name?: string): this {
     location = this.getLocation(location, 'template')
-    let newTemplate = Template.importRoot(location)
-    this.rootTemplate = newTemplate
+    
+    let newTemplate = Template.import(location, name)
+
+    if(!this.isPresTemplate(newTemplate)) {
+      this.rootTemplate = newTemplate
+    } else {
+      this.templates.push(newTemplate)
+    }
+
     return this
   }
 
-  public importTemplate(location: string, name: string): this {
-    location = this.getLocation(location, 'template')
-    let newTemplate = Template.import(location, name)
-    this.templates.push(newTemplate)
+  isPresTemplate(template: PresTemplate | RootPresTemplate): template is PresTemplate { 
+    return 'name' in template; 
+  }
+
+	/**
+	 * Find imported template by given name and return a certain slide available
+	 * @param {string} name - Name of template; must be imported by Automizer.importTemplate()
+	 * @param {number} slideNumber - Number of slide in template presentation
+	 * @return {Slide} Imported slide as an instance of Slide
+	 */
+  public addSlide(name: string, slideNumber: number, callback?: Function): this {
+    let template = this.template(name)
+    
+    let newSlide = new Slide({
+      presentation: this,
+      template: template,
+      number: slideNumber
+    })
+    
+    if(callback !== undefined) {
+      newSlide.root = this,
+      callback(newSlide)
+    }
+
+    this.rootTemplate.slides.push(newSlide)
+    
     return this
   }
 
@@ -54,27 +95,7 @@ export default class Automizer implements IPresentationProps {
     }
   }
 
-	/**
-	 * Find imported template by given name and return a certain slide available
-	 * @param {string} name - Name of template; must be imported by Automizer.importTemplate()
-	 * @param {number} slideNumber - Number of slide in template presentation
-	 * @return {Slide} Imported slide as an instance of Slide
-	 */
-  public addSlide(name: string, slideNumber: number): Slide {
-    let template = this.template(name)
-    
-    let newSlide = new Slide({
-      presentation: this,
-      template: template,
-      number: slideNumber
-    })
-    
-    this.rootTemplate.slides.push(newSlide)
-    
-    return newSlide
-  }
-
-  async write(location: string): Promise<string> {
+  async write(location: string): Promise<AutomizerSummary> {
     await this.rootTemplate.countSlides()
     await this.rootTemplate.countCharts()
     await this.rootTemplate.countImages()
@@ -89,6 +110,6 @@ export default class Automizer implements IPresentationProps {
     let content = await rootArchive.generateAsync({type: "nodebuffer"})
 
     location = this.getLocation(location, 'output')
-    return FileHelper.writeOutputFile(location, content)
+    return FileHelper.writeOutputFile(location, content, this)
   }
 }

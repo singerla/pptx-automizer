@@ -28,13 +28,14 @@ const automizer = new Automizer({
   outputDir: `my/pptx/output`
 })
 
-// Now start and import a root template. All slides will be appended to 
-// any existing slide in RootTemplate.pptx
-let pres = automizer.importRootTemplate(`RootTemplate.pptx`)
-  // We want to make two files available and give them a handy label.
-  .importTemplate(`SlideWithShapes.pptx`, 'shapes')
-  .importTemplate(`SlideWithGraph.pptx`, 'graph')
-  .importTemplate(`SlideWithImages.pptx`, 'images')
+// Now we can start and load a pptx template.
+// Skipping the second argument will set the root template.
+// Each addSlide will append to any existing slide in RootTemplate.pptx.
+let pres = automizer.load(`RootTemplate.pptx`)
+  // We want to make some more files available and give them a handy label.
+  .load(`SlideWithShapes.pptx`, 'shapes')
+  .load(`SlideWithGraph.pptx`, 'graph')
+  .load(`SlideWithImages.pptx`, 'images')
 
 // addSlide takes two arguments: The first will specify the source presentation's
 // label to take the template from, the second will set the slide number to require.
@@ -43,5 +44,7 @@ pres.addSlide('graph', 1)
   .addSlide('images', 2)
 
 // Finally, we want to write the output file.
-pres.write(`myPresentation.pptx`)
+pres.write(`myPresentation.pptx`).then(summary => {
+  console.log(summary)
+})
 ```
