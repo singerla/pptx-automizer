@@ -1,5 +1,7 @@
 import JSZip from 'jszip'
 import Chart from './chart'
+import Image from './image'
+
 import FileHelper from './helper/file'
 import XmlHelper from './helper/xml'
 
@@ -114,13 +116,17 @@ export default class Slide implements ISlide {
 
   async copyRelatedContent(): Promise<void> {
     let charts = await XmlHelper.getTargetsFromRelationships(this.sourceArchive, this.relsPath, '../charts/chart')
-    
     for(let i in charts) {
       let newChart = new Chart(charts[i], this.sourceArchive, this.targetNumber)
+      this.targetTemplate.incrementChartCounter()
+      await this.targetTemplate.appendChart(newChart)
+    }
 
-      await this.targetTemplate.appendShape(newChart)
+    let images = await XmlHelper.getTargetsByRelationshipType(this.sourceArchive, this.relsPath, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image")
+    for(let i in images) {
+      let newImage = new Image(images[i], this.sourceArchive, this.targetNumber)
+      this.targetTemplate.incrementImageCounter()
+      await this.targetTemplate.appendImage(newImage)
     }
   }
-
-
 }

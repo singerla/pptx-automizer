@@ -1,4 +1,5 @@
 import Automizer from "../src/index"
+import FileHelper from "./helper/file"
 
 
 const automizer = new Automizer({
@@ -7,9 +8,10 @@ const automizer = new Automizer({
 })
 
 let pres = automizer.importRootTemplate(`RootTemplateWithCharts.pptx`)
-  .importTemplate(`SlideWithCharts.pptx`, 'charts')
+  .importTemplate(`SlideWithImage.pptx`, 'image')
 
-pres.addSlide('charts', 1)
+pres.addSlide('image', 3)
+pres.addSlide('image', 3)
 
 pres.write(`myPresentation.pptx`).then(result => {
   console.log(result)

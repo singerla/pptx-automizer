@@ -10,3 +10,6 @@ workspace.code-workspace
 ### Testing
 __tests__/pptx-output
 coverage/
+__tests__/images/test.jpg
+__tests__/images/test.png
+__tests__/images/test.svg

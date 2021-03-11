@@ -77,6 +77,7 @@ export default class Automizer implements IPresentationProps {
   async write(location: string): Promise<string> {
     await this.rootTemplate.countSlides()
     await this.rootTemplate.countCharts()
+    await this.rootTemplate.countImages()
 
     let rootArchive = await this.rootTemplate.archive
 

@@ -30,10 +30,16 @@ export interface ITemplate {
 }
 
 export interface RootPresTemplate extends ITemplate {
-  countCharts(): Promise<number>
+  countImages(): Promise<number>
+	countCharts(): Promise<number>
+  incrementChartCounter(): number
+  incrementImageCounter(): number
   appendSlide(slide: ISlide): Promise<void>
-	appendShape: Function
+	appendChart: Function
+	appendImage: Function
 	slideCount: number
+  chartCount: number
+  imageCount: number
 	slides: ISlide[]
 }
 
@@ -52,6 +58,14 @@ export interface IChart extends IShape {
   setTarget: Function
 	sourceNumber: number
 	targetNumber: number
+}
+
+export interface IImage extends IShape {
+  append: Function
+  setTarget: Function
+	sourceFile: string
+	targetFile: string
+	contentTypeMap: any
 }
 
 export type DefaultAttribute = {

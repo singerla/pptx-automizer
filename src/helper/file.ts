@@ -1,4 +1,5 @@
 import fs from 'fs'
+import path from 'path'
 import JSZip, { JSZipFileOptions } from 'jszip'
 
 export default class FileHelper {
@@ -23,34 +24,15 @@ export default class FileHelper {
     return zip.loadAsync(file)
   }
 
-  static extractAllForecefully(filePath: string): void {
-    fs.readFile(filePath, function(err, data) {
-      if (!err) {
-        var path = require('path');
-        let dir = filePath + '.unzip'
-        fs.rmdirSync(dir, { recursive: true })
-        fs.mkdirSync(dir)
-        var zip = new JSZip()
-        zip.loadAsync(data).then(function(contents) {
-          Object.keys(zip.files).forEach(function (filename) {
-            let subDir = path.dirname(contents.files[filename].name)
-            if(!fs.existsSync(subDir)) {
-              fs.mkdirSync(dir + '/' + subDir, { recursive: true })
-            }
-          })
-
-          Object.keys(zip.files).forEach(function (filename) {
-            zip.files[filename].async('string').then(function (fileData) {
-              if(contents.files[filename].dir === false) {
-                fs.writeFileSync(dir + '/' + filename, fileData)
-              }
-            })
-          })
-        })
-      }
-    })
+  static getFileExtension(filename: string): string {
+    let extension = path.extname(filename).replace('.', '')
+    return extension
   }
 
+  static async countImages(presentation: JSZip): Promise<number> {
+    let files = await presentation.file(/ppt\/media\/image/)
+    return files.length
+  }
 	/**
 	 * Copies a file from one archive to another. The new file can have a different name to the origin.
 	 * @param {JSZip} sourceArchive - Source archive

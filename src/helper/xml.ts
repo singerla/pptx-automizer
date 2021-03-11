@@ -73,25 +73,41 @@ export default class XmlHelper {
   }
 
   static async getTargetsFromRelationships(archive: JSZip, path: string, prefix: string, suffix?: string): Promise<Target[]>{
+    return XmlHelper.getRelationships(archive, path, (element: HTMLElement, rels: Target[]) => {
+      let target = element.getAttribute('Target')
+      if(target.indexOf(prefix) === 0) {
+        rels.push(<Target>{
+          file: target,
+          rId: element.getAttribute('Id'),
+          number: Number(target.replace(prefix, '').replace(suffix || '.xml', ''))
+        })
+      }
+    })
+  }
+
+  static async getTargetsByRelationshipType(archive: JSZip, path: string, type: string): Promise<Target[]>{
+    return XmlHelper.getRelationships(archive, path, (element: HTMLElement, rels: Target[]) => {
+      let target = element.getAttribute('Type')
+      if(target === type) {
+        rels.push(<Target>{
+          file: element.getAttribute('Target'),
+          rId: element.getAttribute('Id'),
+        })
+      }
+    })
+  }
+
+  static async getRelationships(archive: JSZip, path: string, cb: Function) {
     let xml = await XmlHelper.getXmlFromArchive(archive, path)
-    let targets = xml.getElementsByTagName('Relationship')
-    let ret = []
-    for(let i in targets) {
-      let element = targets[i]
+    let relationships = xml.getElementsByTagName('Relationship')
+    let rels = []
+    for(let i in relationships) {
+      let element = relationships[i]
       if(element.getAttribute !== undefined) {
-        let target = element.getAttribute('Target')
-        if(target.indexOf(prefix) === 0) {
-          let fileNumber = Number(target.replace(prefix, '').replace(suffix || '.xml', ''))
-          let rid = element.getAttribute('Id')
-          ret.push(<Target>{
-            file: target,
-            rId: rid,
-            number: fileNumber
-          })
-        }
+        cb(element, rels)
       }
     }
-    return ret
+    return rels
   }
 
   static findByAttribute(xml: HTMLElement, tagName: string, attributeName: string, attributeValue: string): Boolean {

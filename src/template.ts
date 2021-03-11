@@ -1,7 +1,7 @@
 import {
   ISlide,
   ITemplate, IChart,
-  PresTemplate, RootPresTemplate
+  PresTemplate, RootPresTemplate, IImage
 } from './types'
 
 import FileHelper from './helper/file'
@@ -46,6 +46,7 @@ class Template implements ITemplate {
    */
   slideCount: number
   chartCount: number
+  imageCount: number
 
   constructor(location: string) {
     this.location = location
@@ -55,6 +56,7 @@ class Template implements ITemplate {
 
     this.slideCount = 0
     this.chartCount = 0
+    this.imageCount = 0
   }
 
   static importRoot(location: string): RootPresTemplate {
@@ -77,22 +79,21 @@ class Template implements ITemplate {
     slide.setTarget(await this.archive, this)
     await slide.append()
   }
-
-  async appendShape(shape: IChart): Promise<void> {
-    this.incrementChartCounter()
-    shape.setTarget(await this.archive, this.chartCount)
-    await shape.append()
-  }
-
+  
   async countSlides(): Promise<number> {
     let slideCount = await XmlHelper.countSlides(await this.archive)
     this.slideCount = slideCount
     return this.slideCount
   }
-
+  
   incrementSlideCounter(): number {
     this.slideCount++
     return this.slideCount;
+  }
+
+  async appendChart(shape: IChart): Promise<void> {
+    shape.setTarget(await this.archive, this.chartCount)
+    await shape.append()
   }
 
   async countCharts(): Promise<number> {
@@ -102,6 +103,20 @@ class Template implements ITemplate {
 
   incrementChartCounter(): number {
     return ++this.chartCount;
+  }
+
+  async appendImage(shape: IImage): Promise<void> {
+    shape.setTarget(await this.archive, this.imageCount)
+    await shape.append()
+  }
+
+  async countImages(): Promise<number> {
+    this.imageCount = await FileHelper.countImages(await this.archive)
+    return this.imageCount
+  }
+
+  incrementImageCounter(): number {
+    return ++this.imageCount;
   }
 }
 

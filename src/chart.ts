@@ -14,7 +14,6 @@ export default class Chart implements IChart {
   targetNumber: number
   sourceWorksheet: number | string
   targetWorksheet: number | string
-  targetSlide: this
   targetSlideNumber: number
   sourceRid: any
 
@@ -28,7 +27,6 @@ export default class Chart implements IChart {
   setTarget(archive: JSZip, number: number) {
     this.targetArchive = archive
     this.targetNumber = number
-    // this.targetNumber = this.sourceNumber
   }
 
   async append() {
