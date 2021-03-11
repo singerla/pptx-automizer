@@ -1,5 +1,6 @@
 
 import {
+  AutomizerParams,
 	IPresentationProps, PresTemplate, RootPresTemplate,
 } from './types'
 
@@ -12,18 +13,27 @@ export default class Automizer implements IPresentationProps {
 
 	rootTemplate: RootPresTemplate
 	templates: PresTemplate[]
+	templateDir: string
+	outputDir: string
+  params: AutomizerParams
 
-  constructor() {
+  constructor(params?: AutomizerParams) {
     this.templates = []
+    this.params = params
+
+    this.templateDir = (params?.templateDir) ? params.templateDir + '/' : ''
+    this.outputDir = (params?.outputDir) ? params.outputDir + '/' : ''
   }
 
   public importRootTemplate(location: string): this {
+    location = this.getLocation(location, 'template')
     let newTemplate = Template.importRoot(location)
     this.rootTemplate = newTemplate
     return this
   }
 
   public importTemplate(location: string, name: string): this {
+    location = this.getLocation(location, 'template')
     let newTemplate = Template.import(location, name)
     this.templates.push(newTemplate)
     return this
@@ -32,6 +42,17 @@ export default class Automizer implements IPresentationProps {
 	public template(name: string): PresTemplate {
 		return this.templates.find(template => template.name === name)
 	}
+
+  public getLocation(location: string, type?: string): string {
+    switch(type) {
+      case 'template':
+        return this.templateDir + location
+      case 'output':
+        return this.outputDir + location
+      default:
+        return location
+    }
+  }
 
 	/**
 	 * Find imported template by given name and return a certain slide available
@@ -53,7 +74,7 @@ export default class Automizer implements IPresentationProps {
     return newSlide
   }
 
-  async write(location: string): Promise<void> {
+  async write(location: string): Promise<string> {
     await this.rootTemplate.countSlides()
     await this.rootTemplate.countCharts()
 
@@ -66,7 +87,7 @@ export default class Automizer implements IPresentationProps {
 
     let content = await rootArchive.generateAsync({type: "nodebuffer"})
 
-    FileHelper.writeOutputFile(location, content)
+    location = this.getLocation(location, 'output')
+    return FileHelper.writeOutputFile(location, content)
   }
-
-} 
+}

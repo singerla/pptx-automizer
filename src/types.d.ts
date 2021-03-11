@@ -1,5 +1,10 @@
 import JSZip from "jszip";
 
+type AutomizerParams = {
+	templateDir?: string
+	outputDir?: string
+}
+
 export interface ISlide {
   append(): Promise<void>
   setTarget(archive: JSZip, targetTemplate: RootPresTemplate): void
@@ -12,6 +17,7 @@ export interface ISlide {
 export interface IPresentationProps {
 	rootTemplate: RootPresTemplate
 	templates: PresTemplate[]
+	params: AutomizerParams
 }
 
 export interface ITemplate {
@@ -24,7 +30,7 @@ export interface ITemplate {
 }
 
 export interface RootPresTemplate extends ITemplate {
-  countCharts();
+  countCharts(): Promise<number>
   appendSlide(slide: ISlide): Promise<void>
 	appendShape: Function
 	slideCount: number

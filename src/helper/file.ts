@@ -67,13 +67,12 @@ export default class FileHelper {
     return targetArchive.file(targetFile || sourceFile, content)
   }
 
-  static writeOutputFile(location: string, content: Buffer): void {
+  static writeOutputFile(location: string, content: Buffer): string {
     fs.writeFile(location, content, function(err: { message: any }) {
       if(err) {
         throw new Error(`Error writing output: ${err.message}`)
-      } else {
-        console.log(`Finished: ${location}`)
       }
     })
+    return `Finished: ${location}`
   }
 }
