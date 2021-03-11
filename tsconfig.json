@@ -10,7 +10,8 @@
     "lib": ["es2015"],
     "declaration": true,
     "declarationDir": "./dist",
+    "types": ["jest", "node"],
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "__tests__/**/*", "src/dev.ts"]
+  "include": ["src/**/*", "__tests__/**/*"],
+  "exclude": ["node_modules", "src/dev.ts"]
 }

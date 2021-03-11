@@ -3,6 +3,27 @@ node_modules/
 pptx/
 out/
 dist/
+__tests__/pptx-output
 
 ### Editor
 workspace.code-workspace
+coverage/clover.xml
+coverage/coverage-final.json
+coverage/lcov.info
+coverage/lcov-report/base.css
+coverage/lcov-report/block-navigation.js
+coverage/lcov-report/favicon.png
+coverage/lcov-report/index.html
+coverage/lcov-report/prettify.css
+coverage/lcov-report/prettify.js
+coverage/lcov-report/sort-arrow-sprite.png
+coverage/lcov-report/sorter.js
+coverage/lcov-report/src/automizer.ts.html
+coverage/lcov-report/src/chart.ts.html
+coverage/lcov-report/src/index.html
+coverage/lcov-report/src/index.ts.html
+coverage/lcov-report/src/slide.ts.html
+coverage/lcov-report/src/template.ts.html
+coverage/lcov-report/src/helper/file.ts.html
+coverage/lcov-report/src/helper/index.html
+coverage/lcov-report/src/helper/xml.ts.html

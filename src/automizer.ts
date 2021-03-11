@@ -10,34 +10,27 @@ import FileHelper from './helper/file'
 
 export default class Automizer implements IPresentationProps {
 
-	private _rootTemplate: RootPresTemplate
-	public get rootTemplate(): RootPresTemplate {
-		return this._rootTemplate
-	}
-
-	private _templates: PresTemplate[]
-	public get templates(): PresTemplate[] {
-		return this._templates
-	}
+	rootTemplate: RootPresTemplate
+	templates: PresTemplate[]
 
   constructor() {
-    this._templates = []
+    this.templates = []
   }
 
   public importRootTemplate(location: string): this {
     let newTemplate = Template.importRoot(location)
-    this._rootTemplate = newTemplate
+    this.rootTemplate = newTemplate
     return this
   }
 
   public importTemplate(location: string, name: string): this {
     let newTemplate = Template.import(location, name)
-    this._templates.push(newTemplate)
+    this.templates.push(newTemplate)
     return this
   }
 
 	public template(name: string): PresTemplate {
-		return this._templates.find(template => template.name === name)
+		return this.templates.find(template => template.name === name)
 	}
 
 	/**
@@ -55,20 +48,20 @@ export default class Automizer implements IPresentationProps {
       number: slideNumber
     })
     
-    this._rootTemplate.slides.push(newSlide)
+    this.rootTemplate.slides.push(newSlide)
     
     return newSlide
   }
 
   async write(location: string): Promise<void> {
-    await this._rootTemplate.countSlides()
-    await this._rootTemplate.countCharts()
+    await this.rootTemplate.countSlides()
+    await this.rootTemplate.countCharts()
 
-    let rootArchive = await this._rootTemplate.archive
+    let rootArchive = await this.rootTemplate.archive
 
-    for(let i in this._rootTemplate.slides) {
-      let slide = this._rootTemplate.slides[i]
-      await this._rootTemplate.appendSlide(slide)
+    for(let i in this.rootTemplate.slides) {
+      let slide = this.rootTemplate.slides[i]
+      await this.rootTemplate.appendSlide(slide)
     }
 
     let content = await rootArchive.generateAsync({type: "nodebuffer"})

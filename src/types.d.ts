@@ -51,35 +51,35 @@ export interface IChart extends IShape {
 export type DefaultAttribute = {
 	Extension: string
 	ContentType: string
-  }
+}
   
-  export type RelationshipAttribute = {
+export type RelationshipAttribute = {
 	Id: string
 	Type: string
 	Target: string
-  }
+}
   
-  export type SlideListAttribute = {
+export type SlideListAttribute = {
 	id: Function
 	'r:id': string
-  }
+}
   
-  export type OverrideAttribute = {
+export type OverrideAttribute = {
 	PartName: string
 	ContentType: string
-  }
+}
   
-  export type XMLElement = {
+export type XMLElement = {
 	archive: any
 	clause?: Function
 	parent: any
 	file: string
 	tag: string
 	attributes: DefaultAttribute | OverrideAttribute | SlideListAttribute | RelationshipAttribute
-  }
+}
   
-  export type Target = {
+export type Target = {
 	file: string
 	number: number
 	rId?: string
-  }
+}

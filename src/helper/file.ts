@@ -4,6 +4,9 @@ import JSZip, { JSZipFileOptions } from 'jszip'
 export default class FileHelper {
 
   static readFile(location:string): Promise<Buffer> {
+    if(!fs.existsSync(location)) {
+      throw new Error('File not found: ' + location)
+    }
     return fs.promises.readFile(location)
   }
 
@@ -69,7 +72,7 @@ export default class FileHelper {
       if(err) {
         throw new Error(`Error writing output: ${err.message}`)
       } else {
-        console.log(`output: ${location}`)
+        console.log(`Finished: ${location}`)
       }
     })
   }
