@@ -1,5 +1,5 @@
 # pptx-automizer
-This is a pptx generator for Node.js based on templates. It can read pptx files and insert selected slides into another presentation. Compared to other pptx libraries (such as [PptxGenJS](https://github.com/gitbrent/PptxGenJS), [officegen](https://github.com/Ziv-Barber/officegen) or [node-pptx](https://github.com/heavysixer/node-pptx)), *pptx-automizer* will not write files from scratch, but edit and merge existing pptx files. Template slides are styled with PowerPoint and will be merged 1:1 into the output presentation.
+This is a pptx generator for Node.js based on templates. It can read pptx files and insert selected slides into another presentation. *pptx-automizer* will not write files from scratch, but edit and merge existing pptx files. Template slides are styled with PowerPoint and will be merged 1:1 into the output presentation.
 
 It is also possible to choose a certain element by its name from a slide and insert it to another template slide. Take a look at <code>slide.addElement()</code> from the example below.
 
@@ -33,19 +33,19 @@ const automizer = new Automizer({
 })
 
 // Now we can start and load a pptx template.
-// Skipping the second argument will set the root template.
 // Each addSlide will append to any existing slide in RootTemplate.pptx.
 let pres = automizer.loadRoot(`RootTemplate.pptx`)
   // We want to make some more files available and give them a handy label.
   .load(`SlideWithShapes.pptx`, 'shapes')
   .load(`SlideWithGraph.pptx`, 'graph')
-  .load(`SlideWithImages.pptx`, 'images')
+  // Skipping the second argument will not set a label.
+  .load(`SlideWithImages.pptx`)
 
 // addSlide takes two arguments: The first will specify the source presentation's
 // label to take the template from, the second will set the slide number to require.
 pres.addSlide('graph', 1)
   .addSlide('shapes', 1)
-  .addSlide('images', 2)
+  .addSlide(`SlideWithImages.pptx`, 2)
 
 // You can also select and import a single element from a template slide. The desired
 // shape will be identified by its name from slide-xml's 'p:cNvPr'-element.
@@ -64,3 +64,19 @@ pres.write(`myPresentation.pptx`).then(summary => {
   console.log(summary)
 })
 ```
+
+### Testing
+You can run some test using
+```
+yarn test
+// or
+yarn test-coverage
+```
+
+### Special Thanks
+This project is deeply inspired by:
+
+* [PptxGenJS](https://github.com/gitbrent/PptxGenJS)
+* [officegen](https://github.com/Ziv-Barber/officegen)
+* [node-pptx](https://github.com/heavysixer/node-pptx))
+* [docxtemplater](https://github.com/open-xml-templating/docxtemplater)
