@@ -8,6 +8,5 @@ dist/
 workspace.code-workspace
 
 ### Testing
-__tests__/pptx-output
 __tests__/images
 coverage/
