@@ -13,6 +13,10 @@ export default class FileHelper {
   }
 
   static extractFromArchive(archive: JSZip, file: string): Promise<string> {
+    if(archive === undefined) {
+      throw new Error('No files found, expected: ' + file)
+    }
+
     if(archive.files[file] === undefined) {
       throw new Error('Archived file not found: ' + file)
     }
@@ -39,8 +43,9 @@ export default class FileHelper {
 	 */
   static async zipCopy(sourceArchive: JSZip, sourceFile:string, targetArchive: JSZip, targetFile?:string, mode?:any): Promise<JSZip> {
     if(sourceArchive.files[sourceFile] === undefined) {
-      throw new Error('File not found: ' + sourceFile)
+      throw new Error(`Zipped file not found: ${sourceFile}`)
     }
+
     let content = sourceArchive.files[sourceFile].async('nodebuffer')
     return targetArchive.file(targetFile || sourceFile, content)
   }
@@ -56,7 +61,9 @@ export default class FileHelper {
       status: 'finished',
       file: location,
       templates: automizer.templates.length,
-      slides: automizer.rootTemplate.counter[0].get()
+      slides: automizer.rootTemplate.count('slides'),
+      charts: automizer.rootTemplate.count('charts'),
+      images: automizer.rootTemplate.count('images'),
     }
   }
 }

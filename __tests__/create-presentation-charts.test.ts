@@ -11,7 +11,8 @@ test("create presentation and append charts to existing charts", async () => {
 
   pres.addSlide('charts', 1)
 
-  await pres.write(`myPresentation.pptx`)
+  let result = await pres.write(`myPresentation.pptx`)
 
-  expect(pres).toBeInstanceOf(Automizer)
+  expect(result.slides).toBe(3)
+  expect(result.charts).toBe(3)
 })

@@ -11,6 +11,8 @@ type AutomizerSummary = {
 	file: string
 	templates: number
 	slides: number
+	charts: number
+	images: number
 }
 
 export interface ICounter {
@@ -23,12 +25,11 @@ export interface ICounter {
 
 export interface ISlide {
   append(): Promise<void>
-  setTarget(archive: JSZip, targetTemplate: RootPresTemplate): void
+  setTarget(targetTemplate: RootPresTemplate): void
   addElement(presName: string, slideNumber: number, selector: Function | string): void
 	sourceArchive: JSZip
 	sourceNumber: number
 	modifications: Function[]
-	toAppend: any[]
 	modify: Function
 }
 

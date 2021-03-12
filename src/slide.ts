@@ -20,16 +20,22 @@ export default class Slide implements ISlide {
   sourcePath: string
   targetPath: string
   modifications: Function[]
-  toAppend: any[]
+  appendElements: any[]
+  appendRelations: any[]
   relsPath: string
   rootTemplate: RootPresTemplate
   root: IPresentationProps
+  targetRelsPath: string
 
   constructor(params: any) {
     this.sourceTemplate = params.template
     this.sourceNumber = params.number
+    this.sourcePath = `ppt/slides/slide${this.sourceNumber}.xml`
+    this.relsPath = `ppt/slides/_rels/slide${this.sourceNumber}.xml.rels`
+
     this.modifications = []
-    this.toAppend = []
+    this.appendElements = []
+    this.appendRelations = []
   }
 
   modify(callback: Function): void {
@@ -39,33 +45,37 @@ export default class Slide implements ISlide {
   async addElement(presName: string, slideNumber: number, selector: string, callback?: Function | Function[]): Promise<this> {
     let template = this.root.template(presName)
     let sourcePath = `ppt/slides/slide${slideNumber}.xml`
-    let archive = await template.archive
-    let sourceElement = await XmlHelper.findByElementName(archive, sourcePath, selector)
+    let sourceArchive = await template.archive
+    let sourceElement = await XmlHelper.findByElementName(sourceArchive, sourcePath, selector)
     
-    if(sourceElement) {
-      let appendElement = sourceElement.cloneNode(true)
-      if(callback !== undefined) {
-        if(callback instanceof Array) {
-          callback.forEach(cb => cb(appendElement))
-        } else {
-          callback(appendElement)
-        }
-      }
-      
-      this.toAppend.push(appendElement)
+    if(!sourceElement) {
+      throw new Error(`Can't find ${selector} on slide ${slideNumber} in ${presName}`)
     }
+
+    let appendElement = sourceElement.cloneNode(true)
+
+    this.analyzeElement(appendElement, sourceArchive)
+
+    if(callback !== undefined) {
+      if(callback instanceof Array) {
+        callback.forEach(cb => cb(appendElement))
+      } else {
+        callback(appendElement)
+      }
+    }
+    
+    this.appendElements.push(appendElement)
 
     return this
   }
 
-  setTarget(archive: JSZip, targetTemplate: RootPresTemplate) {
+  async setTarget(targetTemplate: RootPresTemplate): Promise<void>{
     this.targetTemplate = targetTemplate
-    this.targetArchive = archive
+    this.targetArchive = await targetTemplate.archive
     this.targetNumber = targetTemplate.count('slides')
 
-    this.sourcePath = `ppt/slides/slide${this.sourceNumber}.xml`
-    this.relsPath = `ppt/slides/_rels/slide${this.sourceNumber}.xml.rels`
     this.targetPath = `ppt/slides/slide${this.targetNumber}.xml`
+    this.targetRelsPath = `ppt/slides/_rels/slide${this.targetNumber}.xml.rels`
   }
   
   async append() {
@@ -74,19 +84,54 @@ export default class Slide implements ISlide {
     await this.copySlideFiles()
     await this.copyRelatedContent()
     await this.addSlideToPresentation()
-    await this.appendImportedElements()
+
+    if(this.appendRelations.length) {
+      await this.appendImportedRelations()
+    }
+
+    if(this.appendElements.length) {
+      await this.appendImportedElements()
+    }
+
     await this.applyModifications()
+  }
+
+  async analyzeElement(appendElement, sourceArchive) {
+    let isChart = appendElement.getElementsByTagName('c:chart')
+    if(isChart.length) {
+      let sourceRid = isChart[0].getAttribute('r:id')
+      let chartRels = await XmlHelper.getTargetsFromRelationships(sourceArchive, this.relsPath, '../charts/chart')
+      this.appendRelations.push({
+        relation: chartRels.find(rel => rel.rId === sourceRid),
+        sourceArchive: sourceArchive
+      })
+    }
   }
 
   async appendImportedElements() {
     let slideXml = await XmlHelper.getXmlFromArchive(this.targetArchive, this.targetPath)
     let tree = slideXml.getElementsByTagName('p:spTree')[0]
 
-    this.toAppend.forEach(element => {
+    this.appendElements.forEach(element => {
       tree.appendChild(element)
     })
 
     await XmlHelper.writeXmlToArchive(this.targetArchive, this.targetPath, slideXml)
+  }
+
+  async appendImportedRelations() {
+    for(let i in this.appendRelations) {
+      let relation = this.appendRelations[i].relation
+      let sourceArchive = this.appendRelations[i].sourceArchive
+
+      let newChart = new Chart(relation, sourceArchive, this.targetNumber, true)
+      this.targetTemplate.incrementCounter('charts')
+      await this.targetTemplate.appendChart(newChart)
+
+      this.modifications.push(chart => {
+        chart.getElementsByTagName('c:chart')[0].setAttribute('r:id', newChart.createdRid)
+      })
+    }
   }
 
   async applyModifications(): Promise<void> {

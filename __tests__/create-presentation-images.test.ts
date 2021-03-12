@@ -13,7 +13,7 @@ test("create presentation and append slides with images", async () => {
   pres.addSlide('image', 2)
   pres.addSlide('image', 3)
 
-  await pres.write(`myPresentation.pptx`)
+  let result = await pres.write(`myPresentation.pptx`)
 
-  expect(pres).toBeInstanceOf(Automizer)
+  expect(result.images).toBe(6)
 })

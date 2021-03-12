@@ -1,6 +1,6 @@
 import { DOMParser, XMLSerializer } from 'xmldom'
 import FileHelper from './file'
-import { XMLElement } from '../types'
+import { RelationshipAttribute, XMLElement } from '../types'
 import JSZip from 'jszip'
 import {
   DefaultAttribute, OverrideAttribute, Target
@@ -142,6 +142,16 @@ export default class XmlHelper {
       file: `[Content_Types].xml`,
       parent: (xml: HTMLElement) => xml.getElementsByTagName('Types')[0],
       tag: 'Override',
+      attributes: attributes
+    }
+  }
+
+  static createRelationshipChild(archive: JSZip, targetRelFile:string, attributes: RelationshipAttribute): XMLElement {
+    return {
+      archive: archive,
+      file: targetRelFile,
+      parent: (xml: HTMLElement) => xml.getElementsByTagName('Relationships')[0],
+      tag: 'Relationship',
       attributes: attributes
     }
   }

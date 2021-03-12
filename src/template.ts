@@ -45,7 +45,6 @@ class Template implements ITemplate {
    */
   counter: ICounter[]
 
-
   constructor(location: string, name?: string) {
     this.location = location
     this.file = FileHelper.readFile(location)
@@ -66,26 +65,35 @@ class Template implements ITemplate {
         new CountHelper('charts', newTemplate),
         new CountHelper('images', newTemplate)
       ]
-      newTemplate.counter.forEach(async counter => await counter.set())
     }
 
     return newTemplate
   }
 
   async appendSlide(slide: ISlide): Promise<void> {
+    if(this.counter[0].get() === undefined) {
+      await this.initializeCounter()
+    }
+
     this.incrementCounter('slides')
-    slide.setTarget(await this.archive, this)
+    slide.setTarget(this)
     await slide.append()
   }
 
-  async appendChart(shape: IChart): Promise<void> {
-    shape.setTarget(await this.archive, this.count('charts'))
-    await shape.append()
+  async appendChart(chart: IChart): Promise<void> {
+    chart.setTarget(await this.archive, this.count('charts'))
+    await chart.append()
   }
 
   async appendImage(shape: IImage): Promise<void> {
     shape.setTarget(await this.archive, this.count('images'))
     await shape.append()
+  }
+
+  async initializeCounter(): Promise<void> {
+    for(let i in this.counter) {
+      await this.counter[i].set()
+    } 
   }
 
   incrementCounter(name: string): number {

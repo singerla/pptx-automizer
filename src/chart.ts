@@ -3,7 +3,7 @@ import FileHelper from './helper/file'
 import XmlHelper from './helper/xml'
 
 import {
-	IChart, Target
+	IChart, RelationshipAttribute, Target
 } from './types'
 
 
@@ -16,12 +16,18 @@ export default class Chart implements IChart {
   targetWorksheet: number | string
   targetSlideNumber: number
   sourceRid: any
+  targetRid: boolean
+  createdRid: string
 
-  constructor(relsXmlInfo: Target, sourceArchive: JSZip, targetSlideNumber: number) {
+  constructor(relsXmlInfo: Target, sourceArchive: JSZip, targetSlideNumber: number, targetRid?:boolean) {
     this.sourceNumber = relsXmlInfo.number
     this.sourceRid = relsXmlInfo.rId
     this.sourceArchive = sourceArchive
     this.targetSlideNumber = targetSlideNumber
+
+    if(targetRid) {
+      this.targetRid = targetRid
+    }
   }
 
   setTarget(archive: JSZip, number: number) {
@@ -29,12 +35,12 @@ export default class Chart implements IChart {
     this.targetNumber = number
   }
 
-  async append() {
+  async append(): Promise<void> {
     await this.copyFiles()
     await this.appendTypes()
   }
 
-  async copyFiles() {
+  async copyFiles(): Promise<void> {
     this.copyChartFiles()
 
     let wbRelsPath = `ppt/charts/_rels/chart${this.sourceNumber}.xml.rels`
@@ -46,10 +52,15 @@ export default class Chart implements IChart {
     
     this.copyWorksheetFile()
     this.editTargetWorksheetRel()
-    this.editTargetChartRel()
+
+    if(this.targetRid !== undefined) {
+      await this.appendToSlideRels()
+    } else {
+      await this.editTargetChartRel()
+    }
   }
 
-  async appendTypes() {
+  async appendTypes(): Promise<void> {
     await this.appendChartExtensionToContentType()
     await this.appendChartToContentType()
     await this.appendColorToContentType()
@@ -78,7 +89,7 @@ export default class Chart implements IChart {
     )
   }
 
-  async editTargetChartRel() {
+  async editTargetChartRel(): Promise<void> {
     let targetRelFile = `ppt/slides/_rels/slide${this.targetSlideNumber}.xml.rels`
     let relXml = await XmlHelper.getXmlFromArchive(this.targetArchive, targetRelFile)
     let relations = relXml.getElementsByTagName('Relationship')
@@ -96,7 +107,21 @@ export default class Chart implements IChart {
     XmlHelper.writeXmlToArchive(this.targetArchive, targetRelFile, relXml)
   }
 
-  async editTargetWorksheetRel() {
+  async appendToSlideRels(): Promise<HTMLElement> {
+    let targetRelFile = `ppt/slides/_rels/slide${this.targetSlideNumber}.xml.rels`
+    this.createdRid = await XmlHelper.getNextRelId(this.targetArchive, targetRelFile)
+    let attributes = <RelationshipAttribute> {
+      Id: this.createdRid,
+      Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart",
+      Target: `../charts/chart${this.targetNumber}.xml`
+    }
+
+    return XmlHelper.append(
+      XmlHelper.createRelationshipChild(this.targetArchive, targetRelFile, attributes)
+    )
+  }
+
+  async editTargetWorksheetRel(): Promise<void>  {
     let targetRelFile = `ppt/charts/_rels/chart${this.targetNumber}.xml.rels`
     let relXml = await XmlHelper.getXmlFromArchive(this.targetArchive, targetRelFile)
     let relations = relXml.getElementsByTagName('Relationship')

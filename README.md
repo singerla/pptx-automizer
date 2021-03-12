@@ -1,7 +1,5 @@
 # pptx-automizer
-This is a pptx generator for Node.js based on templates. It can read pptx files and insert selected slides into another presentation. *pptx-automizer* will not write files from scratch, but edit and merge existing pptx files. Template slides are styled with PowerPoint and will be merged 1:1 into the output presentation.
-
-It is also possible to choose a certain element by its name from a slide and insert it to another template slide. Take a look at <code>slide.addElement()</code> from the example below.
+This is a pptx generator for Node.js based on templates. It can read pptx files and insert selected slides or single slide elements into another presentation. *pptx-automizer* will not write files from scratch, but edit and merge existing pptx files. Template slides are styled with PowerPoint and will be merged into the output presentation. Most of the content can be modified by using callbacks based on [xmldom](https://github.com/xmldom/xmldom).
 
 ## Requirements
 This generator can only be used on the server-side and requires a [Node.js](https://nodejs.org/en/download/package-manager/) environment.
@@ -42,7 +40,7 @@ let pres = automizer.loadRoot(`RootTemplate.pptx`)
   .load(`SlideWithImages.pptx`)
 
 // addSlide takes two arguments: The first will specify the source presentation's
-// label to take the template from, the second will set the slide number to require.
+// label to get the template from, the second will set the slide number to require.
 pres.addSlide('graph', 1)
   .addSlide('shapes', 1)
   .addSlide(`SlideWithImages.pptx`, 2)
@@ -55,7 +53,7 @@ pres.addSlide('image', 1, (slide) => {
   slide.addElement('shapes', 2, 'Arrow', (element) => {
     element.getElementsByTagName('a:t')[0]
       .firstChild
-      .data = text
+      .data = 'Custom content'
   })
 })
 
@@ -66,10 +64,9 @@ pres.write(`myPresentation.pptx`).then(summary => {
 ```
 
 ### Testing
-You can run some test using
+You can run tests using these commands:
 ```
 yarn test
-// or
 yarn test-coverage
 ```
 
@@ -78,5 +75,5 @@ This project is deeply inspired by:
 
 * [PptxGenJS](https://github.com/gitbrent/PptxGenJS)
 * [officegen](https://github.com/Ziv-Barber/officegen)
-* [node-pptx](https://github.com/heavysixer/node-pptx))
+* [node-pptx](https://github.com/heavysixer/node-pptx)
 * [docxtemplater](https://github.com/open-xml-templating/docxtemplater)
