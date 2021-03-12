@@ -6,7 +6,7 @@ test("create presentation and append slides with images", async () => {
     outputDir: `${__dirname}/pptx-output`
   })
 
-  let pres = automizer.load(`RootTemplateWithCharts.pptx`)
+  let pres = automizer.loadRoot(`RootTemplateWithCharts.pptx`)
     .load(`SlideWithImage.pptx`, 'image')
 
   pres.addSlide('image', 1)

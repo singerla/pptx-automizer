@@ -35,7 +35,7 @@ const automizer = new Automizer({
 // Now we can start and load a pptx template.
 // Skipping the second argument will set the root template.
 // Each addSlide will append to any existing slide in RootTemplate.pptx.
-let pres = automizer.load(`RootTemplate.pptx`)
+let pres = automizer.loadRoot(`RootTemplate.pptx`)
   // We want to make some more files available and give them a handy label.
   .load(`SlideWithShapes.pptx`, 'shapes')
   .load(`SlideWithGraph.pptx`, 'graph')

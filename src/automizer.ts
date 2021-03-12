@@ -32,12 +32,26 @@ export default class Automizer implements IPresentationProps {
   }
 
 	/**
-	 * Load a pptx file. 
+	 * Load a pptx file and set it as root template. 
 	 * @param {string} location - Filename or path to the template. Will be prefixed with 'templateDir'
-	 * @param {string} name - Optional: A short name for the template. If skipped, the template will be set as RootTemplate.
-	 * @return {Slide} Instance of Automizer
+	 * @return {Automizer} Instance of Automizer
 	 */
-  public load(location: string, name?: string): this {
+   public loadRoot(location: string): this {
+    return this.loadTemplate(location)
+  }
+
+	/**
+	 * Load a template pptx file. 
+	 * @param {string} location - Filename or path to the template. Will be prefixed with 'templateDir'
+	 * @param {string} name - Optional: A short name for the template. If skipped, the template will be named by its location.
+	 * @return {Automizer} Instance of Automizer
+	 */
+   public load(location: string, name?: string): this {
+    name = (name === undefined) ? location : name
+    return this.loadTemplate(location, name)
+  }
+
+  public loadTemplate(location: string, name?: string): this {
     location = this.getLocation(location, 'template')
     
     let newTemplate = Template.import(location, name)
@@ -56,12 +70,16 @@ export default class Automizer implements IPresentationProps {
   }
 
 	/**
-	 * Find imported template by given name and return a certain slide available
+	 * Find imported template by given name and return a certain slide by number.
 	 * @param {string} name - Name of template; must be imported by Automizer.importTemplate()
 	 * @param {number} slideNumber - Number of slide in template presentation
-	 * @return {Slide} Imported slide as an instance of Slide
+	 * @return {Automizer} Instance of Automizer
 	 */
   public addSlide(name: string, slideNumber: number, callback?: Function): this {
+    if(this.rootTemplate === undefined) {
+      throw new Error('You have to set a root template first.')
+    }
+
     let template = this.template(name)
     
     let newSlide = new Slide({
@@ -81,7 +99,11 @@ export default class Automizer implements IPresentationProps {
   }
 
 	public template(name: string): PresTemplate {
-		return this.templates.find(template => template.name === name)
+		let template = this.templates.find(template => template.name === name)
+    if(template === undefined) {
+      throw new Error(`Template not found: ${name}`)
+    }
+    return template
 	}
 
   public getLocation(location: string, type?: string): string {
@@ -96,20 +118,15 @@ export default class Automizer implements IPresentationProps {
   }
 
   async write(location: string): Promise<AutomizerSummary> {
-    await this.rootTemplate.countSlides()
-    await this.rootTemplate.countCharts()
-    await this.rootTemplate.countImages()
-
     let rootArchive = await this.rootTemplate.archive
-
+    
     for(let i in this.rootTemplate.slides) {
       let slide = this.rootTemplate.slides[i]
       await this.rootTemplate.appendSlide(slide)
     }
-
+    
     let content = await rootArchive.generateAsync({type: "nodebuffer"})
-
-    location = this.getLocation(location, 'output')
-    return FileHelper.writeOutputFile(location, content, this)
+    
+    return FileHelper.writeOutputFile(this.getLocation(location, 'output'), content, this)
   }
 }

@@ -1,11 +1,10 @@
 import {
   ISlide,
   ITemplate, IChart,
-  PresTemplate, RootPresTemplate, IImage
+  PresTemplate, RootPresTemplate, IImage, ICounter
 } from './types'
 
 import FileHelper from './helper/file'
-import XmlHelper from './helper/xml'
 import JSZip from 'jszip'
 import CountHelper from './helper/count'
 
@@ -41,28 +40,16 @@ class Template implements ITemplate {
   slides: ISlide[]
 
   /**
-   * Contains actual number of slides in root template.
-   * Has to be incremented before a new slide is appended.
-   * @type: number
+   * Array containing all counters
+   * @type: ICounter[]
    */
-  slideCount: number
-  chartCount: number
-  imageCount: number
+  counter: ICounter[]
+
 
   constructor(location: string, name?: string) {
     this.location = location
-
-    if(name !== undefined) {
-      this.name = name
-    }
-
     this.file = FileHelper.readFile(location)
     this.archive = FileHelper.extractFileContent(this.file)
-    this.slides = []
-
-    this.slideCount = 0
-    this.chartCount = 0
-    this.imageCount = 0
   }
 
   static import(location: string, name?:string): PresTemplate | RootPresTemplate {
@@ -70,56 +57,43 @@ class Template implements ITemplate {
 
     if(name) {
       newTemplate = <PresTemplate> new Template(location, name)
+      newTemplate.name = name
     } else {
       newTemplate = <RootPresTemplate> new Template(location)
+      newTemplate.slides = []
+      newTemplate.counter = [
+        new CountHelper('slides', newTemplate),
+        new CountHelper('charts', newTemplate),
+        new CountHelper('images', newTemplate)
+      ]
+      newTemplate.counter.forEach(async counter => await counter.set())
     }
 
     return newTemplate
   }
 
   async appendSlide(slide: ISlide): Promise<void> {
-    this.incrementSlideCounter()
+    this.incrementCounter('slides')
     slide.setTarget(await this.archive, this)
     await slide.append()
   }
-  
-  async countSlides(): Promise<number> {
-    let slideCount = await CountHelper.countSlides(await this.archive)
-    this.slideCount = slideCount
-    return this.slideCount
-  }
-  
-  incrementSlideCounter(): number {
-    this.slideCount++
-    return this.slideCount;
-  }
 
   async appendChart(shape: IChart): Promise<void> {
-    shape.setTarget(await this.archive, this.chartCount)
+    shape.setTarget(await this.archive, this.count('charts'))
     await shape.append()
-  }
-
-  async countCharts(): Promise<number> {
-    this.chartCount = await CountHelper.countCharts(await this.archive)
-    return this.chartCount
-  }
-
-  incrementChartCounter(): number {
-    return ++this.chartCount;
   }
 
   async appendImage(shape: IImage): Promise<void> {
-    shape.setTarget(await this.archive, this.imageCount)
+    shape.setTarget(await this.archive, this.count('images'))
     await shape.append()
   }
 
-  async countImages(): Promise<number> {
-    this.imageCount = await CountHelper.countImages(await this.archive)
-    return this.imageCount
+  incrementCounter(name: string): number {
+    return CountHelper.increment(name, this.counter)
   }
 
-  incrementImageCounter(): number {
-    return ++this.imageCount;
+  count(name: string): number {
+    return CountHelper.count(name, this.counter)
   }
 }
 

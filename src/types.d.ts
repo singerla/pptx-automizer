@@ -13,6 +13,14 @@ type AutomizerSummary = {
 	slides: number
 }
 
+export interface ICounter {
+  set(): void | PromiseLike<void>
+	get(): number
+	name: string
+	count: number
+  _increment(): number;
+}
+
 export interface ISlide {
   append(): Promise<void>
   setTarget(archive: JSZip, targetTemplate: RootPresTemplate): void
@@ -32,32 +40,24 @@ export interface IPresentationProps {
 }
 
 export interface ITemplate {
-  slideCount: number;
 	location: string
 	file: Promise<Buffer>
 	archive: Promise<JSZip>
 }
 
 export interface RootPresTemplate extends ITemplate {
-	countSlides(): Promise<number>
-  countImages(): Promise<number>
-	countCharts(): Promise<number>
-	incrementSlideCounter(): number
-  incrementChartCounter(): number
-  incrementImageCounter(): number
-  appendSlide(slide: ISlide): Promise<void>
-	appendChart: Function
-	appendImage: Function
-	slideCount: number
-  chartCount: number
-  imageCount: number
 	slides: ISlide[]
+	counter: ICounter[]
+  count(name: string): number
+  incrementCounter(name: string): number
+  appendSlide(slide: ISlide): Promise<void>
+	appendChart(shape: IChart): Promise<void>
+	appendImage(shape: IImage): Promise<void>
 }
 
 export interface PresTemplate extends ITemplate {
 	name: string
 }
-
 
 export interface IShape {
 	sourceArchive: JSZip

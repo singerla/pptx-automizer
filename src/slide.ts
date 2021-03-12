@@ -61,7 +61,7 @@ export default class Slide implements ISlide {
   setTarget(archive: JSZip, targetTemplate: RootPresTemplate) {
     this.targetTemplate = targetTemplate
     this.targetArchive = archive
-    this.targetNumber = targetTemplate.slideCount
+    this.targetNumber = targetTemplate.count('slides')
 
     this.sourcePath = `ppt/slides/slide${this.sourceNumber}.xml`
     this.relsPath = `ppt/slides/_rels/slide${this.sourceNumber}.xml.rels`
@@ -156,14 +156,14 @@ export default class Slide implements ISlide {
     let charts = await XmlHelper.getTargetsFromRelationships(this.sourceArchive, this.relsPath, '../charts/chart')
     for(let i in charts) {
       let newChart = new Chart(charts[i], this.sourceArchive, this.targetNumber)
-      this.targetTemplate.incrementChartCounter()
+      this.targetTemplate.incrementCounter('charts')
       await this.targetTemplate.appendChart(newChart)
     }
 
     let images = await XmlHelper.getTargetsByRelationshipType(this.sourceArchive, this.relsPath, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image")
     for(let i in images) {
       let newImage = new Image(images[i], this.sourceArchive, this.targetNumber)
-      this.targetTemplate.incrementImageCounter()
+      this.targetTemplate.incrementCounter('images')
       await this.targetTemplate.appendImage(newImage)
     }
   }

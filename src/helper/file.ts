@@ -19,7 +19,6 @@ export default class FileHelper {
     return archive.files[file].async('string')
   }
 
-
   static extractFileContent(file: any): Promise<JSZip>{
     const zip = new JSZip();
     return zip.loadAsync(file)
@@ -57,7 +56,7 @@ export default class FileHelper {
       status: 'finished',
       file: location,
       templates: automizer.templates.length,
-      slides: automizer.rootTemplate.slideCount
+      slides: automizer.rootTemplate.counter[0].get()
     }
   }
 }
