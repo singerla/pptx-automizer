@@ -17,7 +17,6 @@ export default class Chart implements IChart {
   targetTemplate: RootPresTemplate
   targetSlideNumber: number
   sourceRid: string
-  appendMode: boolean
   createdRid: string
 
   constructor(relsXmlInfo: Target, sourceArchive: JSZip) {
@@ -32,12 +31,14 @@ export default class Chart implements IChart {
     this.targetNumber = this.targetTemplate.incrementCounter('charts')
     this.targetSlideNumber = targetSlideNumber
 
-    if(appendMode !== undefined) {
-      this.appendMode = appendMode
-    }
-
     await this.copyFiles()
     await this.appendTypes()
+
+    if(appendMode === true) {
+      await this.appendToSlideRels()
+    } else {
+      await this.editTargetChartRel()
+    }
   }
 
   async copyFiles(): Promise<void> {
@@ -52,12 +53,6 @@ export default class Chart implements IChart {
     
     this.copyWorksheetFile()
     this.editTargetWorksheetRel()
-    
-    if(this.appendMode === true) {
-      await this.appendToSlideRels()
-    } else {
-      await this.editTargetChartRel()
-    }
   }
 
   async appendTypes(): Promise<void> {
