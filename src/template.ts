@@ -80,16 +80,6 @@ class Template implements ITemplate {
     await slide.append()
   }
 
-  async appendChart(chart: IChart): Promise<void> {
-    chart.setTarget(await this.archive, this.count('charts'))
-    await chart.append()
-  }
-
-  async appendImage(shape: IImage): Promise<void> {
-    shape.setTarget(await this.archive, this.count('images'))
-    await shape.append()
-  }
-
   async initializeCounter(): Promise<void> {
     for(let i in this.counter) {
       await this.counter[i].set()

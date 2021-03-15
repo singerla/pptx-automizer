@@ -7,18 +7,21 @@ const automizer = new Automizer({
   outputDir: `${__dirname}/../__tests__/pptx-output`
 })
 
-let pres = automizer.loadRoot(`RootTemplate.pptx`)
+let pres = automizer.loadRoot(`RootTemplateWithCharts.pptx`)
   .load(`SlideWithImage.pptx`, 'image')
-  .load(`SlideWithShapes.pptx`, 'shapes')
   .load(`SlideWithCharts.pptx`, 'charts')
 
 pres
-  .addSlide('image', 1, (slide: Slide) => {
-    slide.addElement('charts', 1, 'StackedBars')
+  // .addSlide('charts', 1)
+  .addSlide('charts', 1, (slide: Slide) => {
     // slide.addElement('charts', 1, 'StackedBars')
+    // slide.addElement('charts', 2, 'PieChart')
+    slide.addElement('image', 3, 'imageJPG')
   })
+  // .addSlide('charts', 2)
+
   // .addSlide('image', 1, (slide: Slide) => {
-  //   // slide.addElement('charts', 1, 'StackedBars')
+  //   slide.addElement('charts', 1, 'StackedBars')
   //   // slide.addElement('charts', 1, 'StackedBars')
   // })
   .write(`myPresentation.pptx`).then(result => {

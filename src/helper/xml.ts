@@ -72,7 +72,7 @@ export default class XmlHelper {
     }
   }
 
-  static async getTargetsFromRelationships(archive: JSZip, path: string, prefix: string, suffix?: string): Promise<Target[]>{
+  static async getTargetsFromRelationships(archive: JSZip, path: string, prefix: string, suffix?: string | RegExp): Promise<Target[]>{
     return XmlHelper.getRelationships(archive, path, (element: HTMLElement, rels: Target[]) => {
       let target = element.getAttribute('Target')
       if(target.indexOf(prefix) === 0) {

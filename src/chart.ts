@@ -3,7 +3,7 @@ import FileHelper from './helper/file'
 import XmlHelper from './helper/xml'
 
 import {
-	IChart, RelationshipAttribute, Target
+	IChart, RelationshipAttribute, RootPresTemplate, Target
 } from './types'
 
 
@@ -14,28 +14,28 @@ export default class Chart implements IChart {
   targetNumber: number
   sourceWorksheet: number | string
   targetWorksheet: number | string
+  targetTemplate: RootPresTemplate
   targetSlideNumber: number
-  sourceRid: any
-  targetRid: boolean
+  sourceRid: string
+  appendMode: boolean
   createdRid: string
 
-  constructor(relsXmlInfo: Target, sourceArchive: JSZip, targetSlideNumber: number, targetRid?:boolean) {
+  constructor(relsXmlInfo: Target, sourceArchive: JSZip) {
     this.sourceNumber = relsXmlInfo.number
     this.sourceRid = relsXmlInfo.rId
     this.sourceArchive = sourceArchive
+  }
+  
+  async append(targetTemplate: RootPresTemplate, targetSlideNumber: number, appendMode?: boolean): Promise<void> {
+    this.targetTemplate = targetTemplate
+    this.targetArchive = await this.targetTemplate.archive
+    this.targetNumber = this.targetTemplate.incrementCounter('charts')
     this.targetSlideNumber = targetSlideNumber
 
-    if(targetRid) {
-      this.targetRid = targetRid
+    if(appendMode !== undefined) {
+      this.appendMode = appendMode
     }
-  }
 
-  setTarget(archive: JSZip, number: number) {
-    this.targetArchive = archive
-    this.targetNumber = number
-  }
-
-  async append(): Promise<void> {
     await this.copyFiles()
     await this.appendTypes()
   }
@@ -52,8 +52,8 @@ export default class Chart implements IChart {
     
     this.copyWorksheetFile()
     this.editTargetWorksheetRel()
-
-    if(this.targetRid !== undefined) {
+    
+    if(this.appendMode === true) {
       await this.appendToSlideRels()
     } else {
       await this.editTargetChartRel()

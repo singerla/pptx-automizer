@@ -52,8 +52,6 @@ export interface RootPresTemplate extends ITemplate {
   count(name: string): number
   incrementCounter(name: string): number
   appendSlide(slide: ISlide): Promise<void>
-	appendChart(shape: IChart): Promise<void>
-	appendImage(shape: IImage): Promise<void>
 }
 
 export interface PresTemplate extends ITemplate {
@@ -67,14 +65,12 @@ export interface IShape {
 
 export interface IChart extends IShape {
   append: Function
-  setTarget: Function
 	sourceNumber: number
 	targetNumber: number
 }
 
 export interface IImage extends IShape {
   append: Function
-  setTarget: Function
 	sourceFile: string
 	targetFile: string
 	contentTypeMap: any
@@ -114,4 +110,12 @@ export type Target = {
 	file: string
 	number: number
 	rId?: string
+}
+
+export type ImportedElement = {
+	sourceArchive: JSZip
+	target: Target
+	type: string
+	element: HTMLElement
+	callback: any
 }

@@ -7,7 +7,7 @@ import XmlHelper from './helper/xml'
 
 import { 
   ISlide, RootPresTemplate, PresTemplate,
-  RelationshipAttribute, SlideListAttribute, IPresentationProps 
+  RelationshipAttribute, SlideListAttribute, IPresentationProps, ImportedElement 
 } from './types'
 
 export default class Slide implements ISlide {
@@ -20,8 +20,7 @@ export default class Slide implements ISlide {
   sourcePath: string
   targetPath: string
   modifications: Function[]
-  appendElements: any[]
-  appendRelations: any[]
+  appendElements: ImportedElement[]
   relsPath: string
   rootTemplate: RootPresTemplate
   root: IPresentationProps
@@ -35,7 +34,30 @@ export default class Slide implements ISlide {
 
     this.modifications = []
     this.appendElements = []
-    this.appendRelations = []
+  }
+
+  async setTarget(targetTemplate: RootPresTemplate): Promise<void>{
+    this.targetTemplate = targetTemplate
+
+    this.targetArchive = await targetTemplate.archive
+    this.targetNumber = targetTemplate.count('slides')
+
+    this.targetPath = `ppt/slides/slide${this.targetNumber}.xml`
+    this.targetRelsPath = `ppt/slides/_rels/slide${this.targetNumber}.xml.rels`
+  }
+  
+  async append() {
+    this.sourceArchive = await this.sourceTemplate.archive
+    
+    await this.copySlideFiles()
+    await this.copyRelatedContent()
+    await this.addSlideToPresentation()
+
+    if(this.appendElements.length) {
+      await this.appendImportedElements()
+    }
+
+    await this.applyModifications()
   }
 
   modify(callback: Function): void {
@@ -52,86 +74,96 @@ export default class Slide implements ISlide {
       throw new Error(`Can't find ${selector} on slide ${slideNumber} in ${presName}`)
     }
 
-    let appendElement = sourceElement.cloneNode(true)
+    let appendElement = await this.analyzeElement(sourceElement, sourceArchive, slideNumber)
 
-    this.analyzeElement(appendElement, sourceArchive)
-
-    if(callback !== undefined) {
-      if(callback instanceof Array) {
-        callback.forEach(cb => cb(appendElement))
-      } else {
-        callback(appendElement)
-      }
-    }
-    
-    this.appendElements.push(appendElement)
+    this.appendElements.push( <ImportedElement>{
+      sourceArchive: sourceArchive,
+      type: appendElement.type,
+      target: appendElement.target,
+      element: sourceElement.cloneNode(true),
+      callback: callback
+    })
 
     return this
   }
 
-  async setTarget(targetTemplate: RootPresTemplate): Promise<void>{
-    this.targetTemplate = targetTemplate
-    this.targetArchive = await targetTemplate.archive
-    this.targetNumber = targetTemplate.count('slides')
-
-    this.targetPath = `ppt/slides/slide${this.targetNumber}.xml`
-    this.targetRelsPath = `ppt/slides/_rels/slide${this.targetNumber}.xml.rels`
-  }
-  
-  async append() {
-    this.sourceArchive = await this.sourceTemplate.archive
-    
-    await this.copySlideFiles()
-    await this.copyRelatedContent()
-    await this.addSlideToPresentation()
-
-    if(this.appendRelations.length) {
-      await this.appendImportedRelations()
-    }
-
-    if(this.appendElements.length) {
-      await this.appendImportedElements()
-    }
-
-    await this.applyModifications()
-  }
-
-  async analyzeElement(appendElement, sourceArchive) {
+  async analyzeElement(appendElement: any, sourceArchive: JSZip, slideNumber: number): Promise<any> {
     let isChart = appendElement.getElementsByTagName('c:chart')
+    let relsPath = `ppt/slides/_rels/slide${slideNumber}.xml.rels`
+    
     if(isChart.length) {
       let sourceRid = isChart[0].getAttribute('r:id')
-      let chartRels = await XmlHelper.getTargetsFromRelationships(sourceArchive, this.relsPath, '../charts/chart')
-      this.appendRelations.push({
-        relation: chartRels.find(rel => rel.rId === sourceRid),
-        sourceArchive: sourceArchive
-      })
+      let chartRels = await XmlHelper.getTargetsFromRelationships(sourceArchive, relsPath, '../charts/chart')
+      
+      return {
+        type: 'chart',
+        target: chartRels.find(rel => rel.rId === sourceRid),
+      }
+    }
+
+    let isImage = appendElement.getElementsByTagName('p:nvPicPr')
+    if(isImage.length) {
+      let sourceRid = appendElement.getElementsByTagName('a:blip')[0].getAttribute('r:embed')
+      let imageRels = await XmlHelper.getTargetsFromRelationships(sourceArchive, relsPath, '../media/image', /\..+?$/)
+      
+      return {
+        type: 'image',
+        target: imageRels.find(rel => rel.rId === sourceRid),
+      }
     }
   }
 
-  async appendImportedElements() {
+  async appendImportedElements(): Promise<void> {
     let slideXml = await XmlHelper.getXmlFromArchive(this.targetArchive, this.targetPath)
     let tree = slideXml.getElementsByTagName('p:spTree')[0]
 
-    this.appendElements.forEach(element => {
+    for(let i in this.appendElements) {
+      let info = this.appendElements[i]
+
+      let element = info.element
+      let callbacks = this.arrayify(info.callback)
+
+      switch(info.type) {
+        case 'chart' :
+          let newChart = await this.appendChart(info)
+          
+          callbacks.push(element => {
+            element.getElementsByTagName('c:chart')[0].setAttribute('r:id', newChart.createdRid)
+          })
+        break
+        case 'image' :
+          let newImage = await this.appendImage(info)
+          callbacks.push(element => {
+            element.getElementsByTagName('a:blip')[0].setAttribute('r:embed', newImage.createdRid)
+          })
+        break
+      }
+
+      callbacks.forEach(callback => callback(element))
       tree.appendChild(element)
-    })
+    }
 
     await XmlHelper.writeXmlToArchive(this.targetArchive, this.targetPath, slideXml)
   }
 
-  async appendImportedRelations() {
-    for(let i in this.appendRelations) {
-      let relation = this.appendRelations[i].relation
-      let sourceArchive = this.appendRelations[i].sourceArchive
+  async appendChart(relationInfo: any): Promise<Chart> {
+    let target = relationInfo.target
+    let sourceArchive = relationInfo.sourceArchive
+    
+    let newChart = new Chart(target, sourceArchive)
+    await newChart.append(this.targetTemplate, this.targetNumber, true)
 
-      let newChart = new Chart(relation, sourceArchive, this.targetNumber, true)
-      this.targetTemplate.incrementCounter('charts')
-      await this.targetTemplate.appendChart(newChart)
+    return newChart
+  }
 
-      this.modifications.push(chart => {
-        chart.getElementsByTagName('c:chart')[0].setAttribute('r:id', newChart.createdRid)
-      })
-    }
+  async appendImage(relationInfo: any): Promise<Image> {
+    let target = relationInfo.target
+    let sourceArchive = relationInfo.sourceArchive
+    
+    let newImage = new Image(target, sourceArchive)
+    await newImage.append(this.targetTemplate, this.targetNumber, true)
+
+    return newImage
   }
 
   async applyModifications(): Promise<void> {
@@ -200,16 +232,26 @@ export default class Slide implements ISlide {
   async copyRelatedContent(): Promise<void> {
     let charts = await XmlHelper.getTargetsFromRelationships(this.sourceArchive, this.relsPath, '../charts/chart')
     for(let i in charts) {
-      let newChart = new Chart(charts[i], this.sourceArchive, this.targetNumber)
-      this.targetTemplate.incrementCounter('charts')
-      await this.targetTemplate.appendChart(newChart)
+      let newChart = new Chart(charts[i], this.sourceArchive)
+      await newChart.append(this.targetTemplate, this.targetNumber)
     }
 
     let images = await XmlHelper.getTargetsByRelationshipType(this.sourceArchive, this.relsPath, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image")
     for(let i in images) {
-      let newImage = new Image(images[i], this.sourceArchive, this.targetNumber)
-      this.targetTemplate.incrementCounter('images')
-      await this.targetTemplate.appendImage(newImage)
+      let newImage = new Image(images[i], this.sourceArchive)
+      await newImage.append(this.targetTemplate, this.targetNumber)
     }
   }
+
+
+  arrayify(s) {
+    if(s instanceof Array) {
+      return s
+    } else if(s !== undefined) {
+      return [s]
+    } else {
+      return []
+    }
+  }
+
 }

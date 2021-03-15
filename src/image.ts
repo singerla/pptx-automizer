@@ -3,27 +3,28 @@ import FileHelper from './helper/file'
 import XmlHelper from './helper/xml'
 
 import {
-	IImage, Target
+	IImage, RelationshipAttribute, RootPresTemplate, Target
 } from './types'
 
 
 export default class Image implements IImage {  
   sourceArchive: JSZip
-  targetArchive: JSZip
   sourceFile: string
-  targetFile: string
-  targetSlide: this
-  targetSlideNumber: number
   sourceRid: any
+  targetFile: string
+  targetArchive: JSZip
+  targetTemplate: RootPresTemplate
+  targetSlideNumber: number
   contentTypeMap: any
   targetNumber: number
   extension: string
+  createdRid: string
 
-  constructor(relsXmlInfo: Target, sourceArchive: JSZip, targetSlideNumber: number) {
+  constructor(relsXmlInfo: Target, sourceArchive: JSZip) {
     this.sourceFile = relsXmlInfo.file.replace('../media/', '')
     this.sourceRid = relsXmlInfo.rId
     this.sourceArchive = sourceArchive
-    this.targetSlideNumber = targetSlideNumber
+    
     this.contentTypeMap = {
       jpg: "image/jpeg",
       jpeg: "image/jpeg",
@@ -35,17 +36,23 @@ export default class Image implements IImage {
     }
   }
 
-
-  setTarget(archive: JSZip, number: number) {
-    this.targetArchive = archive
-    this.targetNumber = number
+  
+  async append(targetTemplate: RootPresTemplate, targetSlideNumber: number, appendMode?: boolean): Promise<void> {
+    this.targetTemplate = targetTemplate
+    this.targetArchive = await this.targetTemplate.archive
+    this.targetSlideNumber = targetSlideNumber
+    this.targetNumber = this.targetTemplate.incrementCounter('charts')
     this.extension = FileHelper.getFileExtension(this.sourceFile)
-    this.targetFile = 'image' + number + '.' + this.extension
-  }
+    this.targetFile = 'image' + this.targetNumber + '.' + this.extension
 
-  async append() {
     await this.copyFiles()
     await this.appendTypes()
+    
+    if(appendMode === true) {
+      await this.appendToSlideRels()
+    } else {
+      await this.editTargetChartRel()
+    }
   }
 
   async copyFiles() {
@@ -78,6 +85,21 @@ export default class Image implements IImage {
     XmlHelper.writeXmlToArchive(this.targetArchive, targetRelFile, relXml)
   }
 
+  async appendToSlideRels(): Promise<HTMLElement> {
+    let targetRelFile = `ppt/slides/_rels/slide${this.targetSlideNumber}.xml.rels`
+    this.createdRid = await XmlHelper.getNextRelId(this.targetArchive, targetRelFile)
+    let attributes = <RelationshipAttribute> {
+      Id: this.createdRid,
+      Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+      Target: `../media/image${this.targetNumber}.${this.extension}`
+    }
+
+    return XmlHelper.append(
+      XmlHelper.createRelationshipChild(this.targetArchive, targetRelFile, attributes)
+    )
+  }
+
+  
   appendImageExtensionToContentType(): Promise<HTMLElement | boolean> {
     let extension = this.extension
     let contentType = (this.contentTypeMap[extension]) ? this.contentTypeMap[extension] : 'image/' + extension
