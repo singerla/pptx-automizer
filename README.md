@@ -1,5 +1,5 @@
 # pptx-automizer
-This is a pptx generator for Node.js based on templates. It can read pptx files and insert selected slides or single slide elements into another presentation. *pptx-automizer* will not write files from scratch, but edit and merge existing pptx files. Template slides are styled with PowerPoint and will be merged into the output presentation. Most of the content can be modified by using callbacks based on [xmldom](https://github.com/xmldom/xmldom).
+This is a pptx generator for Node.js based on templates. It can read pptx files and insert selected slides or single slide elements into another presentation. *pptx-automizer* will not write files from scratch, but edit and merge existing pptx files. Template slides are styled within PowerPoint and will be merged into the output presentation. Most of the content can be modified by using callbacks with [xmldom](https://github.com/xmldom/xmldom).
 
 ## Requirements
 This generator can only be used on the server-side and requires a [Node.js](https://nodejs.org/en/download/package-manager/) environment.
@@ -9,6 +9,8 @@ Please note that this project is *work in progress*. At the moment, you might en
 Although, most shape types are already supported, such as connection shapes or charts.
 
 Importing a single element is limited to shapes that also do not require further relations.
+
+All testing focuses on PowerPoint 2019 pptx file format.
 
 ## Install
 You can add this package to your own project using npm or yarn:
@@ -62,6 +64,14 @@ pres.write(`myPresentation.pptx`).then(summary => {
   console.log(summary)
 })
 ```
+
+### Playground
+If you prefer instant testing, you can clone this repo and install dependencies first. 
+Feel free and run:
+```
+yarn dev
+```
+The output file will demonstrate some of the recently implemented features.
 
 ### Testing
 You can run tests using these commands:
