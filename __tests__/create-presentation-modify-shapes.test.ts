@@ -9,11 +9,11 @@ test("create presentation, add some elements and modify content", async () => {
 
   let pres = automizer
     .loadRoot(`RootTemplate.pptx`)
-    .load(`SlideWithImage.pptx`, 'image')
+    .load(`SlideWithImages.pptx`, 'images')
     .load(`SlideWithShapes.pptx`, 'shapes')
 
   let result = await pres
-    .addSlide('image', 1, (slide) => {
+    .addSlide('images', 1, (slide) => {
       slide.addElement('shapes', 2, 'Cloud', [ setSolidFill, setText('my cloudy thoughts')] )
       slide.addElement('shapes', 2, 'Arrow', setText('my text'))
       slide.addElement('shapes', 2, 'Drum')

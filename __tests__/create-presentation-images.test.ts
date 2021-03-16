@@ -7,13 +7,12 @@ test("create presentation and append slides with images", async () => {
   })
 
   let pres = automizer.loadRoot(`RootTemplateWithCharts.pptx`)
-    .load(`SlideWithImage.pptx`, 'image')
+    .load(`SlideWithImages.pptx`, 'images')
 
-  pres.addSlide('image', 1)
-  pres.addSlide('image', 2)
-  pres.addSlide('image', 3)
+  pres.addSlide('images', 1)
+  pres.addSlide('images', 2)
 
   let result = await pres.write(`myPresentation.pptx`)
 
-  expect(result.images).toBe(6)
+  expect(result.images).toBe(3)
 })
