@@ -10,3 +10,7 @@ workspace.code-workspace
 ### Testing
 __tests__/images
 coverage/
+
+### Customer related files
+__customer__/
+src/dev-customer.ts
