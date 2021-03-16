@@ -1,8 +1,6 @@
 import {
-  ISlide,
-  ITemplate, IChart,
-  PresTemplate, RootPresTemplate, IImage, ICounter
-} from './types'
+  ISlide, ITemplate, PresTemplate, RootPresTemplate, ICounter
+} from './types/app'
 
 import FileHelper from './helper/file'
 import JSZip from 'jszip'

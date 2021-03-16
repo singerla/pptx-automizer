@@ -4,11 +4,11 @@ import Image from './image'
 
 import FileHelper from './helper/file'
 import XmlHelper from './helper/xml'
+import GeneralHelper from './helper/general'
 
-import { 
-  ISlide, RootPresTemplate, PresTemplate,
-  RelationshipAttribute, SlideListAttribute, IPresentationProps, ImportedElement 
-} from './types'
+import { ElementType } from './types/enums'
+import { ISlide, RootPresTemplate, PresTemplate, IPresentationProps, ImportedElement, AnalyzedElementType } from './types/app'
+import { RelationshipAttribute, SlideListAttribute } from './types/xml'
 
 export default class Slide implements ISlide {
   sourceTemplate: PresTemplate
@@ -78,9 +78,9 @@ export default class Slide implements ISlide {
 
     this.appendElements.push( <ImportedElement>{
       sourceArchive: sourceArchive,
+      sourceSlideNumber: slideNumber,
       type: appendElement.type,
       target: appendElement.target,
-      element: sourceElement.cloneNode(true),
       callback: callback
     })
 
@@ -95,8 +95,8 @@ export default class Slide implements ISlide {
       let sourceRid = isChart[0].getAttribute('r:id')
       let chartRels = await XmlHelper.getTargetsFromRelationships(sourceArchive, relsPath, '../charts/chart')
       
-      return {
-        type: 'chart',
+      return <AnalyzedElementType> {
+        type: ElementType.Chart,
         target: chartRels.find(rel => rel.rId === sourceRid),
       }
     }
@@ -106,64 +106,32 @@ export default class Slide implements ISlide {
       let sourceRid = appendElement.getElementsByTagName('a:blip')[0].getAttribute('r:embed')
       let imageRels = await XmlHelper.getTargetsFromRelationships(sourceArchive, relsPath, '../media/image', /\..+?$/)
       
-      return {
-        type: 'image',
+      return <AnalyzedElementType> {
+        type: ElementType.Image,
         target: imageRels.find(rel => rel.rId === sourceRid),
       }
+    }
+
+    return <AnalyzedElementType> {
+      type: ElementType.Shape
     }
   }
 
   async appendImportedElements(): Promise<void> {
-    let slideXml = await XmlHelper.getXmlFromArchive(this.targetArchive, this.targetPath)
-    let tree = slideXml.getElementsByTagName('p:spTree')[0]
-
     for(let i in this.appendElements) {
       let info = this.appendElements[i]
 
-      let element = info.element
-      let callbacks = this.arrayify(info.callback)
-
       switch(info.type) {
-        case 'chart' :
-          let newChart = await this.appendChart(info)
-          
-          callbacks.push(element => {
-            element.getElementsByTagName('c:chart')[0].setAttribute('r:id', newChart.createdRid)
-          })
+        case ElementType.Chart :
+          await new Chart(info.target, info.sourceArchive, info.sourceSlideNumber)
+            .append(this.targetTemplate, this.targetNumber, true)
         break
-        case 'image' :
-          let newImage = await this.appendImage(info)
-          callbacks.push(element => {
-            element.getElementsByTagName('a:blip')[0].setAttribute('r:embed', newImage.createdRid)
-          })
+        case ElementType.Image :
+          await new Image(info.target, info.sourceArchive, info.sourceSlideNumber)
+            .append(this.targetTemplate, this.targetNumber, true)
         break
       }
-
-      callbacks.forEach(callback => callback(element))
-      tree.appendChild(element)
     }
-
-    await XmlHelper.writeXmlToArchive(this.targetArchive, this.targetPath, slideXml)
-  }
-
-  async appendChart(relationInfo: any): Promise<Chart> {
-    let target = relationInfo.target
-    let sourceArchive = relationInfo.sourceArchive
-    
-    let newChart = new Chart(target, sourceArchive)
-    await newChart.append(this.targetTemplate, this.targetNumber, true)
-
-    return newChart
-  }
-
-  async appendImage(relationInfo: any): Promise<Image> {
-    let target = relationInfo.target
-    let sourceArchive = relationInfo.sourceArchive
-    
-    let newImage = new Image(target, sourceArchive)
-    await newImage.append(this.targetTemplate, this.targetNumber, true)
-
-    return newImage
   }
 
   async applyModifications(): Promise<void> {
@@ -230,28 +198,16 @@ export default class Slide implements ISlide {
   }
 
   async copyRelatedContent(): Promise<void> {
-    let charts = await XmlHelper.getTargetsFromRelationships(this.sourceArchive, this.relsPath, '../charts/chart')
+    let charts = await Chart.getAllOnSlide(this.sourceArchive, this.relsPath)
     for(let i in charts) {
-      let newChart = new Chart(charts[i], this.sourceArchive)
+      let newChart = new Chart(charts[i], this.sourceArchive, this.sourceNumber)
       await newChart.append(this.targetTemplate, this.targetNumber)
     }
 
-    let images = await XmlHelper.getTargetsByRelationshipType(this.sourceArchive, this.relsPath, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image")
+    let images = await Image.getAllOnSlide(this.sourceArchive, this.relsPath)
     for(let i in images) {
-      let newImage = new Image(images[i], this.sourceArchive)
+      let newImage = new Image(images[i], this.sourceArchive, this.sourceNumber)
       await newImage.append(this.targetTemplate, this.targetNumber)
     }
   }
-
-
-  arrayify(s) {
-    if(s instanceof Array) {
-      return s
-    } else if(s !== undefined) {
-      return [s]
-    } else {
-      return []
-    }
-  }
-
 }

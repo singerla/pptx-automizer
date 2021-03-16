@@ -10,3 +10,7 @@ export const setText = (text: string) => (element) => {
     .firstChild
     .data = text
 }
+
+export const revertElements = (doc: Document) => {
+  // console.log(doc)
+}

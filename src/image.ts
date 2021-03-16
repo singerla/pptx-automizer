@@ -1,30 +1,23 @@
 import JSZip from 'jszip'
 import FileHelper from './helper/file'
 import XmlHelper from './helper/xml'
+import Shape from './shape'
 
-import {
-	IImage, RelationshipAttribute, RootPresTemplate, Target
-} from './types'
+import { IImage, RootPresTemplate, Target } from './types/app'
+import { RelationshipAttribute } from './types/xml'
 
+export default class Image extends Shape implements IImage {  
 
-export default class Image implements IImage {  
-  sourceArchive: JSZip
-  sourceFile: string
-  sourceRid: any
-  targetFile: string
-  targetArchive: JSZip
-  targetTemplate: RootPresTemplate
-  targetSlideNumber: number
-  contentTypeMap: any
-  targetNumber: number
   extension: string
-  createdRid: string
 
-  constructor(relsXmlInfo: Target, sourceArchive: JSZip) {
-    this.sourceFile = relsXmlInfo.file.replace('../media/', '')
-    this.sourceRid = relsXmlInfo.rId
-    this.sourceArchive = sourceArchive
+  constructor(relsXmlInfo: Target, sourceArchive: JSZip, sourceSlideNumber?:number) {
+    super(relsXmlInfo, sourceArchive, sourceSlideNumber)
     
+    this.sourceFile = relsXmlInfo.file.replace('../media/', '')
+    this.relRootTag = 'a:blip'
+    this.relAttribute = 'r:embed'
+    this.relParent = element => <HTMLElement> element.parentNode.parentNode
+
     this.contentTypeMap = {
       jpg: "image/jpeg",
       jpeg: "image/jpeg",
@@ -35,24 +28,25 @@ export default class Image implements IImage {
       mp4: "video/mp4"
     }
   }
-
   
-  async append(targetTemplate: RootPresTemplate, targetSlideNumber: number, appendMode?: boolean): Promise<void> {
-    this.targetTemplate = targetTemplate
-    this.targetArchive = await this.targetTemplate.archive
-    this.targetSlideNumber = targetSlideNumber
-    this.targetNumber = this.targetTemplate.incrementCounter('charts')
+  async append(targetTemplate: RootPresTemplate, targetSlideNumber: number, appendMode?: boolean): Promise<Image> {
+    await this.setTarget(targetTemplate, targetSlideNumber)
+    
+    this.targetNumber = this.targetTemplate.incrementCounter('images')
     this.extension = FileHelper.getFileExtension(this.sourceFile)
     this.targetFile = 'image' + this.targetNumber + '.' + this.extension
-
+    
     await this.copyFiles()
     await this.appendTypes()
-    
-    if(appendMode === true) {
-      await this.appendToSlideRels()
-    } else {
-      await this.editTargetChartRel()
+    await this.appendToSlideRels()
+
+    if(appendMode) {
+      await this.appendToSlideTree()
     }
+
+    await this.updateElementRelId()
+
+    return this
   }
 
   async copyFiles() {
@@ -63,31 +57,13 @@ export default class Image implements IImage {
   }
   
   async appendTypes() {
-    await this.editTargetChartRel()
     await this.appendImageExtensionToContentType()
-  }
-
-  async editTargetChartRel() {
-    let targetRelFile = `ppt/slides/_rels/slide${this.targetSlideNumber}.xml.rels`
-    let relXml = await XmlHelper.getXmlFromArchive(this.targetArchive, targetRelFile)
-    let relations = relXml.getElementsByTagName('Relationship')
-
-    for(let i in relations) {
-      let element = relations[i]
-      if(element.getAttribute) {
-        let rId = element.getAttribute('Id')
-        if(rId === this.sourceRid) {
-          element.setAttribute('Target', `../media/${this.targetFile}`)
-        }
-      }
-    }
-
-    XmlHelper.writeXmlToArchive(this.targetArchive, targetRelFile, relXml)
   }
 
   async appendToSlideRels(): Promise<HTMLElement> {
     let targetRelFile = `ppt/slides/_rels/slide${this.targetSlideNumber}.xml.rels`
     this.createdRid = await XmlHelper.getNextRelId(this.targetArchive, targetRelFile)
+
     let attributes = <RelationshipAttribute> {
       Id: this.createdRid,
       Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
@@ -99,7 +75,6 @@ export default class Image implements IImage {
     )
   }
 
-  
   appendImageExtensionToContentType(): Promise<HTMLElement | boolean> {
     let extension = this.extension
     let contentType = (this.contentTypeMap[extension]) ? this.contentTypeMap[extension] : 'image/' + extension
@@ -114,5 +89,7 @@ export default class Image implements IImage {
     })
   }
 
-
+  static async getAllOnSlide(archive: JSZip, relsPath: string): Promise<Target[]> {
+    return await XmlHelper.getTargetsByRelationshipType(archive, relsPath, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image")
+  }
 }

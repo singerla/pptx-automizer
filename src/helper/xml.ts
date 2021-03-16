@@ -1,10 +1,9 @@
 import { DOMParser, XMLSerializer } from 'xmldom'
 import FileHelper from './file'
-import { RelationshipAttribute, XMLElement } from '../types'
 import JSZip from 'jszip'
-import {
-  DefaultAttribute, OverrideAttribute, Target
-} from '../types'
+
+import { Target } from '../types/app'
+import { DefaultAttribute, OverrideAttribute, RelationshipAttribute, XMLElement } from '../types/xml'
 
 export default class XmlHelper {
 
@@ -133,6 +132,15 @@ export default class XmlHelper {
       }
     }
 
+    return null
+  }
+
+  static findByAttributeValue(nodes: any, attributeName: string, attributeValue:string): HTMLElement {
+    for(let i in nodes) {
+      if(nodes[i].getAttribute && nodes[i].getAttribute(attributeName) === attributeValue) {
+        return nodes[i]
+      }
+    }
     return null
   }
 

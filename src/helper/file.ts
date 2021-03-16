@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
-import JSZip, { JSZipFileOptions } from 'jszip'
-import { AutomizerSummary, IPresentationProps } from '../types'
+import JSZip from 'jszip'
+import { AutomizerSummary, IPresentationProps } from '../types/app'
 
 export default class FileHelper {
 

@@ -3,7 +3,7 @@ import {
   AutomizerParams,
   AutomizerSummary,
 	IPresentationProps, PresTemplate, RootPresTemplate,
-} from './types'
+} from './types/app'
 
 
 import Template from './template'

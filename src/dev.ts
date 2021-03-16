@@ -8,22 +8,20 @@ const automizer = new Automizer({
 })
 
 let pres = automizer.loadRoot(`RootTemplateWithCharts.pptx`)
-  .load(`SlideWithImage.pptx`, 'image')
+  .load(`SlideWithImages.pptx`, 'images')
   .load(`SlideWithCharts.pptx`, 'charts')
 
 pres
   // .addSlide('charts', 1)
   .addSlide('charts', 1, (slide: Slide) => {
-    // slide.addElement('charts', 1, 'StackedBars')
     // slide.addElement('charts', 2, 'PieChart')
-    slide.addElement('image', 3, 'imageJPG')
+    slide.addElement('charts', 2, 'PieChart')
+    // slide.addElement('charts', 2, 'PieChart')
+    slide.addElement('images', 2, 'imageJPG')
+    slide.addElement('charts', 1, 'StackedBars')
   })
-  // .addSlide('charts', 2)
+  .addSlide('images', 2)
 
-  // .addSlide('image', 1, (slide: Slide) => {
-  //   slide.addElement('charts', 1, 'StackedBars')
-  //   // slide.addElement('charts', 1, 'StackedBars')
-  // })
   .write(`myPresentation.pptx`).then(result => {
     console.info(result)
   }).catch(error => {
