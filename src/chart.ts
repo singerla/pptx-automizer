@@ -13,12 +13,13 @@ export default class Chart extends Shape implements IChart {
 
   constructor(relsXmlInfo: Target, sourceArchive: JSZip, sourceSlideNumber?:number) {
     super(relsXmlInfo, sourceArchive, sourceSlideNumber)
+
     this.relRootTag = 'c:chart'
     this.relAttribute = 'r:id'
     this.relParent = element => <HTMLElement> element.parentNode.parentNode.parentNode
   }
   
-  async append(targetTemplate: RootPresTemplate, targetSlideNumber: number, appendMode?: boolean): Promise<Chart> {
+  async append(targetTemplate: RootPresTemplate, targetSlideNumber: number, appendToTree?: boolean): Promise<Chart> {
     await this.setTarget(targetTemplate, targetSlideNumber)
 
     this.targetNumber = this.targetTemplate.incrementCounter('charts')
@@ -27,7 +28,7 @@ export default class Chart extends Shape implements IChart {
     await this.appendTypes()
     await this.appendToSlideRels()
 
-    if(appendMode) {
+    if(appendToTree) {
       await this.appendToSlideTree()
     }
 
@@ -58,6 +59,7 @@ export default class Chart extends Shape implements IChart {
   }
 
   async copyChartFiles(): Promise<void> {
+
     FileHelper.zipCopy(
       this.sourceArchive, `ppt/charts/chart${this.sourceNumber}.xml`, 
       this.targetArchive, `ppt/charts/chart${this.targetNumber}.xml`

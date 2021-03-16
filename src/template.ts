@@ -56,7 +56,7 @@ class Template implements ITemplate {
       newTemplate = <PresTemplate> new Template(location, name)
       newTemplate.name = name
     } else {
-      newTemplate = <RootPresTemplate> new Template(location)
+      newTemplate = <RootPresTemplate> <unknown>new Template(location)
       newTemplate.slides = []
       newTemplate.counter = [
         new CountHelper('slides', newTemplate),
@@ -73,9 +73,7 @@ class Template implements ITemplate {
       await this.initializeCounter()
     }
 
-    this.incrementCounter('slides')
-    slide.setTarget(this)
-    await slide.append()
+    await slide.append(this)
   }
 
   async initializeCounter(): Promise<void> {

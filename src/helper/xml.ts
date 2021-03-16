@@ -109,7 +109,7 @@ export default class XmlHelper {
     return rels
   }
 
-  static findByAttribute(xml: HTMLElement, tagName: string, attributeName: string, attributeValue: string): Boolean {
+  static findByAttribute(xml: HTMLElement | Document, tagName: string, attributeName: string, attributeValue: string): Boolean {
     let elements = xml.getElementsByTagName(tagName)
     for(let i in elements) {
       let element = elements[i]
@@ -120,6 +120,18 @@ export default class XmlHelper {
       }
     }
     return false
+  }
+
+  static async replaceAttribute(archive: JSZip, path: string, tagName: string, attributeName: string, attributeValue: string, replaceValue: string): Promise<JSZip> {
+    let xml = await XmlHelper.getXmlFromArchive(archive, path)
+    let elements = xml.getElementsByTagName(tagName)
+    for(let i in elements) {
+      let element = elements[i]
+      if(element.getAttribute !== undefined && element.getAttribute(attributeName) === attributeValue) {
+        element.setAttribute(attributeName, replaceValue)
+      }
+    }
+    return XmlHelper.writeXmlToArchive(archive, path, xml)
   }
 
   static async findByElementName(archive: JSZip, path: string, name: string): Promise<any> {

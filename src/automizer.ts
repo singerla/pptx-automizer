@@ -11,11 +11,11 @@ import Slide from './slide'
 import FileHelper from './helper/file'
 
 export default class Automizer implements IPresentationProps {
-
 	rootTemplate: RootPresTemplate
 	templates: PresTemplate[]
 	templateDir: string
 	outputDir: string
+	timer: number
   params: AutomizerParams
 
   /**
@@ -29,6 +29,8 @@ export default class Automizer implements IPresentationProps {
     
     this.templateDir = (params?.templateDir) ? params.templateDir + '/' : ''
     this.outputDir = (params?.outputDir) ? params.outputDir + '/' : ''
+
+    this.timer = Date.now()
   }
 
 	/**

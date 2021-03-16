@@ -8,6 +8,7 @@ export type AutomizerParams = {
 
 export type AutomizerSummary = {
 	status: string
+	duration: number
 	file: string
 	templates: number
 	slides: number
@@ -24,8 +25,7 @@ export interface ICounter {
 }
 
 export interface ISlide {
-  append(): Promise<void>
-  setTarget(targetTemplate: RootPresTemplate): void
+  append(targetTemplate: RootPresTemplate): Promise<void>
   addElement(presName: string, slideNumber: number, selector: Function | string): void
 	sourceArchive: JSZip
 	sourceNumber: number
@@ -38,6 +38,7 @@ export interface IPresentationProps {
 	templates: PresTemplate[]
 	template(name: string): PresTemplate
 	params: AutomizerParams
+	timer: number
 }
 
 export interface ITemplate {

@@ -57,8 +57,11 @@ export default class FileHelper {
       }
     })
 
+    let duration: number = (Date.now() - automizer.timer) / 600
+
     return {
       status: 'finished',
+      duration: duration,
       file: location,
       templates: automizer.templates.length,
       slides: automizer.rootTemplate.count('slides'),

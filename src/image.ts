@@ -14,7 +14,16 @@ export default class Image extends Shape implements IImage {
     super(relsXmlInfo, sourceArchive, sourceSlideNumber)
     
     this.sourceFile = relsXmlInfo.file.replace('../media/', '')
-    this.relRootTag = 'a:blip'
+    this.extension = FileHelper.getFileExtension(this.sourceFile)
+
+    let mapRelRootTags = {
+      svg: 'asvg:svgBlip'
+    }
+
+    this.relRootTag = (mapRelRootTags[this.extension]) 
+      ? mapRelRootTags[this.extension] 
+      : 'a:blip'
+      
     this.relAttribute = 'r:embed'
     this.relParent = element => <HTMLElement> element.parentNode.parentNode
 
@@ -25,22 +34,22 @@ export default class Image extends Shape implements IImage {
       gif: "image/gif",
       svg: "image/svg+xml",
       m4v: "video/mp4",
-      mp4: "video/mp4"
+      mp4: "video/mp4",
+      emf: "image/x-emf"
     }
   }
   
-  async append(targetTemplate: RootPresTemplate, targetSlideNumber: number, appendMode?: boolean): Promise<Image> {
+  async append(targetTemplate: RootPresTemplate, targetSlideNumber: number, appendToTree?: boolean): Promise<Image> {
     await this.setTarget(targetTemplate, targetSlideNumber)
     
     this.targetNumber = this.targetTemplate.incrementCounter('images')
-    this.extension = FileHelper.getFileExtension(this.sourceFile)
     this.targetFile = 'image' + this.targetNumber + '.' + this.extension
-    
+
     await this.copyFiles()
     await this.appendTypes()
     await this.appendToSlideRels()
 
-    if(appendMode) {
+    if(appendToTree) {
       await this.appendToSlideTree()
     }
 
