@@ -18,7 +18,7 @@ test("create presentation, add some elements and modify content", async () => {
       slide.addElement('shapes', 2, 'Arrow', setText('my text'))
       slide.addElement('shapes', 2, 'Drum')
     })
-    .write(`myPresentation.pptx`)
+    .write(`create-presentation-modify-shapes.test.pptx`)
 
   expect(result.slides).toBe(2)
 })

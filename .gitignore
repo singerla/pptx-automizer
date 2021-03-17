@@ -13,4 +13,5 @@ coverage/
 
 ### Customer related files
 __customer__/
+__tests__/pptx-output/
 src/dev-customer.ts

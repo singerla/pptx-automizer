@@ -12,7 +12,7 @@ test("create presentation and add basic slide", async () => {
     pres.addSlide('shapes', 1)
   }
 
-  await pres.write(`myPresentation.pptx`)
+  await pres.write(`create-presentation.test.pptx`)
 
   expect(pres).toBeInstanceOf(Automizer)
 })

@@ -19,7 +19,7 @@ test("create presentation and add some single images", async () => {
 
       slide.modify(revertElements)
     })
-    .write(`myPresentation.pptx`)
+    .write(`create-presentation-insert-single-images.test.pptx`)
 
   expect(result.slides).toBe(2)
 })
