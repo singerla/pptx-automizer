@@ -3,8 +3,8 @@ import FileHelper from './helper/file'
 import XmlHelper from './helper/xml'
 import Shape from './shape'
 
-import { IChart, RootPresTemplate, Target } from './types/app'
-import { RelationshipAttribute } from './types/xml'
+import { IChart, RootPresTemplate, Target } from './definitions/app'
+import { RelationshipAttribute } from './definitions/xml'
 
 export default class Chart extends Shape implements IChart {  
 
@@ -29,6 +29,7 @@ export default class Chart extends Shape implements IChart {
     await this.appendToSlideRels()
 
     if(appendToTree) {
+      await this.setTargetElement()
       await this.appendToSlideTree()
     }
 

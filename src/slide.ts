@@ -6,9 +6,9 @@ import FileHelper from './helper/file'
 import XmlHelper from './helper/xml'
 import GeneralHelper from './helper/general'
 
-import { ElementType } from './types/enums'
-import { ISlide, RootPresTemplate, PresTemplate, IPresentationProps, ImportedElement, AnalyzedElementType } from './types/app'
-import { RelationshipAttribute, SlideListAttribute } from './types/xml'
+import { ElementType } from './definitions/enums'
+import { ISlide, RootPresTemplate, PresTemplate, IPresentationProps, ImportedElement, AnalyzedElementType } from './definitions/app'
+import { RelationshipAttribute, SlideListAttribute } from './definitions/xml'
 
 export default class Slide implements ISlide {
   sourceTemplate: PresTemplate
@@ -83,41 +83,34 @@ export default class Slide implements ISlide {
       throw new Error(`Can't find ${selector} on slide ${slideNumber} in ${presName}`)
     }
 
-    let appendElement = await this.analyzeElement(sourceElement, sourceArchive, slideNumber)
+    let appendElementParams = await this.analyzeElement(sourceElement, sourceArchive, slideNumber)
 
     this.appendElements.push( <ImportedElement>{
       sourceArchive: sourceArchive,
       sourceSlideNumber: slideNumber,
-      type: appendElement.type,
-      target: appendElement.target,
-      callback: callback
+      callback: callback,
+      type: appendElementParams.type,
+      target: appendElementParams.target
     })
 
     return this
   }
 
-  async analyzeElement(appendElement: any, sourceArchive: JSZip, slideNumber: number): Promise<any> {
-    let isChart = appendElement.getElementsByTagName('c:chart')
-    let relsPath = `ppt/slides/_rels/slide${slideNumber}.xml.rels`
+  async analyzeElement(appendElement: any, sourceArchive: JSZip, slideNumber: number): Promise<AnalyzedElementType> {
     
+    let isChart = appendElement.getElementsByTagName('c:chart')
     if(isChart.length) {
-      let sourceRid = isChart[0].getAttribute('r:id')
-      let chartRels = await XmlHelper.getTargetsFromRelationships(sourceArchive, relsPath, '../charts/chart')
-      
       return <AnalyzedElementType> {
         type: ElementType.Chart,
-        target: chartRels.find(rel => rel.rId === sourceRid),
+        target: await XmlHelper.getTargetByRelId(sourceArchive, slideNumber, appendElement, 'chart')
       }
     }
 
     let isImage = appendElement.getElementsByTagName('p:nvPicPr')
     if(isImage.length) {
-      let sourceRid = appendElement.getElementsByTagName('a:blip')[0].getAttribute('r:embed')
-      let imageRels = await XmlHelper.getTargetsFromRelationships(sourceArchive, relsPath, '../media/image', /\..+?$/)
-      
       return <AnalyzedElementType> {
         type: ElementType.Image,
-        target: imageRels.find(rel => rel.rId === sourceRid),
+        target: await XmlHelper.getTargetByRelId(sourceArchive, slideNumber, appendElement, 'image')
       }
     }
 
@@ -131,11 +124,11 @@ export default class Slide implements ISlide {
       let info = this.appendElements[i]
 
       switch(info.type) {
-        case ElementType.Chart :
+        case ElementType.Chart:
           await new Chart(info.target, info.sourceArchive, info.sourceSlideNumber)
             .append(this.targetTemplate, this.targetNumber, true)
         break
-        case ElementType.Image :
+        case ElementType.Image:
           await new Image(info.target, info.sourceArchive, info.sourceSlideNumber)
             .append(this.targetTemplate, this.targetNumber, true)
         break
@@ -178,16 +171,14 @@ export default class Slide implements ISlide {
   async updateSlideNoteFile(): Promise<void> {
     await XmlHelper.replaceAttribute(
       this.targetArchive, 
-      `ppt/notesSlides/_rels/notesSlide${this.targetNumber}.xml.rels`,
-      "Relationship", "Target", 
+      `ppt/notesSlides/_rels/notesSlide${this.targetNumber}.xml.rels`, "Relationship", "Target", 
       `../slides/slide${this.sourceNumber}.xml`,
       `../slides/slide${this.targetNumber}.xml`
     )
 
     await XmlHelper.replaceAttribute(
       this.targetArchive, 
-      `ppt/slides/_rels/slide${this.targetNumber}.xml.rels`,
-      "Relationship", "Target", 
+      `ppt/slides/_rels/slide${this.targetNumber}.xml.rels`, "Relationship", "Target", 
       `../notesSlides/notesSlide${this.sourceNumber}.xml`,
       `../notesSlides/notesSlide${this.targetNumber}.xml`
     )

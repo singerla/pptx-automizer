@@ -96,3 +96,9 @@ export type AnalyzedElementType = {
 	target?: Target
 }
 
+export type TargetByRelIdMapParam = {
+	relRootTag: string
+	relAttribute: string
+	prefix: string
+	expression?: RegExp
+}

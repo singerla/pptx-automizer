@@ -2,8 +2,9 @@ import { DOMParser, XMLSerializer } from 'xmldom'
 import FileHelper from './file'
 import JSZip from 'jszip'
 
-import { Target } from '../types/app'
-import { DefaultAttribute, OverrideAttribute, RelationshipAttribute, XMLElement } from '../types/xml'
+import { Target } from '../definitions/app'
+import { DefaultAttribute, OverrideAttribute, RelationshipAttribute, XMLElement } from '../definitions/xml'
+import { TargetByRelIdMap } from '../definitions/constants'
 
 export default class XmlHelper {
 
@@ -132,6 +133,16 @@ export default class XmlHelper {
       }
     }
     return XmlHelper.writeXmlToArchive(archive, path, xml)
+  }
+
+  static async getTargetByRelId(archive: JSZip, slideNumber: number, element: HTMLElement, type: string): Promise<Target> {
+    let params = TargetByRelIdMap[type]
+    let sourceRid = element.getElementsByTagName(params.relRootTag)[0].getAttribute(params.relAttribute)
+    let relsPath = `ppt/slides/_rels/slide${slideNumber}.xml.rels`
+    let imageRels = await XmlHelper.getTargetsFromRelationships(archive, relsPath, params.prefix, params.expression)
+    let target = imageRels.find(rel => rel.rId === sourceRid)
+
+    return target
   }
 
   static async findByElementName(archive: JSZip, path: string, name: string): Promise<any> {

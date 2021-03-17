@@ -18,6 +18,9 @@ pres
     // slide.addElement('charts', 2, 'PieChart')
     // slide.addElement('charts', 2, 'PieChart')
     slide.addElement('images', 2, 'imageSVG')
+    // slide.addElement('images', 2, 'imageSVG')
+    // slide.addElement('images', 2, 'imageSVG')
+    // slide.addElement('images', 2, 'imageSVG')
     // slide.addElement('charts', 1, 'StackedBars')
   })
 

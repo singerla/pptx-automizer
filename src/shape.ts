@@ -1,6 +1,6 @@
 import JSZip from "jszip"
 import XmlHelper from "./helper/xml"
-import { RootPresTemplate, Target } from "./types/app"
+import { RootPresTemplate, Target } from "./definitions/app"
 
 export default class Shape {
   sourceArchive: JSZip
@@ -23,6 +23,7 @@ export default class Shape {
   relRootTag: string
   relAttribute: string
   relParent: (element: HTMLElement) => HTMLElement
+  targetElement: HTMLElement
 
   constructor(relsXmlInfo: Target, sourceArchive: JSZip, sourceSlideNumber?:number) {
     this.sourceNumber = relsXmlInfo.number
@@ -40,22 +41,17 @@ export default class Shape {
     this.targetSlideRelFile = `ppt/slides/_rels/slide${this.targetSlideNumber}.xml.rels`
   }
 
-  async appendToSlideTree(): Promise<void> {
+  async setTargetElement(): Promise<void> {
     let sourceSlideXml = await XmlHelper.getXmlFromArchive(this.sourceArchive, this.sourceSlideFile)
     let sourceElement = <HTMLElement> await this.getElementByRid(sourceSlideXml, this.sourceRid)
-    let targetElement = sourceElement.cloneNode(true)
-    
-    let targetSlideXml = await XmlHelper.getXmlFromArchive(this.targetArchive, this.targetSlideFile)
-    targetSlideXml.getElementsByTagName('p:spTree')[0].appendChild(targetElement)
-
-    await XmlHelper.writeXmlToArchive(this.targetArchive, this.targetSlideFile, targetSlideXml)
+    this.targetElement = <HTMLElement> sourceElement.cloneNode(true)
   }
 
-  async getElementByRid(slideXml: Document, rId: string): Promise<HTMLElement> {
-    let sourceChartList = slideXml.getElementsByTagName('p:spTree')[0].getElementsByTagName(this.relRootTag)
-    let sourceElement = XmlHelper.findByAttributeValue(sourceChartList, this.relAttribute, rId)
+  async appendToSlideTree(): Promise<void> {
+    let targetSlideXml = await XmlHelper.getXmlFromArchive(this.targetArchive, this.targetSlideFile)
+    targetSlideXml.getElementsByTagName('p:spTree')[0].appendChild(this.targetElement)
 
-    return this.relParent(sourceElement)
+    await XmlHelper.writeXmlToArchive(this.targetArchive, this.targetSlideFile, targetSlideXml)
   }
 
   async updateElementRelId() {
@@ -64,5 +60,12 @@ export default class Shape {
     targetElement.getElementsByTagName(this.relRootTag)[0].setAttribute(this.relAttribute, this.createdRid)
 
     await XmlHelper.writeXmlToArchive(this.targetArchive, this.targetSlideFile, targetSlideXml)
+  }
+
+  async getElementByRid(slideXml: Document, rId: string): Promise<HTMLElement> {
+    let sourceList = slideXml.getElementsByTagName('p:spTree')[0].getElementsByTagName(this.relRootTag)
+    let sourceElement = XmlHelper.findByAttributeValue(sourceList, this.relAttribute, rId)
+
+    return this.relParent(sourceElement)
   }
 }

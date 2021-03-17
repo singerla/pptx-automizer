@@ -3,8 +3,9 @@ import FileHelper from './helper/file'
 import XmlHelper from './helper/xml'
 import Shape from './shape'
 
-import { IImage, RootPresTemplate, Target } from './types/app'
-import { RelationshipAttribute } from './types/xml'
+import { IImage, RootPresTemplate, Target } from './definitions/app'
+import { RelationshipAttribute } from './definitions/xml'
+import { ImageTypeMap } from './definitions/enums'
 
 export default class Image extends Shape implements IImage {  
 
@@ -15,28 +16,20 @@ export default class Image extends Shape implements IImage {
     
     this.sourceFile = relsXmlInfo.file.replace('../media/', '')
     this.extension = FileHelper.getFileExtension(this.sourceFile)
-
-    let mapRelRootTags = {
-      svg: 'asvg:svgBlip'
-    }
-
-    this.relRootTag = (mapRelRootTags[this.extension]) 
-      ? mapRelRootTags[this.extension] 
-      : 'a:blip'
-      
     this.relAttribute = 'r:embed'
-    this.relParent = element => <HTMLElement> element.parentNode.parentNode
-
-    this.contentTypeMap = {
-      jpg: "image/jpeg",
-      jpeg: "image/jpeg",
-      png: "image/png",
-      gif: "image/gif",
-      svg: "image/svg+xml",
-      m4v: "video/mp4",
-      mp4: "video/mp4",
-      emf: "image/x-emf"
+    
+    switch(this.extension) {
+      case 'svg':
+        this.relRootTag = 'asvg:svgBlip'
+        this.relParent = element => <HTMLElement> element.parentNode
+      break
+      default:
+        this.relRootTag = 'a:blip'
+        this.relParent = element => <HTMLElement> element.parentNode.parentNode
+      break
     }
+
+    this.contentTypeMap = ImageTypeMap
   }
   
   async append(targetTemplate: RootPresTemplate, targetSlideNumber: number, appendToTree?: boolean): Promise<Image> {
@@ -50,14 +43,21 @@ export default class Image extends Shape implements IImage {
     await this.appendToSlideRels()
 
     if(appendToTree) {
+      await this.setTargetElement()
       await this.appendToSlideTree()
+
+      if(this.hasSvgRelation()) {
+        let target = await XmlHelper.getTargetByRelId(this.sourceArchive, this.sourceSlideNumber, this.targetElement, 'image:svg')
+        await new Image(target, this.sourceArchive, this.sourceSlideNumber)
+          .append(targetTemplate, targetSlideNumber)
+      }
     }
 
     await this.updateElementRelId()
 
     return this
   }
-
+  
   async copyFiles() {
     FileHelper.zipCopy(
       this.sourceArchive, `ppt/media/${this.sourceFile}`, 
@@ -96,6 +96,10 @@ export default class Image extends Shape implements IImage {
       tag: 'Default',
       clause: (xml: HTMLElement) => !XmlHelper.findByAttribute(xml, 'Default', 'Extension', extension)
     })
+  }
+
+  hasSvgRelation() {
+    return (this.targetElement.getElementsByTagName('asvg:svgBlip').length > 0)
   }
 
   static async getAllOnSlide(archive: JSZip, relsPath: string): Promise<Target[]> {
