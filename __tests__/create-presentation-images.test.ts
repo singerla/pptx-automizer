@@ -14,5 +14,5 @@ test("create presentation and append slides with images", async () => {
 
   let result = await pres.write(`myPresentation.pptx`)
 
-  expect(result.images).toBe(3)
+  expect(result.images).toBe(5)
 })
