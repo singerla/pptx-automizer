@@ -1,6 +1,7 @@
 import JSZip from "jszip"
 import XmlHelper from "./helper/xml"
 import { RootPresTemplate, Target } from "./definitions/app"
+import { ImageTypeMap } from "./definitions/enums"
 
 export default class Shape {
   sourceArchive: JSZip
@@ -11,8 +12,8 @@ export default class Shape {
   targetArchive: JSZip
   targetTemplate: RootPresTemplate
   targetSlideNumber: number
-  contentTypeMap: any
   targetNumber: number
+  contentTypeMap: any
 
   createdRid: string
   sourceSlideNumber: number
@@ -67,5 +68,11 @@ export default class Shape {
     let sourceElement = XmlHelper.findByAttributeValue(sourceList, this.relAttribute, rId)
 
     return this.relParent(sourceElement)
+  }
+
+  applyCallbacks(callbacks: Function[], element: HTMLElement): void {
+    for(let i in callbacks) {
+      callbacks[i](element)
+    }
   }
 }

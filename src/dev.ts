@@ -9,6 +9,7 @@ const automizer = new Automizer({
 
 let pres = automizer.loadRoot(`RootTemplate.pptx`)
   .load(`SlideWithImages.pptx`, 'images')
+  .load(`SlideWithLink.pptx`, 'link')
   .load(`EmptySlide.pptx`, 'empty')
 
 pres
@@ -18,6 +19,7 @@ pres
     // slide.addElement('charts', 2, 'PieChart')
     // slide.addElement('charts', 2, 'PieChart')
     slide.addElement('images', 2, 'imageSVG')
+    slide.addElement('link', 1, 'Link')
     // slide.addElement('images', 2, 'imageSVG')
     // slide.addElement('images', 2, 'imageSVG')
     // slide.addElement('images', 2, 'imageSVG')

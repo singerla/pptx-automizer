@@ -15,4 +15,3 @@ export enum ImageTypeMap {
   mp4 = "video/mp4",
   emf = "image/x-emf"
 }
-

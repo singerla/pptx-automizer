@@ -1,14 +1,13 @@
 import JSZip from 'jszip'
-import FileHelper from './helper/file'
-import XmlHelper from './helper/xml'
-import Shape from './shape'
+import FileHelper from '../helper/file'
+import XmlHelper from '../helper/xml'
+import Shape from '../shape'
 
-import { IImage, RootPresTemplate, Target } from './definitions/app'
-import { RelationshipAttribute } from './definitions/xml'
-import { ImageTypeMap } from './definitions/enums'
+import { IImage, RootPresTemplate, Target } from '../definitions/app'
+import { RelationshipAttribute } from '../definitions/xml'
+import { ImageTypeMap } from '../definitions/enums'
 
 export default class Image extends Shape implements IImage {  
-
   extension: string
 
   constructor(relsXmlInfo: Target, sourceArchive: JSZip, sourceSlideNumber?:number) {

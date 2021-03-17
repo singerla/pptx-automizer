@@ -89,11 +89,13 @@ export type ImportedElement = {
 	target: Target
 	type: ElementType
 	callback: any
+	element?: HTMLElement
 }
 
 export type AnalyzedElementType = {
 	type: ElementType
 	target?: Target
+	element?: HTMLElement
 }
 
 export type TargetByRelIdMapParam = {

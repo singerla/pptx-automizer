@@ -1,14 +1,14 @@
 import JSZip from 'jszip'
-import Chart from './chart'
-import Image from './image'
+import Chart from './shapes/chart'
+import Image from './shapes/image'
 
 import FileHelper from './helper/file'
 import XmlHelper from './helper/xml'
-import GeneralHelper from './helper/general'
 
 import { ElementType } from './definitions/enums'
-import { ISlide, RootPresTemplate, PresTemplate, IPresentationProps, ImportedElement, AnalyzedElementType } from './definitions/app'
+import { ISlide, RootPresTemplate, PresTemplate, IPresentationProps, ImportedElement, AnalyzedElementType, Target } from './definitions/app'
 import { RelationshipAttribute, SlideListAttribute } from './definitions/xml'
+import Generic from './shapes/generic'
 
 export default class Slide implements ISlide {
   sourceTemplate: PresTemplate
@@ -85,24 +85,24 @@ export default class Slide implements ISlide {
 
     let appendElementParams = await this.analyzeElement(sourceElement, sourceArchive, slideNumber)
 
-    this.appendElements.push( <ImportedElement>{
+    this.appendElements.push(<ImportedElement>{
       sourceArchive: sourceArchive,
       sourceSlideNumber: slideNumber,
       callback: callback,
       type: appendElementParams.type,
-      target: appendElementParams.target
+      target: appendElementParams.target,
+      element: appendElementParams.element
     })
 
     return this
   }
 
   async analyzeElement(appendElement: any, sourceArchive: JSZip, slideNumber: number): Promise<AnalyzedElementType> {
-    
     let isChart = appendElement.getElementsByTagName('c:chart')
     if(isChart.length) {
       return <AnalyzedElementType> {
         type: ElementType.Chart,
-        target: await XmlHelper.getTargetByRelId(sourceArchive, slideNumber, appendElement, 'chart')
+        target: await XmlHelper.getTargetByRelId(sourceArchive, slideNumber, appendElement, 'chart'),
       }
     }
 
@@ -115,7 +115,8 @@ export default class Slide implements ISlide {
     }
 
     return <AnalyzedElementType> {
-      type: ElementType.Shape
+      type: ElementType.Shape,
+      element: appendElement
     }
   }
 
@@ -131,6 +132,10 @@ export default class Slide implements ISlide {
         case ElementType.Image:
           await new Image(info.target, info.sourceArchive, info.sourceSlideNumber)
             .append(this.targetTemplate, this.targetNumber, true)
+        break
+        case ElementType.Shape:
+          await new Generic(info, info.sourceArchive, info.sourceSlideNumber)
+            .append(this.targetTemplate, this.targetNumber)
         break
       }
     }
@@ -237,7 +242,6 @@ export default class Slide implements ISlide {
     }
 
     let images = await Image.getAllOnSlide(this.sourceArchive, this.relsPath)
-
     for(let i in images) {
       let newImage = new Image(images[i], this.sourceArchive, this.sourceNumber)
       await newImage.append(this.targetTemplate, this.targetNumber)

@@ -1,10 +1,8 @@
-
 import {
   AutomizerParams,
   AutomizerSummary,
 	IPresentationProps, PresTemplate, RootPresTemplate,
 } from './definitions/app'
-
 
 import Template from './template'
 import Slide from './slide'
