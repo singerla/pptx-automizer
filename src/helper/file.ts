@@ -12,7 +12,7 @@ export default class FileHelper {
     return fs.promises.readFile(location)
   }
 
-  static extractFromArchive(archive: JSZip, file: string): Promise<string> {
+  static extractFromArchive(archive: JSZip, file: string, type?:any): Promise<any> {
     if(archive === undefined) {
       throw new Error('No files found, expected: ' + file)
     }
@@ -20,7 +20,7 @@ export default class FileHelper {
     if(archive.files[file] === undefined) {
       throw new Error('Archived file not found: ' + file)
     }
-    return archive.files[file].async('string')
+    return archive.files[file].async(type || 'string')
   }
 
   static extractFileContent(file: any): Promise<JSZip>{

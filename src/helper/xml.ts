@@ -186,4 +186,68 @@ export default class XmlHelper {
       attributes: attributes
     }
   }
+
+  static setChartData(chart, workbook, data) {
+    let series = chart.getElementsByTagName('c:ser')
+
+    for(let c in data.categories) {
+      for(let s in data.categories[c].values) {
+        series[s].getElementsByTagName('c:cat')[0]
+          .getElementsByTagName('c:v')[c]
+          .firstChild.data = data.categories[c].label
+
+        series[s].getElementsByTagName('c:v')[0]
+          .firstChild.data = data.series[s].label
+
+        series[s].getElementsByTagName('c:val')[0]
+          .getElementsByTagName('c:v')[c]
+          .firstChild.data = String(data.categories[c].values[s])
+      }
+    }
+
+    XmlHelper.setWorkbookData(workbook, data)
+  }
+
+  static setWorkbookData(workbook, data) {
+    let rows = workbook.sheet.getElementsByTagName('row')
+  
+    for(let c in data.categories) {
+      let r = Number(c) + 1
+      let stringId = XmlHelper.appendSharedString(workbook.sharedStrings, data.categories[c].label)
+      let rowLabel = rows[r].getElementsByTagName('c')[0].getElementsByTagName('v')[0]
+      rowLabel.firstChild.data = String(stringId)
+  
+      for(let s in data.categories[c].values) {
+        let v = Number(s) + 1
+        rows[r].getElementsByTagName('c')[v]
+          .getElementsByTagName('v')[0]
+          .firstChild.data = String(data.categories[c].values[s])
+      }
+    }
+  
+    for(let s in data.series) {
+      let c = Number(s) + 1
+      let colLabel = rows[0].getElementsByTagName('c')[c].getElementsByTagName('v')[0]
+      let stringId = XmlHelper.appendSharedString(workbook.sharedStrings, data.series[s].label)
+      
+      colLabel.firstChild.data = String(stringId)
+  
+      workbook.table.getElementsByTagName('tableColumn')[c].setAttribute('name', data.series[s].label)
+    }
+  }
+
+  static appendSharedString(sharedStrings: Document, string: string): number {
+    let strings = sharedStrings.getElementsByTagName('sst')[0]
+    let newLabel = sharedStrings.createTextNode(string)
+    let newText = sharedStrings.createElement('t')
+    newText.appendChild(newLabel)
+
+    let newString = sharedStrings.createElement('si')
+    newString.appendChild(newText)
+
+    strings.appendChild(newString)
+    
+    let stringId = strings.getElementsByTagName('si').length - 1
+    return stringId
+  }
 }

@@ -126,15 +126,15 @@ export default class Slide implements ISlide {
 
       switch(info.type) {
         case ElementType.Chart:
-          await new Chart(info.target, info.sourceArchive, info.sourceSlideNumber)
+          await new Chart(info)
             .append(this.targetTemplate, this.targetNumber, true)
         break
         case ElementType.Image:
-          await new Image(info.target, info.sourceArchive, info.sourceSlideNumber)
+          await new Image(info)
             .append(this.targetTemplate, this.targetNumber, true)
         break
         case ElementType.Shape:
-          await new Generic(info, info.sourceArchive, info.sourceSlideNumber)
+          await new Generic(info)
             .append(this.targetTemplate, this.targetNumber)
         break
       }
@@ -237,14 +237,20 @@ export default class Slide implements ISlide {
   async copyRelatedContent(): Promise<void> {
     let charts = await Chart.getAllOnSlide(this.sourceArchive, this.relsPath)
     for(let i in charts) {
-      let newChart = new Chart(charts[i], this.sourceArchive, this.sourceNumber)
-      await newChart.append(this.targetTemplate, this.targetNumber)
+      await new Chart({
+        target: charts[i], 
+        sourceArchive: this.sourceArchive,
+        sourceSlideNumber: this.sourceNumber,
+      }).append(this.targetTemplate, this.targetNumber)
     }
 
     let images = await Image.getAllOnSlide(this.sourceArchive, this.relsPath)
     for(let i in images) {
-      let newImage = new Image(images[i], this.sourceArchive, this.sourceNumber)
-      await newImage.append(this.targetTemplate, this.targetNumber)
+      await new Image({
+        target: images[i], 
+        sourceArchive: this.sourceArchive,
+        sourceSlideNumber: this.sourceNumber,
+      }).append(this.targetTemplate, this.targetNumber)
     }
   }
 

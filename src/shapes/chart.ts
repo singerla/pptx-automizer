@@ -3,15 +3,16 @@ import FileHelper from '../helper/file'
 import XmlHelper from '../helper/xml'
 import Shape from '../shape'
 
-import { IChart, RootPresTemplate, Target } from '../definitions/app'
+import { IChart, ImportedElement, RootPresTemplate, Target, Workbook } from '../definitions/app'
 import { RelationshipAttribute } from '../definitions/xml'
+import { DOMParser, XMLSerializer } from 'xmldom'
 
 export default class Chart extends Shape implements IChart {  
   sourceWorksheet: number | string
   targetWorksheet: number | string
 
-  constructor(relsXmlInfo: Target, sourceArchive: JSZip, sourceSlideNumber?:number) {
-    super(relsXmlInfo, sourceArchive, sourceSlideNumber)
+  constructor(shape: ImportedElement) {
+    super(shape)
 
     this.relRootTag = 'c:chart'
     this.relAttribute = 'r:id'
@@ -26,15 +27,49 @@ export default class Chart extends Shape implements IChart {
     await this.copyFiles()
     await this.appendTypes()
     await this.appendToSlideRels()
-
+    
     if(appendToTree) {
       await this.setTargetElement()
+
+      let chartXml = await XmlHelper.getXmlFromArchive(this.targetArchive, `ppt/charts/chart${this.targetNumber}.xml`)
+      let workbook = await this.readWorkbook()
+
+      this.applyCallbacks(this.callbacks, this.targetElement, chartXml, workbook)
+
+      await XmlHelper.writeXmlToArchive(this.targetArchive, `ppt/charts/chart${this.targetNumber}.xml`, chartXml)
+      await this.writeWorkbook(workbook)
+
+      await this.updateTargetElementRelId()
       await this.appendToSlideTree()
+    } else {
+      await this.updateElementRelId()
     }
 
-    await this.updateElementRelId()
-
     return this
+  }
+
+  async readWorkbook(): Promise<Workbook> {
+    let worksheet = await FileHelper.extractFromArchive(this.targetArchive, `ppt/embeddings/Microsoft_Excel_Worksheet${this.targetWorksheet}.xlsx`, 'nodebuffer')
+    let archive = await FileHelper.extractFileContent(worksheet)
+    let sheet = await XmlHelper.getXmlFromArchive(archive, 'xl/worksheets/sheet1.xml')
+    let table = await XmlHelper.getXmlFromArchive(archive, 'xl/tables/table1.xml')
+    let sharedStrings = await XmlHelper.getXmlFromArchive(archive, 'xl/sharedStrings.xml')
+
+    return {
+      archive: archive,
+      sheet: sheet,
+      sharedStrings: sharedStrings,
+      table: table
+    }
+  }
+
+  async writeWorkbook(workbook: Workbook): Promise<void> {
+    await XmlHelper.writeXmlToArchive(workbook.archive, 'xl/worksheets/sheet1.xml', workbook.sheet)
+    await XmlHelper.writeXmlToArchive(workbook.archive, 'xl/tables/table1.xml', workbook.table)
+    await XmlHelper.writeXmlToArchive(workbook.archive, 'xl/sharedStrings.xml', workbook.sharedStrings)
+
+    let worksheet= await workbook.archive.generateAsync({type: "nodebuffer"})
+    this.targetArchive.file(`ppt/embeddings/Microsoft_Excel_Worksheet${this.targetWorksheet}.xlsx`, worksheet)
   }
 
   async copyFiles(): Promise<void> {

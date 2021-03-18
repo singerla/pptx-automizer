@@ -3,17 +3,17 @@ import FileHelper from '../helper/file'
 import XmlHelper from '../helper/xml'
 import Shape from '../shape'
 
-import { IImage, RootPresTemplate, Target } from '../definitions/app'
+import { IImage, ImportedElement, RootPresTemplate, Target } from '../definitions/app'
 import { RelationshipAttribute } from '../definitions/xml'
-import { ImageTypeMap } from '../definitions/enums'
+import { ImageTypeMap, ElementType } from '../definitions/enums'
 
 export default class Image extends Shape implements IImage {  
   extension: string
 
-  constructor(relsXmlInfo: Target, sourceArchive: JSZip, sourceSlideNumber?:number) {
-    super(relsXmlInfo, sourceArchive, sourceSlideNumber)
+  constructor(shape: ImportedElement) {
+    super(shape)
     
-    this.sourceFile = relsXmlInfo.file.replace('../media/', '')
+    this.sourceFile = shape.target.file.replace('../media/', '')
     this.extension = FileHelper.getFileExtension(this.sourceFile)
     this.relAttribute = 'r:embed'
     
@@ -43,16 +43,24 @@ export default class Image extends Shape implements IImage {
 
     if(appendToTree) {
       await this.setTargetElement()
+
+      this.applyCallbacks(this.callbacks, this.targetElement)
+      
+      await this.updateTargetElementRelId()
       await this.appendToSlideTree()
 
       if(this.hasSvgRelation()) {
         let target = await XmlHelper.getTargetByRelId(this.sourceArchive, this.sourceSlideNumber, this.targetElement, 'image:svg')
-        await new Image(target, this.sourceArchive, this.sourceSlideNumber)
-          .append(targetTemplate, targetSlideNumber)
+        await new Image({
+          target: target, 
+          sourceArchive: this.sourceArchive,
+          sourceSlideNumber: this.sourceSlideNumber,
+          type: ElementType.Image,
+        }).append(targetTemplate, targetSlideNumber)
       }
+    } else {
+      await this.updateElementRelId()
     }
-
-    await this.updateElementRelId()
 
     return this
   }

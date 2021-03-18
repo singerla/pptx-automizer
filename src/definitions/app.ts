@@ -86,9 +86,9 @@ export type Target = {
 export type ImportedElement = {
 	sourceArchive: JSZip
 	sourceSlideNumber: number
-	target: Target
-	type: ElementType
-	callback: any
+	target?: Target
+	type?: ElementType
+	callback?: any
 	element?: HTMLElement
 }
 
@@ -103,4 +103,11 @@ export type TargetByRelIdMapParam = {
 	relAttribute: string
 	prefix: string
 	expression?: RegExp
+}
+
+export type Workbook = {
+	archive: JSZip,
+	sheet: Document | any,
+	sharedStrings: Document,
+	table: Document
 }

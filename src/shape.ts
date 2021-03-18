@@ -1,7 +1,8 @@
 import JSZip from "jszip"
 import XmlHelper from "./helper/xml"
-import { RootPresTemplate, Target } from "./definitions/app"
+import { ImportedElement, RootPresTemplate, Target } from "./definitions/app"
 import { ImageTypeMap } from "./definitions/enums"
+import GeneralHelper from "./helper/general"
 
 export default class Shape {
   sourceArchive: JSZip
@@ -25,13 +26,18 @@ export default class Shape {
   relAttribute: string
   relParent: (element: HTMLElement) => HTMLElement
   targetElement: HTMLElement
+  callbacks: Function[]
 
-  constructor(relsXmlInfo: Target, sourceArchive: JSZip, sourceSlideNumber?:number) {
-    this.sourceNumber = relsXmlInfo.number
-    this.sourceRid = relsXmlInfo.rId
-    this.sourceArchive = sourceArchive
-    this.sourceSlideNumber = sourceSlideNumber
+  constructor(shape: ImportedElement) {
+    this.sourceArchive = shape.sourceArchive
+    this.sourceSlideNumber = shape.sourceSlideNumber
     this.sourceSlideFile = `ppt/slides/slide${this.sourceSlideNumber}.xml`
+    this.callbacks = GeneralHelper.arrayify(shape.callback)
+
+    if(shape.target) {
+      this.sourceNumber = shape.target.number
+      this.sourceRid = shape.target.rId
+    }
   }
 
   async setTarget(targetTemplate: RootPresTemplate, targetSlideNumber: number): Promise<void> {
@@ -63,6 +69,10 @@ export default class Shape {
     await XmlHelper.writeXmlToArchive(this.targetArchive, this.targetSlideFile, targetSlideXml)
   }
 
+  async updateTargetElementRelId() {
+    this.targetElement.getElementsByTagName(this.relRootTag)[0].setAttribute(this.relAttribute, this.createdRid)
+  }
+
   async getElementByRid(slideXml: Document, rId: string): Promise<HTMLElement> {
     let sourceList = slideXml.getElementsByTagName('p:spTree')[0].getElementsByTagName(this.relRootTag)
     let sourceElement = XmlHelper.findByAttributeValue(sourceList, this.relAttribute, rId)
@@ -70,9 +80,9 @@ export default class Shape {
     return this.relParent(sourceElement)
   }
 
-  applyCallbacks(callbacks: Function[], element: HTMLElement): void {
+  applyCallbacks(callbacks: Function[], element: HTMLElement, arg1?:any, arg2?:any): void {
     for(let i in callbacks) {
-      callbacks[i](element)
+      callbacks[i](element, arg1, arg2)
     }
   }
 }
