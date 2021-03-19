@@ -1,7 +1,7 @@
 import {
   AutomizerParams,
   AutomizerSummary,
-	IPresentationProps, PresTemplate, RootPresTemplate,
+  IPresentationProps, PresTemplate, RootPresTemplate,
 } from './definitions/app'
 
 import Template from './template'
@@ -9,11 +9,11 @@ import Slide from './slide'
 import FileHelper from './helper/file'
 
 export default class Automizer implements IPresentationProps {
-	rootTemplate: RootPresTemplate
-	templates: PresTemplate[]
-	templateDir: string
-	outputDir: string
-	timer: number
+  rootTemplate: RootPresTemplate
+  templates: PresTemplate[]
+  templateDir: string
+  outputDir: string
+  timer: number
   params: AutomizerParams
 
   /**
@@ -31,21 +31,21 @@ export default class Automizer implements IPresentationProps {
     this.timer = Date.now()
   }
 
-	/**
-	 * Load a pptx file and set it as root template. 
-	 * @param {string} location - Filename or path to the template. Will be prefixed with 'templateDir'
-	 * @return {Automizer} Instance of Automizer
-	 */
+  /**
+   * Load a pptx file and set it as root template. 
+   * @param {string} location - Filename or path to the template. Will be prefixed with 'templateDir'
+   * @return {Automizer} Instance of Automizer
+   */
    public loadRoot(location: string): this {
     return this.loadTemplate(location)
   }
 
-	/**
-	 * Load a template pptx file. 
-	 * @param {string} location - Filename or path to the template. Will be prefixed with 'templateDir'
-	 * @param {string} name - Optional: A short name for the template. If skipped, the template will be named by its location.
-	 * @return {Automizer} Instance of Automizer
-	 */
+  /**
+   * Load a template pptx file. 
+   * @param {string} location - Filename or path to the template. Will be prefixed with 'templateDir'
+   * @param {string} name - Optional: A short name for the template. If skipped, the template will be named by its location.
+   * @return {Automizer} Instance of Automizer
+   */
    public load(location: string, name?: string): this {
     name = (name === undefined) ? location : name
     return this.loadTemplate(location, name)
@@ -69,12 +69,12 @@ export default class Automizer implements IPresentationProps {
     return 'name' in template; 
   }
 
-	/**
-	 * Find imported template by given name and return a certain slide by number.
-	 * @param {string} name - Name of template; must be imported by Automizer.importTemplate()
-	 * @param {number} slideNumber - Number of slide in template presentation
-	 * @return {Automizer} Instance of Automizer
-	 */
+  /**
+   * Find imported template by given name and return a certain slide by number.
+   * @param {string} name - Name of template; must be imported by Automizer.importTemplate()
+   * @param {number} slideNumber - Number of slide in template presentation
+   * @return {Automizer} Instance of Automizer
+   */
   public addSlide(name: string, slideNumber: number, callback?: Function): this {
     if(this.rootTemplate === undefined) {
       throw new Error('You have to set a root template first.')
@@ -98,13 +98,13 @@ export default class Automizer implements IPresentationProps {
     return this
   }
 
-	public template(name: string): PresTemplate {
-		let template = this.templates.find(template => template.name === name)
+  public template(name: string): PresTemplate {
+    let template = this.templates.find(template => template.name === name)
     if(template === undefined) {
       throw new Error(`Template not found: ${name}`)
     }
     return template
-	}
+  }
 
   public getLocation(location: string, type?: string): string {
     switch(type) {

@@ -1,37 +1,46 @@
 import JSZip from "jszip"
 import XmlHelper from "./helper/xml"
 import { ImportedElement, RootPresTemplate, Target } from "./definitions/app"
-import { ImageTypeMap } from "./definitions/enums"
 import GeneralHelper from "./helper/general"
 
 export default class Shape {
+  mode: string
+  name: string
+
   sourceArchive: JSZip
+  sourceSlideNumber: number
+  sourceSlideFile: string
   sourceNumber: number
   sourceFile: string
   sourceRid: string
+  sourceElement: HTMLElement
+
   targetFile: string
   targetArchive: JSZip
   targetTemplate: RootPresTemplate
   targetSlideNumber: number
   targetNumber: number
-  contentTypeMap: any
-
-  createdRid: string
-  sourceSlideNumber: number
-  sourceSlideFile: string
   targetSlideFile: string
   targetSlideRelFile: string
+
+  createdRid: string
 
   relRootTag: string
   relAttribute: string
   relParent: (element: HTMLElement) => HTMLElement
+
   targetElement: HTMLElement
   callbacks: Function[]
-
+  
   constructor(shape: ImportedElement) {
+    this.mode = shape.mode
+    this.name = shape.name
+
     this.sourceArchive = shape.sourceArchive
     this.sourceSlideNumber = shape.sourceSlideNumber
     this.sourceSlideFile = `ppt/slides/slide${this.sourceSlideNumber}.xml`
+    this.sourceElement = shape.sourceElement
+
     this.callbacks = GeneralHelper.arrayify(shape.callback)
 
     if(shape.target) {
@@ -49,14 +58,23 @@ export default class Shape {
   }
 
   async setTargetElement(): Promise<void> {
-    let sourceSlideXml = await XmlHelper.getXmlFromArchive(this.sourceArchive, this.sourceSlideFile)
-    let sourceElement = <HTMLElement> await this.getElementByRid(sourceSlideXml, this.sourceRid)
-    this.targetElement = <HTMLElement> sourceElement.cloneNode(true)
+    this.targetElement = <HTMLElement> this.sourceElement.cloneNode(true)
   }
 
   async appendToSlideTree(): Promise<void> {
     let targetSlideXml = await XmlHelper.getXmlFromArchive(this.targetArchive, this.targetSlideFile)
     targetSlideXml.getElementsByTagName('p:spTree')[0].appendChild(this.targetElement)
+    
+    await XmlHelper.writeXmlToArchive(this.targetArchive, this.targetSlideFile, targetSlideXml)
+  }
+
+  async replaceIntoSlideTree(): Promise<void> {
+    let targetSlideXml = await XmlHelper.getXmlFromArchive(this.targetArchive, this.targetSlideFile)
+    
+    let sourceElementOnTargetSlide = await XmlHelper.findByName(targetSlideXml, this.name)
+
+    sourceElementOnTargetSlide.parentNode.insertBefore(this.targetElement, sourceElementOnTargetSlide)
+    sourceElementOnTargetSlide.parentNode.removeChild(sourceElementOnTargetSlide)
 
     await XmlHelper.writeXmlToArchive(this.targetArchive, this.targetSlideFile, targetSlideXml)
   }
@@ -65,6 +83,7 @@ export default class Shape {
     let targetSlideXml = await XmlHelper.getXmlFromArchive(this.targetArchive, this.targetSlideFile)
     let targetElement = await this.getElementByRid(targetSlideXml, this.sourceRid)
     targetElement.getElementsByTagName(this.relRootTag)[0].setAttribute(this.relAttribute, this.createdRid)
+    
 
     await XmlHelper.writeXmlToArchive(this.targetArchive, this.targetSlideFile, targetSlideXml)
   }

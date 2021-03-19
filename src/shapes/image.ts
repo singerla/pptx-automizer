@@ -9,6 +9,7 @@ import { ImageTypeMap, ElementType } from '../definitions/enums'
 
 export default class Image extends Shape implements IImage {  
   extension: string
+  contentTypeMap: object
 
   constructor(shape: ImportedElement) {
     super(shape)
@@ -30,8 +31,45 @@ export default class Image extends Shape implements IImage {
 
     this.contentTypeMap = ImageTypeMap
   }
-  
-  async append(targetTemplate: RootPresTemplate, targetSlideNumber: number, appendToTree?: boolean): Promise<Image> {
+
+  async modify(targetTemplate: RootPresTemplate, targetSlideNumber: number): Promise<Image> {
+    await this.prepare(targetTemplate, targetSlideNumber)
+    await this.updateElementRelId()
+
+    return this
+  }
+
+  async modifyOnAddedSlide(targetTemplate: RootPresTemplate, targetSlideNumber: number): Promise<Image> {
+    await this.prepare(targetTemplate, targetSlideNumber)
+    await this.updateElementRelId()
+
+    return this
+  }
+
+  async append(targetTemplate: RootPresTemplate, targetSlideNumber: number): Promise<Image> {
+    await this.prepare(targetTemplate, targetSlideNumber)
+    await this.setTargetElement()
+
+    this.applyCallbacks(this.callbacks, this.targetElement)
+
+    await this.updateTargetElementRelId()
+    await this.appendToSlideTree()
+
+    if(this.hasSvgRelation()) {
+      let target = await XmlHelper.getTargetByRelId(this.sourceArchive, this.sourceSlideNumber, this.targetElement, 'image:svg')
+      await new Image({
+        mode: 'append',
+        target: target, 
+        sourceArchive: this.sourceArchive,
+        sourceSlideNumber: this.sourceSlideNumber,
+        type: ElementType.Image,
+      }).modify(targetTemplate, targetSlideNumber)
+    }
+
+    return this
+  }
+
+  async prepare(targetTemplate, targetSlideNumber) {
     await this.setTarget(targetTemplate, targetSlideNumber)
     
     this.targetNumber = this.targetTemplate.incrementCounter('images')
@@ -40,31 +78,8 @@ export default class Image extends Shape implements IImage {
     await this.copyFiles()
     await this.appendTypes()
     await this.appendToSlideRels()
-
-    if(appendToTree) {
-      await this.setTargetElement()
-
-      this.applyCallbacks(this.callbacks, this.targetElement)
-      
-      await this.updateTargetElementRelId()
-      await this.appendToSlideTree()
-
-      if(this.hasSvgRelation()) {
-        let target = await XmlHelper.getTargetByRelId(this.sourceArchive, this.sourceSlideNumber, this.targetElement, 'image:svg')
-        await new Image({
-          target: target, 
-          sourceArchive: this.sourceArchive,
-          sourceSlideNumber: this.sourceSlideNumber,
-          type: ElementType.Image,
-        }).append(targetTemplate, targetSlideNumber)
-      }
-    } else {
-      await this.updateElementRelId()
-    }
-
-    return this
   }
-  
+
   async copyFiles() {
     FileHelper.zipCopy(
       this.sourceArchive, `ppt/media/${this.sourceFile}`, 

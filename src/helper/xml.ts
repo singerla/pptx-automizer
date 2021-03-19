@@ -5,6 +5,7 @@ import JSZip from 'jszip'
 import { Target } from '../definitions/app'
 import { DefaultAttribute, OverrideAttribute, RelationshipAttribute, XMLElement } from '../definitions/xml'
 import { TargetByRelIdMap } from '../definitions/constants'
+import XmlPrettyPrint from './pretty'
 
 export default class XmlHelper {
 
@@ -147,7 +148,12 @@ export default class XmlHelper {
 
   static async findByElementName(archive: JSZip, path: string, name: string): Promise<any> {
     let slideXml = await XmlHelper.getXmlFromArchive(archive, path)
-    let names = slideXml.getElementsByTagName('p:cNvPr')
+
+    return XmlHelper.findByName(slideXml, name)
+  }
+
+  static findByName(doc: Document, name: string): any {
+    let names = doc.getElementsByTagName('p:cNvPr')
     
     for(let i in names) {
       if(names[i].getAttribute && names[i].getAttribute('name') === name) {
@@ -250,4 +256,13 @@ export default class XmlHelper {
     let stringId = strings.getElementsByTagName('si').length - 1
     return stringId
   }
+
+  static dump(element:any) {
+    let s = new XMLSerializer()
+    let xmlBuffer = s.serializeToString(element)
+
+    let p = new XmlPrettyPrint(xmlBuffer)
+    p.dump()
+  }
+
 }

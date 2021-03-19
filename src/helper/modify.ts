@@ -13,16 +13,37 @@ export const setText = (text: string) => (element) => {
     .data = text
 }
 
-export const revertElements = (doc: Document) => {
-  // console.log(doc)
+export const revertElements = (slide: Document) => {
+  // dump(slide)
 }
 
+// e.g. setPosition({x: 8000000, h:5000000})
 export const setPosition = (pos: any) => (element: HTMLElement) => {
-  console.log(element.getElementsByTagName('p:cNvPr')[0].getAttribute('name'))
+  let map = {
+    x: { tag: 'a:off', attribute: 'x' },
+    y: { tag: 'a:off', attribute: 'y' },
+    w: { tag: 'a:ext', attribute: 'cx' },
+    h: { tag: 'a:ext', attribute: 'cy' },
+  }
 
-  element.getElementsByTagName('a:off')[0].setAttribute('x', pos.x)
+  let parent = 'a:xfrm'
+
+  for(let key in pos) {
+    element.getElementsByTagName(parent)[0]
+      .getElementsByTagName(map[key].tag)[0]
+      .setAttribute(map[key].attribute, pos[key])
+  }
+}
+
+export const setAttribute = (tagName:string, attribute:string, value: string | number, count?: number) => (element: HTMLElement) => {
+  element.getElementsByTagName(tagName)[count || 0]
+    .setAttribute(attribute, String(value))
 }
 
 export const setChartData = (data: any) => (element: HTMLElement, chart: Document, workbook: Workbook) => {
   XmlHelper.setChartData(chart, workbook, data)
+}
+
+export const dump = (element: HTMLElement | Document) => {
+  XmlHelper.dump(element)
 }

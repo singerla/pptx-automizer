@@ -6,7 +6,7 @@ import FileHelper from './helper/file'
 import XmlHelper from './helper/xml'
 
 import { ElementType } from './definitions/enums'
-import { ISlide, RootPresTemplate, PresTemplate, IPresentationProps, ImportedElement, AnalyzedElementType, Target } from './definitions/app'
+import { ISlide, RootPresTemplate, PresTemplate, IPresentationProps, ImportedElement, AnalyzedElementType, Target, ImportElement } from './definitions/app'
 import { RelationshipAttribute, SlideListAttribute } from './definitions/xml'
 import Generic from './shapes/generic'
 
@@ -20,7 +20,7 @@ export default class Slide implements ISlide {
   sourcePath: string
   targetPath: string
   modifications: Function[]
-  appendElements: ImportedElement[]
+  importElements: ImportElement[]
   relsPath: string
   rootTemplate: RootPresTemplate
   root: IPresentationProps
@@ -33,7 +33,7 @@ export default class Slide implements ISlide {
     this.relsPath = `ppt/slides/_rels/slide${this.sourceNumber}.xml.rels`
 
     this.modifications = []
-    this.appendElements = []
+    this.importElements = []
   }
 
   async append(targetTemplate: RootPresTemplate) {
@@ -55,8 +55,8 @@ export default class Slide implements ISlide {
       await this.appendNotesToContentType(this.targetArchive, this.targetNumber)
     }
     
-    if(this.appendElements.length) {
-      await this.appendImportedElements()
+    if(this.importElements.length) {
+      await this.importedSelectedElements()
     }
     
     await this.applyModifications()
@@ -73,71 +73,94 @@ export default class Slide implements ISlide {
     await this.appendSlideToContentType(this.targetArchive, this.targetNumber)
   }
 
+  async modifyElement(selector: string, callback: Function | Function[]): Promise<this> {
+    let presName = this.sourceTemplate.name
+    let slideNumber = this.sourceNumber
+
+    this.addElementToModlist(presName, slideNumber, selector, 'modify', callback)
+
+    return this
+  }
+
   async addElement(presName: string, slideNumber: number, selector: string, callback?: Function | Function[]): Promise<this> {
-    let template = this.root.template(presName)
-    let sourcePath = `ppt/slides/slide${slideNumber}.xml`
-    let sourceArchive = await template.archive
-    let sourceElement = await XmlHelper.findByElementName(sourceArchive, sourcePath, selector)
-    
-    if(!sourceElement) {
-      throw new Error(`Can't find ${selector} on slide ${slideNumber} in ${presName}`)
-    }
+    this.addElementToModlist(presName, slideNumber, selector, 'append', callback)
 
-    let appendElementParams = await this.analyzeElement(sourceElement, sourceArchive, slideNumber)
+    return this
+  }
 
-    this.appendElements.push(<ImportedElement>{
-      sourceArchive: sourceArchive,
-      sourceSlideNumber: slideNumber,
-      callback: callback,
-      type: appendElementParams.type,
-      target: appendElementParams.target,
-      element: appendElementParams.element
+  async addElementToModlist(presName: string, slideNumber: number, selector: string, mode:string, callback?: Function | Function[]): Promise<this> {
+    this.importElements.push(<ImportElement>{
+      presName: presName,
+      slideNumber: slideNumber,
+      selector: selector,
+      mode: mode,
+      callback: callback
     })
 
     return this
   }
 
-  async analyzeElement(appendElement: any, sourceArchive: JSZip, slideNumber: number): Promise<AnalyzedElementType> {
-    let isChart = appendElement.getElementsByTagName('c:chart')
+  async importedSelectedElements(): Promise<void> {
+    for(let i in this.importElements) {
+      let info = await this.getElementInfo(this.importElements[i])
+
+      switch(info.type) {
+        case ElementType.Chart:
+          await new Chart(info)[info.mode](this.targetTemplate, this.targetNumber)
+          break
+        case ElementType.Image:
+          await new Image(info)[info.mode](this.targetTemplate, this.targetNumber)
+          break
+        case ElementType.Shape:
+          await new Generic(info)[info.mode](this.targetTemplate, this.targetNumber)
+          break
+      }
+    }
+  }
+
+  async getElementInfo(importElement: ImportElement): Promise<ImportedElement> {
+      let template = this.root.template(importElement.presName)
+      let sourcePath = `ppt/slides/slide${importElement.slideNumber}.xml`
+      let sourceArchive = await template.archive
+      let sourceElement = await XmlHelper.findByElementName(sourceArchive, sourcePath, importElement.selector)
+      
+      if(!sourceElement) {
+        throw new Error(`Can't find ${importElement.selector} on slide ${importElement.slideNumber} in ${importElement.presName}`)
+      }
+  
+      let appendElementParams = await this.analyzeElement(sourceElement, sourceArchive, importElement.slideNumber)
+
+      return {
+        mode: importElement.mode,
+        name: importElement.selector,
+        sourceArchive: sourceArchive,
+        sourceSlideNumber: importElement.slideNumber,
+        sourceElement: sourceElement,
+        callback: importElement.callback,
+        target: appendElementParams.target,
+        type: appendElementParams.type,
+      }
+  }
+
+  async analyzeElement(sourceElement: any, sourceArchive: JSZip, slideNumber: number): Promise<AnalyzedElementType> {
+    let isChart = sourceElement.getElementsByTagName('c:chart')
     if(isChart.length) {
       return <AnalyzedElementType> {
         type: ElementType.Chart,
-        target: await XmlHelper.getTargetByRelId(sourceArchive, slideNumber, appendElement, 'chart'),
+        target: await XmlHelper.getTargetByRelId(sourceArchive, slideNumber, sourceElement, 'chart'),
       }
     }
 
-    let isImage = appendElement.getElementsByTagName('p:nvPicPr')
+    let isImage = sourceElement.getElementsByTagName('p:nvPicPr')
     if(isImage.length) {
       return <AnalyzedElementType> {
         type: ElementType.Image,
-        target: await XmlHelper.getTargetByRelId(sourceArchive, slideNumber, appendElement, 'image')
+        target: await XmlHelper.getTargetByRelId(sourceArchive, slideNumber, sourceElement, 'image'),
       }
     }
 
     return <AnalyzedElementType> {
       type: ElementType.Shape,
-      element: appendElement
-    }
-  }
-
-  async appendImportedElements(): Promise<void> {
-    for(let i in this.appendElements) {
-      let info = this.appendElements[i]
-
-      switch(info.type) {
-        case ElementType.Chart:
-          await new Chart(info)
-            .append(this.targetTemplate, this.targetNumber, true)
-        break
-        case ElementType.Image:
-          await new Image(info)
-            .append(this.targetTemplate, this.targetNumber, true)
-        break
-        case ElementType.Shape:
-          await new Generic(info)
-            .append(this.targetTemplate, this.targetNumber)
-        break
-      }
     }
   }
 
@@ -238,19 +261,21 @@ export default class Slide implements ISlide {
     let charts = await Chart.getAllOnSlide(this.sourceArchive, this.relsPath)
     for(let i in charts) {
       await new Chart({
+        mode: 'append',
         target: charts[i], 
         sourceArchive: this.sourceArchive,
         sourceSlideNumber: this.sourceNumber,
-      }).append(this.targetTemplate, this.targetNumber)
+      }).modifyOnAddedSlide(this.targetTemplate, this.targetNumber)
     }
 
     let images = await Image.getAllOnSlide(this.sourceArchive, this.relsPath)
     for(let i in images) {
       await new Image({
+        mode: 'append',
         target: images[i], 
         sourceArchive: this.sourceArchive,
         sourceSlideNumber: this.sourceNumber,
-      }).append(this.targetTemplate, this.targetNumber)
+      }).modifyOnAddedSlide(this.targetTemplate, this.targetNumber)
     }
   }
 

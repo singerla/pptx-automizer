@@ -1,8 +1,8 @@
 
 export enum ElementType {
-  Chart,
-  Image,
-  Shape
+  Chart = "Chart",
+  Image = "Image",
+  Shape = "Generic"
 }
 
 export enum ImageTypeMap {

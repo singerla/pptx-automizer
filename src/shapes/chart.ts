@@ -5,7 +5,6 @@ import Shape from '../shape'
 
 import { IChart, ImportedElement, RootPresTemplate, Target, Workbook } from '../definitions/app'
 import { RelationshipAttribute } from '../definitions/xml'
-import { DOMParser, XMLSerializer } from 'xmldom'
 
 export default class Chart extends Shape implements IChart {  
   sourceWorksheet: number | string
@@ -19,7 +18,30 @@ export default class Chart extends Shape implements IChart {
     this.relParent = element => <HTMLElement> element.parentNode.parentNode.parentNode
   }
   
-  async append(targetTemplate: RootPresTemplate, targetSlideNumber: number, appendToTree?: boolean): Promise<Chart> {
+  async modify(targetTemplate: RootPresTemplate, targetSlideNumber: number): Promise<Chart> {
+    await this.prepare(targetTemplate, targetSlideNumber)
+    await this.clone()
+    await this.replaceIntoSlideTree()
+
+    return this
+  }
+
+  async append(targetTemplate: RootPresTemplate, targetSlideNumber: number): Promise<Chart> {
+    await this.prepare(targetTemplate, targetSlideNumber)
+    await this.clone()
+    await this.appendToSlideTree()
+
+    return this
+  }
+
+  async modifyOnAddedSlide(targetTemplate: RootPresTemplate, targetSlideNumber: number): Promise<Chart> {
+    await this.prepare(targetTemplate, targetSlideNumber)
+    await this.updateElementRelId()
+
+    return this
+  }
+
+  async prepare(targetTemplate: RootPresTemplate, targetSlideNumber: number): Promise<void> {
     await this.setTarget(targetTemplate, targetSlideNumber)
 
     this.targetNumber = this.targetTemplate.incrementCounter('charts')
@@ -27,25 +49,22 @@ export default class Chart extends Shape implements IChart {
     await this.copyFiles()
     await this.appendTypes()
     await this.appendToSlideRels()
-    
-    if(appendToTree) {
-      await this.setTargetElement()
+  }
 
-      let chartXml = await XmlHelper.getXmlFromArchive(this.targetArchive, `ppt/charts/chart${this.targetNumber}.xml`)
-      let workbook = await this.readWorkbook()
+  async clone() {
+    await this.setTargetElement()
+    await this.modifyChartData()
+    await this.updateTargetElementRelId()
+  }
 
-      this.applyCallbacks(this.callbacks, this.targetElement, chartXml, workbook)
+  async modifyChartData() {
+    let chartXml = await XmlHelper.getXmlFromArchive(this.targetArchive, `ppt/charts/chart${this.targetNumber}.xml`)
+    let workbook = await this.readWorkbook()
 
-      await XmlHelper.writeXmlToArchive(this.targetArchive, `ppt/charts/chart${this.targetNumber}.xml`, chartXml)
-      await this.writeWorkbook(workbook)
+    this.applyCallbacks(this.callbacks, this.targetElement, chartXml, workbook)
 
-      await this.updateTargetElementRelId()
-      await this.appendToSlideTree()
-    } else {
-      await this.updateElementRelId()
-    }
-
-    return this
+    await XmlHelper.writeXmlToArchive(this.targetArchive, `ppt/charts/chart${this.targetNumber}.xml`, chartXml)
+    await this.writeWorkbook(workbook)
   }
 
   async readWorkbook(): Promise<Workbook> {

@@ -16,6 +16,11 @@
     "test": "npx jest",
     "test-coverage": "npx jest --coverage"
   },
+  "jest": {
+    "collectCoverageFrom": [
+      "src/helper/{!(pretty),}.js"
+    ]
+  },
   "files": [
     "dist",
     "README"

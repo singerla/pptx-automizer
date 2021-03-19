@@ -83,13 +83,23 @@ export type Target = {
 	rId?: string
 }
 
+export type ImportElement = {
+	presName: string
+	slideNumber: number
+	selector: string
+	mode:string
+	callback?: Function | Function[]
+}
+
 export type ImportedElement = {
+	mode: string
+	name?: string
 	sourceArchive: JSZip
 	sourceSlideNumber: number
-	target?: Target
-	type?: ElementType
 	callback?: any
-	element?: HTMLElement
+	target?: AnalyzedElementType["target"]
+	type?: AnalyzedElementType["type"]
+	sourceElement?: AnalyzedElementType["element"]
 }
 
 export type AnalyzedElementType = {
