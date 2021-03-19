@@ -25,6 +25,7 @@ npm install pptx-automizer
 ## Example
 ```js
 import Automizer from "pptx-automizer"
+import { setPosition, setChartData, dump } from "pptx-automizer/helper/modify"
 
 // First, let's set some preferences
 const automizer = new Automizer({
@@ -57,6 +58,37 @@ pres.addSlide('image', 1, (slide) => {
       .firstChild
       .data = 'Custom content'
   })
+})
+
+// It is possible to modify an existing element on a newly added slide.
+pres.addSlide('shapes', 2, (slide) => {
+  slide.modifyElement('Drum', [
+    // You can use some of the builtin modifiers to edit a shape's xml:
+    setPosition({x: 1000000, h:5000000, w:5000000}),
+    // Log your target xml into the console:
+    dump
+  ])
+})
+
+// Modify an existing chart on an added slide.
+pres.addSlide('charts', 2, (slide) => {
+  slide.modifyElement('ColumnChart', [
+    // Use an object like this to inject the new chart data.
+    // Make sure there is enough space in the template chart.
+    setChartData({
+      series: [
+        { label: 'series 1' },
+        { label: 'series 2' },
+        { label: 'series 3' },
+      ],
+      categories: [
+        { label: 'cat 2-1', values: [ 50, 50, 20 ] },
+        { label: 'cat 2-2', values: [ 14, 50, 20 ] },
+        { label: 'cat 2-3', values: [ 15, 50, 20 ] },
+        { label: 'cat 2-4', values: [ 26, 50, 20 ] }
+      ]
+    })
+  ])
 })
 
 // Finally, we want to write the output file.
