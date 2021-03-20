@@ -1,21 +1,21 @@
-import { TargetByRelIdMapParam } from "./app";
+import { TargetByRelIdMapParam } from './app';
 
-export const TargetByRelIdMap =  {
-  chart: <TargetByRelIdMapParam> {
+export const TargetByRelIdMap = {
+  chart: <TargetByRelIdMapParam>{
     relRootTag: 'c:chart',
     relAttribute: 'r:id',
     prefix: '../charts/chart'
   },
-  image: <TargetByRelIdMapParam> {
+  image: <TargetByRelIdMapParam>{
     relRootTag: 'a:blip',
     relAttribute: 'r:embed',
     prefix: '../media/image',
     expression: /\..+?$/
   },
-  'image:svg': <TargetByRelIdMapParam> {
+  'image:svg': <TargetByRelIdMapParam>{
     relRootTag: 'asvg:svgBlip',
     relAttribute: 'r:embed',
     prefix: '../media/image',
     expression: /\..+?$/
   }
-}
+};

@@ -1,123 +1,133 @@
-import JSZip from "jszip";
-import { ElementType } from "./enums";
+import JSZip from 'jszip';
+import { ElementType } from './enums';
 
 export type AutomizerParams = {
-	templateDir?: string
-	outputDir?: string
+  templateDir?: string
+  outputDir?: string
 }
 
 export type AutomizerSummary = {
-	status: string
-	duration: number
-	file: string
-	templates: number
-	slides: number
-	charts: number
-	images: number
+  status: string
+  duration: number
+  file: string
+  templates: number
+  slides: number
+  charts: number
+  images: number
 }
 
 export interface ICounter {
   set(): void | PromiseLike<void>
-	get(): number
-	name: string
-	count: number
+
+  get(): number
+
+  name: string
+  count: number
+
   _increment(): number;
 }
 
 export interface ISlide {
   append(targetTemplate: RootPresTemplate): Promise<void>
+
   addElement(presName: string, slideNumber: number, selector: Function | string): void
-	sourceArchive: JSZip
-	sourceNumber: number
-	modifications: Function[]
-	modify: Function
+
+  sourceArchive: JSZip
+  sourceNumber: number
+  modifications: Function[]
+  modify: Function
 }
 
 export interface IPresentationProps {
-	rootTemplate: RootPresTemplate
-	templates: PresTemplate[]
-	template(name: string): PresTemplate
-	params: AutomizerParams
-	timer: number
+  rootTemplate: RootPresTemplate
+  templates: PresTemplate[]
+
+  template(name: string): PresTemplate
+
+  params: AutomizerParams
+  timer: number
 }
 
 export interface ITemplate {
-	location: string
-	file: Promise<Buffer>
-	archive: Promise<JSZip>
+  location: string
+  file: Promise<Buffer>
+  archive: Promise<JSZip>
 }
 
 export interface RootPresTemplate extends ITemplate {
-	slides: ISlide[]
-	counter: ICounter[]
+  slides: ISlide[]
+  counter: ICounter[]
+
   count(name: string): number
+
   incrementCounter(name: string): number
+
   appendSlide(slide: ISlide): Promise<void>
 }
 
 export interface PresTemplate extends ITemplate {
-	name: string
+  name: string
 }
 
 export interface IShape {
-	sourceArchive: JSZip
-	targetArchive: JSZip
+  sourceArchive: JSZip
+  targetArchive: JSZip
 }
 
 export interface IChart extends IShape {
   append: Function
-	sourceNumber: number
-	targetNumber: number
+  sourceNumber: number
+  targetNumber: number
 }
 
 export interface IImage extends IShape {
   append: Function
-	sourceFile: string
-	targetFile: string
-	contentTypeMap: any
+  sourceFile: string
+  targetFile: string
+  contentTypeMap: any
 }
-  
+
 export type Target = {
-	file: string
-	number: number
-	rId?: string
+  file: string
+  number: number
+  rId?: string
 }
 
 export type ImportElement = {
-	presName: string
-	slideNumber: number
-	selector: string
-	mode:string
-	callback?: Function | Function[]
+  presName: string
+  slideNumber: number
+  selector: string
+  mode: string
+  callback?: Function | Function[]
 }
 
 export type ImportedElement = {
-	mode: string
-	name?: string
-	sourceArchive: JSZip
-	sourceSlideNumber: number
-	callback?: any
-	target?: AnalyzedElementType["target"]
-	type?: AnalyzedElementType["type"]
-	sourceElement?: AnalyzedElementType["element"]
+  mode: string
+  name?: string
+  sourceArchive: JSZip
+  sourceSlideNumber: number
+  callback?: any
+  target?: AnalyzedElementType['target']
+  type?: AnalyzedElementType['type']
+  sourceElement?: AnalyzedElementType['element']
 }
 
 export type AnalyzedElementType = {
-	type: ElementType
-	target?: Target
-	element?: HTMLElement
+  type: ElementType
+  target?: Target
+  element?: HTMLElement
 }
 
 export type TargetByRelIdMapParam = {
-	relRootTag: string
-	relAttribute: string
-	prefix: string
-	expression?: RegExp
+  relRootTag: string
+  relAttribute: string
+  prefix: string
+  expression?: RegExp
 }
 
 export type Workbook = {
-	archive: JSZip,
-	sheet: Document | any,
-	sharedStrings: Document,
-	table: Document
+  archive: JSZip,
+  sheet: Document | any,
+  sharedStrings: Document,
+  table: Document
 }

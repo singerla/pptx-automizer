@@ -1,21 +1,21 @@
-import Automizer from "./automizer"
+import Automizer from './automizer';
 
-export default Automizer
+export default Automizer;
 
-import { 
+import {
   setSolidFill,
   setText,
   setPosition,
   setAttribute,
   setChartData,
   dump
-} from "./helper/modify"
+} from './helper/modify';
 
-export const modify = { 
+export const modify = {
   setSolidFill,
   setText,
   setPosition,
   setAttribute,
   setChartData,
   dump
-}
+};
