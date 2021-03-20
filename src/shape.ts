@@ -58,20 +58,20 @@ export default class Shape {
   }
 
   async setTargetElement(): Promise<void> {
-    this.targetElement = <HTMLElement>this.sourceElement.cloneNode(true);
+    this.targetElement = (this.sourceElement.cloneNode(true) as HTMLElement);
   }
 
   async appendToSlideTree(): Promise<void> {
-    let targetSlideXml = await XmlHelper.getXmlFromArchive(this.targetArchive, this.targetSlideFile);
+    const targetSlideXml = await XmlHelper.getXmlFromArchive(this.targetArchive, this.targetSlideFile);
     targetSlideXml.getElementsByTagName('p:spTree')[0].appendChild(this.targetElement);
 
     await XmlHelper.writeXmlToArchive(this.targetArchive, this.targetSlideFile, targetSlideXml);
   }
 
   async replaceIntoSlideTree(): Promise<void> {
-    let targetSlideXml = await XmlHelper.getXmlFromArchive(this.targetArchive, this.targetSlideFile);
+    const targetSlideXml = await XmlHelper.getXmlFromArchive(this.targetArchive, this.targetSlideFile);
 
-    let sourceElementOnTargetSlide = await XmlHelper.findByName(targetSlideXml, this.name);
+    const sourceElementOnTargetSlide = await XmlHelper.findByName(targetSlideXml, this.name);
 
     sourceElementOnTargetSlide.parentNode.insertBefore(this.targetElement, sourceElementOnTargetSlide);
     sourceElementOnTargetSlide.parentNode.removeChild(sourceElementOnTargetSlide);
@@ -80,8 +80,8 @@ export default class Shape {
   }
 
   async updateElementRelId() {
-    let targetSlideXml = await XmlHelper.getXmlFromArchive(this.targetArchive, this.targetSlideFile);
-    let targetElement = await this.getElementByRid(targetSlideXml, this.sourceRid);
+    const targetSlideXml = await XmlHelper.getXmlFromArchive(this.targetArchive, this.targetSlideFile);
+    const targetElement = await this.getElementByRid(targetSlideXml, this.sourceRid);
     targetElement.getElementsByTagName(this.relRootTag)[0].setAttribute(this.relAttribute, this.createdRid);
 
 
@@ -93,14 +93,14 @@ export default class Shape {
   }
 
   async getElementByRid(slideXml: Document, rId: string): Promise<HTMLElement> {
-    let sourceList = slideXml.getElementsByTagName('p:spTree')[0].getElementsByTagName(this.relRootTag);
-    let sourceElement = XmlHelper.findByAttributeValue(sourceList, this.relAttribute, rId);
+    const sourceList = slideXml.getElementsByTagName('p:spTree')[0].getElementsByTagName(this.relRootTag);
+    const sourceElement = XmlHelper.findByAttributeValue(sourceList, this.relAttribute, rId);
 
     return this.relParent(sourceElement);
   }
 
   applyCallbacks(callbacks: Function[], element: HTMLElement, arg1?: any, arg2?: any): void {
-    for (let i in callbacks) {
+    for (const i in callbacks) {
       callbacks[i](element, arg1, arg2);
     }
   }

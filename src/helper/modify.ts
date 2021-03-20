@@ -19,16 +19,16 @@ export const revertElements = (slide: Document) => {
 
 // e.g. setPosition({x: 8000000, h:5000000})
 export const setPosition = (pos: any) => (element: HTMLElement) => {
-  let map = {
+  const map = {
     x: {tag: 'a:off', attribute: 'x'},
     y: {tag: 'a:off', attribute: 'y'},
     w: {tag: 'a:ext', attribute: 'cx'},
     h: {tag: 'a:ext', attribute: 'cy'},
   };
 
-  let parent = 'a:xfrm';
+  const parent = 'a:xfrm';
 
-  for (let key in pos) {
+  for (const key in pos) {
     element.getElementsByTagName(parent)[0]
       .getElementsByTagName(map[key].tag)[0]
       .setAttribute(map[key].attribute, pos[key]);

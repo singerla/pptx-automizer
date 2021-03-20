@@ -53,10 +53,10 @@ class Template implements ITemplate {
     let newTemplate: PresTemplate | RootPresTemplate;
 
     if (name) {
-      newTemplate = <PresTemplate>new Template(location, name);
+      newTemplate = new Template(location, name) as PresTemplate;
       newTemplate.name = name;
     } else {
-      newTemplate = <RootPresTemplate><unknown>new Template(location);
+      newTemplate = new Template(location) as RootPresTemplate;
       newTemplate.slides = [];
       newTemplate.counter = [
         new CountHelper('slides', newTemplate),

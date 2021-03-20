@@ -76,15 +76,15 @@ export default class Slide implements ISlide {
   }
 
   async addSlideToPresentation(): Promise<void> {
-    let relId = await XmlHelper.getNextRelId(this.targetArchive, 'ppt/_rels/presentation.xml.rels');
+    const relId = await XmlHelper.getNextRelId(this.targetArchive, 'ppt/_rels/presentation.xml.rels');
     await this.appendToSlideRel(this.targetArchive, relId, this.targetNumber),
       await this.appendToSlideList(this.targetArchive, relId),
       await this.appendSlideToContentType(this.targetArchive, this.targetNumber);
   }
 
   async modifyElement(selector: string, callback: Function | Function[]): Promise<this> {
-    let presName = this.sourceTemplate.name;
-    let slideNumber = this.sourceNumber;
+    const presName = this.sourceTemplate.name;
+    const slideNumber = this.sourceNumber;
 
     this.addElementToModlist(presName, slideNumber, selector, 'modify', callback);
 
@@ -98,20 +98,20 @@ export default class Slide implements ISlide {
   }
 
   async addElementToModlist(presName: string, slideNumber: number, selector: string, mode: string, callback?: Function | Function[]): Promise<this> {
-    this.importElements.push(<ImportElement>{
-      presName: presName,
-      slideNumber: slideNumber,
-      selector: selector,
-      mode: mode,
-      callback: callback
-    });
+    this.importElements.push({
+      presName,
+      slideNumber,
+      selector,
+      mode,
+      callback
+    } as ImportElement);
 
     return this;
   }
 
   async importedSelectedElements(): Promise<void> {
-    for (let i in this.importElements) {
-      let info = await this.getElementInfo(this.importElements[i]);
+    for (const i in this.importElements) {
+      const info = await this.getElementInfo(this.importElements[i]);
 
       switch (info.type) {
         case ElementType.Chart:
@@ -128,23 +128,23 @@ export default class Slide implements ISlide {
   }
 
   async getElementInfo(importElement: ImportElement): Promise<ImportedElement> {
-    let template = this.root.template(importElement.presName);
-    let sourcePath = `ppt/slides/slide${importElement.slideNumber}.xml`;
-    let sourceArchive = await template.archive;
-    let sourceElement = await XmlHelper.findByElementName(sourceArchive, sourcePath, importElement.selector);
+    const template = this.root.template(importElement.presName);
+    const sourcePath = `ppt/slides/slide${importElement.slideNumber}.xml`;
+    const sourceArchive = await template.archive;
+    const sourceElement = await XmlHelper.findByElementName(sourceArchive, sourcePath, importElement.selector);
 
     if (!sourceElement) {
       throw new Error(`Can't find ${importElement.selector} on slide ${importElement.slideNumber} in ${importElement.presName}`);
     }
 
-    let appendElementParams = await this.analyzeElement(sourceElement, sourceArchive, importElement.slideNumber);
+    const appendElementParams = await this.analyzeElement(sourceElement, sourceArchive, importElement.slideNumber);
 
     return {
       mode: importElement.mode,
       name: importElement.selector,
-      sourceArchive: sourceArchive,
+      sourceArchive,
       sourceSlideNumber: importElement.slideNumber,
-      sourceElement: sourceElement,
+      sourceElement,
       callback: importElement.callback,
       target: appendElementParams.target,
       type: appendElementParams.type,
@@ -152,30 +152,30 @@ export default class Slide implements ISlide {
   }
 
   async analyzeElement(sourceElement: any, sourceArchive: JSZip, slideNumber: number): Promise<AnalyzedElementType> {
-    let isChart = sourceElement.getElementsByTagName('c:chart');
+    const isChart = sourceElement.getElementsByTagName('c:chart');
     if (isChart.length) {
-      return <AnalyzedElementType>{
+      return {
         type: ElementType.Chart,
         target: await XmlHelper.getTargetByRelId(sourceArchive, slideNumber, sourceElement, 'chart'),
-      };
+      } as AnalyzedElementType;
     }
 
-    let isImage = sourceElement.getElementsByTagName('p:nvPicPr');
+    const isImage = sourceElement.getElementsByTagName('p:nvPicPr');
     if (isImage.length) {
-      return <AnalyzedElementType>{
+      return {
         type: ElementType.Image,
         target: await XmlHelper.getTargetByRelId(sourceArchive, slideNumber, sourceElement, 'image'),
-      };
+      } as AnalyzedElementType;
     }
 
-    return <AnalyzedElementType>{
+    return {
       type: ElementType.Shape,
-    };
+    } as AnalyzedElementType;
   }
 
   async applyModifications(): Promise<void> {
-    for (let m in this.modifications) {
-      let xml = await XmlHelper.getXmlFromArchive(this.targetArchive, this.targetPath);
+    for (const m in this.modifications) {
+      const xml = await XmlHelper.getXmlFromArchive(this.targetArchive, this.targetPath);
       this.modifications[m](xml);
       await XmlHelper.writeXmlToArchive(this.targetArchive, this.targetPath, xml);
     }
@@ -227,11 +227,11 @@ export default class Slide implements ISlide {
       file: `ppt/_rels/presentation.xml.rels`,
       parent: (xml: HTMLElement) => xml.getElementsByTagName('Relationships')[0],
       tag: 'Relationship',
-      attributes: <RelationshipAttribute>{
+      attributes: {
         Id: relId,
         Type: `http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide`,
         Target: `slides/slide${slideCount}.xml`
-      }
+      } as RelationshipAttribute
     });
   }
 
@@ -241,10 +241,10 @@ export default class Slide implements ISlide {
       file: `ppt/presentation.xml`,
       parent: (xml: HTMLElement) => xml.getElementsByTagName('p:sldIdLst')[0],
       tag: 'p:sldId',
-      attributes: <SlideListAttribute>{
+      attributes: {
         id: (xml: HTMLElement) => XmlHelper.getMaxId(xml.getElementsByTagName('p:sldId'), 'id', true),
         'r:id': relId
-      }
+      } as SlideListAttribute
     });
   }
 
@@ -267,8 +267,8 @@ export default class Slide implements ISlide {
   }
 
   async copyRelatedContent(): Promise<void> {
-    let charts = await Chart.getAllOnSlide(this.sourceArchive, this.relsPath);
-    for (let i in charts) {
+    const charts = await Chart.getAllOnSlide(this.sourceArchive, this.relsPath);
+    for (const i in charts) {
       await new Chart({
         mode: 'append',
         target: charts[i],
@@ -277,8 +277,8 @@ export default class Slide implements ISlide {
       }).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);
     }
 
-    let images = await Image.getAllOnSlide(this.sourceArchive, this.relsPath);
-    for (let i in images) {
+    const images = await Image.getAllOnSlide(this.sourceArchive, this.relsPath);
+    for (const i in images) {
       await new Image({
         mode: 'append',
         target: images[i],
@@ -289,7 +289,7 @@ export default class Slide implements ISlide {
   }
 
   hasNotes(): boolean {
-    let file = this.sourceArchive.file(`ppt/notesSlides/notesSlide${this.sourceNumber}.xml`);
+    const file = this.sourceArchive.file(`ppt/notesSlides/notesSlide${this.sourceNumber}.xml`);
     return file && file.hasOwnProperty('name');
   }
 

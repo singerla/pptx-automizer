@@ -21,7 +21,7 @@ export default class CountHelper implements ICounter {
   }
 
   static getCounterByName(name: string, counters: ICounter[]): ICounter {
-    let counter = counters.find(counter => counter.name === name);
+    const counter = counters.find(counter => counter.name === name);
     if (counter === undefined) {
       throw new Error(`Counter ${name} not found.`);
     }
@@ -34,7 +34,7 @@ export default class CountHelper implements ICounter {
   }
 
   async set() {
-    let method = this.getCounterMethod();
+    const method = this.getCounterMethod();
     if (method === undefined) {
       throw new Error(`No way to count ${this.name}.`);
     }
@@ -58,20 +58,19 @@ export default class CountHelper implements ICounter {
   }
 
   static async countSlides(presentation: JSZip): Promise<number> {
-    let presentationXml = await XmlHelper.getXmlFromArchive(presentation, 'ppt/presentation.xml');
-    let slideCount = presentationXml.getElementsByTagName('p:sldId').length;
-    return slideCount;
+    const presentationXml = await XmlHelper.getXmlFromArchive(presentation, 'ppt/presentation.xml');
+    return presentationXml.getElementsByTagName('p:sldId').length;
   }
 
   static async countCharts(presentation: JSZip): Promise<number> {
-    let contentTypesXml = await XmlHelper.getXmlFromArchive(presentation, '[Content_Types].xml');
-    let overrides = contentTypesXml.getElementsByTagName('Override');
+    const contentTypesXml = await XmlHelper.getXmlFromArchive(presentation, '[Content_Types].xml');
+    const overrides = contentTypesXml.getElementsByTagName('Override');
     let chartCount = 0;
 
-    for (let i in overrides) {
-      let override = overrides[i];
+    for (const i in overrides) {
+      const override = overrides[i];
       if (override.getAttribute) {
-        let contentType = override.getAttribute('ContentType');
+        const contentType = override.getAttribute('ContentType');
         if (contentType === `application/vnd.openxmlformats-officedocument.drawingml.chart+xml`) {
           chartCount++;
         }
@@ -82,7 +81,7 @@ export default class CountHelper implements ICounter {
   }
 
   static async countImages(presentation: JSZip): Promise<number> {
-    let files = presentation.file(/ppt\/media\/image/);
+    const files = presentation.file(/ppt\/media\/image/);
     return files.length;
   }
 }

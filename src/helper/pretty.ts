@@ -19,15 +19,15 @@ export default class XmlPrettyPrint {
   }
 
   parse(xmlStr) {
-    var opener = /<(\w+)[^>]*?>/m,
-      closer = /<\/[^>]*>/m;
+    const opener = /<(\w+)[^>]*?>/m;
+    const closer = /<\/[^>]*>/m;
 
-    var idx = 0,
-      indent = 0,
-      processing = '',
-      tags = [],
-      output = [],
-      token;
+    let idx = 0;
+    let indent = 0;
+    let processing = '';
+    const tags = [];
+    const output = [];
+    let token;
 
     while (idx < xmlStr.length) {
       processing += xmlStr[idx];
@@ -71,16 +71,16 @@ export default class XmlPrettyPrint {
 
   getToken(regex, str) {
     if (regex.test(str)) {
-      var matches = regex.exec(str);
-      var match = matches[0];
-      var offset = str.length - match.length;
-      var preContent = str.substring(0, offset);
+      const matches = regex.exec(str);
+      const match = matches[0];
+      const offset = str.length - match.length;
+      const preContent = str.substring(0, offset);
 
       return {
-        match: match,
+        match,
         tag: matches[1],
-        offset: offset,
-        preContent: preContent
+        offset,
+        preContent
       };
     }
   }
@@ -88,7 +88,7 @@ export default class XmlPrettyPrint {
   addLine(output, content, indent) {
     // Trim the content
     if (content = content.replace(/^\s+|\s+$/, '')) {
-      var tabs = '';
+      let tabs = '';
 
       while (indent--) {
         tabs += this.TAB;

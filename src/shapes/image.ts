@@ -21,11 +21,11 @@ export default class Image extends Shape implements IImage {
     switch (this.extension) {
       case 'svg':
         this.relRootTag = 'asvg:svgBlip';
-        this.relParent = element => <HTMLElement>element.parentNode;
+        this.relParent = element => element.parentNode as HTMLElement;
         break;
       default:
         this.relRootTag = 'a:blip';
-        this.relParent = element => <HTMLElement>element.parentNode.parentNode;
+        this.relParent = element => element.parentNode.parentNode as HTMLElement;
         break;
     }
 
@@ -56,10 +56,10 @@ export default class Image extends Shape implements IImage {
     await this.appendToSlideTree();
 
     if (this.hasSvgRelation()) {
-      let target = await XmlHelper.getTargetByRelId(this.sourceArchive, this.sourceSlideNumber, this.targetElement, 'image:svg');
+      const target = await XmlHelper.getTargetByRelId(this.sourceArchive, this.sourceSlideNumber, this.targetElement, 'image:svg');
       await new Image({
         mode: 'append',
-        target: target,
+        target,
         sourceArchive: this.sourceArchive,
         sourceSlideNumber: this.sourceSlideNumber,
         type: ElementType.Image,
@@ -92,14 +92,14 @@ export default class Image extends Shape implements IImage {
   }
 
   async appendToSlideRels(): Promise<HTMLElement> {
-    let targetRelFile = `ppt/slides/_rels/slide${this.targetSlideNumber}.xml.rels`;
+    const targetRelFile = `ppt/slides/_rels/slide${this.targetSlideNumber}.xml.rels`;
     this.createdRid = await XmlHelper.getNextRelId(this.targetArchive, targetRelFile);
 
-    let attributes = <RelationshipAttribute>{
+    const attributes = {
       Id: this.createdRid,
       Type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image',
       Target: `../media/image${this.targetNumber}.${this.extension}`
-    };
+    } as RelationshipAttribute;
 
     return XmlHelper.append(
       XmlHelper.createRelationshipChild(this.targetArchive, targetRelFile, attributes)
@@ -107,8 +107,8 @@ export default class Image extends Shape implements IImage {
   }
 
   appendImageExtensionToContentType(): Promise<HTMLElement | boolean> {
-    let extension = this.extension;
-    let contentType = (this.contentTypeMap[extension]) ? this.contentTypeMap[extension] : 'image/' + extension;
+    const extension = this.extension;
+    const contentType = (this.contentTypeMap[extension]) ? this.contentTypeMap[extension] : 'image/' + extension;
 
     return XmlHelper.appendIf({
       ...XmlHelper.createContentTypeChild(this.targetArchive, {

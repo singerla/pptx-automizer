@@ -15,7 +15,7 @@ export default class Chart extends Shape implements IChart {
 
     this.relRootTag = 'c:chart';
     this.relAttribute = 'r:id';
-    this.relParent = element => <HTMLElement>element.parentNode.parentNode.parentNode;
+    this.relParent = element => element.parentNode.parentNode.parentNode as HTMLElement;
   }
 
   async modify(targetTemplate: RootPresTemplate, targetSlideNumber: number): Promise<Chart> {
@@ -58,8 +58,8 @@ export default class Chart extends Shape implements IChart {
   }
 
   async modifyChartData() {
-    let chartXml = await XmlHelper.getXmlFromArchive(this.targetArchive, `ppt/charts/chart${this.targetNumber}.xml`);
-    let workbook = await this.readWorkbook();
+    const chartXml = await XmlHelper.getXmlFromArchive(this.targetArchive, `ppt/charts/chart${this.targetNumber}.xml`);
+    const workbook = await this.readWorkbook();
 
     this.applyCallbacks(this.callbacks, this.targetElement, chartXml, workbook);
 
@@ -68,17 +68,17 @@ export default class Chart extends Shape implements IChart {
   }
 
   async readWorkbook(): Promise<Workbook> {
-    let worksheet = await FileHelper.extractFromArchive(this.targetArchive, `ppt/embeddings/Microsoft_Excel_Worksheet${this.targetWorksheet}.xlsx`, 'nodebuffer');
-    let archive = await FileHelper.extractFileContent(worksheet);
-    let sheet = await XmlHelper.getXmlFromArchive(archive, 'xl/worksheets/sheet1.xml');
-    let table = await XmlHelper.getXmlFromArchive(archive, 'xl/tables/table1.xml');
-    let sharedStrings = await XmlHelper.getXmlFromArchive(archive, 'xl/sharedStrings.xml');
+    const worksheet = await FileHelper.extractFromArchive(this.targetArchive, `ppt/embeddings/Microsoft_Excel_Worksheet${this.targetWorksheet}.xlsx`, 'nodebuffer');
+    const archive = await FileHelper.extractFileContent(worksheet);
+    const sheet = await XmlHelper.getXmlFromArchive(archive, 'xl/worksheets/sheet1.xml');
+    const table = await XmlHelper.getXmlFromArchive(archive, 'xl/tables/table1.xml');
+    const sharedStrings = await XmlHelper.getXmlFromArchive(archive, 'xl/sharedStrings.xml');
 
     return {
-      archive: archive,
-      sheet: sheet,
-      sharedStrings: sharedStrings,
-      table: table
+      archive,
+      sheet,
+      sharedStrings,
+      table
     };
   }
 
@@ -87,16 +87,16 @@ export default class Chart extends Shape implements IChart {
     await XmlHelper.writeXmlToArchive(workbook.archive, 'xl/tables/table1.xml', workbook.table);
     await XmlHelper.writeXmlToArchive(workbook.archive, 'xl/sharedStrings.xml', workbook.sharedStrings);
 
-    let worksheet = await workbook.archive.generateAsync({type: 'nodebuffer'});
+    const worksheet = await workbook.archive.generateAsync({type: 'nodebuffer'});
     this.targetArchive.file(`ppt/embeddings/Microsoft_Excel_Worksheet${this.targetWorksheet}.xlsx`, worksheet);
   }
 
   async copyFiles(): Promise<void> {
     this.copyChartFiles();
 
-    let wbRelsPath = `ppt/charts/_rels/chart${this.sourceNumber}.xml.rels`;
-    let worksheets = await XmlHelper.getTargetsFromRelationships(this.sourceArchive, wbRelsPath, '../embeddings/Microsoft_Excel_Worksheet', '.xlsx');
-    let worksheet = worksheets[0];
+    const wbRelsPath = `ppt/charts/_rels/chart${this.sourceNumber}.xml.rels`;
+    const worksheets = await XmlHelper.getTargetsFromRelationships(this.sourceArchive, wbRelsPath, '../embeddings/Microsoft_Excel_Worksheet', '.xlsx');
+    const worksheet = worksheets[0];
 
     this.sourceWorksheet = (worksheet.number === 0) ? '' : worksheet.number;
     this.targetWorksheet = this.targetNumber;
@@ -137,11 +137,11 @@ export default class Chart extends Shape implements IChart {
 
   async appendToSlideRels(): Promise<HTMLElement> {
     this.createdRid = await XmlHelper.getNextRelId(this.targetArchive, this.targetSlideRelFile);
-    let attributes = <RelationshipAttribute>{
+    const attributes = {
       Id: this.createdRid,
       Type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart',
       Target: `../charts/chart${this.targetNumber}.xml`
-    };
+    } as RelationshipAttribute;
 
     return XmlHelper.append(
       XmlHelper.createRelationshipChild(this.targetArchive, this.targetSlideRelFile, attributes)
@@ -149,14 +149,14 @@ export default class Chart extends Shape implements IChart {
   }
 
   async editTargetWorksheetRel(): Promise<void> {
-    let targetRelFile = `ppt/charts/_rels/chart${this.targetNumber}.xml.rels`;
-    let relXml = await XmlHelper.getXmlFromArchive(this.targetArchive, targetRelFile);
-    let relations = relXml.getElementsByTagName('Relationship');
+    const targetRelFile = `ppt/charts/_rels/chart${this.targetNumber}.xml.rels`;
+    const relXml = await XmlHelper.getXmlFromArchive(this.targetArchive, targetRelFile);
+    const relations = relXml.getElementsByTagName('Relationship');
 
-    for (let i in relations) {
-      let element = relations[i];
+    for (const i in relations) {
+      const element = relations[i];
       if (element.getAttribute) {
-        let type = element.getAttribute('Type');
+        const type = element.getAttribute('Type');
         switch (type) {
           case 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/package':
             element.setAttribute('Target', `../embeddings/Microsoft_Excel_Worksheet${this.targetWorksheet}.xlsx`);

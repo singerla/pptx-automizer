@@ -7,7 +7,7 @@ const automizer = new Automizer({
   outputDir: `${__dirname}/../__tests__/pptx-output`
 });
 
-let pres = automizer.loadRoot(`RootTemplate.pptx`)
+const pres = automizer.loadRoot(`RootTemplate.pptx`)
   .load(`SlideWithImages.pptx`, 'images')
   .load(`SlideWithLink.pptx`, 'link')
   .load(`SlideWithCharts.pptx`, 'charts')

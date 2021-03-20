@@ -29,8 +29,7 @@ export default class FileHelper {
   }
 
   static getFileExtension(filename: string): string {
-    let extension = path.extname(filename).replace('.', '');
-    return extension;
+    return path.extname(filename).replace('.', '');
   }
 
   /**
@@ -46,22 +45,22 @@ export default class FileHelper {
       throw new Error(`Zipped file not found: ${sourceFile}`);
     }
 
-    let content = sourceArchive.files[sourceFile].async('nodebuffer');
+    const content = sourceArchive.files[sourceFile].async('nodebuffer');
     return targetArchive.file(targetFile || sourceFile, content);
   }
 
   static writeOutputFile(location: string, content: Buffer, automizer: IPresentationProps): AutomizerSummary {
-    fs.writeFile(location, content, function (err: { message: any }) {
+    fs.writeFile(location, content, (err: { message: any }) => {
       if (err) {
         throw new Error(`Error writing output: ${err.message}`);
       }
     });
 
-    let duration: number = (Date.now() - automizer.timer) / 600;
+    const duration: number = (Date.now() - automizer.timer) / 600;
 
     return {
       status: 'finished',
-      duration: duration,
+      duration,
       file: location,
       templates: automizer.templates.length,
       slides: automizer.rootTemplate.count('slides'),
