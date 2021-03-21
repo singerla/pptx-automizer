@@ -29,8 +29,8 @@ export default class Chart extends Shape implements IChart {
   }
 
   async append(targetTemplate: RootPresTemplate, targetSlideNumber: number): Promise<Chart> {
-    await this.clone();
     await this.prepare(targetTemplate, targetSlideNumber);
+    await this.clone();
     await this.appendToSlideTree();
 
     return this;
