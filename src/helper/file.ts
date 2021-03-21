@@ -1,7 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import JSZip from 'jszip';
-import { AutomizerSummary, IPresentationProps } from '../definitions/app';
+import { AutomizerSummary } from '../types/types';
+import { IPresentationProps } from '../interfaces/ipresentation-props';
 
 export default class FileHelper {
 

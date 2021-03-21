@@ -1,4 +1,4 @@
-import { TargetByRelIdMapParam } from './app';
+import { TargetByRelIdMapParam } from '../types/types';
 
 export const TargetByRelIdMap = {
   chart: {

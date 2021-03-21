@@ -1,6 +1,5 @@
-import { Workbook } from '../definitions/app';
 import XmlHelper from './xml';
-import { Frame } from '../definitions/types';
+import { Frame, Workbook } from '../types/types';
 
 export const setSolidFill = (element) => {
   element.getElementsByTagName('a:solidFill')[0]

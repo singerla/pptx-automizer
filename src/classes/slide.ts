@@ -1,24 +1,19 @@
 import JSZip from 'jszip';
-import Chart from './shapes/chart';
-import Image from './shapes/image';
+import Chart from '../shapes/chart';
+import Image from '../shapes/image';
 
-import FileHelper from './helper/file';
-import XmlHelper from './helper/xml';
+import FileHelper from '../helper/file';
+import XmlHelper from '../helper/xml';
 
-import { ElementType } from './definitions/enums';
-import {
-  ISlide,
-  RootPresTemplate,
-  PresTemplate,
-  IPresentationProps,
-  ImportedElement,
-  AnalyzedElementType,
-  Target,
-  ImportElement
-} from './definitions/app';
-import { RelationshipAttribute, SlideListAttribute } from './definitions/xml';
-import Generic from './shapes/generic';
-import { ModificationCallback } from './definitions/types';
+
+import Generic from '../shapes/generic';
+import { AnalyzedElementType, ImportedElement, ImportElement, ModificationCallback, Target } from '../types/types';
+import { ISlide } from '../interfaces/islide';
+import { IPresentationProps } from '../interfaces/ipresentation-props';
+import { PresTemplate } from '../interfaces/pres-template';
+import { RootPresTemplate } from '../interfaces/root-pres-template';
+import { ElementType } from '../enums/element-type';
+import { RelationshipAttribute, SlideListAttribute } from '../types/xml-types';
 
 export default class Slide implements ISlide {
   sourceTemplate: PresTemplate;

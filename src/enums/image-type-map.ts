@@ -1,9 +1,3 @@
-export enum ElementType {
-  Chart = 'Chart',
-  Image = 'Image',
-  Shape = 'Generic'
-}
-
 export enum ImageTypeMap {
   jpg = 'image/jpeg',
   jpeg = 'image/jpeg',

@@ -2,10 +2,10 @@ import { DOMParser, XMLSerializer } from 'xmldom';
 import FileHelper from './file';
 import JSZip from 'jszip';
 
-import { Target } from '../definitions/app';
-import { DefaultAttribute, OverrideAttribute, RelationshipAttribute, XMLElement } from '../definitions/xml';
-import { TargetByRelIdMap } from '../definitions/constants';
+import { DefaultAttribute, OverrideAttribute, RelationshipAttribute, XMLElement } from '../types/xml-types';
+import { TargetByRelIdMap } from '../constants/constants';
 import XmlPrettyPrint from './pretty';
+import { Target } from '../types/types';
 
 export default class XmlHelper {
 

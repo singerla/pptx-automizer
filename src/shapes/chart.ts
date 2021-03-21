@@ -1,10 +1,12 @@
 import JSZip from 'jszip';
 import FileHelper from '../helper/file';
 import XmlHelper from '../helper/xml';
-import Shape from '../shape';
+import Shape from '../classes/shape';
 
-import { IChart, ImportedElement, RootPresTemplate, Target, Workbook } from '../definitions/app';
-import { RelationshipAttribute } from '../definitions/xml';
+import { RelationshipAttribute } from '../types/xml-types';
+import { ImportedElement, Target, Workbook } from '../types/types';
+import { IChart } from '../interfaces/ichart';
+import { RootPresTemplate } from '../interfaces/root-pres-template';
 
 export default class Chart extends Shape implements IChart {
   sourceWorksheet: number | string;

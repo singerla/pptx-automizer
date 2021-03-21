@@ -1,10 +1,11 @@
-import {
-  ISlide, ITemplate, PresTemplate, RootPresTemplate, ICounter
-} from './definitions/app';
-
-import FileHelper from './helper/file';
+import FileHelper from '../helper/file';
 import JSZip from 'jszip';
-import CountHelper from './helper/count';
+import CountHelper from '../helper/count';
+import { ICounter } from '../interfaces/icounter';
+import { ISlide } from '../interfaces/islide';
+import { PresTemplate } from '../interfaces/pres-template';
+import { RootPresTemplate } from '../interfaces/root-pres-template';
+import { ITemplate } from '../interfaces/itemplate';
 
 class Template implements ITemplate {
   /**

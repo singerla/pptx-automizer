@@ -1,8 +1,8 @@
 import JSZip from 'jszip';
-import XmlHelper from './helper/xml';
-import { ImportedElement, RootPresTemplate } from './definitions/app';
-import GeneralHelper from './helper/general';
-import { ShapeCallback } from './definitions/types';
+import XmlHelper from '../helper/xml';
+import GeneralHelper from '../helper/general';
+import { ImportedElement, ShapeCallback } from '../types/types';
+import { RootPresTemplate } from '../interfaces/root-pres-template';
 
 export default class Shape {
   mode: string;

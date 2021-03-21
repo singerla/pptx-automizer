@@ -1,5 +1,5 @@
 import Automizer from './index';
-import Slide from './slide';
+import Slide from './classes/slide';
 import { dump, setPosition } from './helper/modify';
 
 const automizer = new Automizer({

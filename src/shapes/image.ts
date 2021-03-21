@@ -1,11 +1,14 @@
 import JSZip from 'jszip';
 import FileHelper from '../helper/file';
 import XmlHelper from '../helper/xml';
-import Shape from '../shape';
+import Shape from '../classes/shape';
 
-import { IImage, ImportedElement, RootPresTemplate, Target } from '../definitions/app';
-import { RelationshipAttribute } from '../definitions/xml';
-import { ImageTypeMap, ElementType } from '../definitions/enums';
+import { RelationshipAttribute } from '../types/xml-types';
+import { ImportedElement, Target } from '../types/types';
+import { IImage } from '../interfaces/iimage';
+import { RootPresTemplate } from '../interfaces/root-pres-template';
+import { ImageTypeMap } from '../enums/image-type-map';
+import { ElementType } from '../enums/element-type';
 
 export default class Image extends Shape implements IImage {
   extension: string;

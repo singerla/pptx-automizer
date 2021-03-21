@@ -1,6 +1,7 @@
 import JSZip from 'jszip';
 import XmlHelper from './xml';
-import { ICounter, RootPresTemplate } from '../definitions/app';
+import { ICounter } from '../interfaces/icounter';
+import { RootPresTemplate } from '../interfaces/root-pres-template';
 
 export default class CountHelper implements ICounter {
   template: RootPresTemplate;
