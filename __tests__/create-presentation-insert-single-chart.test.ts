@@ -1,22 +1,22 @@
-import Automizer from "../src/automizer"
+import Automizer from '../src/automizer';
 
-test("create presentation and add some single charts", async () => {
+test('create presentation and add some single charts', async () => {
   const automizer = new Automizer({
     templateDir: `${__dirname}/pptx-templates`,
     outputDir: `${__dirname}/pptx-output`
-  })
+  });
 
-  let pres = automizer
+  const pres = automizer
     .loadRoot(`RootTemplate.pptx`)
     .load(`EmptySlide.pptx`, 'empty')
-    .load(`SlideWithCharts.pptx`, 'charts')
+    .load(`SlideWithCharts.pptx`, 'charts');
 
-  let result = await pres
+  const result = await pres
     .addSlide('empty', 1, (slide) => {
-      slide.addElement('charts', 2, 'PieChart')
-      slide.addElement('charts', 1, 'StackedBars')
+      slide.addElement('charts', 2, 'PieChart');
+      slide.addElement('charts', 1, 'StackedBars');
     })
-    .write(`create-presentation-insert-single-chart.test.pptx`)
+    .write(`create-presentation-insert-single-chart.test.pptx`);
 
-  expect(result.slides).toBe(2)
-})
+  expect(result.slides).toBe(2);
+});

@@ -21,7 +21,7 @@ export default class CountHelper implements ICounter {
   }
 
   static getCounterByName(name: string, counters: ICounter[]): ICounter {
-    const counter = counters.find(counter => counter.name === name);
+    const counter = counters.find(c => c.name === name);
     if (counter === undefined) {
       throw new Error(`Counter ${name} not found.`);
     }
@@ -65,23 +65,14 @@ export default class CountHelper implements ICounter {
   static async countCharts(presentation: JSZip): Promise<number> {
     const contentTypesXml = await XmlHelper.getXmlFromArchive(presentation, '[Content_Types].xml');
     const overrides = contentTypesXml.getElementsByTagName('Override');
-    let chartCount = 0;
 
-    for (const i in overrides) {
-      const override = overrides[i];
-      if (override.getAttribute) {
-        const contentType = override.getAttribute('ContentType');
-        if (contentType === `application/vnd.openxmlformats-officedocument.drawingml.chart+xml`) {
-          chartCount++;
-        }
-      }
-    }
-
-    return chartCount;
+    return  Object.keys(overrides)
+      .map(key => overrides[key] as Element)
+      .filter(o => o.getAttribute && o.getAttribute('ContentType') === `application/vnd.openxmlformats-officedocument.drawingml.chart+xml`)
+      .length;
   }
 
   static async countImages(presentation: JSZip): Promise<number> {
-    const files = presentation.file(/ppt\/media\/image/);
-    return files.length;
+    return presentation.file(/ppt\/media\/image/).length;
   }
 }

@@ -18,6 +18,7 @@ import {
 } from './definitions/app';
 import { RelationshipAttribute, SlideListAttribute } from './definitions/xml';
 import Generic from './shapes/generic';
+import { ModificationCallback } from './definitions/types';
 
 export default class Slide implements ISlide {
   sourceTemplate: PresTemplate;
@@ -28,7 +29,7 @@ export default class Slide implements ISlide {
   sourceArchive: JSZip;
   sourcePath: string;
   targetPath: string;
-  modifications: Function[];
+  modifications: ModificationCallback[];
   importElements: ImportElement[];
   relsPath: string;
   rootTemplate: RootPresTemplate;
@@ -71,7 +72,7 @@ export default class Slide implements ISlide {
     await this.applyModifications();
   }
 
-  modify(callback: Function): void {
+  modify(callback: ModificationCallback): void {
     this.modifications.push(callback);
   }
 
@@ -104,14 +105,14 @@ export default class Slide implements ISlide {
       selector,
       mode,
       callback
-    } as ImportElement);
+    });
 
     return this;
   }
 
   async importedSelectedElements(): Promise<void> {
-    for (const i in this.importElements) {
-      const info = await this.getElementInfo(this.importElements[i]);
+    for (const element of this.importElements) {
+      const info = await this.getElementInfo(element);
 
       switch (info.type) {
         case ElementType.Chart:
@@ -174,9 +175,9 @@ export default class Slide implements ISlide {
   }
 
   async applyModifications(): Promise<void> {
-    for (const m in this.modifications) {
+    for (const modification of this.modifications) {
       const xml = await XmlHelper.getXmlFromArchive(this.targetArchive, this.targetPath);
-      this.modifications[m](xml);
+      modification(xml);
       await XmlHelper.writeXmlToArchive(this.targetArchive, this.targetPath, xml);
     }
   }
@@ -268,20 +269,20 @@ export default class Slide implements ISlide {
 
   async copyRelatedContent(): Promise<void> {
     const charts = await Chart.getAllOnSlide(this.sourceArchive, this.relsPath);
-    for (const i in charts) {
+    for (const chart of charts) {
       await new Chart({
         mode: 'append',
-        target: charts[i],
+        target: chart,
         sourceArchive: this.sourceArchive,
         sourceSlideNumber: this.sourceNumber,
       }).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);
     }
 
     const images = await Image.getAllOnSlide(this.sourceArchive, this.relsPath);
-    for (const i in images) {
+    for (const image of images) {
       await new Image({
         mode: 'append',
-        target: images[i],
+        target: image,
         sourceArchive: this.sourceArchive,
         sourceSlideNumber: this.sourceNumber,
       }).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);

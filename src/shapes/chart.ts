@@ -27,8 +27,8 @@ export default class Chart extends Shape implements IChart {
   }
 
   async append(targetTemplate: RootPresTemplate, targetSlideNumber: number): Promise<Chart> {
-    await this.prepare(targetTemplate, targetSlideNumber);
     await this.clone();
+    await this.prepare(targetTemplate, targetSlideNumber);
     await this.appendToSlideTree();
 
     return this;
@@ -153,9 +153,10 @@ export default class Chart extends Shape implements IChart {
     const relXml = await XmlHelper.getXmlFromArchive(this.targetArchive, targetRelFile);
     const relations = relXml.getElementsByTagName('Relationship');
 
-    for (const i in relations) {
-      const element = relations[i];
-      if (element.getAttribute) {
+    Object.keys(relations)
+      .map(key => relations[key])
+      .filter(element => element.getAttribute)
+      .forEach(element => {
         const type = element.getAttribute('Type');
         switch (type) {
           case 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/package':
@@ -168,8 +169,7 @@ export default class Chart extends Shape implements IChart {
             element.setAttribute('Target', `style${this.targetNumber}.xml`);
             break;
         }
-      }
-    }
+      });
 
     XmlHelper.writeXmlToArchive(this.targetArchive, targetRelFile, relXml);
   }

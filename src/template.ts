@@ -77,8 +77,8 @@ class Template implements ITemplate {
   }
 
   async initializeCounter(): Promise<void> {
-    for (let i in this.counter) {
-      await this.counter[i].set();
+    for (const c of this.counter) {
+      await c.set();
     }
   }
 

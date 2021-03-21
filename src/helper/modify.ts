@@ -1,5 +1,6 @@
 import { Workbook } from '../definitions/app';
 import XmlHelper from './xml';
+import { Frame } from '../definitions/types';
 
 export const setSolidFill = (element) => {
   element.getElementsByTagName('a:solidFill')[0]
@@ -18,7 +19,7 @@ export const revertElements = (slide: Document) => {
 };
 
 // e.g. setPosition({x: 8000000, h:5000000})
-export const setPosition = (pos: any) => (element: HTMLElement) => {
+export const setPosition = (pos: Frame) => (element: HTMLElement) => {
   const map = {
     x: {tag: 'a:off', attribute: 'x'},
     y: {tag: 'a:off', attribute: 'y'},

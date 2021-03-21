@@ -1,18 +1,18 @@
-import Automizer from "../src/automizer"
+import Automizer from '../src/automizer';
 
-test("create presentation and append slides with images", async () => {
+test('create presentation and append slides with images', async () => {
   const automizer = new Automizer({
     templateDir: `${__dirname}/pptx-templates`,
     outputDir: `${__dirname}/pptx-output`
-  })
+  });
 
-  let pres = automizer.loadRoot(`RootTemplateWithCharts.pptx`)
-    .load(`SlideWithImages.pptx`, 'images')
+  const pres = automizer.loadRoot(`RootTemplateWithCharts.pptx`)
+    .load(`SlideWithImages.pptx`, 'images');
 
-  pres.addSlide('images', 1)
-  pres.addSlide('images', 2)
+  pres.addSlide('images', 1);
+  pres.addSlide('images', 2);
 
-  let result = await pres.write(`create-presentation-images.test.pptx`)
+  const result = await pres.write(`create-presentation-images.test.pptx`);
 
-  expect(result.images).toBe(5)
-})
+  expect(result.images).toBe(5);
+});

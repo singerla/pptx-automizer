@@ -18,8 +18,7 @@ export default class Automizer implements IPresentationProps {
 
   /**
    * Parameters for Automizer constructor.
-   * @param {string} templateDir - optional: prefix for all templates to load.
-   * @param {string} outputDir - optional: prefix for all output files.
+   * @param params
    */
   constructor(params?: AutomizerParams) {
     this.templates = [];
@@ -73,9 +72,10 @@ export default class Automizer implements IPresentationProps {
    * Find imported template by given name and return a certain slide by number.
    * @param {string} name - Name of template; must be imported by Automizer.importTemplate()
    * @param {number} slideNumber - Number of slide in template presentation
+   * @param callback
    * @return {Automizer} Instance of Automizer
    */
-  public addSlide(name: string, slideNumber: number, callback?: Function): this {
+  public addSlide(name: string, slideNumber: number, callback?: (slide: Slide) => void): this {
     if (this.rootTemplate === undefined) {
       throw new Error('You have to set a root template first.');
     }
@@ -89,8 +89,8 @@ export default class Automizer implements IPresentationProps {
     });
 
     if (callback !== undefined) {
-      newSlide.root = this,
-        callback(newSlide);
+      newSlide.root = this;
+      callback(newSlide);
     }
 
     this.rootTemplate.slides.push(newSlide);
@@ -99,7 +99,7 @@ export default class Automizer implements IPresentationProps {
   }
 
   public template(name: string): PresTemplate {
-    const template = this.templates.find(template => template.name === name);
+    const template = this.templates.find(t => t.name === name);
     if (template === undefined) {
       throw new Error(`Template not found: ${name}`);
     }
@@ -120,8 +120,7 @@ export default class Automizer implements IPresentationProps {
   async write(location: string): Promise<AutomizerSummary> {
     const rootArchive = await this.rootTemplate.archive;
 
-    for (const i in this.rootTemplate.slides) {
-      const slide = this.rootTemplate.slides[i];
+    for (const slide of this.rootTemplate.slides) {
       await this.rootTemplate.appendSlide(slide);
     }
 

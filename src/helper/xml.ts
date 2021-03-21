@@ -25,11 +25,10 @@ export default class XmlHelper {
   static async appendIf(element: XMLElement): Promise<HTMLElement | boolean> {
     const xml = await XmlHelper.getXmlFromArchive(element.archive, element.file);
 
-    if (element.clause !== undefined) {
-      if (!element.clause(xml)) return false;
-    }
+    return element.clause !== undefined && !element.clause(xml)
+      ? false
+      : XmlHelper.append(element);
 
-    return XmlHelper.append(element);
   }
 
   static async append(element: XMLElement): Promise<HTMLElement> {
@@ -51,7 +50,7 @@ export default class XmlHelper {
 
   static async getNextRelId(rootArchive, file): Promise<string> {
     const presentationRelsXml = await XmlHelper.getXmlFromArchive(rootArchive, file);
-    const increment: Function = (max: number) => 'rId' + max;
+    const increment = (max: number) => 'rId' + max;
     const rid = XmlHelper.getMaxId(presentationRelsXml.documentElement.childNodes, 'Id', true);
 
     return increment(rid);
@@ -244,9 +243,9 @@ export default class XmlHelper {
     }
   }
 
-  static appendSharedString(sharedStrings: Document, string: string): number {
+  static appendSharedString(sharedStrings: Document, stringValue: string): number {
     const strings = sharedStrings.getElementsByTagName('sst')[0];
-    const newLabel = sharedStrings.createTextNode(string);
+    const newLabel = sharedStrings.createTextNode(stringValue);
     const newText = sharedStrings.createElement('t');
     newText.appendChild(newLabel);
 

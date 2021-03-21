@@ -1,7 +1,8 @@
 import JSZip from 'jszip';
 import XmlHelper from './helper/xml';
-import { ImportedElement, RootPresTemplate, Target } from './definitions/app';
+import { ImportedElement, RootPresTemplate } from './definitions/app';
 import GeneralHelper from './helper/general';
+import { ShapeCallback } from './definitions/types';
 
 export default class Shape {
   mode: string;
@@ -30,7 +31,7 @@ export default class Shape {
   relParent: (element: HTMLElement) => HTMLElement;
 
   targetElement: HTMLElement;
-  callbacks: Function[];
+  callbacks: ShapeCallback[];
 
   constructor(shape: ImportedElement) {
     this.mode = shape.mode;
@@ -99,9 +100,7 @@ export default class Shape {
     return this.relParent(sourceElement);
   }
 
-  applyCallbacks(callbacks: Function[], element: HTMLElement, arg1?: any, arg2?: any): void {
-    for (const i in callbacks) {
-      callbacks[i](element, arg1, arg2);
-    }
+  applyCallbacks(callbacks: ShapeCallback[], element: HTMLElement, arg1?: any, arg2?: any): void {
+    callbacks.forEach(callback => callback(element, arg1, arg2));
   }
 }

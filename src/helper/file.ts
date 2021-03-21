@@ -40,7 +40,7 @@ export default class FileHelper {
    * @param {string} targetFile - file path and name inside target archive
    * @return {JSZip} targetArchive as an instance of JSZip
    */
-  static async zipCopy(sourceArchive: JSZip, sourceFile: string, targetArchive: JSZip, targetFile?: string, mode?: any): Promise<JSZip> {
+  static async zipCopy(sourceArchive: JSZip, sourceFile: string, targetArchive: JSZip, targetFile?: string): Promise<JSZip> {
     if (sourceArchive.files[sourceFile] === undefined) {
       throw new Error(`Zipped file not found: ${sourceFile}`);
     }
