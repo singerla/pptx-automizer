@@ -1,10 +1,11 @@
 import JSZip from 'jszip';
-import XmlHelper from '../helper/xml';
-import GeneralHelper from '../helper/general';
+
+import { XmlHelper } from '../helper/xml';
+import { GeneralHelper } from '../helper/general';
 import { ImportedElement, ShapeCallback } from '../types/types';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 
-export default class Shape {
+export class Shape {
   mode: string;
   name: string;
 
@@ -64,6 +65,7 @@ export default class Shape {
 
   async appendToSlideTree(): Promise<void> {
     const targetSlideXml = await XmlHelper.getXmlFromArchive(this.targetArchive, this.targetSlideFile);
+
     targetSlideXml.getElementsByTagName('p:spTree')[0].appendChild(this.targetElement);
 
     await XmlHelper.writeXmlToArchive(this.targetArchive, this.targetSlideFile, targetSlideXml);
@@ -71,7 +73,6 @@ export default class Shape {
 
   async replaceIntoSlideTree(): Promise<void> {
     const targetSlideXml = await XmlHelper.getXmlFromArchive(this.targetArchive, this.targetSlideFile);
-
     const sourceElementOnTargetSlide = await XmlHelper.findByName(targetSlideXml, this.name);
 
     sourceElementOnTargetSlide.parentNode.insertBefore(this.targetElement, sourceElementOnTargetSlide);
@@ -83,8 +84,8 @@ export default class Shape {
   async updateElementRelId() {
     const targetSlideXml = await XmlHelper.getXmlFromArchive(this.targetArchive, this.targetSlideFile);
     const targetElement = await this.getElementByRid(targetSlideXml, this.sourceRid);
-    targetElement.getElementsByTagName(this.relRootTag)[0].setAttribute(this.relAttribute, this.createdRid);
 
+    targetElement.getElementsByTagName(this.relRootTag)[0].setAttribute(this.relAttribute, this.createdRid);
 
     await XmlHelper.writeXmlToArchive(this.targetArchive, this.targetSlideFile, targetSlideXml);
   }

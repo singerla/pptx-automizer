@@ -1,13 +1,14 @@
-import FileHelper from '../helper/file';
 import JSZip from 'jszip';
-import CountHelper from '../helper/count';
+
+import { FileHelper } from '../helper/file';
+import { CountHelper } from '../helper/count';
 import { ICounter } from '../interfaces/icounter';
 import { ISlide } from '../interfaces/islide';
 import { PresTemplate } from '../interfaces/pres-template';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { ITemplate } from '../interfaces/itemplate';
 
-class Template implements ITemplate {
+export class Template implements ITemplate {
   /**
    * Path to local file
    * @type string
@@ -91,6 +92,3 @@ class Template implements ITemplate {
     return CountHelper.count(name, this.counter);
   }
 }
-
-
-export default Template;

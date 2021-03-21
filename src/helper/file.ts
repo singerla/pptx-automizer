@@ -1,10 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import JSZip from 'jszip';
+
 import { AutomizerSummary } from '../types/types';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
 
-export default class FileHelper {
+export class FileHelper {
 
   static readFile(location: string): Promise<Buffer> {
     if (!fs.existsSync(location)) {

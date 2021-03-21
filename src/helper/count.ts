@@ -1,9 +1,10 @@
 import JSZip from 'jszip';
-import XmlHelper from './xml';
+
 import { ICounter } from '../interfaces/icounter';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
+import { XmlHelper } from './xml';
 
-export default class CountHelper implements ICounter {
+export class CountHelper implements ICounter {
   template: RootPresTemplate;
   name: string;
   count: number;
@@ -67,7 +68,7 @@ export default class CountHelper implements ICounter {
     const contentTypesXml = await XmlHelper.getXmlFromArchive(presentation, '[Content_Types].xml');
     const overrides = contentTypesXml.getElementsByTagName('Override');
 
-    return  Object.keys(overrides)
+    return Object.keys(overrides)
       .map(key => overrides[key] as Element)
       .filter(o => o.getAttribute && o.getAttribute('ContentType') === `application/vnd.openxmlformats-officedocument.drawingml.chart+xml`)
       .length;

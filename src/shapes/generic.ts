@@ -1,9 +1,8 @@
-import Shape from '../classes/shape';
-
 import { ImportedElement } from '../types/types';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
+import { Shape } from './shape';
 
-export default class Generic extends Shape {
+export class Generic extends Shape {
   sourceElement: HTMLElement;
 
   constructor(shape: ImportedElement) {

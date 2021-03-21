@@ -1,4 +1,4 @@
-export default class GeneralHelper {
+export class GeneralHelper {
   static arrayify<T>(input: T): T[] {
     if (input instanceof Array) {
       return input;

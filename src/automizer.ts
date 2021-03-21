@@ -1,10 +1,10 @@
-import Template from './classes/template';
-import Slide from './classes/slide';
-import FileHelper from './helper/file';
+import { Slide } from './classes/slide';
+import { FileHelper } from './helper/file';
 import { AutomizerParams, AutomizerSummary } from './types/types';
 import { IPresentationProps } from './interfaces/ipresentation-props';
 import { PresTemplate } from './interfaces/pres-template';
 import { RootPresTemplate } from './interfaces/root-pres-template';
+import { Template } from './classes/template';
 
 export default class Automizer implements IPresentationProps {
   rootTemplate: RootPresTemplate;

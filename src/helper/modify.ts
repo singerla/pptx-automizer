@@ -1,4 +1,4 @@
-import XmlHelper from './xml';
+import { XmlHelper } from './xml';
 import { Frame, Workbook } from '../types/types';
 
 export const setSolidFill = (element) => {
@@ -28,11 +28,12 @@ export const setPosition = (pos: Frame) => (element: HTMLElement) => {
 
   const parent = 'a:xfrm';
 
-  for (const key in pos) {
-    element.getElementsByTagName(parent)[0]
-      .getElementsByTagName(map[key].tag)[0]
-      .setAttribute(map[key].attribute, pos[key]);
-  }
+  Object.keys(pos)
+    .forEach(key => {
+      element.getElementsByTagName(parent)[0]
+        .getElementsByTagName(map[key].tag)[0]
+        .setAttribute(map[key].attribute, pos[key]);
+    });
 };
 
 export const setAttribute = (tagName: string, attribute: string, value: string | number, count?: number) => (element: HTMLElement) => {

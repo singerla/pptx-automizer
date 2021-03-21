@@ -1,7 +1,7 @@
 // Thanks to https://github.com/aishwar/xml-pretty-print
 // Alternative: https://github.com/riversun/xml-beautify
 
-export default class XmlPrettyPrint {
+export class XmlPrettyPrint {
   xmlStr: string;
   TAB: string;
 

@@ -1,12 +1,7 @@
 import JSZip from 'jszip';
-import Chart from '../shapes/chart';
-import Image from '../shapes/image';
 
-import FileHelper from '../helper/file';
-import XmlHelper from '../helper/xml';
-
-
-import Generic from '../shapes/generic';
+import { FileHelper } from '../helper/file';
+import { XmlHelper } from '../helper/xml';
 import { AnalyzedElementType, ImportedElement, ImportElement, ModificationCallback, Target } from '../types/types';
 import { ISlide } from '../interfaces/islide';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
@@ -14,8 +9,11 @@ import { PresTemplate } from '../interfaces/pres-template';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { ElementType } from '../enums/element-type';
 import { RelationshipAttribute, SlideListAttribute } from '../types/xml-types';
+import { Image } from '../shapes/image';
+import { Chart } from '../shapes/chart';
+import { Generic } from '../shapes/generic';
 
-export default class Slide implements ISlide {
+export class Slide implements ISlide {
   sourceTemplate: PresTemplate;
   targetTemplate: RootPresTemplate;
   targetNumber: number;
@@ -73,9 +71,9 @@ export default class Slide implements ISlide {
 
   async addSlideToPresentation(): Promise<void> {
     const relId = await XmlHelper.getNextRelId(this.targetArchive, 'ppt/_rels/presentation.xml.rels');
-    await this.appendToSlideRel(this.targetArchive, relId, this.targetNumber),
-      await this.appendToSlideList(this.targetArchive, relId),
-      await this.appendSlideToContentType(this.targetArchive, this.targetNumber);
+    await this.appendToSlideRel(this.targetArchive, relId, this.targetNumber);
+    await this.appendToSlideList(this.targetArchive, relId);
+    await this.appendSlideToContentType(this.targetArchive, this.targetNumber);
   }
 
   async modifyElement(selector: string, callback: Function | Function[]): Promise<this> {

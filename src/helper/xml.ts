@@ -1,13 +1,13 @@
-import { DOMParser, XMLSerializer } from 'xmldom';
-import FileHelper from './file';
 import JSZip from 'jszip';
 
+import { DOMParser, XMLSerializer } from 'xmldom';
+import { FileHelper } from './file';
 import { DefaultAttribute, OverrideAttribute, RelationshipAttribute, XMLElement } from '../types/xml-types';
 import { TargetByRelIdMap } from '../constants/constants';
-import XmlPrettyPrint from './pretty';
+import { XmlPrettyPrint } from './pretty';
 import { Target } from '../types/types';
 
-export default class XmlHelper {
+export class XmlHelper {
 
   static async getXmlFromArchive(archive: JSZip, file: string): Promise<Document> {
     const xmlDocument = await FileHelper.extractFromArchive(archive, file);
