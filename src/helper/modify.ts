@@ -1,4 +1,4 @@
-import { XmlHelper } from './xml';
+import { XmlHelper } from './xml-helper';
 import { Frame, Workbook } from '../types/types';
 
 export const setSolidFill = (element) => {

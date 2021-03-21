@@ -1,6 +1,6 @@
 import JSZip from 'jszip';
 
-import { FileHelper } from '../helper/file';
+import { FileHelper } from '../helper/file-helper';
 import { CountHelper } from '../helper/count';
 import { ICounter } from '../interfaces/icounter';
 import { ISlide } from '../interfaces/islide';

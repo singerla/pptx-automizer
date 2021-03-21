@@ -2,7 +2,7 @@ import JSZip from 'jszip';
 
 import { ICounter } from '../interfaces/icounter';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
-import { XmlHelper } from './xml';
+import { XmlHelper } from './xml-helper';
 
 export class CountHelper implements ICounter {
   template: RootPresTemplate;
@@ -36,35 +36,32 @@ export class CountHelper implements ICounter {
   }
 
   async set() {
-    const method = this.getCounterMethod();
-    if (method === undefined) {
-      throw new Error(`No way to count ${this.name}.`);
-    }
-
-    this.count = await method(await this.template.archive);
+    this.count = await this.calculateCount(await this.template.archive);
   }
 
   get(): number {
     return this.count;
   }
 
-  getCounterMethod(): any {
+  private calculateCount(presentation: JSZip): Promise<number> {
     switch (this.name) {
       case 'slides' :
-        return CountHelper.countSlides;
+        return CountHelper.countSlides(presentation);
       case 'charts' :
-        return CountHelper.countCharts;
+        return CountHelper.countCharts(presentation);
       case 'images' :
-        return CountHelper.countImages;
+        return CountHelper.countImages(presentation);
     }
+
+    throw new Error(`No way to count ${this.name}.`);
   }
 
-  static async countSlides(presentation: JSZip): Promise<number> {
+  private static async countSlides(presentation: JSZip): Promise<number> {
     const presentationXml = await XmlHelper.getXmlFromArchive(presentation, 'ppt/presentation.xml');
     return presentationXml.getElementsByTagName('p:sldId').length;
   }
 
-  static async countCharts(presentation: JSZip): Promise<number> {
+  private static async countCharts(presentation: JSZip): Promise<number> {
     const contentTypesXml = await XmlHelper.getXmlFromArchive(presentation, '[Content_Types].xml');
     const overrides = contentTypesXml.getElementsByTagName('Override');
 
@@ -74,7 +71,7 @@ export class CountHelper implements ICounter {
       .length;
   }
 
-  static async countImages(presentation: JSZip): Promise<number> {
+  private static async countImages(presentation: JSZip): Promise<number> {
     return presentation.file(/ppt\/media\/image/).length;
   }
 }

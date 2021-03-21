@@ -1,8 +1,15 @@
 import JSZip from 'jszip';
 
-import { FileHelper } from '../helper/file';
-import { XmlHelper } from '../helper/xml';
-import { AnalyzedElementType, ImportedElement, ImportElement, ModificationCallback, Target } from '../types/types';
+import { FileHelper } from '../helper/file-helper';
+import { XmlHelper } from '../helper/xml-helper';
+import {
+  AnalyzedElementType,
+  ImportedElement,
+  ImportElement,
+  ModificationCallback,
+  ShapeCallback,
+  Target
+} from '../types/types';
 import { ISlide } from '../interfaces/islide';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
 import { PresTemplate } from '../interfaces/pres-template';
@@ -11,7 +18,7 @@ import { ElementType } from '../enums/element-type';
 import { RelationshipAttribute, SlideListAttribute } from '../types/xml-types';
 import { Image } from '../shapes/image';
 import { Chart } from '../shapes/chart';
-import { Generic } from '../shapes/generic';
+import { GenericShape } from '../shapes/generic-shape';
 
 export class Slide implements ISlide {
   sourceTemplate: PresTemplate;
@@ -76,22 +83,18 @@ export class Slide implements ISlide {
     await this.appendSlideToContentType(this.targetArchive, this.targetNumber);
   }
 
-  async modifyElement(selector: string, callback: Function | Function[]): Promise<this> {
+  modifyElement(selector: string, callback: ShapeCallback | ShapeCallback[]): this {
     const presName = this.sourceTemplate.name;
     const slideNumber = this.sourceNumber;
 
-    this.addElementToModlist(presName, slideNumber, selector, 'modify', callback);
-
-    return this;
+    return this.addElementToModificationsList(presName, slideNumber, selector, 'modify', callback);
   }
 
-  async addElement(presName: string, slideNumber: number, selector: string, callback?: Function | Function[]): Promise<this> {
-    this.addElementToModlist(presName, slideNumber, selector, 'append', callback);
-
-    return this;
+  addElement(presName: string, slideNumber: number, selector: string, callback?: ShapeCallback | ShapeCallback[]): this {
+    return this.addElementToModificationsList(presName, slideNumber, selector, 'append', callback);
   }
 
-  async addElementToModlist(presName: string, slideNumber: number, selector: string, mode: string, callback?: Function | Function[]): Promise<this> {
+  private addElementToModificationsList(presName: string, slideNumber: number, selector: string, mode: string, callback?: ShapeCallback | ShapeCallback[]): this {
     this.importElements.push({
       presName,
       slideNumber,
@@ -115,7 +118,7 @@ export class Slide implements ISlide {
           await new Image(info)[info.mode](this.targetTemplate, this.targetNumber);
           break;
         case ElementType.Shape:
-          await new Generic(info)[info.mode](this.targetTemplate, this.targetNumber);
+          await new GenericShape(info)[info.mode](this.targetTemplate, this.targetNumber);
           break;
       }
     }
@@ -176,24 +179,24 @@ export class Slide implements ISlide {
   }
 
   async copySlideFiles(): Promise<void> {
-    FileHelper.zipCopy(
+    await FileHelper.zipCopy(
       this.sourceArchive, `ppt/slides/slide${this.sourceNumber}.xml`,
       this.targetArchive, `ppt/slides/slide${this.targetNumber}.xml`
     );
 
-    FileHelper.zipCopy(
+    await FileHelper.zipCopy(
       this.sourceArchive, `ppt/slides/_rels/slide${this.sourceNumber}.xml.rels`,
       this.targetArchive, `ppt/slides/_rels/slide${this.targetNumber}.xml.rels`
     );
   }
 
   async copySlideNoteFiles(): Promise<void> {
-    FileHelper.zipCopy(
+    await FileHelper.zipCopy(
       this.sourceArchive, `ppt/notesSlides/notesSlide${this.sourceNumber}.xml`,
       this.targetArchive, `ppt/notesSlides/notesSlide${this.targetNumber}.xml`
     );
 
-    FileHelper.zipCopy(
+    await FileHelper.zipCopy(
       this.sourceArchive, `ppt/notesSlides/_rels/notesSlide${this.sourceNumber}.xml.rels`,
       this.targetArchive, `ppt/notesSlides/_rels/notesSlide${this.targetNumber}.xml.rels`
     );

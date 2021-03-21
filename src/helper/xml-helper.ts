@@ -1,10 +1,10 @@
 import JSZip from 'jszip';
 
 import { DOMParser, XMLSerializer } from 'xmldom';
-import { FileHelper } from './file';
+import { FileHelper } from './file-helper';
 import { DefaultAttribute, OverrideAttribute, RelationshipAttribute, XMLElement } from '../types/xml-types';
 import { TargetByRelIdMap } from '../constants/constants';
-import { XmlPrettyPrint } from './pretty';
+import { XmlPrettyPrint } from './xml-pretty-print';
 import { Target } from '../types/types';
 
 export class XmlHelper {
@@ -112,7 +112,7 @@ export class XmlHelper {
     return rels;
   }
 
-  static findByAttribute(xml: HTMLElement | Document, tagName: string, attributeName: string, attributeValue: string): Boolean {
+  static findByAttribute(xml: HTMLElement | Document, tagName: string, attributeName: string, attributeValue: string): boolean {
     const elements = xml.getElementsByTagName(tagName);
     for (const i in elements) {
       const element = elements[i];

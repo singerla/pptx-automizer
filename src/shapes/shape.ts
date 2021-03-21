@@ -1,7 +1,7 @@
 import JSZip from 'jszip';
 
-import { XmlHelper } from '../helper/xml';
-import { GeneralHelper } from '../helper/general';
+import { XmlHelper } from '../helper/xml-helper';
+import { GeneralHelper } from '../helper/general-helper';
 import { ImportedElement, ShapeCallback } from '../types/types';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 

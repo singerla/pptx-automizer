@@ -1,6 +1,6 @@
 import JSZip from 'jszip';
-import { FileHelper } from '../helper/file';
-import { XmlHelper } from '../helper/xml';
+import { FileHelper } from '../helper/file-helper';
+import { XmlHelper } from '../helper/xml-helper';
 import { Shape } from './shape';
 
 import { RelationshipAttribute } from '../types/xml-types';
@@ -94,7 +94,7 @@ export class Chart extends Shape implements IChart {
   }
 
   async copyFiles(): Promise<void> {
-    this.copyChartFiles();
+    await this.copyChartFiles();
 
     const wbRelsPath = `ppt/charts/_rels/chart${this.sourceNumber}.xml.rels`;
     const worksheets = await XmlHelper.getTargetsFromRelationships(this.sourceArchive, wbRelsPath, '../embeddings/Microsoft_Excel_Worksheet', '.xlsx');
@@ -103,8 +103,8 @@ export class Chart extends Shape implements IChart {
     this.sourceWorksheet = (worksheet.number === 0) ? '' : worksheet.number;
     this.targetWorksheet = this.targetNumber;
 
-    this.copyWorksheetFile();
-    this.editTargetWorksheetRel();
+    await this.copyWorksheetFile();
+    await this.editTargetWorksheetRel();
   }
 
   async appendTypes(): Promise<void> {
@@ -116,22 +116,22 @@ export class Chart extends Shape implements IChart {
 
   async copyChartFiles(): Promise<void> {
 
-    FileHelper.zipCopy(
+    await FileHelper.zipCopy(
       this.sourceArchive, `ppt/charts/chart${this.sourceNumber}.xml`,
       this.targetArchive, `ppt/charts/chart${this.targetNumber}.xml`
     );
 
-    FileHelper.zipCopy(
+    await FileHelper.zipCopy(
       this.sourceArchive, `ppt/charts/colors${this.sourceNumber}.xml`,
       this.targetArchive, `ppt/charts/colors${this.targetNumber}.xml`
     );
 
-    FileHelper.zipCopy(
+    await FileHelper.zipCopy(
       this.sourceArchive, `ppt/charts/style${this.sourceNumber}.xml`,
       this.targetArchive, `ppt/charts/style${this.targetNumber}.xml`
     );
 
-    FileHelper.zipCopy(
+    await FileHelper.zipCopy(
       this.sourceArchive, `ppt/charts/_rels/chart${this.sourceNumber}.xml.rels`,
       this.targetArchive, `ppt/charts/_rels/chart${this.targetNumber}.xml.rels`
     );
@@ -177,7 +177,7 @@ export class Chart extends Shape implements IChart {
   }
 
   async copyWorksheetFile(): Promise<void> {
-    FileHelper.zipCopy(
+    await FileHelper.zipCopy(
       this.sourceArchive, `ppt/embeddings/Microsoft_Excel_Worksheet${this.sourceWorksheet}.xlsx`,
       this.targetArchive, `ppt/embeddings/Microsoft_Excel_Worksheet${this.targetWorksheet}.xlsx`,
     );

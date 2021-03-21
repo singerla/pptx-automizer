@@ -1,5 +1,5 @@
 import { Slide } from './classes/slide';
-import { FileHelper } from './helper/file';
+import { FileHelper } from './helper/file-helper';
 import { AutomizerParams, AutomizerSummary } from './types/types';
 import { IPresentationProps } from './interfaces/ipresentation-props';
 import { PresTemplate } from './interfaces/pres-template';

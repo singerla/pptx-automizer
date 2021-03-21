@@ -1,7 +1,7 @@
 import JSZip from 'jszip';
 
-import { FileHelper } from '../helper/file';
-import { XmlHelper } from '../helper/xml';
+import { FileHelper } from '../helper/file-helper';
+import { XmlHelper } from '../helper/xml-helper';
 import { Shape } from './shape';
 import { RelationshipAttribute } from '../types/xml-types';
 import { ImportedElement, Target } from '../types/types';
@@ -84,7 +84,7 @@ export class Image extends Shape implements IImage {
   }
 
   async copyFiles() {
-    FileHelper.zipCopy(
+    await FileHelper.zipCopy(
       this.sourceArchive, `ppt/media/${this.sourceFile}`,
       this.targetArchive, `ppt/media/${this.targetFile}`
     );
