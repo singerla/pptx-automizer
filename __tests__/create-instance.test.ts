@@ -1,7 +1,7 @@
-import Automizer from "../src/index"
+import Automizer from '../src/index';
 
-test("create automizer instance", () => {
-  const automizer = new Automizer()
+test('create automizer instance', () => {
+  const automizer = new Automizer();
 
-  expect(automizer).toBeInstanceOf(Automizer)
+  expect(automizer).toBeInstanceOf(Automizer);
 });

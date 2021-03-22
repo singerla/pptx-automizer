@@ -1,85 +1,77 @@
-import JSZip from 'jszip'
-import XmlHelper from './xml'
-import { ICounter, RootPresTemplate } from '../definitions/app'
+import JSZip from 'jszip';
 
-export default class CountHelper implements ICounter {
-  template: RootPresTemplate
-  name: string
-  count: number
-  
+import { ICounter } from '../interfaces/icounter';
+import { RootPresTemplate } from '../interfaces/root-pres-template';
+import { XmlHelper } from './xml-helper';
+
+export class CountHelper implements ICounter {
+  template: RootPresTemplate;
+  name: string;
+  count: number;
+
   constructor(name: string, template: RootPresTemplate) {
-    this.name = name
-    this.template = template
+    this.name = name;
+    this.template = template;
   }
 
-  static increment(name:string, counters: ICounter[]): number | null {
-    return CountHelper.getCounterByName(name, counters)._increment()
+  static increment(name: string, counters: ICounter[]): number | null {
+    return CountHelper.getCounterByName(name, counters)._increment();
   }
 
-  static count(name:string, counters: ICounter[]): number {
-    return CountHelper.getCounterByName(name, counters).get()
+  static count(name: string, counters: ICounter[]): number {
+    return CountHelper.getCounterByName(name, counters).get();
   }
 
-  static getCounterByName(name:string, counters: ICounter[]): ICounter {
-    let counter = counters.find(counter => counter.name === name)
-    if(counter === undefined) {
-      throw new Error(`Counter ${name} not found.`)
+  static getCounterByName(name: string, counters: ICounter[]): ICounter {
+    const counter = counters.find(c => c.name === name);
+    if (counter === undefined) {
+      throw new Error(`Counter ${name} not found.`);
     }
-    return counter
+    return counter;
   }
 
   _increment(): number {
-    this.count++
-    return this.count
+    this.count++;
+    return this.count;
   }
 
   async set() {
-    let method = this.getCounterMethod()
-    if(method === undefined) {
-      throw new Error(`No way to count ${this.name}.`)
-    }
-    
-    this.count = await method(await this.template.archive)
+    this.count = await this.calculateCount(await this.template.archive);
   }
 
   get(): number {
-    return this.count
+    return this.count;
   }
 
-  getCounterMethod(): any {
+  private calculateCount(presentation: JSZip): Promise<number> {
     switch (this.name) {
-      case 'slides' : return CountHelper.countSlides
-      case 'charts' : return CountHelper.countCharts
-      case 'images' : return CountHelper.countImages
-    }
-  }
-
-  static async countSlides(presentation: JSZip): Promise<number> {
-    let presentationXml = await XmlHelper.getXmlFromArchive(presentation, 'ppt/presentation.xml')
-    let slideCount = presentationXml.getElementsByTagName('p:sldId').length
-    return slideCount
-  }
-
-  static async countCharts(presentation: JSZip): Promise<number> {
-    let contentTypesXml = await XmlHelper.getXmlFromArchive(presentation, '[Content_Types].xml')
-    let overrides = contentTypesXml.getElementsByTagName('Override')
-    let chartCount = 0
-
-    for(let i in overrides) {
-      let override = overrides[i]
-      if(override.getAttribute) {
-        let contentType = override.getAttribute('ContentType')
-        if(contentType === `application/vnd.openxmlformats-officedocument.drawingml.chart+xml`) {
-          chartCount++
-        }
-      }
+      case 'slides' :
+        return CountHelper.countSlides(presentation);
+      case 'charts' :
+        return CountHelper.countCharts(presentation);
+      case 'images' :
+        return CountHelper.countImages(presentation);
     }
 
-    return chartCount
+    throw new Error(`No way to count ${this.name}.`);
   }
 
-  static async countImages(presentation: JSZip): Promise<number> {
-    let files = presentation.file(/ppt\/media\/image/)
-    return files.length
+  private static async countSlides(presentation: JSZip): Promise<number> {
+    const presentationXml = await XmlHelper.getXmlFromArchive(presentation, 'ppt/presentation.xml');
+    return presentationXml.getElementsByTagName('p:sldId').length;
+  }
+
+  private static async countCharts(presentation: JSZip): Promise<number> {
+    const contentTypesXml = await XmlHelper.getXmlFromArchive(presentation, '[Content_Types].xml');
+    const overrides = contentTypesXml.getElementsByTagName('Override');
+
+    return Object.keys(overrides)
+      .map(key => overrides[key] as Element)
+      .filter(o => o.getAttribute && o.getAttribute('ContentType') === `application/vnd.openxmlformats-officedocument.drawingml.chart+xml`)
+      .length;
+  }
+
+  private static async countImages(presentation: JSZip): Promise<number> {
+    return presentation.file(/ppt\/media\/image/).length;
   }
 }

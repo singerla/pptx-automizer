@@ -1,18 +1,18 @@
-import Automizer from "../src/automizer"
+import Automizer from '../src/automizer';
 
-test("create presentation and append charts to existing charts", async () => {
+test('create presentation and append charts to existing charts', async () => {
   const automizer = new Automizer({
     templateDir: `${__dirname}/pptx-templates`,
     outputDir: `${__dirname}/pptx-output`
-  })
+  });
 
-  let pres = automizer.loadRoot(`RootTemplateWithCharts.pptx`)
-    .load(`SlideWithCharts.pptx`, 'charts')
+  const pres = automizer.loadRoot(`RootTemplateWithCharts.pptx`)
+    .load(`SlideWithCharts.pptx`, 'charts');
 
-  pres.addSlide('charts', 1)
+  pres.addSlide('charts', 1);
 
-  let result = await pres.write(`create-presentation-charts.test.pptx`)
+  const result = await pres.write(`create-presentation-charts.test.pptx`);
 
-  expect(result.slides).toBe(3)
-  expect(result.charts).toBe(3)
-})
+  expect(result.slides).toBe(3);
+  expect(result.charts).toBe(3);
+});

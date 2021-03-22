@@ -7,11 +7,11 @@ test("create presentation, add slide with shapes from template and modify existi
     outputDir: `${__dirname}/pptx-output`
   })
 
-  let pres = automizer
+  const pres = automizer
     .loadRoot(`RootTemplate.pptx`)
     .load(`SlideWithShapes.pptx`, 'shapes')
 
-  let result = await pres
+  const result = await pres
     .addSlide('shapes', 2, (slide) => {
       slide.modifyElement('Drum', [setPosition({x: 1000000, h:5000000, w:5000000})])
     })
