@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import JSZip from 'jszip';
+import JSZip, { InputType, OutputType } from 'jszip';
 
 import { AutomizerSummary } from '../types/types';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
@@ -14,7 +14,7 @@ export class FileHelper {
     return fs.promises.readFile(location);
   }
 
-  static extractFromArchive(archive: JSZip, file: string, type?: any): Promise<any> {
+  static extractFromArchive(archive: JSZip, file: string, type?: OutputType): Promise<string | number[] | Uint8Array | ArrayBuffer | Blob | Buffer> {
     if (archive === undefined) {
       throw new Error('No files found, expected: ' + file);
     }
@@ -25,9 +25,9 @@ export class FileHelper {
     return archive.files[file].async(type || 'string');
   }
 
-  static extractFileContent(file: any): Promise<JSZip> {
+  static extractFileContent(file: Buffer): Promise<JSZip> {
     const zip = new JSZip();
-    return zip.loadAsync(file);
+    return zip.loadAsync(file as unknown as InputType);
   }
 
   static getFileExtension(filename: string): string {
@@ -52,7 +52,7 @@ export class FileHelper {
   }
 
   static writeOutputFile(location: string, content: Buffer, automizer: IPresentationProps): AutomizerSummary {
-    fs.writeFile(location, content, (err: { message: any }) => {
+    fs.writeFile(location, content, (err: { message: string }) => {
       if (err) {
         throw new Error(`Error writing output: ${err.message}`);
       }

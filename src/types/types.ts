@@ -2,8 +2,8 @@ import JSZip from 'jszip';
 import { ElementType } from '../enums/element-type';
 
 export type ModificationCallback = (document: Document) => void;
-
-export type ShapeCallback = (htmlElement: HTMLElement, arg1?: any, arg2?: any) => void;
+export type GetRelationshipsCallback = (element: Element, rels: Target[]) => void;
+export type ShapeCallback = (XMLDocument: XMLDocument, arg1?: Document, arg2?: Workbook) => void;
 
 export type Frame = {
   x?: number;
@@ -27,7 +27,7 @@ export type AutomizerSummary = {
 }
 export type Target = {
   file: string;
-  number: number;
+  number?: number;
   rId?: string;
 }
 export type ImportElement = {
@@ -42,7 +42,7 @@ export type ImportedElement = {
   name?: string;
   sourceArchive: JSZip;
   sourceSlideNumber: number;
-  callback?: any;
+  callback?: ImportElement['callback'];
   target?: AnalyzedElementType['target'];
   type?: AnalyzedElementType['type'];
   sourceElement?: AnalyzedElementType['element'];
@@ -50,7 +50,7 @@ export type ImportedElement = {
 export type AnalyzedElementType = {
   type: ElementType;
   target?: Target;
-  element?: HTMLElement;
+  element?: XMLDocument;
 }
 export type TargetByRelIdMapParam = {
   relRootTag: string;
@@ -60,7 +60,18 @@ export type TargetByRelIdMapParam = {
 }
 export type Workbook = {
   archive: JSZip;
-  sheet: Document | any;
-  sharedStrings: Document;
-  table: Document;
+  sheet: XMLDocument;
+  sharedStrings: XMLDocument;
+  table: XMLDocument;
+}
+export type ChartSeries = {
+  label: string;
+}
+export type ChartCategory = {
+  label: string;
+  values: number[];
+}
+export type ChartData = {
+  series: ChartSeries[];
+  categories: ChartCategory[];
 }

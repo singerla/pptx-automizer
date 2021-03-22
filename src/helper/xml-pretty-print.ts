@@ -1,60 +1,69 @@
 // Thanks to https://github.com/aishwar/xml-pretty-print
 // Alternative: https://github.com/riversun/xml-beautify
 
+type PrettyPrintToken = {
+  match: string,
+  tag: string,
+  offset: number,
+  preContent: string
+}
+
+
 export class XmlPrettyPrint {
   xmlStr: string;
   TAB: string;
 
-  constructor(xmlStr) {
+  constructor(xmlStr: string) {
     this.xmlStr = xmlStr;
     this.TAB = '  ';
   }
 
-  dump() {
+  dump(): void {
     console.log(this.prettify());
   }
 
-  prettify() {
+  prettify(): string {
     return this.parse(this.xmlStr).join('\n');
   }
 
-  parse(xmlStr) {
+  parse(xmlStr: string): string[] {
     const opener = /<(\w+)[^>]*?>/m;
     const closer = /<\/[^>]*>/m;
-
     let idx = 0;
     let indent = 0;
     let processing = '';
     const tags = [];
     const output = [];
-    let token;
 
     while (idx < xmlStr.length) {
       processing += xmlStr[idx];
 
-      if (token = this.getToken(opener, processing)) {
+      const openToken = this.getToken(opener, processing);
+      const closeToken = this.getToken(closer, processing);
+
+      if (openToken) {
         // Check if it is a singular element, e.g. <link />
         if (processing[processing.length - 2] != '/') {
-          this.addLine(output, token.preContent, indent);
-          this.addLine(output, token.match, indent);
+          this.addLine(output, openToken.preContent, indent);
+          this.addLine(output, openToken.match, indent);
 
-          tags.push(token.tag);
+          tags.push(openToken.tag);
           indent += 1;
           processing = '';
         } else {
-          this.addLine(output, token.preContent, indent);
-          this.addLine(output, token.match, indent);
+          this.addLine(output, openToken.preContent, indent);
+          this.addLine(output, openToken.match, indent);
           processing = '';
         }
-      } else if (token = this.getToken(closer, processing)) {
-        this.addLine(output, token.preContent, indent);
+      } else if (closeToken) {
+        this.addLine(output, closeToken.preContent, indent);
 
-        if (tags[tags.length] == token.tag) {
+        if (tags[tags.length] == closeToken.tag) {
           tags.pop();
           indent -= 1;
         }
 
-        this.addLine(output, token.match, indent);
+        this.addLine(output, closeToken.match, indent);
         processing = '';
       }
 
@@ -69,7 +78,7 @@ export class XmlPrettyPrint {
     return output;
   }
 
-  getToken(regex, str) {
+  getToken(regex: RegExp, str: string): PrettyPrintToken {
     if (regex.test(str)) {
       const matches = regex.exec(str);
       const match = matches[0];
@@ -85,9 +94,10 @@ export class XmlPrettyPrint {
     }
   }
 
-  addLine(output, content, indent) {
+  addLine(output: string[], content: string, indent: number): void {
     // Trim the content
-    if (content = content.replace(/^\s+|\s+$/, '')) {
+    content = content.replace(/^\s+|\s+$/, '')
+    if (content) {
       let tabs = '';
 
       while (indent--) {

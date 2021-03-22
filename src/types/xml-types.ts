@@ -1,3 +1,5 @@
+import JSZip from "jszip"
+
 export type DefaultAttribute = {
   Extension: string;
   ContentType: string;
@@ -10,7 +12,7 @@ export type RelationshipAttribute = {
 }
 
 export type SlideListAttribute = {
-  id: (xml: HTMLElement) => number;
+  id: (xml: XMLDocument) => number;
   'r:id': string;
 }
 
@@ -19,10 +21,10 @@ export type OverrideAttribute = {
   ContentType: string;
 }
 
-export type XMLElement = {
-  archive: any;
-  clause?: (xml: HTMLElement | Document) => boolean;
-  parent: any;
+export type HelperElement = {
+  archive: JSZip;
+  clause?: (xml: XMLDocument) => boolean;
+  parent: (xml: XMLDocument) => Element;
   file: string;
   tag: string;
   attributes: DefaultAttribute | OverrideAttribute | SlideListAttribute | RelationshipAttribute;

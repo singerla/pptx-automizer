@@ -3,7 +3,7 @@ import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { Shape } from './shape';
 
 export class GenericShape extends Shape {
-  sourceElement: HTMLElement;
+  sourceElement: XMLDocument;
 
   constructor(shape: ImportedElement) {
     super(shape);
@@ -21,7 +21,7 @@ export class GenericShape extends Shape {
     return this;
   }
 
-  async prepare(targetTemplate: RootPresTemplate, targetSlideNumber: number) {
+  async prepare(targetTemplate: RootPresTemplate, targetSlideNumber: number): Promise<void> {
     await this.setTarget(targetTemplate, targetSlideNumber);
     await this.setTargetElement();
     this.applyCallbacks(this.callbacks, this.targetElement);

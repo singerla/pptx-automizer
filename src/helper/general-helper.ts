@@ -8,4 +8,9 @@ export class GeneralHelper {
       return [];
     }
   }
+
+  static propertyExists<T>(object: T, property: string): boolean {
+    if(!object || typeof object !== 'object') return false
+    return !!Object.getOwnPropertyDescriptor(object, property)
+  }
 }

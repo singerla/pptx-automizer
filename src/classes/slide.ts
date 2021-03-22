@@ -7,18 +7,18 @@ import {
   ImportedElement,
   ImportElement,
   ModificationCallback,
-  ShapeCallback,
-  Target
+  ShapeCallback
 } from '../types/types';
 import { ISlide } from '../interfaces/islide';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
 import { PresTemplate } from '../interfaces/pres-template';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { ElementType } from '../enums/element-type';
-import { RelationshipAttribute, SlideListAttribute } from '../types/xml-types';
+import { RelationshipAttribute, SlideListAttribute, HelperElement } from '../types/xml-types';
 import { Image } from '../shapes/image';
 import { Chart } from '../shapes/chart';
 import { GenericShape } from '../shapes/generic-shape';
+import { GeneralHelper } from '../helper/general-helper';
 
 export class Slide implements ISlide {
   sourceTemplate: PresTemplate;
@@ -46,7 +46,7 @@ export class Slide implements ISlide {
     this.importElements = [];
   }
 
-  async append(targetTemplate: RootPresTemplate) {
+  async append(targetTemplate: RootPresTemplate): Promise<void> {
     this.targetTemplate = targetTemplate;
     this.targetArchive = await targetTemplate.archive;
     this.targetNumber = targetTemplate.incrementCounter('slides');
@@ -148,7 +148,7 @@ export class Slide implements ISlide {
     };
   }
 
-  async analyzeElement(sourceElement: any, sourceArchive: JSZip, slideNumber: number): Promise<AnalyzedElementType> {
+  async analyzeElement(sourceElement: XMLDocument, sourceArchive: JSZip, slideNumber: number): Promise<AnalyzedElementType> {
     const isChart = sourceElement.getElementsByTagName('c:chart');
     if (isChart.length) {
       return {
@@ -218,11 +218,11 @@ export class Slide implements ISlide {
     );
   }
 
-  appendToSlideRel(rootArchive: JSZip, relId: string, slideCount: number): Promise<HTMLElement> {
+  appendToSlideRel(rootArchive: JSZip, relId: string, slideCount: number): Promise<HelperElement> {
     return XmlHelper.append({
       archive: rootArchive,
       file: `ppt/_rels/presentation.xml.rels`,
-      parent: (xml: HTMLElement) => xml.getElementsByTagName('Relationships')[0],
+      parent: (xml: XMLDocument) => xml.getElementsByTagName('Relationships')[0],
       tag: 'Relationship',
       attributes: {
         Id: relId,
@@ -232,20 +232,20 @@ export class Slide implements ISlide {
     });
   }
 
-  appendToSlideList(rootArchive: JSZip, relId: string): Promise<HTMLElement> {
+  appendToSlideList(rootArchive: JSZip, relId: string): Promise<HelperElement> {
     return XmlHelper.append({
       archive: rootArchive,
       file: `ppt/presentation.xml`,
-      parent: (xml: HTMLElement) => xml.getElementsByTagName('p:sldIdLst')[0],
+      parent: (xml: XMLDocument) => xml.getElementsByTagName('p:sldIdLst')[0],
       tag: 'p:sldId',
       attributes: {
-        id: (xml: HTMLElement) => XmlHelper.getMaxId(xml.getElementsByTagName('p:sldId'), 'id', true),
+        id: (xml: XMLDocument) => XmlHelper.getMaxId(xml.getElementsByTagName('p:sldId'), 'id', true),
         'r:id': relId
       } as SlideListAttribute
     });
   }
 
-  appendSlideToContentType(rootArchive: JSZip, slideCount: number): Promise<HTMLElement> {
+  appendSlideToContentType(rootArchive: JSZip, slideCount: number): Promise<HelperElement> {
     return XmlHelper.append(
       XmlHelper.createContentTypeChild(rootArchive, {
         PartName: `/ppt/slides/slide${slideCount}.xml`,
@@ -254,7 +254,7 @@ export class Slide implements ISlide {
     );
   }
 
-  appendNotesToContentType(rootArchive: JSZip, slideCount: number): Promise<HTMLElement> {
+  appendNotesToContentType(rootArchive: JSZip, slideCount: number): Promise<HelperElement> {
     return XmlHelper.append(
       XmlHelper.createContentTypeChild(rootArchive, {
         PartName: `/ppt/notesSlides/notesSlide${slideCount}.xml`,
@@ -287,7 +287,6 @@ export class Slide implements ISlide {
 
   hasNotes(): boolean {
     const file = this.sourceArchive.file(`ppt/notesSlides/notesSlide${this.sourceNumber}.xml`);
-    return file && file.hasOwnProperty('name');
+    return GeneralHelper.propertyExists(file, 'name');
   }
-
 }

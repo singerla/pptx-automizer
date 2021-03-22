@@ -1,24 +1,26 @@
 import { XmlHelper } from './xml-helper';
-import { Frame, Workbook } from '../types/types';
+import { ChartData, Frame, Workbook } from '../types/types';
+import { XmlChartHelper } from './xml-chart-helper';
 
-export const setSolidFill = (element) => {
+export const setSolidFill = (element: XMLDocument): void => {
   element.getElementsByTagName('a:solidFill')[0]
     .getElementsByTagName('a:schemeClr')[0]
     .setAttribute('val', 'accent6');
 };
 
-export const setText = (text: string) => (element) => {
+export const setText = (text: string) => (element: XMLDocument): void => {
   element.getElementsByTagName('a:t')[0]
     .firstChild
-    .data = text;
+    .textContent = text;
 };
 
-export const revertElements = (slide: Document) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const revertElements = (slide: Document): void => {
   // dump(slide)
 };
 
 // e.g. setPosition({x: 8000000, h:5000000})
-export const setPosition = (pos: Frame) => (element: HTMLElement) => {
+export const setPosition = (pos: Frame) => (element: XMLDocument): void => {
   const map = {
     x: {tag: 'a:off', attribute: 'x'},
     y: {tag: 'a:off', attribute: 'y'},
@@ -36,15 +38,15 @@ export const setPosition = (pos: Frame) => (element: HTMLElement) => {
     });
 };
 
-export const setAttribute = (tagName: string, attribute: string, value: string | number, count?: number) => (element: HTMLElement) => {
+export const setAttribute = (tagName: string, attribute: string, value: string | number, count?: number) => (element: XMLDocument): void => {
   element.getElementsByTagName(tagName)[count || 0]
     .setAttribute(attribute, String(value));
 };
 
-export const setChartData = (data: any) => (element: HTMLElement, chart: Document, workbook: Workbook) => {
-  XmlHelper.setChartData(chart, workbook, data);
+export const setChartData = (data: ChartData) => (element: XMLDocument, chart: Document, workbook: Workbook): void => {
+  XmlChartHelper.setChartData(chart, workbook, data);
 };
 
-export const dump = (element: HTMLElement | Document) => {
+export const dump = (element: XMLDocument | Document): void => {
   XmlHelper.dump(element);
 };

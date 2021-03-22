@@ -1,4 +1,4 @@
-import JSZip from 'jszip';
+import JSZip, { InputType } from 'jszip';
 
 import { FileHelper } from '../helper/file-helper';
 import { CountHelper } from '../helper/count';
@@ -25,7 +25,7 @@ export class Template implements ITemplate {
    * Node file buffer
    * @type Promise<Buffer>
    */
-  file: Promise<Buffer>;
+  file: InputType;
 
   /**
    * this.file will be passed to JSZip
@@ -45,17 +45,17 @@ export class Template implements ITemplate {
    */
   counter: ICounter[];
 
-  constructor(location: string, name?: string) {
+  constructor(location: string) {
     this.location = location;
-    this.file = FileHelper.readFile(location);
-    this.archive = FileHelper.extractFileContent(this.file);
+    const file = FileHelper.readFile(location);
+    this.archive = FileHelper.extractFileContent(file as unknown as Buffer);
   }
 
   static import(location: string, name?: string): PresTemplate | RootPresTemplate {
     let newTemplate: PresTemplate | RootPresTemplate;
 
     if (name) {
-      newTemplate = new Template(location, name) as PresTemplate;
+      newTemplate = new Template(location) as PresTemplate;
       newTemplate.name = name;
     } else {
       newTemplate = new Template(location) as RootPresTemplate;

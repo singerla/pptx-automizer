@@ -3,7 +3,7 @@ import { FileHelper } from '../helper/file-helper';
 import { XmlHelper } from '../helper/xml-helper';
 import { Shape } from './shape';
 
-import { RelationshipAttribute } from '../types/xml-types';
+import { RelationshipAttribute, HelperElement } from '../types/xml-types';
 import { ImportedElement, Target, Workbook } from '../types/types';
 import { IChart } from '../interfaces/ichart';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
@@ -17,7 +17,7 @@ export class Chart extends Shape implements IChart {
 
     this.relRootTag = 'c:chart';
     this.relAttribute = 'r:id';
-    this.relParent = element => element.parentNode.parentNode.parentNode as HTMLElement;
+    this.relParent = (element: Element) => element.parentNode.parentNode.parentNode as Element;
   }
 
   async modify(targetTemplate: RootPresTemplate, targetSlideNumber: number): Promise<Chart> {
@@ -53,13 +53,13 @@ export class Chart extends Shape implements IChart {
     await this.appendToSlideRels();
   }
 
-  async clone() {
+  async clone(): Promise<void> {
     await this.setTargetElement();
     await this.modifyChartData();
     await this.updateTargetElementRelId();
   }
 
-  async modifyChartData() {
+  async modifyChartData(): Promise<void> {
     const chartXml = await XmlHelper.getXmlFromArchive(this.targetArchive, `ppt/charts/chart${this.targetNumber}.xml`);
     const workbook = await this.readWorkbook();
 
@@ -71,7 +71,7 @@ export class Chart extends Shape implements IChart {
 
   async readWorkbook(): Promise<Workbook> {
     const worksheet = await FileHelper.extractFromArchive(this.targetArchive, `ppt/embeddings/Microsoft_Excel_Worksheet${this.targetWorksheet}.xlsx`, 'nodebuffer');
-    const archive = await FileHelper.extractFileContent(worksheet);
+    const archive = await FileHelper.extractFileContent(worksheet as unknown as Buffer);
     const sheet = await XmlHelper.getXmlFromArchive(archive, 'xl/worksheets/sheet1.xml');
     const table = await XmlHelper.getXmlFromArchive(archive, 'xl/tables/table1.xml');
     const sharedStrings = await XmlHelper.getXmlFromArchive(archive, 'xl/sharedStrings.xml');
@@ -137,7 +137,7 @@ export class Chart extends Shape implements IChart {
     );
   }
 
-  async appendToSlideRels(): Promise<HTMLElement> {
+  async appendToSlideRels(): Promise<HelperElement> {
     this.createdRid = await XmlHelper.getNextRelId(this.targetArchive, this.targetSlideRelFile);
     const attributes = {
       Id: this.createdRid,
@@ -183,18 +183,18 @@ export class Chart extends Shape implements IChart {
     );
   }
 
-  appendChartExtensionToContentType(): Promise<HTMLElement | boolean> {
+  appendChartExtensionToContentType(): Promise<HelperElement | boolean> {
     return XmlHelper.appendIf({
       ...XmlHelper.createContentTypeChild(this.targetArchive, {
         Extension: `xlsx`,
         ContentType: `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
       }),
       tag: 'Default',
-      clause: (xml: HTMLElement) => !XmlHelper.findByAttribute(xml, 'Default', 'Extension', 'xlsx')
+      clause: (xml: XMLDocument) => !XmlHelper.findByAttribute(xml, 'Default', 'Extension', 'xlsx')
     });
   }
 
-  appendChartToContentType(): Promise<HTMLElement> {
+  appendChartToContentType(): Promise<HelperElement> {
     return XmlHelper.append(
       XmlHelper.createContentTypeChild(this.targetArchive, {
         PartName: `/ppt/charts/chart${this.targetNumber}.xml`,
@@ -203,7 +203,7 @@ export class Chart extends Shape implements IChart {
     );
   }
 
-  appendColorToContentType(): Promise<HTMLElement> {
+  appendColorToContentType(): Promise<HelperElement> {
     return XmlHelper.append(
       XmlHelper.createContentTypeChild(this.targetArchive, {
         PartName: `/ppt/charts/colors${this.targetNumber}.xml`,
@@ -212,7 +212,7 @@ export class Chart extends Shape implements IChart {
     );
   }
 
-  appendStyleToContentType(): Promise<HTMLElement> {
+  appendStyleToContentType(): Promise<HelperElement> {
     return XmlHelper.append(
       XmlHelper.createContentTypeChild(this.targetArchive, {
         PartName: `/ppt/charts/style${this.targetNumber}.xml`,

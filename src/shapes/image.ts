@@ -3,7 +3,7 @@ import JSZip from 'jszip';
 import { FileHelper } from '../helper/file-helper';
 import { XmlHelper } from '../helper/xml-helper';
 import { Shape } from './shape';
-import { RelationshipAttribute } from '../types/xml-types';
+import { RelationshipAttribute, HelperElement } from '../types/xml-types';
 import { ImportedElement, Target } from '../types/types';
 import { IImage } from '../interfaces/iimage';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
@@ -12,7 +12,7 @@ import { ElementType } from '../enums/element-type';
 
 export class Image extends Shape implements IImage {
   extension: string;
-  contentTypeMap: object;
+  contentTypeMap: typeof ImageTypeMap;
 
   constructor(shape: ImportedElement) {
     super(shape);
@@ -24,11 +24,11 @@ export class Image extends Shape implements IImage {
     switch (this.extension) {
       case 'svg':
         this.relRootTag = 'asvg:svgBlip';
-        this.relParent = element => element.parentNode as HTMLElement;
+        this.relParent = (element: Element) => element.parentNode as Element;
         break;
       default:
         this.relRootTag = 'a:blip';
-        this.relParent = element => element.parentNode.parentNode as HTMLElement;
+        this.relParent = (element: Element) => element.parentNode.parentNode as Element;
         break;
     }
 
@@ -72,7 +72,7 @@ export class Image extends Shape implements IImage {
     return this;
   }
 
-  async prepare(targetTemplate, targetSlideNumber) {
+  async prepare(targetTemplate: RootPresTemplate, targetSlideNumber: number): Promise<void> {
     await this.setTarget(targetTemplate, targetSlideNumber);
 
     this.targetNumber = this.targetTemplate.incrementCounter('images');
@@ -83,18 +83,18 @@ export class Image extends Shape implements IImage {
     await this.appendToSlideRels();
   }
 
-  async copyFiles() {
+  async copyFiles(): Promise<void> {
     await FileHelper.zipCopy(
       this.sourceArchive, `ppt/media/${this.sourceFile}`,
       this.targetArchive, `ppt/media/${this.targetFile}`
     );
   }
 
-  async appendTypes() {
+  async appendTypes(): Promise<void> {
     await this.appendImageExtensionToContentType();
   }
 
-  async appendToSlideRels(): Promise<HTMLElement> {
+  async appendToSlideRels(): Promise<HelperElement> {
     const targetRelFile = `ppt/slides/_rels/slide${this.targetSlideNumber}.xml.rels`;
     this.createdRid = await XmlHelper.getNextRelId(this.targetArchive, targetRelFile);
 
@@ -109,7 +109,7 @@ export class Image extends Shape implements IImage {
     );
   }
 
-  appendImageExtensionToContentType(): Promise<HTMLElement | boolean> {
+  appendImageExtensionToContentType(): Promise<HelperElement | boolean> {
     const extension = this.extension;
     const contentType = (this.contentTypeMap[extension]) ? this.contentTypeMap[extension] : 'image/' + extension;
 
@@ -119,11 +119,11 @@ export class Image extends Shape implements IImage {
         ContentType: contentType
       }),
       tag: 'Default',
-      clause: (xml: HTMLElement) => !XmlHelper.findByAttribute(xml, 'Default', 'Extension', extension)
+      clause: (xml: XMLDocument) => !XmlHelper.findByAttribute(xml, 'Default', 'Extension', extension)
     });
   }
 
-  hasSvgRelation() {
+  hasSvgRelation(): boolean {
     return (this.targetElement.getElementsByTagName('asvg:svgBlip').length > 0);
   }
 

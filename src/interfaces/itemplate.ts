@@ -1,7 +1,7 @@
-import JSZip from 'jszip';
+import JSZip, { InputType } from 'jszip';
 
 export interface ITemplate {
   location: string;
-  file: Promise<Buffer>;
+  file: InputType;
   archive: Promise<JSZip>;
 }

@@ -2,7 +2,7 @@ import JSZip from 'jszip';
 
 import { XmlHelper } from '../helper/xml-helper';
 import { GeneralHelper } from '../helper/general-helper';
-import { ImportedElement, ShapeCallback } from '../types/types';
+import { ImportedElement, ShapeCallback, Workbook } from '../types/types';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 
 export class Shape {
@@ -15,7 +15,7 @@ export class Shape {
   sourceNumber: number;
   sourceFile: string;
   sourceRid: string;
-  sourceElement: HTMLElement;
+  sourceElement: XMLDocument;
 
   targetFile: string;
   targetArchive: JSZip;
@@ -29,10 +29,12 @@ export class Shape {
 
   relRootTag: string;
   relAttribute: string;
-  relParent: (element: HTMLElement) => HTMLElement;
+  relParent: (element: Element) => Element;
 
-  targetElement: HTMLElement;
-  callbacks: ShapeCallback[];
+  targetElement: XMLDocument;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  callbacks: any[];
 
   constructor(shape: ImportedElement) {
     this.mode = shape.mode;
@@ -60,7 +62,7 @@ export class Shape {
   }
 
   async setTargetElement(): Promise<void> {
-    this.targetElement = (this.sourceElement.cloneNode(true) as HTMLElement);
+    this.targetElement = (this.sourceElement.cloneNode(true) as XMLDocument);
   }
 
   async appendToSlideTree(): Promise<void> {
@@ -81,7 +83,7 @@ export class Shape {
     await XmlHelper.writeXmlToArchive(this.targetArchive, this.targetSlideFile, targetSlideXml);
   }
 
-  async updateElementRelId() {
+  async updateElementRelId(): Promise<void> {
     const targetSlideXml = await XmlHelper.getXmlFromArchive(this.targetArchive, this.targetSlideFile);
     const targetElement = await this.getElementByRid(targetSlideXml, this.sourceRid);
 
@@ -90,18 +92,18 @@ export class Shape {
     await XmlHelper.writeXmlToArchive(this.targetArchive, this.targetSlideFile, targetSlideXml);
   }
 
-  async updateTargetElementRelId() {
+  async updateTargetElementRelId(): Promise<void> {
     this.targetElement.getElementsByTagName(this.relRootTag)[0].setAttribute(this.relAttribute, this.createdRid);
   }
 
-  async getElementByRid(slideXml: Document, rId: string): Promise<HTMLElement> {
+  async getElementByRid(slideXml: Document, rId: string): Promise<Element> {
     const sourceList = slideXml.getElementsByTagName('p:spTree')[0].getElementsByTagName(this.relRootTag);
     const sourceElement = XmlHelper.findByAttributeValue(sourceList, this.relAttribute, rId);
 
     return this.relParent(sourceElement);
   }
 
-  applyCallbacks(callbacks: ShapeCallback[], element: HTMLElement, arg1?: any, arg2?: any): void {
+  applyCallbacks(callbacks: ShapeCallback[], element: XMLDocument, arg1?: Document, arg2?: Workbook): void {
     callbacks.forEach(callback => callback(element, arg1, arg2));
   }
 }

@@ -35,7 +35,7 @@ export class CountHelper implements ICounter {
     return this.count;
   }
 
-  async set() {
+  async set(): Promise<void> {
     this.count = await this.calculateCount(await this.template.archive);
   }
 

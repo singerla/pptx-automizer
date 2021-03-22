@@ -11,5 +11,5 @@ export interface ISlide {
 
   append(targetTemplate: RootPresTemplate): Promise<void>;
 
-  addElement(presName: string, slideNumber: number, selector: Function | string): void;
+  addElement(presName: string, slideNumber: number, selector: string): void;
 }

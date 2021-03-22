@@ -1,5 +1,6 @@
 import Automizer from '../src/automizer';
 import { setChartData } from '../src/helper/modify';
+import { ChartData } from '../src/types/types';
 
 test('create presentation, add slide with charts from template and modify existing chart.', async () => {
   const automizer = new Automizer({
@@ -14,7 +15,7 @@ test('create presentation, add slide with charts from template and modify existi
   const result = await pres
     .addSlide('charts', 2, (slide) => {
       slide.modifyElement('ColumnChart', [
-        setChartData({
+        setChartData(<ChartData>{
           series: [
             {label: 'series 1'},
             {label: 'series 2'},
