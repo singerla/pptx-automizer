@@ -36,9 +36,9 @@ export class Slide implements ISlide {
   root: IPresentationProps;
   targetRelsPath: string;
 
-  constructor(params: any) {
+  constructor(params: { presentation: IPresentationProps, template: PresTemplate, slideNumber: number }) {
     this.sourceTemplate = params.template;
-    this.sourceNumber = params.number;
+    this.sourceNumber = params.slideNumber;
     this.sourcePath = `ppt/slides/slide${this.sourceNumber}.xml`;
     this.relsPath = `ppt/slides/_rels/slide${this.sourceNumber}.xml.rels`;
 
@@ -125,7 +125,7 @@ export class Slide implements ISlide {
   }
 
   async getElementInfo(importElement: ImportElement): Promise<ImportedElement> {
-    const template = this.root.template(importElement.presName);
+    const template = this.root.getTemplate(importElement.presName);
     const sourcePath = `ppt/slides/slide${importElement.slideNumber}.xml`;
     const sourceArchive = await template.archive;
     const sourceElement = await XmlHelper.findByElementName(sourceArchive, sourcePath, importElement.selector);

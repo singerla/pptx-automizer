@@ -70,7 +70,7 @@ export default class Automizer implements IPresentationProps {
    * Find imported template by given name and return a certain slide by number.
    * @param {string} name - Name of template; must be imported by Automizer.importTemplate()
    * @param {number} slideNumber - Number of slide in template presentation
-   * @param callback
+   * @param callback - Executed when slide is created. Passes the newly created slide
    * @return {Automizer} Instance of Automizer
    */
   public addSlide(name: string, slideNumber: number, callback?: (slide: Slide) => void): this {
@@ -78,12 +78,12 @@ export default class Automizer implements IPresentationProps {
       throw new Error('You have to set a root template first.');
     }
 
-    const template = this.template(name);
+    const template = this.getTemplate(name);
 
     const newSlide = new Slide({
       presentation: this,
       template,
-      number: slideNumber
+      slideNumber
     });
 
     if (callback !== undefined) {
@@ -96,23 +96,12 @@ export default class Automizer implements IPresentationProps {
     return this;
   }
 
-  public template(name: string): PresTemplate {
+  public getTemplate(name: string): PresTemplate {
     const template = this.templates.find(t => t.name === name);
     if (template === undefined) {
       throw new Error(`Template not found: ${name}`);
     }
     return template;
-  }
-
-  public getLocation(location: string, type?: string): string {
-    switch (type) {
-      case 'template':
-        return this.templateDir + location;
-      case 'output':
-        return this.outputDir + location;
-      default:
-        return location;
-    }
   }
 
   async write(location: string): Promise<AutomizerSummary> {
@@ -125,5 +114,16 @@ export default class Automizer implements IPresentationProps {
     const content = await rootArchive.generateAsync({type: 'nodebuffer'});
 
     return FileHelper.writeOutputFile(this.getLocation(location, 'output'), content, this);
+  }
+
+  private getLocation(location: string, type?: string): string {
+    switch (type) {
+      case 'template':
+        return this.templateDir + location;
+      case 'output':
+        return this.outputDir + location;
+      default:
+        return location;
+    }
   }
 }

@@ -8,5 +8,5 @@ export interface IPresentationProps {
   params: AutomizerParams;
   timer: number;
 
-  template(name: string): PresTemplate;
+  getTemplate(name: string): PresTemplate;
 }

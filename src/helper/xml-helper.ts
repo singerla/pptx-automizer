@@ -103,12 +103,12 @@ export class XmlHelper {
     const xml = await XmlHelper.getXmlFromArchive(archive, path);
     const relationships = xml.getElementsByTagName('Relationship');
     const rels = [];
-    for (const i in relationships) {
-      const element = relationships[i];
-      if (element.getAttribute !== undefined) {
-        cb(element, rels);
-      }
-    }
+
+    Object.keys(relationships)
+      .map(key => relationships[key] as Element)
+      .filter(element => element.getAttribute !== undefined)
+      .forEach(element => cb(element, rels));
+
     return rels;
   }
 
