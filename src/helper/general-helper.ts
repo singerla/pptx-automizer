@@ -1,6 +1,6 @@
 export class GeneralHelper {
-  static arrayify<T>(input: T): T[] {
-    if (input instanceof Array) {
+  static arrayify<T>(input: T | T[]): T[] {
+    if (Array.isArray(input)) {
       return input;
     } else if (input !== undefined) {
       return [input];
