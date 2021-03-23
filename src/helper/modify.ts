@@ -1,5 +1,5 @@
 import { XmlHelper } from './xml-helper';
-import { ChartData, Frame, Workbook } from '../types/types';
+import { ChartData, FrameCoordinates, Workbook } from '../types/types';
 import { XmlChartHelper } from './xml-chart-helper';
 
 export const setSolidFill = (element: XMLDocument): void => {
@@ -20,7 +20,7 @@ export const revertElements = (slide: Document): void => {
 };
 
 // e.g. setPosition({x: 8000000, h:5000000})
-export const setPosition = (pos: Frame) => (element: XMLDocument): void => {
+export const setPosition = (pos: FrameCoordinates) => (element: XMLDocument): void => {
   const map = {
     x: {tag: 'a:off', attribute: 'x'},
     y: {tag: 'a:off', attribute: 'y'},

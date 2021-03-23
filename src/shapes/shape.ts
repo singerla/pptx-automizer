@@ -2,7 +2,7 @@ import JSZip from 'jszip';
 
 import { XmlHelper } from '../helper/xml-helper';
 import { GeneralHelper } from '../helper/general-helper';
-import { ImportedElement, ShapeCallback, Workbook } from '../types/types';
+import { ImportedElement, ShapeModificationCallback, Workbook } from '../types/types';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 
 export class Shape {
@@ -33,8 +33,7 @@ export class Shape {
 
   targetElement: XMLDocument;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  callbacks: any[];
+  callbacks: ShapeModificationCallback[];
 
   constructor(shape: ImportedElement) {
     this.mode = shape.mode;
@@ -103,7 +102,7 @@ export class Shape {
     return this.relParent(sourceElement);
   }
 
-  applyCallbacks(callbacks: ShapeCallback[], element: XMLDocument, arg1?: Document, arg2?: Workbook): void {
+  applyCallbacks(callbacks: ShapeModificationCallback[], element: XMLDocument, arg1?: Document, arg2?: Workbook): void {
     callbacks.forEach(callback => callback(element, arg1, arg2));
   }
 }

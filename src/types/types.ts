@@ -1,11 +1,11 @@
 import JSZip from 'jszip';
 import { ElementType } from '../enums/element-type';
 
-export type ModificationCallback = (document: Document) => void;
+export type SlideModificationCallback = (document: Document) => void;
+export type ShapeModificationCallback = (XMLDocument: XMLDocument, arg1?: Document, arg2?: Workbook) => void;
 export type GetRelationshipsCallback = (element: Element, rels: Target[]) => void;
-export type ShapeCallback = (XMLDocument: XMLDocument, arg1?: Document, arg2?: Workbook) => void;
 
-export type Frame = {
+export type FrameCoordinates = {
   x?: number;
   y?: number;
   w?: number;
@@ -35,7 +35,7 @@ export type ImportElement = {
   slideNumber: number;
   selector: string;
   mode: string;
-  callback?: ShapeCallback | ShapeCallback[];
+  callback?: ShapeModificationCallback | ShapeModificationCallback[];
 }
 export type ImportedElement = {
   mode: string;

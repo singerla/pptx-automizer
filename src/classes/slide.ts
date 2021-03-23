@@ -6,8 +6,8 @@ import {
   AnalyzedElementType,
   ImportedElement,
   ImportElement,
-  ModificationCallback,
-  ShapeCallback
+  SlideModificationCallback,
+  ShapeModificationCallback
 } from '../types/types';
 import { ISlide } from '../interfaces/islide';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
@@ -29,7 +29,7 @@ export class Slide implements ISlide {
   sourceArchive: JSZip;
   sourcePath: string;
   targetPath: string;
-  modifications: ModificationCallback[];
+  modifications: SlideModificationCallback[];
   importElements: ImportElement[];
   relsPath: string;
   rootTemplate: RootPresTemplate;
@@ -72,7 +72,7 @@ export class Slide implements ISlide {
     await this.applyModifications();
   }
 
-  modify(callback: ModificationCallback): void {
+  modify(callback: SlideModificationCallback): void {
     this.modifications.push(callback);
   }
 
@@ -83,18 +83,18 @@ export class Slide implements ISlide {
     await this.appendSlideToContentType(this.targetArchive, this.targetNumber);
   }
 
-  modifyElement(selector: string, callback: ShapeCallback | ShapeCallback[]): this {
+  modifyElement(selector: string, callback: ShapeModificationCallback | ShapeModificationCallback[]): this {
     const presName = this.sourceTemplate.name;
     const slideNumber = this.sourceNumber;
 
     return this.addElementToModificationsList(presName, slideNumber, selector, 'modify', callback);
   }
 
-  addElement(presName: string, slideNumber: number, selector: string, callback?: ShapeCallback | ShapeCallback[]): this {
+  addElement(presName: string, slideNumber: number, selector: string, callback?: ShapeModificationCallback | ShapeModificationCallback[]): this {
     return this.addElementToModificationsList(presName, slideNumber, selector, 'append', callback);
   }
 
-  private addElementToModificationsList(presName: string, slideNumber: number, selector: string, mode: string, callback?: ShapeCallback | ShapeCallback[]): this {
+  private addElementToModificationsList(presName: string, slideNumber: number, selector: string, mode: string, callback?: ShapeModificationCallback | ShapeModificationCallback[]): this {
     this.importElements.push({
       presName,
       slideNumber,
