@@ -23,7 +23,7 @@ export class CountHelper implements ICounter {
   }
 
   static getCounterByName(name: string, counters: ICounter[]): ICounter {
-    const counter = counters.find(c => c.name === name);
+    const counter = counters.find((c) => c.name === name);
     if (counter === undefined) {
       throw new Error(`Counter ${name} not found.`);
     }
@@ -45,11 +45,11 @@ export class CountHelper implements ICounter {
 
   private calculateCount(presentation: JSZip): Promise<number> {
     switch (this.name) {
-      case 'slides' :
+      case 'slides':
         return CountHelper.countSlides(presentation);
-      case 'charts' :
+      case 'charts':
         return CountHelper.countCharts(presentation);
-      case 'images' :
+      case 'images':
         return CountHelper.countImages(presentation);
     }
 
@@ -57,18 +57,28 @@ export class CountHelper implements ICounter {
   }
 
   private static async countSlides(presentation: JSZip): Promise<number> {
-    const presentationXml = await XmlHelper.getXmlFromArchive(presentation, 'ppt/presentation.xml');
+    const presentationXml = await XmlHelper.getXmlFromArchive(
+      presentation,
+      'ppt/presentation.xml',
+    );
     return presentationXml.getElementsByTagName('p:sldId').length;
   }
 
   private static async countCharts(presentation: JSZip): Promise<number> {
-    const contentTypesXml = await XmlHelper.getXmlFromArchive(presentation, '[Content_Types].xml');
+    const contentTypesXml = await XmlHelper.getXmlFromArchive(
+      presentation,
+      '[Content_Types].xml',
+    );
     const overrides = contentTypesXml.getElementsByTagName('Override');
 
     return Object.keys(overrides)
-      .map(key => overrides[key] as Element)
-      .filter(o => o.getAttribute && o.getAttribute('ContentType') === `application/vnd.openxmlformats-officedocument.drawingml.chart+xml`)
-      .length;
+      .map((key) => overrides[key] as Element)
+      .filter(
+        (o) =>
+          o.getAttribute &&
+          o.getAttribute('ContentType') ===
+            `application/vnd.openxmlformats-officedocument.drawingml.chart+xml`,
+      ).length;
   }
 
   private static async countImages(presentation: JSZip): Promise<number> {

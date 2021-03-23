@@ -9,19 +9,28 @@ export class GenericShape extends Shape {
     super(shape);
   }
 
-  async modify(targetTemplate: RootPresTemplate, targetSlideNumber: number): Promise<GenericShape> {
+  async modify(
+    targetTemplate: RootPresTemplate,
+    targetSlideNumber: number,
+  ): Promise<GenericShape> {
     await this.prepare(targetTemplate, targetSlideNumber);
     await this.replaceIntoSlideTree();
     return this;
   }
 
-  async append(targetTemplate: RootPresTemplate, targetSlideNumber: number): Promise<GenericShape> {
+  async append(
+    targetTemplate: RootPresTemplate,
+    targetSlideNumber: number,
+  ): Promise<GenericShape> {
     await this.prepare(targetTemplate, targetSlideNumber);
     await this.appendToSlideTree();
     return this;
   }
 
-  async prepare(targetTemplate: RootPresTemplate, targetSlideNumber: number): Promise<void> {
+  async prepare(
+    targetTemplate: RootPresTemplate,
+    targetSlideNumber: number,
+  ): Promise<void> {
     await this.setTarget(targetTemplate, targetSlideNumber);
     await this.setTargetElement();
     this.applyCallbacks(this.callbacks, this.targetElement);

@@ -22,8 +22,8 @@ export default class Automizer implements IPresentationProps {
     this.templates = [];
     this.params = params;
 
-    this.templateDir = (params?.templateDir) ? params.templateDir + '/' : '';
-    this.outputDir = (params?.outputDir) ? params.outputDir + '/' : '';
+    this.templateDir = params?.templateDir ? params.templateDir + '/' : '';
+    this.outputDir = params?.outputDir ? params.outputDir + '/' : '';
 
     this.timer = Date.now();
   }
@@ -44,7 +44,7 @@ export default class Automizer implements IPresentationProps {
    * @return {Automizer} Instance of Automizer
    */
   public load(location: string, name?: string): this {
-    name = (name === undefined) ? location : name;
+    name = name === undefined ? location : name;
     return this.loadTemplate(location, name);
   }
 
@@ -62,7 +62,9 @@ export default class Automizer implements IPresentationProps {
     return this;
   }
 
-  isPresTemplate(template: PresTemplate | RootPresTemplate): template is PresTemplate {
+  isPresTemplate(
+    template: PresTemplate | RootPresTemplate,
+  ): template is PresTemplate {
     return 'name' in template;
   }
 
@@ -73,7 +75,11 @@ export default class Automizer implements IPresentationProps {
    * @param callback - Executed when slide is created. Passes the newly created slide
    * @return {Automizer} Instance of Automizer
    */
-  public addSlide(name: string, slideNumber: number, callback?: (slide: Slide) => void): this {
+  public addSlide(
+    name: string,
+    slideNumber: number,
+    callback?: (slide: Slide) => void,
+  ): this {
     if (this.rootTemplate === undefined) {
       throw new Error('You have to set a root template first.');
     }
@@ -83,7 +89,7 @@ export default class Automizer implements IPresentationProps {
     const newSlide = new Slide({
       presentation: this,
       template,
-      slideNumber
+      slideNumber,
     });
 
     if (callback !== undefined) {
@@ -97,7 +103,7 @@ export default class Automizer implements IPresentationProps {
   }
 
   public getTemplate(name: string): PresTemplate {
-    const template = this.templates.find(t => t.name === name);
+    const template = this.templates.find((t) => t.name === name);
     if (template === undefined) {
       throw new Error(`Template not found: ${name}`);
     }
@@ -111,9 +117,13 @@ export default class Automizer implements IPresentationProps {
       await this.rootTemplate.appendSlide(slide);
     }
 
-    const content = await rootArchive.generateAsync({type: 'nodebuffer'});
+    const content = await rootArchive.generateAsync({ type: 'nodebuffer' });
 
-    return FileHelper.writeOutputFile(this.getLocation(location, 'output'), content, this);
+    return FileHelper.writeOutputFile(
+      this.getLocation(location, 'output'),
+      content,
+      this,
+    );
   }
 
   private getLocation(location: string, type?: string): string {

@@ -48,10 +48,13 @@ export class Template implements ITemplate {
   constructor(location: string) {
     this.location = location;
     const file = FileHelper.readFile(location);
-    this.archive = FileHelper.extractFileContent(file as unknown as Buffer);
+    this.archive = FileHelper.extractFileContent((file as unknown) as Buffer);
   }
 
-  static import(location: string, name?: string): PresTemplate | RootPresTemplate {
+  static import(
+    location: string,
+    name?: string,
+  ): PresTemplate | RootPresTemplate {
     let newTemplate: PresTemplate | RootPresTemplate;
 
     if (name) {
@@ -63,7 +66,7 @@ export class Template implements ITemplate {
       newTemplate.counter = [
         new CountHelper('slides', newTemplate),
         new CountHelper('charts', newTemplate),
-        new CountHelper('images', newTemplate)
+        new CountHelper('images', newTemplate),
       ];
     }
 

@@ -17,10 +17,14 @@ export class Chart extends Shape implements IChart {
 
     this.relRootTag = 'c:chart';
     this.relAttribute = 'r:id';
-    this.relParent = (element: Element) => element.parentNode.parentNode.parentNode as Element;
+    this.relParent = (element: Element) =>
+      element.parentNode.parentNode.parentNode as Element;
   }
 
-  async modify(targetTemplate: RootPresTemplate, targetSlideNumber: number): Promise<Chart> {
+  async modify(
+    targetTemplate: RootPresTemplate,
+    targetSlideNumber: number,
+  ): Promise<Chart> {
     await this.prepare(targetTemplate, targetSlideNumber);
     await this.clone();
     await this.replaceIntoSlideTree();
@@ -28,7 +32,10 @@ export class Chart extends Shape implements IChart {
     return this;
   }
 
-  async append(targetTemplate: RootPresTemplate, targetSlideNumber: number): Promise<Chart> {
+  async append(
+    targetTemplate: RootPresTemplate,
+    targetSlideNumber: number,
+  ): Promise<Chart> {
     await this.prepare(targetTemplate, targetSlideNumber);
     await this.clone();
     await this.appendToSlideTree();
@@ -36,14 +43,20 @@ export class Chart extends Shape implements IChart {
     return this;
   }
 
-  async modifyOnAddedSlide(targetTemplate: RootPresTemplate, targetSlideNumber: number): Promise<Chart> {
+  async modifyOnAddedSlide(
+    targetTemplate: RootPresTemplate,
+    targetSlideNumber: number,
+  ): Promise<Chart> {
     await this.prepare(targetTemplate, targetSlideNumber);
     await this.updateElementRelId();
 
     return this;
   }
 
-  async prepare(targetTemplate: RootPresTemplate, targetSlideNumber: number): Promise<void> {
+  async prepare(
+    targetTemplate: RootPresTemplate,
+    targetSlideNumber: number,
+  ): Promise<void> {
     await this.setTarget(targetTemplate, targetSlideNumber);
 
     this.targetNumber = this.targetTemplate.incrementCounter('charts');
@@ -60,47 +73,91 @@ export class Chart extends Shape implements IChart {
   }
 
   async modifyChartData(): Promise<void> {
-    const chartXml = await XmlHelper.getXmlFromArchive(this.targetArchive, `ppt/charts/chart${this.targetNumber}.xml`);
+    const chartXml = await XmlHelper.getXmlFromArchive(
+      this.targetArchive,
+      `ppt/charts/chart${this.targetNumber}.xml`,
+    );
     const workbook = await this.readWorkbook();
 
     this.applyCallbacks(this.callbacks, this.targetElement, chartXml, workbook);
 
-    await XmlHelper.writeXmlToArchive(this.targetArchive, `ppt/charts/chart${this.targetNumber}.xml`, chartXml);
+    await XmlHelper.writeXmlToArchive(
+      this.targetArchive,
+      `ppt/charts/chart${this.targetNumber}.xml`,
+      chartXml,
+    );
     await this.writeWorkbook(workbook);
   }
 
   async readWorkbook(): Promise<Workbook> {
-    const worksheet = await FileHelper.extractFromArchive(this.targetArchive, `ppt/embeddings/Microsoft_Excel_Worksheet${this.targetWorksheet}.xlsx`, 'nodebuffer');
-    const archive = await FileHelper.extractFileContent(worksheet as unknown as Buffer);
-    const sheet = await XmlHelper.getXmlFromArchive(archive, 'xl/worksheets/sheet1.xml');
-    const table = await XmlHelper.getXmlFromArchive(archive, 'xl/tables/table1.xml');
-    const sharedStrings = await XmlHelper.getXmlFromArchive(archive, 'xl/sharedStrings.xml');
+    const worksheet = await FileHelper.extractFromArchive(
+      this.targetArchive,
+      `ppt/embeddings/Microsoft_Excel_Worksheet${this.targetWorksheet}.xlsx`,
+      'nodebuffer',
+    );
+    const archive = await FileHelper.extractFileContent(
+      (worksheet as unknown) as Buffer,
+    );
+    const sheet = await XmlHelper.getXmlFromArchive(
+      archive,
+      'xl/worksheets/sheet1.xml',
+    );
+    const table = await XmlHelper.getXmlFromArchive(
+      archive,
+      'xl/tables/table1.xml',
+    );
+    const sharedStrings = await XmlHelper.getXmlFromArchive(
+      archive,
+      'xl/sharedStrings.xml',
+    );
 
     return {
       archive,
       sheet,
       sharedStrings,
-      table
+      table,
     };
   }
 
   async writeWorkbook(workbook: Workbook): Promise<void> {
-    await XmlHelper.writeXmlToArchive(workbook.archive, 'xl/worksheets/sheet1.xml', workbook.sheet);
-    await XmlHelper.writeXmlToArchive(workbook.archive, 'xl/tables/table1.xml', workbook.table);
-    await XmlHelper.writeXmlToArchive(workbook.archive, 'xl/sharedStrings.xml', workbook.sharedStrings);
+    await XmlHelper.writeXmlToArchive(
+      workbook.archive,
+      'xl/worksheets/sheet1.xml',
+      workbook.sheet,
+    );
+    await XmlHelper.writeXmlToArchive(
+      workbook.archive,
+      'xl/tables/table1.xml',
+      workbook.table,
+    );
+    await XmlHelper.writeXmlToArchive(
+      workbook.archive,
+      'xl/sharedStrings.xml',
+      workbook.sharedStrings,
+    );
 
-    const worksheet = await workbook.archive.generateAsync({type: 'nodebuffer'});
-    this.targetArchive.file(`ppt/embeddings/Microsoft_Excel_Worksheet${this.targetWorksheet}.xlsx`, worksheet);
+    const worksheet = await workbook.archive.generateAsync({
+      type: 'nodebuffer',
+    });
+    this.targetArchive.file(
+      `ppt/embeddings/Microsoft_Excel_Worksheet${this.targetWorksheet}.xlsx`,
+      worksheet,
+    );
   }
 
   async copyFiles(): Promise<void> {
     await this.copyChartFiles();
 
     const wbRelsPath = `ppt/charts/_rels/chart${this.sourceNumber}.xml.rels`;
-    const worksheets = await XmlHelper.getTargetsFromRelationships(this.sourceArchive, wbRelsPath, '../embeddings/Microsoft_Excel_Worksheet', '.xlsx');
+    const worksheets = await XmlHelper.getTargetsFromRelationships(
+      this.sourceArchive,
+      wbRelsPath,
+      '../embeddings/Microsoft_Excel_Worksheet',
+      '.xlsx',
+    );
     const worksheet = worksheets[0];
 
-    this.sourceWorksheet = (worksheet.number === 0) ? '' : worksheet.number;
+    this.sourceWorksheet = worksheet.number === 0 ? '' : worksheet.number;
     this.targetWorksheet = this.targetNumber;
 
     await this.copyWorksheetFile();
@@ -115,54 +172,75 @@ export class Chart extends Shape implements IChart {
   }
 
   async copyChartFiles(): Promise<void> {
-
     await FileHelper.zipCopy(
-      this.sourceArchive, `ppt/charts/chart${this.sourceNumber}.xml`,
-      this.targetArchive, `ppt/charts/chart${this.targetNumber}.xml`
+      this.sourceArchive,
+      `ppt/charts/chart${this.sourceNumber}.xml`,
+      this.targetArchive,
+      `ppt/charts/chart${this.targetNumber}.xml`,
     );
 
     await FileHelper.zipCopy(
-      this.sourceArchive, `ppt/charts/colors${this.sourceNumber}.xml`,
-      this.targetArchive, `ppt/charts/colors${this.targetNumber}.xml`
+      this.sourceArchive,
+      `ppt/charts/colors${this.sourceNumber}.xml`,
+      this.targetArchive,
+      `ppt/charts/colors${this.targetNumber}.xml`,
     );
 
     await FileHelper.zipCopy(
-      this.sourceArchive, `ppt/charts/style${this.sourceNumber}.xml`,
-      this.targetArchive, `ppt/charts/style${this.targetNumber}.xml`
+      this.sourceArchive,
+      `ppt/charts/style${this.sourceNumber}.xml`,
+      this.targetArchive,
+      `ppt/charts/style${this.targetNumber}.xml`,
     );
 
     await FileHelper.zipCopy(
-      this.sourceArchive, `ppt/charts/_rels/chart${this.sourceNumber}.xml.rels`,
-      this.targetArchive, `ppt/charts/_rels/chart${this.targetNumber}.xml.rels`
+      this.sourceArchive,
+      `ppt/charts/_rels/chart${this.sourceNumber}.xml.rels`,
+      this.targetArchive,
+      `ppt/charts/_rels/chart${this.targetNumber}.xml.rels`,
     );
   }
 
   async appendToSlideRels(): Promise<HelperElement> {
-    this.createdRid = await XmlHelper.getNextRelId(this.targetArchive, this.targetSlideRelFile);
+    this.createdRid = await XmlHelper.getNextRelId(
+      this.targetArchive,
+      this.targetSlideRelFile,
+    );
     const attributes = {
       Id: this.createdRid,
-      Type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart',
-      Target: `../charts/chart${this.targetNumber}.xml`
+      Type:
+        'http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart',
+      Target: `../charts/chart${this.targetNumber}.xml`,
     } as RelationshipAttribute;
 
     return XmlHelper.append(
-      XmlHelper.createRelationshipChild(this.targetArchive, this.targetSlideRelFile, attributes)
+      XmlHelper.createRelationshipChild(
+        this.targetArchive,
+        this.targetSlideRelFile,
+        attributes,
+      ),
     );
   }
 
   async editTargetWorksheetRel(): Promise<void> {
     const targetRelFile = `ppt/charts/_rels/chart${this.targetNumber}.xml.rels`;
-    const relXml = await XmlHelper.getXmlFromArchive(this.targetArchive, targetRelFile);
+    const relXml = await XmlHelper.getXmlFromArchive(
+      this.targetArchive,
+      targetRelFile,
+    );
     const relations = relXml.getElementsByTagName('Relationship');
 
     Object.keys(relations)
-      .map(key => relations[key])
-      .filter(element => element.getAttribute)
-      .forEach(element => {
+      .map((key) => relations[key])
+      .filter((element) => element.getAttribute)
+      .forEach((element) => {
         const type = element.getAttribute('Type');
         switch (type) {
           case 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/package':
-            element.setAttribute('Target', `../embeddings/Microsoft_Excel_Worksheet${this.targetWorksheet}.xlsx`);
+            element.setAttribute(
+              'Target',
+              `../embeddings/Microsoft_Excel_Worksheet${this.targetWorksheet}.xlsx`,
+            );
             break;
           case 'http://schemas.microsoft.com/office/2011/relationships/chartColorStyle':
             element.setAttribute('Target', `colors${this.targetNumber}.xml`);
@@ -178,8 +256,10 @@ export class Chart extends Shape implements IChart {
 
   async copyWorksheetFile(): Promise<void> {
     await FileHelper.zipCopy(
-      this.sourceArchive, `ppt/embeddings/Microsoft_Excel_Worksheet${this.sourceWorksheet}.xlsx`,
-      this.targetArchive, `ppt/embeddings/Microsoft_Excel_Worksheet${this.targetWorksheet}.xlsx`,
+      this.sourceArchive,
+      `ppt/embeddings/Microsoft_Excel_Worksheet${this.sourceWorksheet}.xlsx`,
+      this.targetArchive,
+      `ppt/embeddings/Microsoft_Excel_Worksheet${this.targetWorksheet}.xlsx`,
     );
   }
 
@@ -187,10 +267,11 @@ export class Chart extends Shape implements IChart {
     return XmlHelper.appendIf({
       ...XmlHelper.createContentTypeChild(this.targetArchive, {
         Extension: `xlsx`,
-        ContentType: `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+        ContentType: `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`,
       }),
       tag: 'Default',
-      clause: (xml: XMLDocument) => !XmlHelper.findByAttribute(xml, 'Default', 'Extension', 'xlsx')
+      clause: (xml: XMLDocument) =>
+        !XmlHelper.findByAttribute(xml, 'Default', 'Extension', 'xlsx'),
     });
   }
 
@@ -198,8 +279,8 @@ export class Chart extends Shape implements IChart {
     return XmlHelper.append(
       XmlHelper.createContentTypeChild(this.targetArchive, {
         PartName: `/ppt/charts/chart${this.targetNumber}.xml`,
-        ContentType: `application/vnd.openxmlformats-officedocument.drawingml.chart+xml`
-      })
+        ContentType: `application/vnd.openxmlformats-officedocument.drawingml.chart+xml`,
+      }),
     );
   }
 
@@ -207,8 +288,8 @@ export class Chart extends Shape implements IChart {
     return XmlHelper.append(
       XmlHelper.createContentTypeChild(this.targetArchive, {
         PartName: `/ppt/charts/colors${this.targetNumber}.xml`,
-        ContentType: `application/vnd.ms-office.chartcolorstyle+xml`
-      })
+        ContentType: `application/vnd.ms-office.chartcolorstyle+xml`,
+      }),
     );
   }
 
@@ -216,12 +297,19 @@ export class Chart extends Shape implements IChart {
     return XmlHelper.append(
       XmlHelper.createContentTypeChild(this.targetArchive, {
         PartName: `/ppt/charts/style${this.targetNumber}.xml`,
-        ContentType: `application/vnd.ms-office.chartstyle+xml`
-      })
+        ContentType: `application/vnd.ms-office.chartstyle+xml`,
+      }),
     );
   }
 
-  static async getAllOnSlide(archive: JSZip, relsPath: string): Promise<Target[]> {
-    return await XmlHelper.getTargetsFromRelationships(archive, relsPath, '../charts/chart');
+  static async getAllOnSlide(
+    archive: JSZip,
+    relsPath: string,
+  ): Promise<Target[]> {
+    return await XmlHelper.getTargetsFromRelationships(
+      archive,
+      relsPath,
+      '../charts/chart',
+    );
   }
 }

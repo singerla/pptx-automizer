@@ -7,14 +7,18 @@ import {
   ImportedElement,
   ImportElement,
   SlideModificationCallback,
-  ShapeModificationCallback
+  ShapeModificationCallback,
 } from '../types/types';
 import { ISlide } from '../interfaces/islide';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
 import { PresTemplate } from '../interfaces/pres-template';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { ElementType } from '../enums/element-type';
-import { RelationshipAttribute, SlideListAttribute, HelperElement } from '../types/xml-types';
+import {
+  RelationshipAttribute,
+  SlideListAttribute,
+  HelperElement,
+} from '../types/xml-types';
 import { Image } from '../shapes/image';
 import { Chart } from '../shapes/chart';
 import { GenericShape } from '../shapes/generic-shape';
@@ -36,7 +40,11 @@ export class Slide implements ISlide {
   root: IPresentationProps;
   targetRelsPath: string;
 
-  constructor(params: { presentation: IPresentationProps, template: PresTemplate, slideNumber: number }) {
+  constructor(params: {
+    presentation: IPresentationProps;
+    template: PresTemplate;
+    slideNumber: number;
+  }) {
     this.sourceTemplate = params.template;
     this.sourceNumber = params.slideNumber;
     this.sourcePath = `ppt/slides/slide${this.sourceNumber}.xml`;
@@ -62,7 +70,10 @@ export class Slide implements ISlide {
     if (this.hasNotes()) {
       await this.copySlideNoteFiles();
       await this.updateSlideNoteFile();
-      await this.appendNotesToContentType(this.targetArchive, this.targetNumber);
+      await this.appendNotesToContentType(
+        this.targetArchive,
+        this.targetNumber,
+      );
     }
 
     if (this.importElements.length) {
@@ -77,30 +88,59 @@ export class Slide implements ISlide {
   }
 
   async addSlideToPresentation(): Promise<void> {
-    const relId = await XmlHelper.getNextRelId(this.targetArchive, 'ppt/_rels/presentation.xml.rels');
+    const relId = await XmlHelper.getNextRelId(
+      this.targetArchive,
+      'ppt/_rels/presentation.xml.rels',
+    );
     await this.appendToSlideRel(this.targetArchive, relId, this.targetNumber);
     await this.appendToSlideList(this.targetArchive, relId);
     await this.appendSlideToContentType(this.targetArchive, this.targetNumber);
   }
 
-  modifyElement(selector: string, callback: ShapeModificationCallback | ShapeModificationCallback[]): this {
+  modifyElement(
+    selector: string,
+    callback: ShapeModificationCallback | ShapeModificationCallback[],
+  ): this {
     const presName = this.sourceTemplate.name;
     const slideNumber = this.sourceNumber;
 
-    return this.addElementToModificationsList(presName, slideNumber, selector, 'modify', callback);
+    return this.addElementToModificationsList(
+      presName,
+      slideNumber,
+      selector,
+      'modify',
+      callback,
+    );
   }
 
-  addElement(presName: string, slideNumber: number, selector: string, callback?: ShapeModificationCallback | ShapeModificationCallback[]): this {
-    return this.addElementToModificationsList(presName, slideNumber, selector, 'append', callback);
+  addElement(
+    presName: string,
+    slideNumber: number,
+    selector: string,
+    callback?: ShapeModificationCallback | ShapeModificationCallback[],
+  ): this {
+    return this.addElementToModificationsList(
+      presName,
+      slideNumber,
+      selector,
+      'append',
+      callback,
+    );
   }
 
-  private addElementToModificationsList(presName: string, slideNumber: number, selector: string, mode: string, callback?: ShapeModificationCallback | ShapeModificationCallback[]): this {
+  private addElementToModificationsList(
+    presName: string,
+    slideNumber: number,
+    selector: string,
+    mode: string,
+    callback?: ShapeModificationCallback | ShapeModificationCallback[],
+  ): this {
     this.importElements.push({
       presName,
       slideNumber,
       selector,
       mode,
-      callback
+      callback,
     });
 
     return this;
@@ -112,13 +152,22 @@ export class Slide implements ISlide {
 
       switch (info.type) {
         case ElementType.Chart:
-          await new Chart(info)[info.mode](this.targetTemplate, this.targetNumber);
+          await new Chart(info)[info.mode](
+            this.targetTemplate,
+            this.targetNumber,
+          );
           break;
         case ElementType.Image:
-          await new Image(info)[info.mode](this.targetTemplate, this.targetNumber);
+          await new Image(info)[info.mode](
+            this.targetTemplate,
+            this.targetNumber,
+          );
           break;
         case ElementType.Shape:
-          await new GenericShape(info)[info.mode](this.targetTemplate, this.targetNumber);
+          await new GenericShape(info)[info.mode](
+            this.targetTemplate,
+            this.targetNumber,
+          );
           break;
       }
     }
@@ -128,13 +177,23 @@ export class Slide implements ISlide {
     const template = this.root.getTemplate(importElement.presName);
     const sourcePath = `ppt/slides/slide${importElement.slideNumber}.xml`;
     const sourceArchive = await template.archive;
-    const sourceElement = await XmlHelper.findByElementName(sourceArchive, sourcePath, importElement.selector);
+    const sourceElement = await XmlHelper.findByElementName(
+      sourceArchive,
+      sourcePath,
+      importElement.selector,
+    );
 
     if (!sourceElement) {
-      throw new Error(`Can't find ${importElement.selector} on slide ${importElement.slideNumber} in ${importElement.presName}`);
+      throw new Error(
+        `Can't find ${importElement.selector} on slide ${importElement.slideNumber} in ${importElement.presName}`,
+      );
     }
 
-    const appendElementParams = await this.analyzeElement(sourceElement, sourceArchive, importElement.slideNumber);
+    const appendElementParams = await this.analyzeElement(
+      sourceElement,
+      sourceArchive,
+      importElement.slideNumber,
+    );
 
     return {
       mode: importElement.mode,
@@ -148,12 +207,21 @@ export class Slide implements ISlide {
     };
   }
 
-  async analyzeElement(sourceElement: XMLDocument, sourceArchive: JSZip, slideNumber: number): Promise<AnalyzedElementType> {
+  async analyzeElement(
+    sourceElement: XMLDocument,
+    sourceArchive: JSZip,
+    slideNumber: number,
+  ): Promise<AnalyzedElementType> {
     const isChart = sourceElement.getElementsByTagName('c:chart');
     if (isChart.length) {
       return {
         type: ElementType.Chart,
-        target: await XmlHelper.getTargetByRelId(sourceArchive, slideNumber, sourceElement, 'chart'),
+        target: await XmlHelper.getTargetByRelId(
+          sourceArchive,
+          slideNumber,
+          sourceElement,
+          'chart',
+        ),
       } as AnalyzedElementType;
     }
 
@@ -161,7 +229,12 @@ export class Slide implements ISlide {
     if (isImage.length) {
       return {
         type: ElementType.Image,
-        target: await XmlHelper.getTargetByRelId(sourceArchive, slideNumber, sourceElement, 'image'),
+        target: await XmlHelper.getTargetByRelId(
+          sourceArchive,
+          slideNumber,
+          sourceElement,
+          'image',
+        ),
       } as AnalyzedElementType;
     }
 
@@ -172,63 +245,87 @@ export class Slide implements ISlide {
 
   async applyModifications(): Promise<void> {
     for (const modification of this.modifications) {
-      const xml = await XmlHelper.getXmlFromArchive(this.targetArchive, this.targetPath);
+      const xml = await XmlHelper.getXmlFromArchive(
+        this.targetArchive,
+        this.targetPath,
+      );
       modification(xml);
-      await XmlHelper.writeXmlToArchive(this.targetArchive, this.targetPath, xml);
+      await XmlHelper.writeXmlToArchive(
+        this.targetArchive,
+        this.targetPath,
+        xml,
+      );
     }
   }
 
   async copySlideFiles(): Promise<void> {
     await FileHelper.zipCopy(
-      this.sourceArchive, `ppt/slides/slide${this.sourceNumber}.xml`,
-      this.targetArchive, `ppt/slides/slide${this.targetNumber}.xml`
+      this.sourceArchive,
+      `ppt/slides/slide${this.sourceNumber}.xml`,
+      this.targetArchive,
+      `ppt/slides/slide${this.targetNumber}.xml`,
     );
 
     await FileHelper.zipCopy(
-      this.sourceArchive, `ppt/slides/_rels/slide${this.sourceNumber}.xml.rels`,
-      this.targetArchive, `ppt/slides/_rels/slide${this.targetNumber}.xml.rels`
+      this.sourceArchive,
+      `ppt/slides/_rels/slide${this.sourceNumber}.xml.rels`,
+      this.targetArchive,
+      `ppt/slides/_rels/slide${this.targetNumber}.xml.rels`,
     );
   }
 
   async copySlideNoteFiles(): Promise<void> {
     await FileHelper.zipCopy(
-      this.sourceArchive, `ppt/notesSlides/notesSlide${this.sourceNumber}.xml`,
-      this.targetArchive, `ppt/notesSlides/notesSlide${this.targetNumber}.xml`
+      this.sourceArchive,
+      `ppt/notesSlides/notesSlide${this.sourceNumber}.xml`,
+      this.targetArchive,
+      `ppt/notesSlides/notesSlide${this.targetNumber}.xml`,
     );
 
     await FileHelper.zipCopy(
-      this.sourceArchive, `ppt/notesSlides/_rels/notesSlide${this.sourceNumber}.xml.rels`,
-      this.targetArchive, `ppt/notesSlides/_rels/notesSlide${this.targetNumber}.xml.rels`
+      this.sourceArchive,
+      `ppt/notesSlides/_rels/notesSlide${this.sourceNumber}.xml.rels`,
+      this.targetArchive,
+      `ppt/notesSlides/_rels/notesSlide${this.targetNumber}.xml.rels`,
     );
   }
 
   async updateSlideNoteFile(): Promise<void> {
     await XmlHelper.replaceAttribute(
       this.targetArchive,
-      `ppt/notesSlides/_rels/notesSlide${this.targetNumber}.xml.rels`, 'Relationship', 'Target',
+      `ppt/notesSlides/_rels/notesSlide${this.targetNumber}.xml.rels`,
+      'Relationship',
+      'Target',
       `../slides/slide${this.sourceNumber}.xml`,
-      `../slides/slide${this.targetNumber}.xml`
+      `../slides/slide${this.targetNumber}.xml`,
     );
 
     await XmlHelper.replaceAttribute(
       this.targetArchive,
-      `ppt/slides/_rels/slide${this.targetNumber}.xml.rels`, 'Relationship', 'Target',
+      `ppt/slides/_rels/slide${this.targetNumber}.xml.rels`,
+      'Relationship',
+      'Target',
       `../notesSlides/notesSlide${this.sourceNumber}.xml`,
-      `../notesSlides/notesSlide${this.targetNumber}.xml`
+      `../notesSlides/notesSlide${this.targetNumber}.xml`,
     );
   }
 
-  appendToSlideRel(rootArchive: JSZip, relId: string, slideCount: number): Promise<HelperElement> {
+  appendToSlideRel(
+    rootArchive: JSZip,
+    relId: string,
+    slideCount: number,
+  ): Promise<HelperElement> {
     return XmlHelper.append({
       archive: rootArchive,
       file: `ppt/_rels/presentation.xml.rels`,
-      parent: (xml: XMLDocument) => xml.getElementsByTagName('Relationships')[0],
+      parent: (xml: XMLDocument) =>
+        xml.getElementsByTagName('Relationships')[0],
       tag: 'Relationship',
       attributes: {
         Id: relId,
         Type: `http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide`,
-        Target: `slides/slide${slideCount}.xml`
-      } as RelationshipAttribute
+        Target: `slides/slide${slideCount}.xml`,
+      } as RelationshipAttribute,
     });
   }
 
@@ -239,27 +336,34 @@ export class Slide implements ISlide {
       parent: (xml: XMLDocument) => xml.getElementsByTagName('p:sldIdLst')[0],
       tag: 'p:sldId',
       attributes: {
-        id: (xml: XMLDocument) => XmlHelper.getMaxId(xml.getElementsByTagName('p:sldId'), 'id', true),
-        'r:id': relId
-      } as SlideListAttribute
+        id: (xml: XMLDocument) =>
+          XmlHelper.getMaxId(xml.getElementsByTagName('p:sldId'), 'id', true),
+        'r:id': relId,
+      } as SlideListAttribute,
     });
   }
 
-  appendSlideToContentType(rootArchive: JSZip, slideCount: number): Promise<HelperElement> {
+  appendSlideToContentType(
+    rootArchive: JSZip,
+    slideCount: number,
+  ): Promise<HelperElement> {
     return XmlHelper.append(
       XmlHelper.createContentTypeChild(rootArchive, {
         PartName: `/ppt/slides/slide${slideCount}.xml`,
-        ContentType: `application/vnd.openxmlformats-officedocument.presentationml.slide+xml`
-      })
+        ContentType: `application/vnd.openxmlformats-officedocument.presentationml.slide+xml`,
+      }),
     );
   }
 
-  appendNotesToContentType(rootArchive: JSZip, slideCount: number): Promise<HelperElement> {
+  appendNotesToContentType(
+    rootArchive: JSZip,
+    slideCount: number,
+  ): Promise<HelperElement> {
     return XmlHelper.append(
       XmlHelper.createContentTypeChild(rootArchive, {
         PartName: `/ppt/notesSlides/notesSlide${slideCount}.xml`,
-        ContentType: `application/vnd.openxmlformats-officedocument.presentationml.notesSlide+xml`
-      })
+        ContentType: `application/vnd.openxmlformats-officedocument.presentationml.notesSlide+xml`,
+      }),
     );
   }
 
@@ -286,7 +390,9 @@ export class Slide implements ISlide {
   }
 
   hasNotes(): boolean {
-    const file = this.sourceArchive.file(`ppt/notesSlides/notesSlide${this.sourceNumber}.xml`);
+    const file = this.sourceArchive.file(
+      `ppt/notesSlides/notesSlide${this.sourceNumber}.xml`,
+    );
     return GeneralHelper.propertyExists(file, 'name');
   }
 }

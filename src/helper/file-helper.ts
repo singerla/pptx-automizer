@@ -6,7 +6,6 @@ import { AutomizerSummary } from '../types/types';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
 
 export class FileHelper {
-
   static readFile(location: string): Promise<Buffer> {
     if (!fs.existsSync(location)) {
       throw new Error('File not found: ' + location);
@@ -14,7 +13,11 @@ export class FileHelper {
     return fs.promises.readFile(location);
   }
 
-  static extractFromArchive(archive: JSZip, file: string, type?: OutputType): Promise<string | number[] | Uint8Array | ArrayBuffer | Blob | Buffer> {
+  static extractFromArchive(
+    archive: JSZip,
+    file: string,
+    type?: OutputType,
+  ): Promise<string | number[] | Uint8Array | ArrayBuffer | Blob | Buffer> {
     if (archive === undefined) {
       throw new Error('No files found, expected: ' + file);
     }
@@ -27,7 +30,7 @@ export class FileHelper {
 
   static extractFileContent(file: Buffer): Promise<JSZip> {
     const zip = new JSZip();
-    return zip.loadAsync(file as unknown as InputType);
+    return zip.loadAsync((file as unknown) as InputType);
   }
 
   static getFileExtension(filename: string): string {
@@ -42,7 +45,12 @@ export class FileHelper {
    * @param {string} targetFile - file path and name inside target archive
    * @return {JSZip} targetArchive as an instance of JSZip
    */
-  static async zipCopy(sourceArchive: JSZip, sourceFile: string, targetArchive: JSZip, targetFile?: string): Promise<JSZip> {
+  static async zipCopy(
+    sourceArchive: JSZip,
+    sourceFile: string,
+    targetArchive: JSZip,
+    targetFile?: string,
+  ): Promise<JSZip> {
     if (sourceArchive.files[sourceFile] === undefined) {
       throw new Error(`Zipped file not found: ${sourceFile}`);
     }
@@ -51,7 +59,11 @@ export class FileHelper {
     return targetArchive.file(targetFile || sourceFile, content);
   }
 
-  static writeOutputFile(location: string, content: Buffer, automizer: IPresentationProps): AutomizerSummary {
+  static writeOutputFile(
+    location: string,
+    content: Buffer,
+    automizer: IPresentationProps,
+  ): AutomizerSummary {
     fs.writeFile(location, content, (err: { message: string }) => {
       if (err) {
         throw new Error(`Error writing output: ${err.message}`);

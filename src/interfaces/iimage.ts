@@ -5,5 +5,8 @@ export interface IImage extends IShape {
   sourceFile: string;
   targetFile: string;
 
-  append(targetTemplate: RootPresTemplate, targetSlideNumber: number): Promise<IImage>;
+  append(
+    targetTemplate: RootPresTemplate,
+    targetSlideNumber: number,
+  ): Promise<IImage>;
 }

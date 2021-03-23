@@ -8,7 +8,7 @@ import {
   setPosition,
   setAttribute,
   setChartData,
-  dump
+  dump,
 } from './helper/modify';
 
 export const modify = {
@@ -17,5 +17,5 @@ export const modify = {
   setPosition,
   setAttribute,
   setChartData,
-  dump
+  dump,
 };

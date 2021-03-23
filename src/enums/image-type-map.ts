@@ -6,5 +6,5 @@ export enum ImageTypeMap {
   svg = 'image/svg+xml',
   m4v = 'video/mp4',
   mp4 = 'video/mp4',
-  emf = 'image/x-emf'
+  emf = 'image/x-emf',
 }

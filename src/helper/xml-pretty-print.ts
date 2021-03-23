@@ -2,12 +2,11 @@
 // Alternative: https://github.com/riversun/xml-beautify
 
 type PrettyPrintToken = {
-  match: string,
-  tag: string,
-  offset: number,
-  preContent: string
-}
-
+  match: string;
+  tag: string;
+  offset: number;
+  preContent: string;
+};
 
 export class XmlPrettyPrint {
   xmlStr: string;
@@ -71,7 +70,9 @@ export class XmlPrettyPrint {
     }
 
     if (tags.length) {
-      console.log('WARNING: xmlFile may be malformed. Not all opening tags were closed. Following tags were left open:');
+      console.log(
+        'WARNING: xmlFile may be malformed. Not all opening tags were closed. Following tags were left open:',
+      );
       console.log(tags);
     }
 
@@ -89,14 +90,14 @@ export class XmlPrettyPrint {
         match,
         tag: matches[1],
         offset,
-        preContent
+        preContent,
       };
     }
   }
 
   addLine(output: string[], content: string, indent: number): void {
     // Trim the content
-    content = content.replace(/^\s+|\s+$/, '')
+    content = content.replace(/^\s+|\s+$/, '');
     if (content) {
       let tabs = '';
 
