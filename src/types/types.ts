@@ -82,3 +82,23 @@ export type ChartData = {
   series: ChartSeries[];
   categories: ChartCategory[];
 };
+export type ChartXYCategory = {
+  label: string;
+  values: number[];
+  yValue: number;
+};
+export type XYChartData = {
+  series: ChartSeries[];
+  categories: ChartXYCategory[];
+};
+export type ModificationPatternModifier = {
+  (element: Element);
+}
+export type ModificationPattern = {
+  index?: number;
+  children?: ModificationPatternChildren;
+  modify?: ModificationPatternModifier | ModificationPatternModifier[];
+};
+export type ModificationPatternChildren = {
+  [tag: string]: ModificationPattern;
+};

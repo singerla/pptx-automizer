@@ -296,10 +296,13 @@ export class XmlHelper {
     };
   }
 
+  static insertAfter(newNode: Node, referenceNode: Element): void {
+    referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+  }
+
   static dump(element: XMLDocument | Element): void {
     const s = new XMLSerializer();
     const xmlBuffer = s.serializeToString(element);
-
     const p = new XmlPrettyPrint(xmlBuffer);
     p.dump();
   }

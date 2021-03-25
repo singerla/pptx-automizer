@@ -1,6 +1,13 @@
 import { XmlHelper } from './xml-helper';
-import { ChartData, FrameCoordinates, Workbook } from '../types/types';
-import { XmlChartHelper } from './xml-chart-helper';
+import {
+  ChartData,
+  FrameCoordinates,
+  Workbook,
+  XYChartData,
+} from '../types/types';
+
+import { ModifyChartPattern } from './modify-chart-pattern';
+import { ModifyWorkbookPattern } from './modify-worksheet-pattern';
 
 export const setSolidFill = (element: XMLDocument): void => {
   element
@@ -55,7 +62,49 @@ export const setChartData = (data: ChartData) => (
   chart: Document,
   workbook: Workbook,
 ): void => {
-  XmlChartHelper.setChartData(chart, workbook, data);
+  const valuesPattern = (ctx, category, value, c, s) => ctx.defaultValues(category.label, value, c, s)
+  const modCh = new ModifyChartPattern(chart, data, valuesPattern);
+  modCh.setChart()
+  
+  const modWbk = new ModifyWorkbookPattern(workbook, data);
+  modWbk.setWorkbook()
+};
+
+export const setChartVerticalLines = (data: XYChartData) => (
+  element: XMLDocument,
+  chart: Document,
+  workbook: Workbook,
+): void => {
+  const valuesPattern = (ctx, category, value, c, s) => ctx.xyValues(value, category.yValue, c, s)
+  const addCols = [
+    (ctx, category, r:number) => ctx.pattern(ctx.rowValues(r, 1, category.yValue))
+  ]
+
+  const modCh = new ModifyChartPattern(chart, data, valuesPattern, addCols);
+  modCh.setChart()
+
+  const modWbk = new ModifyWorkbookPattern(workbook, data, addCols);
+  modWbk.setWorkbook()
+};
+
+export const setChartBubbles = (data: XYChartData) => (
+  element: XMLDocument,
+  chart: Document,
+  workbook: Workbook,
+): void => {
+  const valuesPattern = (ctx, category, value, c, s) => ctx.xyValues(value, category.yValue, c, s)
+  const addCols = [
+    (ctx, category, r:number) => ctx.pattern(ctx.rowValues(r, 1, category.yValue)),
+    (ctx, category, r:number) => ctx.pattern(ctx.rowValues(r, 5, category.sizes[0])),
+    (ctx, category, r:number) => ctx.pattern(ctx.rowValues(r, 6, category.sizes[1])),
+    (ctx, category, r:number) => ctx.pattern(ctx.rowValues(r, 7, category.sizes[2]))
+  ]
+
+  const modCh = new ModifyChartPattern(chart, data, valuesPattern, addCols);
+  modCh.setChart()
+
+  const modWbk = new ModifyWorkbookPattern(workbook, data, addCols);
+  modWbk.setWorkbook()
 };
 
 export const dump = (element: XMLDocument | Document): void => {

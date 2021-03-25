@@ -8,6 +8,7 @@ import {
   setPosition,
   setAttribute,
   setChartData,
+  setChartVerticalLines,
   dump,
 } from './helper/modify';
 
@@ -17,5 +18,6 @@ export const modify = {
   setPosition,
   setAttribute,
   setChartData,
+  setChartVerticalLines,
   dump,
 };
