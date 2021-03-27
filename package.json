@@ -15,8 +15,8 @@
     "dev-customer": "nodemon -e ts --exec 'ts-node' __customer__/dev-customer.ts",
     "test": "npx jest",
     "test-coverage": "npx jest --coverage",
-    "lint": "eslint '*/**/*.{js,ts,tsx}' --quiet --fix",
-    "prettier-format": "prettier --config .prettierrc 'src/**/*.ts' --write"
+    "lint": "eslint '*/**/*.{js,ts,tsx}' --fix",
+    "prettier": "prettier --config .prettierrc 'src/**/*.ts' --write"
   },
   "jest": {
     "collectCoverageFrom": [

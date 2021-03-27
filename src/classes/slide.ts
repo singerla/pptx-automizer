@@ -21,7 +21,7 @@ import {
 } from '../types/xml-types';
 import { Image } from '../shapes/image';
 import { Chart } from '../shapes/chart';
-import { GenericShape } from '../shapes/generic-shape';
+import { GenericShape } from '../shapes/generic';
 import { GeneralHelper } from '../helper/general-helper';
 
 export class Slide implements ISlide {

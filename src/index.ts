@@ -9,8 +9,9 @@ import {
   setAttribute,
   setChartData,
   setChartVerticalLines,
+  setChartBubbles,
   dump,
-} from './helper/modify';
+} from './helper/modify-helper';
 
 export const modify = {
   setSolidFill,
@@ -19,5 +20,6 @@ export const modify = {
   setAttribute,
   setChartData,
   setChartVerticalLines,
+  setChartBubbles,
   dump,
 };

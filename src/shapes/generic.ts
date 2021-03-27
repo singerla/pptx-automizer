@@ -1,6 +1,6 @@
 import { ImportedElement } from '../types/types';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
-import { Shape } from './shape';
+import { Shape } from '../classes/shape';
 
 export class GenericShape extends Shape {
   sourceElement: XMLDocument;

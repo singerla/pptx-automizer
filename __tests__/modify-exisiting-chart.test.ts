@@ -1,11 +1,10 @@
-import Automizer from '../src/automizer';
-import { setChartData } from '../src/helper/modify';
-import { ChartData } from '../src/types/types';
+import Automizer, { modify } from '../src/index';
+import { ChartData } from '../src/types/chart-types';
 
 test('create presentation, add slide with charts from template and modify existing chart.', async () => {
   const automizer = new Automizer({
     templateDir: `${__dirname}/pptx-templates`,
-    outputDir: `${__dirname}/pptx-output`
+    outputDir: `${__dirname}/pptx-output`,
   });
 
   const pres = automizer
@@ -15,7 +14,7 @@ test('create presentation, add slide with charts from template and modify existi
   const result = await pres
     .addSlide('charts', 2, (slide) => {
       slide.modifyElement('ColumnChart', [
-        setChartData(<ChartData>{
+        modify.setChartData(<ChartData>{
           series: [
             {label: 'series 1'},
             {label: 'series 2'},
@@ -30,7 +29,7 @@ test('create presentation, add slide with charts from template and modify existi
         })
       ]);
     })
-    .write(`create-presentation-modify-existing-chart.test.pptx`);
+    .write(`modify-existing-chart.test.pptx`);
 
   expect(result.charts).toBe(3);
 });

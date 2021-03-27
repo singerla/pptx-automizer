@@ -1,6 +1,5 @@
 import Automizer from './index';
-import { Slide } from './classes/slide';
-import { dump, setPosition } from './helper/modify';
+import { setChartData } from './helper/modify-helper';
 
 const automizer = new Automizer({
   templateDir: `${__dirname}/../__tests__/pptx-templates`,
@@ -9,21 +8,30 @@ const automizer = new Automizer({
 
 const pres = automizer
   .loadRoot(`RootTemplate.pptx`)
-  .load(`SlideWithImages.pptx`, 'images')
-  .load(`SlideWithLink.pptx`, 'link')
-  .load(`SlideWithCharts.pptx`, 'charts')
-  .load(`EmptySlide.pptx`, 'empty')
-  .load(`SlideWithShapes.pptx`, 'shapes');
+  .load(`ChartBarsStackedFmt.pptx`, 'charts');
+
+const data = {
+  series: [
+    { label: 'series s1' },
+    { label: 'series s2' },
+    { label: 'series s3' },
+  ],
+  categories: [
+    { label: 'item test r1', values: [10, 16, 12] },
+    { label: 'item test r2', values: [12, 18, 15] },
+    // { label: 'item test r3', values: [ 14, 12, 11 ] },
+    // { label: 'item test r4', values: [ 8, 11, 9 ] },
+    // { label: 'item test r5', values: [ 6, 15, 7 ] },
+    // { label: 'item test r6', values: [ 16, 16, 9 ] },
+  ],
+};
 
 pres
-  .addSlide('shapes', 2, (slide: Slide) => {
-    slide.modifyElement('Drum', [
-      dump,
-      setPosition({ x: 1000000, h: 5000000, w: 5000000 }),
-    ]);
+  .addSlide('charts', 1, (slide) => {
+    slide.modifyElement('BarsStacked', [setChartData(data)]);
   })
+  .write(`modify-chart-stacked-bars.test.pptx`)
 
-  .write(`myPresentation.pptx`)
   .then((result) => {
     console.info(result);
   })

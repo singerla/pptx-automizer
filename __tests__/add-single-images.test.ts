@@ -1,5 +1,4 @@
 import Automizer from '../src/automizer';
-import { revertElements } from '../src/helper/modify';
 
 test('create presentation and add some single images', async () => {
   const automizer = new Automizer({
@@ -16,10 +15,8 @@ test('create presentation and add some single images', async () => {
     .addSlide('empty', 1, (slide) => {
       slide.addElement('images', 2, 'imageJPG');
       slide.addElement('images', 2, 'imagePNG');
-
-      slide.modify(revertElements);
     })
-    .write(`create-presentation-insert-single-images.test.pptx`);
+    .write(`add-single-images.test.pptx`);
 
   expect(result.slides).toBe(2);
 });

@@ -11,7 +11,7 @@ test('create presentation and append slides with notes', async () => {
 
   pres.addSlide('notes', 1);
 
-  const result = await pres.write(`create-presentation-notes.test.pptx`);
+  const result = await pres.write(`add-slide-notes.test.pptx`);
 
   expect(result.slides).toBe(2);
 });

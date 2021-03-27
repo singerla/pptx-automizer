@@ -2,7 +2,7 @@ import JSZip from 'jszip';
 
 import { FileHelper } from '../helper/file-helper';
 import { XmlHelper } from '../helper/xml-helper';
-import { Shape } from './shape';
+import { Shape } from '../classes/shape';
 import { RelationshipAttribute, HelperElement } from '../types/xml-types';
 import { ImportedElement, Target } from '../types/types';
 import { IImage } from '../interfaces/iimage';

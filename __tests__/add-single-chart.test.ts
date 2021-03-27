@@ -16,7 +16,7 @@ test('create presentation and add some single charts', async () => {
       slide.addElement('charts', 2, 'PieChart');
       slide.addElement('charts', 1, 'StackedBars');
     })
-    .write(`create-presentation-insert-single-chart.test.pptx`);
+    .write(`add-single-chart.test.pptx`);
 
   expect(result.slides).toBe(2);
 });

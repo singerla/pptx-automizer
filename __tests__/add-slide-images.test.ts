@@ -12,7 +12,7 @@ test('create presentation and append slides with images', async () => {
   pres.addSlide('images', 1);
   pres.addSlide('images', 2);
 
-  const result = await pres.write(`create-presentation-images.test.pptx`);
+  const result = await pres.write(`add-slide-images.test.pptx`);
 
   expect(result.images).toBe(5);
 });

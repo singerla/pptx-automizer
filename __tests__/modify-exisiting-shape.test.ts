@@ -1,5 +1,4 @@
-import Automizer from "../src/automizer"
-import { setPosition } from "../src/helper/modify"
+import Automizer, { modify } from '../src/index';
 
 test("create presentation, add slide with shapes from template and modify existing shape.", async () => {
   const automizer = new Automizer({
@@ -13,7 +12,7 @@ test("create presentation, add slide with shapes from template and modify existi
 
   const result = await pres
     .addSlide('shapes', 2, (slide) => {
-      slide.modifyElement('Drum', [setPosition({x: 1000000, h:5000000, w:5000000})])
+      slide.modifyElement('Drum', [modify.setPosition({x: 1000000, h:5000000, w:5000000})])
     })
     .write(`create-presentation-modify-existing-shape.test.pptx`)
 

@@ -1,5 +1,4 @@
-import Automizer from '../src/automizer';
-import { setSolidFill, setText } from '../src/helper/modify';
+import Automizer, { modify } from '../src/index';
 
 test('create presentation, add some elements and modify content', async () => {
   const automizer = new Automizer({
@@ -14,8 +13,8 @@ test('create presentation, add some elements and modify content', async () => {
 
   const result = await pres
     .addSlide('images', 1, (slide) => {
-      slide.addElement('shapes', 2, 'Cloud', [setSolidFill, setText('my cloudy thoughts')]);
-      slide.addElement('shapes', 2, 'Arrow', setText('my text'));
+      slide.addElement('shapes', 2, 'Cloud', [modify.setSolidFill, modify.setText('my cloudy thoughts')]);
+      slide.addElement('shapes', 2, 'Arrow', modify.setText('my text'));
       slide.addElement('shapes', 2, 'Drum');
     })
     .write(`create-presentation-modify-shapes.test.pptx`);

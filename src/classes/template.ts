@@ -1,7 +1,7 @@
 import JSZip, { InputType } from 'jszip';
 
 import { FileHelper } from '../helper/file-helper';
-import { CountHelper } from '../helper/count';
+import { CountHelper } from '../helper/count-helper';
 import { ICounter } from '../interfaces/icounter';
 import { ISlide } from '../interfaces/islide';
 import { PresTemplate } from '../interfaces/pres-template';

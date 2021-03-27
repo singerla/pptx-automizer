@@ -10,12 +10,12 @@ export default class StringIdGenerator {
     this._nextId = [0];
   }
 
-  start(index:number): this {
-    this._nextId = [index]
-    return this
+  start(index: number): this {
+    this._nextId = [index];
+    return this;
   }
 
-  next() {
+  next(): string {
     const r = [];
     for (const char of this._nextId) {
       r.unshift(this._chars[char]);
@@ -24,7 +24,7 @@ export default class StringIdGenerator {
     return r.join('');
   }
 
-  _increment() {
+  _increment(): void {
     for (let i = 0; i < this._nextId.length; i++) {
       const val = ++this._nextId[i];
       if (val >= this._chars.length) {
@@ -36,6 +36,7 @@ export default class StringIdGenerator {
     this._nextId.push(0);
   }
 
+  // eslint-disable-next-line
   *[Symbol.iterator]() {
     while (true) {
       yield this.next();

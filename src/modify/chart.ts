@@ -1,46 +1,46 @@
 import {
   ChartData,
-  ModificationPatternChildren, XYChartData,
-} from '../types/types';
-import { GeneralHelper } from './general-helper';
-import { XmlHelper } from './xml-helper';
-import StringIdGenerator from './string-id-generator';
+  ChartColumn,
+  ModificationPatternChildren,
+} from '../types/chart-types';
+import { GeneralHelper } from '../helper/general-helper';
+import { XmlHelper } from '../helper/xml-helper';
+import StringIdGenerator from '../helper/string-id-generator';
 
 export class ModifyChart {
   root: XMLDocument;
   StringIdGenerator: StringIdGenerator;
-  data: XYChartData | ChartData;
+  data: ChartData;
   height: number;
   width: number;
-  addCols: any[];
-  addColsLength: number;
+  columns: ChartColumn[];
 
-  constructor(root: XMLDocument, data: XYChartData | ChartData, addCols?: any[]) {
-    this.root = root
-    this.StringIdGenerator = new StringIdGenerator('ABCDEFGHIJKLMNOPQRSTUVWXYZ')
-
-    this.data = data
+  constructor(root: XMLDocument, data: ChartData, columns: ChartColumn[]) {
+    this.root = root;
+    this.StringIdGenerator = new StringIdGenerator(
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+    );
+    this.data = data;
+    this.columns = GeneralHelper.arrayify(columns);
     this.height = this.data.categories.length;
-    this.addCols = GeneralHelper.arrayify(addCols);
-    this.addColsLength = this.addCols.length;
-    this.width = this.data.series.length + 1 + this.addColsLength;
+    this.width = this.columns.length;
   }
 
   pattern(
     pattern: ModificationPatternChildren,
-    root?: XMLDocument | Element
+    root?: XMLDocument | Element,
   ): void {
-    root = root || this.root
+    root = root || this.root;
 
     for (const tag in pattern) {
       const parentPattern = pattern[tag];
       const index = parentPattern.index || 0;
-      this.assert(root.getElementsByTagName(tag), index)
+      this.assertNode(root.getElementsByTagName(tag), index);
       const element = root.getElementsByTagName(tag)[index];
 
       if (GeneralHelper.propertyExists(parentPattern, 'modify')) {
-        const modifies = GeneralHelper.arrayify(parentPattern.modify)
-        Object.values(modifies).forEach(modify => modify(element))
+        const modifies = GeneralHelper.arrayify(parentPattern.modify);
+        Object.values(modifies).forEach((modify) => modify(element));
       }
 
       if (GeneralHelper.propertyExists(parentPattern, 'children')) {
@@ -53,11 +53,13 @@ export class ModifyChart {
     element.firstChild.textContent = String(label);
   };
 
-  value = (value: number | string, index?: number) => (element: Element): void => {
+  value = (value: number | string, index?: number) => (
+    element: Element,
+  ): void => {
     element.getElementsByTagName('c:v')[0].firstChild.textContent = String(
       value,
     );
-    if(index !== undefined) {
+    if (index !== undefined) {
       element.setAttribute('idx', String(index));
     }
   };
@@ -78,10 +80,10 @@ export class ModifyChart {
     const spans = info[1].split(':');
     const start = spans[0].split('$');
     const startRow = Number(spans[0].split('$')[2]);
-    const colLetter = this.StringIdGenerator.start(colId).next()
+    const colLetter = this.StringIdGenerator.start(colId).next();
 
-    let endCell = ''
-    if(length !== undefined) {
+    let endCell = '';
+    if (length !== undefined) {
       const endRow = String(startRow + length - 1);
       endCell = `:$${colLetter}$${endRow}`;
     }
@@ -91,19 +93,26 @@ export class ModifyChart {
     element.firstChild.textContent = newRange;
   }
 
-  getSpanString(startColNumber: number, startRowNumber:number, cols:number, rows:number): string {
-    const startColLetter = this.StringIdGenerator.start(startColNumber).next()
-    const endColLetter = this.StringIdGenerator.start(startColNumber+cols).next()
-    const endRowNumber = startRowNumber + rows
-    return `${startColLetter}${startRowNumber}:${endColLetter}${endRowNumber}`
+  getSpanString(
+    startColNumber: number,
+    startRowNumber: number,
+    cols: number,
+    rows: number,
+  ): string {
+    const startColLetter = this.StringIdGenerator.start(startColNumber).next();
+    const endColLetter = this.StringIdGenerator.start(
+      startColNumber + cols,
+    ).next();
+    const endRowNumber = startRowNumber + rows;
+    return `${startColLetter}${startRowNumber}:${endColLetter}${endRowNumber}`;
   }
 
-  getCellAddressString(c:number,r:number): string {
-    const colLetter = this.StringIdGenerator.start(c).next()
-    return `${colLetter}${r+1}`
+  getCellAddressString(c: number, r: number): string {
+    const colLetter = this.StringIdGenerator.start(c).next();
+    return `${colLetter}${r + 1}`;
   }
 
-  assert(collection: HTMLCollectionOf<Element>, index: number) {
+  assertNode(collection: HTMLCollectionOf<Element>, index: number): void {
     if (!collection[index]) {
       const tplNode = collection[collection.length - 1];
       const newChild = tplNode.cloneNode(true);
