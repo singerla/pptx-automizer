@@ -44,9 +44,9 @@ export type ModificationPatternModifier = {
 };
 export type ModificationPattern = {
   index?: number;
-  children?: ModificationPatternChildren;
+  children?: ModificationTags;
   modify?: ModificationPatternModifier | ModificationPatternModifier[];
 };
-export type ModificationPatternChildren = {
+export type ModificationTags = {
   [tag: string]: ModificationPattern;
 };

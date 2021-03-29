@@ -2,7 +2,7 @@ import {
   ChartData,
   ChartColumn,
   ModificationPattern,
-  ModificationPatternChildren,
+  ModificationTags,
 } from '../types/chart-types';
 import { ModifyChart } from './chart';
 
@@ -46,8 +46,8 @@ export class ModifyChartspace extends ModifyChart {
 
   series = (
     index: number,
-    children: ModificationPatternChildren,
-  ): ModificationPatternChildren => {
+    children: ModificationTags,
+  ): ModificationTags => {
     return {
       'c:ser': {
         index: index,
@@ -56,7 +56,7 @@ export class ModifyChartspace extends ModifyChart {
     };
   };
 
-  seriesId = (series: number): ModificationPatternChildren => {
+  seriesId = (series: number): ModificationTags => {
     return {
       'c:idx': {
         modify: this.attribute('val', series),
@@ -70,7 +70,7 @@ export class ModifyChartspace extends ModifyChart {
   seriesLabel = (
     label: string,
     series: number,
-  ): ModificationPatternChildren => {
+  ): ModificationTags => {
     return {
       'c:f': {
         modify: this.range(series + 1),
@@ -86,7 +86,7 @@ export class ModifyChartspace extends ModifyChart {
     value: number,
     index: number,
     series: number,
-  ): ModificationPatternChildren => {
+  ): ModificationTags => {
     return {
       'c:val': this.point(value, index, series + 1),
       'c:cat': this.point(index, 0, label),

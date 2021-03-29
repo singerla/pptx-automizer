@@ -1,15 +1,14 @@
 import {
   ChartData,
   ChartColumn,
-  ModificationPatternChildren,
+  ModificationTags,
 } from '../types/chart-types';
 import { GeneralHelper } from '../helper/general-helper';
 import { XmlHelper } from '../helper/xml-helper';
-import StringIdGenerator from '../helper/string-id-generator';
+import StringIdGenerator from '../helper/cell-id-helper';
 
 export class ModifyChart {
   root: XMLDocument;
-  StringIdGenerator: StringIdGenerator;
   data: ChartData;
   height: number;
   width: number;
@@ -17,9 +16,6 @@ export class ModifyChart {
 
   constructor(root: XMLDocument, data: ChartData, columns: ChartColumn[]) {
     this.root = root;
-    this.StringIdGenerator = new StringIdGenerator(
-      'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
-    );
     this.data = data;
     this.columns = GeneralHelper.arrayify(columns);
     this.height = this.data.categories.length;
@@ -27,13 +23,13 @@ export class ModifyChart {
   }
 
   pattern(
-    pattern: ModificationPatternChildren,
+    tags: ModificationTags,
     root?: XMLDocument | Element,
   ): void {
     root = root || this.root;
 
-    for (const tag in pattern) {
-      const parentPattern = pattern[tag];
+    for (const tag in tags) {
+      const parentPattern = tags[tag];
       const index = parentPattern.index || 0;
       this.assertNode(root.getElementsByTagName(tag), index);
       const element = root.getElementsByTagName(tag)[index];
@@ -71,46 +67,9 @@ export class ModifyChart {
   };
 
   range = (series: number, length?: number) => (element: Element): void => {
-    this.setRange(element, series, length);
+    const range = element.firstChild.textContent
+    element.firstChild.textContent = StringIdGenerator.setRange(range, series, length);;
   };
-
-  setRange(element: Element, colId: number, length?: number): void {
-    const range = element.firstChild.textContent;
-    const info = range.split('!');
-    const spans = info[1].split(':');
-    const start = spans[0].split('$');
-    const startRow = Number(spans[0].split('$')[2]);
-    const colLetter = this.StringIdGenerator.start(colId).next();
-
-    let endCell = '';
-    if (length !== undefined) {
-      const endRow = String(startRow + length - 1);
-      endCell = `:$${colLetter}$${endRow}`;
-    }
-
-    const newRange = `${info[0]}!$${colLetter}$${start[2]}${endCell}`;
-
-    element.firstChild.textContent = newRange;
-  }
-
-  getSpanString(
-    startColNumber: number,
-    startRowNumber: number,
-    cols: number,
-    rows: number,
-  ): string {
-    const startColLetter = this.StringIdGenerator.start(startColNumber).next();
-    const endColLetter = this.StringIdGenerator.start(
-      startColNumber + cols,
-    ).next();
-    const endRowNumber = startRowNumber + rows;
-    return `${startColLetter}${startRowNumber}:${endColLetter}${endRowNumber}`;
-  }
-
-  getCellAddressString(c: number, r: number): string {
-    const colLetter = this.StringIdGenerator.start(c).next();
-    return `${colLetter}${r + 1}`;
-  }
 
   assertNode(collection: HTMLCollectionOf<Element>, index: number): void {
     if (!collection[index]) {

@@ -1,7 +1,8 @@
+import CellIdHelper from '../helper/cell-id-helper';
 import {
   ChartData,
   ChartColumn,
-  ModificationPatternChildren,
+  ModificationTags,
 } from '../types/chart-types';
 import { Workbook } from '../types/types';
 import { ModifyChart } from './chart';
@@ -19,6 +20,7 @@ export class ModifyWorkbook extends ModifyChart {
 
   setWorkbook(): void {
     this.pattern(this.spanString());
+    this.pattern(this.rowAttributes(0, 1));
 
     this.data.categories.forEach((category, c) => {
       const r = c + 1;
@@ -30,7 +32,6 @@ export class ModifyWorkbook extends ModifyChart {
       );
     });
 
-    this.pattern(this.rowAttributes(0, 1));
     this.table.setWorkbookTable();
 
     this.columns.forEach((addCol, s) => {
@@ -39,14 +40,14 @@ export class ModifyWorkbook extends ModifyChart {
     });
   }
 
-  colLabel(c: number, label: string): ModificationPatternChildren {
+  colLabel(c: number, label: string): ModificationTags {
     return {
       row: {
         modify: this.attribute('spans', `1:${this.width}`),
         children: {
           c: {
             index: c,
-            modify: this.attribute('r', this.getCellAddressString(c, 0)),
+            modify: this.attribute('r', CellIdHelper.getCellAddressString(c, 0)),
             children: this.sharedString(label),
           },
         },
@@ -54,7 +55,7 @@ export class ModifyWorkbook extends ModifyChart {
     };
   }
 
-  rowAttributes(r: number, rowId: number): ModificationPatternChildren {
+  rowAttributes(r: number, rowId: number): ModificationTags {
     return {
       row: {
         index: r,
@@ -66,13 +67,13 @@ export class ModifyWorkbook extends ModifyChart {
     };
   }
 
-  rowLabels(r: number, label: string): ModificationPatternChildren {
+  rowLabels(r: number, label: string): ModificationTags {
     return {
       row: {
         index: r,
         children: {
           c: {
-            modify: this.attribute('r', this.getCellAddressString(0, r)),
+            modify: this.attribute('r', CellIdHelper.getCellAddressString(0, r)),
             children: this.sharedString(label),
           },
         },
@@ -80,14 +81,14 @@ export class ModifyWorkbook extends ModifyChart {
     };
   }
 
-  rowValues(r: number, c: number, value: number): ModificationPatternChildren {
+  rowValues(r: number, c: number, value: number): ModificationTags {
     return {
       row: {
         index: r,
         children: {
           c: {
             index: c,
-            modify: this.attribute('r', this.getCellAddressString(c, r)),
+            modify: this.attribute('r', CellIdHelper.getCellAddressString(c, r)),
             children: this.cellValue(value),
           },
         },
@@ -95,23 +96,23 @@ export class ModifyWorkbook extends ModifyChart {
     };
   }
 
-  spanString(): ModificationPatternChildren {
+  spanString(): ModificationTags {
     return {
       dimension: {
         modify: this.attribute(
           'ref',
-          this.getSpanString(0, 1, this.width, this.height),
+          CellIdHelper.getSpanString(0, 1, this.width, this.height),
         ),
       },
     };
   }
 
-  sharedString(label: string): ModificationPatternChildren {
+  sharedString(label: string): ModificationTags {
     const stringId = this.appendSharedString(this.sharedStrings, label);
     return this.cellValue(stringId);
   }
 
-  cellValue(value: number): ModificationPatternChildren {
+  cellValue(value: number): ModificationTags {
     return {
       v: {
         modify: this.text(String(value)),
