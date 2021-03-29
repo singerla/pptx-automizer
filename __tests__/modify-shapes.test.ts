@@ -17,7 +17,7 @@ test('create presentation, add some elements and modify content', async () => {
       slide.addElement('shapes', 2, 'Arrow', modify.setText('my text'));
       slide.addElement('shapes', 2, 'Drum');
     })
-    .write(`create-presentation-modify-shapes.test.pptx`);
+    .write(`modify-shapes.test.pptx`);
 
   expect(result.slides).toBe(2);
 });

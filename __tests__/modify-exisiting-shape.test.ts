@@ -14,7 +14,7 @@ test("create presentation, add slide with shapes from template and modify existi
     .addSlide('shapes', 2, (slide) => {
       slide.modifyElement('Drum', [modify.setPosition({x: 1000000, h:5000000, w:5000000})])
     })
-    .write(`create-presentation-modify-existing-shape.test.pptx`)
+    .write(`modify-existing-shape.test.pptx`)
 
   expect(result.slides).toBe(2)
 })
