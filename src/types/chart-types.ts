@@ -22,13 +22,11 @@ export type ChartColumn = {
   series?: number;
   label: string;
   worksheet: (
-    ctx: any,
     point: number | ChartPoint | ChartBubble | ChartValue,
     r: number,
     category: ChartCategory,
   ) => any;
   chart?: (
-    ctx: any,
     point: number | ChartPoint | ChartBubble | ChartValue,
     r: number,
     category: ChartCategory,
@@ -39,6 +37,19 @@ export type ChartData = {
   series: ChartSeries[];
   categories: ChartCategory[];
 };
+export type ChartDataMapper = {
+  (point: number | ChartPoint | ChartBubble | ChartValue, category?: ChartCategory): number;
+};
+export type ChartSlot = {
+  label?: string;
+  mapData?: ChartDataMapper;
+  series?: ChartSeries;
+  index?: number;
+  targetCol: number;
+  type?: string;
+  tag?: string;
+  isStrRef?: boolean;
+}
 export type ModificationPatternModifier = {
   (element: Element);
 };

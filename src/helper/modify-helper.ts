@@ -1,8 +1,7 @@
 import { XmlHelper } from './xml-helper';
-import { ChartData, ChartColumn, ChartBubble } from '../types/chart-types';
+import { ChartData, ChartColumn, ChartBubble, ChartSlot, ChartCategory } from '../types/chart-types';
 import { FrameCoordinates, Workbook } from '../types/types';
-import { ModifyChartspace } from '../modify/chartspace';
-import { ModifyWorkbook } from '../modify/workbook';
+import { ModifyChart } from '../modify/chart';
 
 export const setSolidFill = (element: XMLDocument): void => {
   element
@@ -52,26 +51,20 @@ export const setChartData = (data: ChartData) => (
   chart: Document,
   workbook: Workbook,
 ): void => {
-  const columns = [] as ChartColumn[];
-
+  
+  const slots = [] as ChartSlot[]
   data.series.forEach((series, s) => {
-    columns.push({
-      series: s,
-      label: `${series.label}`,
-      worksheet: (ctx, point: number, r: number) =>
-        ctx.pattern(ctx.rowValues(r, s + 1, point)),
-      chart: (ctx, point: number, r: number, category) => {
-        return {
-          'c:val': ctx.point(r, s + 1, point),
-          'c:cat': ctx.point(r, 0, category.label),
-        };
-      },
-      isStrRef: true,
-    });
+    slots.push({
+      index: s,
+      series: series,
+      targetCol: s + 1,
+      type: 'defaultSeries',
+    })
   });
 
-  new ModifyChartspace(chart, data, columns).setChart();
-  new ModifyWorkbook(workbook, data, columns).setWorkbook();
+  new ModifyChart(chart, workbook, data, slots).modify();
+  
+  // XmlHelper.dump(chart)
 };
 
 export const setChartVerticalLines = (data: ChartData) => (
@@ -79,32 +72,24 @@ export const setChartVerticalLines = (data: ChartData) => (
   chart: Document,
   workbook: Workbook,
 ): void => {
-  const columns = [] as ChartColumn[];
+  const slots = [] as ChartSlot[]
 
-  columns.push({
+  slots.push({
     label: `Y-Values`,
-    worksheet: (ctx, point, r: number, category) =>
-      ctx.pattern(ctx.rowValues(r, 1, category.y)),
+    mapData: (point: number, category: ChartCategory) => category.y,
+    targetCol: 1,
   });
 
   data.series.forEach((series, s) => {
-    columns.push({
-      series: s,
-      label: `${series.label}`,
-      worksheet: (ctx, point: number, r: number) =>
-        ctx.pattern(ctx.rowValues(r, s + 2, point)),
-      chart: (ctx, point: number, r: number, category) => {
-        return {
-          'c:xVal': ctx.point(r, s + 2, point),
-          'c:yVal': ctx.point(r, 1, category.y),
-        };
-      },
-      isStrRef: true,
-    });
+    slots.push({
+      index: s,
+      series: series,
+      targetCol: s + 2,
+      type: 'xySeries',
+    })
   });
 
-  new ModifyChartspace(chart, data, columns).setChart();
-  new ModifyWorkbook(workbook, data, columns).setWorkbook();
+  new ModifyChart(chart, workbook, data, slots).modify();
 };
 
 export const setChartBubbles = (data: ChartData) => (
@@ -112,42 +97,41 @@ export const setChartBubbles = (data: ChartData) => (
   chart: Document,
   workbook: Workbook,
 ): void => {
-  const columns = [] as ChartColumn[];
+  const slots = [] as ChartSlot[]
 
   data.series.forEach((series, s) => {
     const colId = s * 3;
-    columns.push({
-      series: s,
-      label: `${series.label}`,
-      worksheet: (ctx, point: ChartBubble, r: number) =>
-        ctx.pattern(ctx.rowValues(r, colId + 1, point.x)),
-      chart: (ctx, point: ChartBubble, r: number) => {
-        return { 'c:xVal': ctx.point(r, colId + 1, point.x) };
-      },
-      isStrRef: true,
-    });
-    columns.push({
-      series: s,
+    slots.push({
+      index: s,
+      series: series,
+      targetCol: colId + 1,
+      type: 'customSeries',
+      tag: 'c:xVal',
+      mapData: (point: ChartBubble): number => point.x,
+    })
+    slots.push({
       label: `${series.label}-Y-Value`,
-      worksheet: (ctx, point: ChartBubble, r: number) =>
-        ctx.pattern(ctx.rowValues(r, colId + 2, point.y)),
-      chart: (ctx, point: ChartBubble, r: number) => {
-        return { 'c:yVal': ctx.point(r, colId + 2, point.y) };
-      },
-    });
-    columns.push({
-      series: s,
+      index: s,
+      series: series,
+      targetCol: colId + 2,
+      type: 'customSeries',
+      tag: 'c:yVal',
+      mapData: (point: ChartBubble): number => point.y,
+      isStrRef: false
+    })
+    slots.push({
       label: `${series.label}-Size`,
-      worksheet: (ctx, point: ChartBubble, r: number) =>
-        ctx.pattern(ctx.rowValues(r, colId + 3, point.size)),
-      chart: (ctx, point: ChartBubble, r: number) => {
-        return { 'c:bubbleSize': ctx.point(r, colId + 3, point.size) };
-      },
-    });
+      index: s,
+      series: series,
+      targetCol: colId + 3,
+      type: 'customSeries',
+      tag: 'c:bubbleSize',
+      mapData: (point: ChartBubble): number => point.size,
+      isStrRef: false
+    })
   });
 
-  new ModifyChartspace(chart, data, columns).setChart();
-  new ModifyWorkbook(workbook, data, columns).setWorkbook();
+  new ModifyChart(chart, workbook, data, slots).modify();
 };
 
 export const dump = (element: XMLDocument | Document): void => {

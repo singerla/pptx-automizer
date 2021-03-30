@@ -1,81 +1,329 @@
 import {
   ChartData,
   ChartColumn,
+  ChartSlot,
+  ChartCategory,
+  ChartPoint,
+  ChartBubble,
+  ChartValue,
   ModificationTags,
+  ModificationPattern,
+  ChartDataMapper,
 } from '../types/chart-types';
-import { GeneralHelper } from '../helper/general-helper';
 import { XmlHelper } from '../helper/xml-helper';
-import StringIdGenerator from '../helper/cell-id-helper';
+import CellIdHelper from '../helper/cell-id-helper';
+import { Workbook } from '../types/types';
+import ModifyXmlHelper from '../helper/modify-xml-helper';
+import { GeneralHelper } from '../helper/general-helper';
 
 export class ModifyChart {
-  root: XMLDocument;
   data: ChartData;
   height: number;
   width: number;
   columns: ChartColumn[];
 
-  constructor(root: XMLDocument, data: ChartData, columns: ChartColumn[]) {
-    this.root = root;
+  sharedStrings: Document;
+
+  workbook: ModifyXmlHelper;
+  workbookTable: ModifyXmlHelper;
+  chart: ModifyXmlHelper;
+
+  constructor(chart: XMLDocument, workbook: Workbook, data: ChartData, slot: ChartSlot[]) {
     this.data = data;
-    this.columns = GeneralHelper.arrayify(columns);
+
+    this.chart = new ModifyXmlHelper(chart);
+    this.workbook = new ModifyXmlHelper(workbook.sheet);
+    this.workbookTable = new ModifyXmlHelper(workbook.table);
+
+    this.sharedStrings = workbook.sharedStrings;
+
+    this.columns = this.setColumns(slot);
     this.height = this.data.categories.length;
     this.width = this.columns.length;
   }
 
-  pattern(
-    tags: ModificationTags,
-    root?: XMLDocument | Element,
-  ): void {
-    root = root || this.root;
-
-    for (const tag in tags) {
-      const parentPattern = tags[tag];
-      const index = parentPattern.index || 0;
-      this.assertNode(root.getElementsByTagName(tag), index);
-      const element = root.getElementsByTagName(tag)[index];
-
-      if (GeneralHelper.propertyExists(parentPattern, 'modify')) {
-        const modifies = GeneralHelper.arrayify(parentPattern.modify);
-        Object.values(modifies).forEach((modify) => modify(element));
-      }
-
-      if (GeneralHelper.propertyExists(parentPattern, 'children')) {
-        this.pattern(parentPattern.children, element);
-      }
-    }
+  modify() {
+    this.setValues()
+    this.setSeries()
+    this.setWorkbook()
+    this.setWorkbookTable()
   }
 
-  text = (label: string) => (element: Element): void => {
-    element.firstChild.textContent = String(label);
+  setColumns(slot: ChartSlot[]): ChartColumn[] {
+    const columns = [] as ChartColumn[];
+
+    slot.forEach(slot => {
+      const series = slot.series
+      const index = slot.index
+      const targetCol = slot.targetCol
+
+      const label = (slot.label)
+        ? slot.label
+        : series.label
+
+      const mapData = (slot.mapData) 
+        ? slot.mapData 
+        : (point: number) => point;
+        
+      const isStrRef = (slot.isStrRef) 
+        ? slot.isStrRef 
+        : true;
+
+      const worksheetCb = (point: number, r: number, category: ChartCategory) => {
+        return this.workbook.modify(this.rowValues(r, targetCol, mapData(point, category)))
+      }
+      
+      const chartCb = (slot.type !== undefined && GeneralHelper.propertyExists(this, slot.type)) 
+        ? (point: number | ChartPoint | ChartBubble | ChartValue, r: number, category: ChartCategory) => {
+            return this[slot.type](r, targetCol, point, category, slot.tag, mapData)
+          }
+        : null
+
+      const column = <ChartColumn> {
+        series: index,
+        label: label,
+        worksheet: worksheetCb,
+        chart: chartCb,
+        isStrRef: isStrRef,
+      }
+
+      columns.push(column);
+    })
+
+    return columns
+  }
+
+  setValues(): void {
+    this.data.categories.forEach((category, c) => {
+      this.columns
+        .filter((col) => col.chart)
+        .forEach((col) => {
+          this.chart.modify(
+            this.series(
+              col.series,
+              col.chart(category.values[col.series], c, category),
+            ),
+          );
+        });
+    });
+  }
+
+  setSeries(): void {
+    this.columns.forEach((column, colId) => {
+      if (column.isStrRef === undefined || column.isStrRef === true) {
+        this.chart.modify(
+          this.series(column.series, {
+            ...this.seriesId(column.series),
+            ...this.seriesLabel(column.label, colId),
+          }),
+        );
+      }
+    });
+  }
+  
+  setWorkbook(): void {
+    this.workbook.modify(this.spanString());
+    this.workbook.modify(this.rowAttributes(0, 1));
+
+    this.data.categories.forEach((category, c) => {
+      const r = c + 1;
+      this.workbook.modify(this.rowLabels(r, category.label));
+      this.workbook.modify(this.rowAttributes(r, r + 1));
+
+      this.columns.forEach((addCol) =>
+        addCol.worksheet(category.values[addCol.series], r, category),
+      );
+    });
+
+    this.columns.forEach((addCol, s) => {
+      this.workbook.modify(this.colLabel(s + 1, addCol.label));
+    });
+  }
+
+
+  series = (
+    index: number,
+    children: ModificationTags,
+  ): ModificationTags => {
+    return {
+      'c:ser': {
+        index: index,
+        children: children,
+      },
+    };
   };
 
-  value = (value: number | string, index?: number) => (
-    element: Element,
-  ): void => {
-    element.getElementsByTagName('c:v')[0].firstChild.textContent = String(
-      value,
+  seriesId = (series: number): ModificationTags => {
+    return {
+      'c:idx': {
+        modify: ModifyXmlHelper.attribute('val', series),
+      },
+      'c:order': {
+        modify: ModifyXmlHelper.attribute('val', series + 1),
+      },
+    };
+  };
+
+  seriesLabel = (
+    label: string,
+    series: number,
+  ): ModificationTags => {
+    return {
+      'c:f': {
+        modify: ModifyXmlHelper.range(series + 1),
+      },
+      'c:v': {
+        modify: ModifyXmlHelper.text(label),
+      },
+    };
+  };
+
+  defaultSeries(r: number, targetCol: number, point:number, category: ChartCategory) {
+    return {
+      'c:val': this.point(r, targetCol, point),
+      'c:cat': this.point(r, 0, category.label),
+    }
+  };
+
+  xySeries(r: number, targetCol: number, point:number, category: ChartCategory) {
+    return {
+      'c:xVal': this.point(r, targetCol, point),
+      'c:yVal': this.point(r, 1, category.y),
+    }
+  };
+
+  customSeries(r: number, targetCol: number, point:number | ChartPoint | ChartBubble | ChartValue, category: ChartCategory, tag:string, mapData:ChartDataMapper) {
+    return {
+      [tag]: this.point(r, targetCol, mapData(point, category)),
+    }
+  };
+
+  point = (
+    r: number,
+    c: number,
+    value: number | string,
+  ): ModificationPattern => {
+    return {
+      children: {
+        'c:pt': {
+          index: r,
+          modify: ModifyXmlHelper.value(value, r),
+        },
+        'c:f': {
+          modify: ModifyXmlHelper.range(c, this.height),
+        },
+        'c:ptCount': {
+          modify: ModifyXmlHelper.attribute('val', this.height),
+        },
+      },
+    };
+  };
+
+  colLabel(c: number, label: string): ModificationTags {
+    return {
+      row: {
+        modify: ModifyXmlHelper.attribute('spans', `1:${this.width}`),
+        children: {
+          c: {
+            index: c,
+            modify: ModifyXmlHelper.attribute('r', CellIdHelper.getCellAddressString(c, 0)),
+            children: this.sharedString(label),
+          },
+        },
+      },
+    };
+  }
+
+  rowAttributes(r: number, rowId: number): ModificationTags {
+    return {
+      row: {
+        index: r,
+        modify: [
+          ModifyXmlHelper.attribute('spans', `1:${this.width}`),
+          ModifyXmlHelper.attribute('r', String(rowId)),
+        ],
+      },
+    };
+  }
+
+  rowLabels(r: number, label: string): ModificationTags {
+    return {
+      row: {
+        index: r,
+        children: {
+          c: {
+            modify: ModifyXmlHelper.attribute('r', CellIdHelper.getCellAddressString(0, r)),
+            children: this.sharedString(label),
+          },
+        },
+      },
+    };
+  }
+
+  rowValues(r: number, c: number, value: number): ModificationTags {
+    return {
+      row: {
+        index: r,
+        children: {
+          c: {
+            index: c,
+            modify: ModifyXmlHelper.attribute('r', CellIdHelper.getCellAddressString(c, r)),
+            children: this.cellValue(value),
+          },
+        },
+      },
+    };
+  }
+
+  spanString(): ModificationTags {
+    return {
+      dimension: {
+        modify: ModifyXmlHelper.attribute(
+          'ref',
+          CellIdHelper.getSpanString(0, 1, this.width, this.height),
+        ),
+      },
+    };
+  }
+
+  cellValue(value: number): ModificationTags {
+    return {
+      v: {
+        modify: ModifyXmlHelper.text(String(value)),
+      },
+    };
+  }
+
+  sharedString(label: string): ModificationTags {
+    return this.cellValue(
+      XmlHelper.appendSharedString(this.sharedStrings, label)
     );
-    if (index !== undefined) {
-      element.setAttribute('idx', String(index));
-    }
-  };
+  }
 
-  attribute = (attribute: string, value: string | number) => (
-    element: Element,
-  ): void => {
-    element.setAttribute(attribute, String(value));
-  };
+  setWorkbookTable(): void {
+    this.workbookTable.modify({
+      'table': {
+        modify: ModifyXmlHelper.attribute('ref', CellIdHelper.getSpanString(0, 1, this.width, this.height))
+      },
+      'tableColumns': {
+        modify: ModifyXmlHelper.attribute('count', this.width + 1)
+      }
+    })
 
-  range = (series: number, length?: number) => (element: Element): void => {
-    const range = element.firstChild.textContent
-    element.firstChild.textContent = StringIdGenerator.setRange(range, series, length);;
-  };
+    this.columns.forEach((addCol, s) => {
+      this.setWorkbookTableColumn(s + 1, addCol.label);
+    });
+  }
 
-  assertNode(collection: HTMLCollectionOf<Element>, index: number): void {
-    if (!collection[index]) {
-      const tplNode = collection[collection.length - 1];
-      const newChild = tplNode.cloneNode(true);
-      XmlHelper.insertAfter(newChild, tplNode);
-    }
+  setWorkbookTableColumn(c: number, label: string): void {
+    this.workbookTable.modify({
+      'tableColumn': {
+        index: c,
+        modify: [
+          ModifyXmlHelper.attribute('id', c + 1),
+          ModifyXmlHelper.attribute('name', label),
+        ]
+      }
+    })
   }
 }

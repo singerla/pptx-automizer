@@ -296,6 +296,21 @@ export class XmlHelper {
     };
   }
 
+
+  static appendSharedString(sharedStrings: Document, stringValue: string): number {
+    const strings = sharedStrings.getElementsByTagName('sst')[0];
+    const newLabel = sharedStrings.createTextNode(stringValue);
+    const newText = sharedStrings.createElement('t');
+    newText.appendChild(newLabel);
+
+    const newString = sharedStrings.createElement('si');
+    newString.appendChild(newText);
+
+    strings.appendChild(newString);
+
+    return strings.getElementsByTagName('si').length - 1;
+  }
+
   static insertAfter(newNode: Node, referenceNode: Element): void {
     referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
   }

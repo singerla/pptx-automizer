@@ -19,9 +19,9 @@ const data = {
   categories: [
     { label: 'item test r1', values: [10, 16, 12] },
     { label: 'item test r2', values: [12, 18, 15] },
-    // { label: 'item test r3', values: [ 14, 12, 11 ] },
-    // { label: 'item test r4', values: [ 8, 11, 9 ] },
-    // { label: 'item test r5', values: [ 6, 15, 7 ] },
+    { label: 'item test r3', values: [ 14, 12, 11 ] },
+    { label: 'item test r4', values: [ 8, 11, 9 ] },
+    { label: 'item test r5', values: [ 6, 15, 7 ] },
     // { label: 'item test r6', values: [ 16, 16, 9 ] },
   ],
 };
