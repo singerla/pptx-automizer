@@ -1,4 +1,4 @@
-import Automizer from '../src/index';
+import Automizer, { modify } from '../src/index';
 
 test('create presentation, add and modify an existing table.', async () => {
   const automizer = new Automizer({
@@ -42,10 +42,12 @@ test('create presentation, add and modify an existing table.', async () => {
           row.forEach((cell,c) => {
             const tabCell = tabRow.getElementsByTagName('a:tc')[c]
 
-            // We can hopefully found a corresponding text node
-            // and update textContent by our own label.
-            tabCell.getElementsByTagName('a:t')
-              [0].firstChild.textContent = String(cell.label)
+            // We could hopefully find a corresponding text node
+            // and replace textContent with our own label.
+            if(cell.label !== undefined) {
+              tabCell.getElementsByTagName('a:t')
+                [0].firstChild.textContent = String(cell.label)
+            }
           })
         })
       });
