@@ -24,7 +24,7 @@ npm install pptx-automizer
 
 ## Example
 ```js
-import Automizer from "pptx-automizer"
+import Automizer, { modify } from "pptx-automizer"
 
 // First, let's set some preferences
 const automizer = new Automizer({
@@ -63,9 +63,9 @@ pres.addSlide('image', 1, (slide) => {
 pres.addSlide('shapes', 2, (slide) => {
   slide.modifyElement('Drum', [
     // You can use some of the builtin modifiers to edit a shape's xml:
-    Automizer.modify.setPosition({x: 1000000, h:5000000, w:5000000}),
+    modify.setPosition({x: 1000000, h:5000000, w:5000000}),
     // Log your target xml into the console:
-    Automizer.modify.dump
+    modify.dump
   ])
 })
 
@@ -73,8 +73,9 @@ pres.addSlide('shapes', 2, (slide) => {
 pres.addSlide('charts', 2, (slide) => {
   slide.modifyElement('ColumnChart', [
     // Use an object like this to inject the new chart data.
-    // Make sure there is enough space in the template chart.
-    Automizer.modify.setChartData({
+    // Make sure there is enough space in the template chart,
+    // as this will only update existing nodes.
+    modify.setChartData({
       series: [
         { label: 'series 1' },
         { label: 'series 2' },
