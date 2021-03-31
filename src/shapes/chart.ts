@@ -11,6 +11,7 @@ import { RootPresTemplate } from '../interfaces/root-pres-template';
 export class Chart extends Shape implements IChart {
   sourceWorksheet: number | string;
   targetWorksheet: number | string;
+  worksheetFilePrefix: string;
 
   constructor(shape: ImportedElement) {
     super(shape);
@@ -92,7 +93,7 @@ export class Chart extends Shape implements IChart {
   async readWorkbook(): Promise<Workbook> {
     const worksheet = await FileHelper.extractFromArchive(
       this.targetArchive,
-      `ppt/embeddings/Microsoft_Excel_Worksheet${this.targetWorksheet}.xlsx`,
+      `ppt/embeddings/${this.worksheetFilePrefix}${this.targetWorksheet}.xlsx`,
       'nodebuffer',
     );
     const archive = await FileHelper.extractFileContent(
@@ -140,7 +141,7 @@ export class Chart extends Shape implements IChart {
       type: 'nodebuffer',
     });
     this.targetArchive.file(
-      `ppt/embeddings/Microsoft_Excel_Worksheet${this.targetWorksheet}.xlsx`,
+      `ppt/embeddings/${this.worksheetFilePrefix}${this.targetWorksheet}.xlsx`,
       worksheet,
     );
   }
@@ -149,10 +150,14 @@ export class Chart extends Shape implements IChart {
     await this.copyChartFiles();
 
     const wbRelsPath = `ppt/charts/_rels/chart${this.sourceNumber}.xml.rels`;
+    const wbEmbeddingsPath = `../embeddings/`;
+
+    this.worksheetFilePrefix = await this.getWorksheetFilePrefix(wbRelsPath);
+
     const worksheets = await XmlHelper.getTargetsFromRelationships(
       this.sourceArchive,
       wbRelsPath,
-      '../embeddings/Microsoft_Excel_Worksheet',
+      `${wbEmbeddingsPath}${this.worksheetFilePrefix}`,
       '.xlsx',
     );
     const worksheet = worksheets[0];
@@ -162,6 +167,25 @@ export class Chart extends Shape implements IChart {
 
     await this.copyWorksheetFile();
     await this.editTargetWorksheetRel();
+  }
+
+  async getWorksheetFilePrefix(
+    targetRelFile: string,
+  ) {
+    const relationTargets = await XmlHelper.getTargetsFromRelationships(
+      this.sourceArchive,
+      targetRelFile,
+      `../embeddings/`,
+      '.xlsx',
+    );
+
+    let wbPath = relationTargets[0].file
+      .replace(`../embeddings/`, '')
+      .replace('.xlsx', '')
+    
+    const wbTitle = wbPath.match(/^(.+?)(\d+)*$/)
+    
+    return wbTitle[0]
   }
 
   async appendTypes(): Promise<void> {
@@ -239,7 +263,7 @@ export class Chart extends Shape implements IChart {
           case 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/package':
             element.setAttribute(
               'Target',
-              `../embeddings/Microsoft_Excel_Worksheet${this.targetWorksheet}.xlsx`,
+              `../embeddings/${this.worksheetFilePrefix}${this.targetWorksheet}.xlsx`,
             );
             break;
           case 'http://schemas.microsoft.com/office/2011/relationships/chartColorStyle':
@@ -257,9 +281,9 @@ export class Chart extends Shape implements IChart {
   async copyWorksheetFile(): Promise<void> {
     await FileHelper.zipCopy(
       this.sourceArchive,
-      `ppt/embeddings/Microsoft_Excel_Worksheet${this.sourceWorksheet}.xlsx`,
+      `ppt/embeddings/${this.worksheetFilePrefix}${this.sourceWorksheet}.xlsx`,
       this.targetArchive,
-      `ppt/embeddings/Microsoft_Excel_Worksheet${this.targetWorksheet}.xlsx`,
+      `ppt/embeddings/${this.worksheetFilePrefix}${this.targetWorksheet}.xlsx`,
     );
   }
 
