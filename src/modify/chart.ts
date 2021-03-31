@@ -72,8 +72,8 @@ export class ModifyChart {
       const worksheetCb = (point: number, r: number, category: ChartCategory) => {
         return this.workbook.modify(this.rowValues(r, targetCol, mapData(point, category)))
       }
-      
-      const chartCb = (slot.type !== undefined && GeneralHelper.propertyExists(this, slot.type)) 
+
+      const chartCb = (slot.type !== undefined && this[slot.type] !== undefined && typeof this[slot.type] === 'function') 
         ? (point: number | ChartPoint | ChartBubble | ChartValue, r: number, category: ChartCategory) => {
             return this[slot.type](r, targetCol, point, category, slot.tag, mapData)
           }
