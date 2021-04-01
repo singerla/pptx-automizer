@@ -173,9 +173,7 @@ export class Chart extends Shape implements IChart {
     await this.editTargetWorksheetRel();
   }
 
-  async getWorksheetFilePrefix(
-    targetRelFile: string,
-  ) {
+  async getWorksheetFilePrefix(targetRelFile: string) {
     const relationTargets = await XmlHelper.getTargetsFromRelationships(
       this.sourceArchive,
       targetRelFile,
@@ -183,13 +181,13 @@ export class Chart extends Shape implements IChart {
       this.wbExtension,
     );
 
-    let wbPath = relationTargets[0].file
+    const wbPath = relationTargets[0].file
       .replace(this.wbEmbeddingsPath, '')
-      .replace(this.wbExtension, '')
-    
-    const wbTitle = wbPath.match(/^(.+?)(\d+)*$/)
-    
-    return wbTitle[0]
+      .replace(this.wbExtension, '');
+
+    const wbTitle = wbPath.match(/^(.+?)(\d+)*$/);
+
+    return wbTitle[0];
   }
 
   async appendTypes(): Promise<void> {

@@ -296,8 +296,10 @@ export class XmlHelper {
     };
   }
 
-
-  static appendSharedString(sharedStrings: Document, stringValue: string): number {
+  static appendSharedString(
+    sharedStrings: Document,
+    stringValue: string,
+  ): number {
     const strings = sharedStrings.getElementsByTagName('sst')[0];
     const newLabel = sharedStrings.createTextNode(stringValue);
     const newText = sharedStrings.createElement('t');

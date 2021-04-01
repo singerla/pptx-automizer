@@ -44,7 +44,7 @@ export default class CellIdHelper {
   }
 
   static increment(letterNumber: number): string {
-    const Generator = new this('ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+    const Generator = new this('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
     return Generator.start(letterNumber).next();
   }
 
@@ -63,7 +63,7 @@ export default class CellIdHelper {
     }
 
     const newRange = `${info[0]}!$${colLetter}$${start[2]}${endCell}`;
-    return newRange
+    return newRange;
   }
 
   static getSpanString(
@@ -73,7 +73,7 @@ export default class CellIdHelper {
     rows: number,
   ): string {
     const startColLetter = CellIdHelper.increment(startColNumber);
-    const endColLetter =  CellIdHelper.increment(startColNumber + cols);
+    const endColLetter = CellIdHelper.increment(startColNumber + cols);
     const endRowNumber = startRowNumber + rows;
     return `${startColLetter}${startRowNumber}:${endColLetter}${endRowNumber}`;
   }

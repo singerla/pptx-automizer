@@ -1,7 +1,13 @@
 import { XmlHelper } from './xml-helper';
 import { ModifyChart } from '../modify/modify-chart';
 import { Workbook } from '../types/types';
-import { ChartData, ChartBubble, ChartSlot, ChartCategory, ChartSeries } from '../types/chart-types';
+import {
+  ChartData,
+  ChartBubble,
+  ChartSlot,
+  ChartCategory,
+  ChartSeries,
+} from '../types/chart-types';
 import { TableData } from '../types/table-types';
 import { ShapeCoordinates } from '../types/shape-types';
 
@@ -53,19 +59,18 @@ export const setChartData = (data: ChartData) => (
   chart: Document,
   workbook: Workbook,
 ): void => {
-  
-  const slots = [] as ChartSlot[]
+  const slots = [] as ChartSlot[];
   data.series.forEach((series: ChartSeries, s: number) => {
     slots.push({
       index: s,
       series: series,
       targetCol: s + 1,
       type: 'defaultSeries',
-    })
+    });
   });
 
   new ModifyChart(chart, workbook, data, slots).modify();
-  
+
   // XmlHelper.dump(chart)
 };
 
@@ -74,7 +79,7 @@ export const setChartVerticalLines = (data: ChartData) => (
   chart: Document,
   workbook: Workbook,
 ): void => {
-  const slots = [] as ChartSlot[]
+  const slots = [] as ChartSlot[];
 
   slots.push({
     label: `Y-Values`,
@@ -88,7 +93,7 @@ export const setChartVerticalLines = (data: ChartData) => (
       series: series,
       targetCol: s + 2,
       type: 'xySeries',
-    })
+    });
   });
 
   new ModifyChart(chart, workbook, data, slots).modify();
@@ -99,7 +104,7 @@ export const setChartBubbles = (data: ChartData) => (
   chart: Document,
   workbook: Workbook,
 ): void => {
-  const slots = [] as ChartSlot[]
+  const slots = [] as ChartSlot[];
 
   data.series.forEach((series: ChartSeries, s: number) => {
     const colId = s * 3;
@@ -110,7 +115,7 @@ export const setChartBubbles = (data: ChartData) => (
       type: 'customSeries',
       tag: 'c:xVal',
       mapData: (point: ChartBubble): number => point.x,
-    })
+    });
     slots.push({
       label: `${series.label}-Y-Value`,
       index: s,
@@ -119,8 +124,8 @@ export const setChartBubbles = (data: ChartData) => (
       type: 'customSeries',
       tag: 'c:yVal',
       mapData: (point: ChartBubble): number => point.y,
-      isStrRef: false
-    })
+      isStrRef: false,
+    });
     slots.push({
       label: `${series.label}-Size`,
       index: s,
@@ -129,15 +134,15 @@ export const setChartBubbles = (data: ChartData) => (
       type: 'customSeries',
       tag: 'c:bubbleSize',
       mapData: (point: ChartBubble): number => point.size,
-      isStrRef: false
-    })
+      isStrRef: false,
+    });
   });
 
   new ModifyChart(chart, workbook, data, slots).modify();
 };
 
 export const setTableData = (data: TableData) => (
-  element: XMLDocument | Document | Element
+  element: XMLDocument | Document | Element,
 ): void => {
   XmlHelper.dump(element);
 };

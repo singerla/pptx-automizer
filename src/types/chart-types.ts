@@ -1,4 +1,4 @@
-import { ModificationTags } from "./modify-types";
+import { ModificationTags } from './modify-types';
 
 export type ChartValue = {
   value: number;
@@ -40,7 +40,10 @@ export type ChartData = {
   categories: ChartCategory[];
 };
 export type ChartDataMapper = {
-  (point: number | ChartPoint | ChartBubble | ChartValue, category?: ChartCategory): number;
+  (
+    point: number | ChartPoint | ChartBubble | ChartValue,
+    category?: ChartCategory,
+  ): number;
 };
 export type ChartSlot = {
   label?: string;
@@ -51,4 +54,4 @@ export type ChartSlot = {
   type?: string;
   tag?: string;
   isStrRef?: boolean;
-}
+};

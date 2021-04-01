@@ -1,7 +1,4 @@
-import {
-  Modification,
-  ModificationTags,
-} from '../types/modify-types';
+import { Modification, ModificationTags } from '../types/modify-types';
 
 import StringIdGenerator from './cell-id-helper';
 import { GeneralHelper } from './general-helper';
@@ -14,10 +11,7 @@ export default class ModifyXmlHelper {
     this.root = root;
   }
 
-  modify(
-    tags: ModificationTags,
-    root?: XMLDocument | Element,
-  ): void {
+  modify(tags: ModificationTags, root?: XMLDocument | Element): void {
     root = root || this.root;
 
     for (const tag in tags) {
@@ -59,16 +53,27 @@ export default class ModifyXmlHelper {
     element.setAttribute(attribute, String(value));
   };
 
-  static range = (series: number, length?: number) => (element: Element): void => {
-    const range = element.firstChild.textContent
-    element.firstChild.textContent = StringIdGenerator.setRange(range, series, length);;
+  static range = (series: number, length?: number) => (
+    element: Element,
+  ): void => {
+    const range = element.firstChild.textContent;
+    element.firstChild.textContent = StringIdGenerator.setRange(
+      range,
+      series,
+      length,
+    );
   };
 
-  assertNode(collection: HTMLCollectionOf<Element>, index: number, tag?: string, info?): void {
+  assertNode(
+    collection: HTMLCollectionOf<Element>,
+    index: number,
+    tag?: string,
+    info?,
+  ): void {
     if (!collection[index]) {
-      if(collection[collection.length - 1] === undefined) {
-        console.log(info)
-        throw new Error(`Index ${index} not found at "${tag}"`)
+      if (collection[collection.length - 1] === undefined) {
+        console.log(info);
+        throw new Error(`Index ${index} not found at "${tag}"`);
       }
       const tplNode = collection[collection.length - 1];
       const newChild = tplNode.cloneNode(true);

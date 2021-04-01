@@ -99,7 +99,7 @@ export class Slide implements ISlide {
 
   /**
    * Select and modify a single element on an added slide.
-   * @param {string} selector - Element's name on the slide. 
+   * @param {string} selector - Element's name on the slide.
    * Should be a unique string defined on the "Selection"-pane within ppt.
    * @param {ShapeModificationCallback | ShapeModificationCallback[]} callback - One or more callback functions to apply.
    * Depending on the shape type (e.g. chart or table), different arguments will be passed to the callback.
@@ -122,9 +122,9 @@ export class Slide implements ISlide {
 
   /**
    * Select, insert and (optionally) modify a single element to a slide.
-   * @param {string} presName - Filename or alias name of the template presentation. 
+   * @param {string} presName - Filename or alias name of the template presentation.
    * Must have been importet with Automizer.load().
-   * @param {number} slideNumber - Slide number within the specified template to search for the required element. 
+   * @param {number} slideNumber - Slide number within the specified template to search for the required element.
    * @param {ShapeModificationCallback | ShapeModificationCallback[]} callback - One or more callback functions to apply.
    * Depending on the shape type (e.g. chart or table), different arguments will be passed to the callback.
    */

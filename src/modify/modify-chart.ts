@@ -8,10 +8,7 @@ import {
   ChartValue,
   ChartDataMapper,
 } from '../types/chart-types';
-import {
-  ModificationTags,
-  Modification
-} from '../types/modify-types';
+import { ModificationTags, Modification } from '../types/modify-types';
 import { XmlHelper } from '../helper/xml-helper';
 import CellIdHelper from '../helper/cell-id-helper';
 import { Workbook } from '../types/types';
@@ -29,7 +26,12 @@ export class ModifyChart {
   workbookTable: ModifyXmlHelper;
   chart: ModifyXmlHelper;
 
-  constructor(chart: XMLDocument, workbook: Workbook, data: ChartData, slot: ChartSlot[]) {
+  constructor(
+    chart: XMLDocument,
+    workbook: Workbook,
+    data: ChartData,
+    slot: ChartSlot[],
+  ) {
     this.data = data;
 
     this.chart = new ModifyXmlHelper(chart);
@@ -44,54 +46,68 @@ export class ModifyChart {
   }
 
   modify() {
-    this.setValues()
-    this.setSeries()
-    this.setWorkbook()
-    this.setWorkbookTable()
+    this.setValues();
+    this.setSeries();
+    this.setWorkbook();
+    this.setWorkbookTable();
   }
 
   setColumns(slot: ChartSlot[]): ChartColumn[] {
     const columns = [] as ChartColumn[];
 
-    slot.forEach(slot => {
-      const series = slot.series
-      const index = slot.index
-      const targetCol = slot.targetCol
+    slot.forEach((slot) => {
+      const series = slot.series;
+      const index = slot.index;
+      const targetCol = slot.targetCol;
 
-      const label = (slot.label)
-        ? slot.label
-        : series.label
+      const label = slot.label ? slot.label : series.label;
 
-      const mapData = (slot.mapData) 
-        ? slot.mapData 
-        : (point: number) => point;
-        
-      const isStrRef = (slot.isStrRef) 
-        ? slot.isStrRef 
-        : true;
+      const mapData = slot.mapData ? slot.mapData : (point: number) => point;
 
-      const worksheetCb = (point: number, r: number, category: ChartCategory): void => {
-        return this.workbook.modify(this.rowValues(r, targetCol, mapData(point, category)))
-      }
+      const isStrRef = slot.isStrRef ? slot.isStrRef : true;
 
-      const chartCb = (slot.type !== undefined && this[slot.type] !== undefined && typeof this[slot.type] === 'function') 
-        ? (point: number | ChartPoint | ChartBubble | ChartValue, r: number, category: ChartCategory): ModificationTags => {
-            return this[slot.type](r, targetCol, point, category, slot.tag, mapData)
-          }
-        : null
+      const worksheetCb = (
+        point: number,
+        r: number,
+        category: ChartCategory,
+      ): void => {
+        return this.workbook.modify(
+          this.rowValues(r, targetCol, mapData(point, category)),
+        );
+      };
 
-      const column = <ChartColumn> {
+      const chartCb =
+        slot.type !== undefined &&
+        this[slot.type] !== undefined &&
+        typeof this[slot.type] === 'function'
+          ? (
+              point: number | ChartPoint | ChartBubble | ChartValue,
+              r: number,
+              category: ChartCategory,
+            ): ModificationTags => {
+              return this[slot.type](
+                r,
+                targetCol,
+                point,
+                category,
+                slot.tag,
+                mapData,
+              );
+            }
+          : null;
+
+      const column = <ChartColumn>{
         series: index,
         label: label,
         worksheet: worksheetCb,
         chart: chartCb,
         isStrRef: isStrRef,
-      }
+      };
 
       columns.push(column);
-    })
+    });
 
-    return columns
+    return columns;
   }
 
   setValues(): void {
@@ -121,7 +137,7 @@ export class ModifyChart {
       }
     });
   }
-  
+
   setWorkbook(): void {
     this.workbook.modify(this.spanString());
     this.workbook.modify(this.rowAttributes(0, 1));
@@ -141,11 +157,7 @@ export class ModifyChart {
     });
   }
 
-
-  series = (
-    index: number,
-    children: ModificationTags,
-  ): ModificationTags => {
+  series = (index: number, children: ModificationTags): ModificationTags => {
     return {
       'c:ser': {
         index: index,
@@ -165,10 +177,7 @@ export class ModifyChart {
     };
   };
 
-  seriesLabel = (
-    label: string,
-    series: number,
-  ): ModificationTags => {
+  seriesLabel = (label: string, series: number): ModificationTags => {
     return {
       'c:f': {
         modify: ModifyXmlHelper.range(series + 1),
@@ -179,31 +188,44 @@ export class ModifyChart {
     };
   };
 
-  defaultSeries(r: number, targetCol: number, point:number, category: ChartCategory): ModificationTags {
+  defaultSeries(
+    r: number,
+    targetCol: number,
+    point: number,
+    category: ChartCategory,
+  ): ModificationTags {
     return {
       'c:val': this.point(r, targetCol, point),
       'c:cat': this.point(r, 0, category.label),
-    }
-  };
+    };
+  }
 
-  xySeries(r: number, targetCol: number, point:number, category: ChartCategory): ModificationTags {
+  xySeries(
+    r: number,
+    targetCol: number,
+    point: number,
+    category: ChartCategory,
+  ): ModificationTags {
     return {
       'c:xVal': this.point(r, targetCol, point),
       'c:yVal': this.point(r, 1, category.y),
-    }
-  };
+    };
+  }
 
-  customSeries(r: number, targetCol: number, point:number | ChartPoint | ChartBubble | ChartValue, category: ChartCategory, tag:string, mapData:ChartDataMapper): ModificationTags {
+  customSeries(
+    r: number,
+    targetCol: number,
+    point: number | ChartPoint | ChartBubble | ChartValue,
+    category: ChartCategory,
+    tag: string,
+    mapData: ChartDataMapper,
+  ): ModificationTags {
     return {
       [tag]: this.point(r, targetCol, mapData(point, category)),
-    }
-  };
+    };
+  }
 
-  point = (
-    r: number,
-    c: number,
-    value: number | string,
-  ): Modification => {
+  point = (r: number, c: number, value: number | string): Modification => {
     return {
       children: {
         'c:pt': {
@@ -227,7 +249,10 @@ export class ModifyChart {
         children: {
           c: {
             index: c,
-            modify: ModifyXmlHelper.attribute('r', CellIdHelper.getCellAddressString(c, 0)),
+            modify: ModifyXmlHelper.attribute(
+              'r',
+              CellIdHelper.getCellAddressString(c, 0),
+            ),
             children: this.sharedString(label),
           },
         },
@@ -253,7 +278,10 @@ export class ModifyChart {
         index: r,
         children: {
           c: {
-            modify: ModifyXmlHelper.attribute('r', CellIdHelper.getCellAddressString(0, r)),
+            modify: ModifyXmlHelper.attribute(
+              'r',
+              CellIdHelper.getCellAddressString(0, r),
+            ),
             children: this.sharedString(label),
           },
         },
@@ -268,7 +296,10 @@ export class ModifyChart {
         children: {
           c: {
             index: c,
-            modify: ModifyXmlHelper.attribute('r', CellIdHelper.getCellAddressString(c, r)),
+            modify: ModifyXmlHelper.attribute(
+              'r',
+              CellIdHelper.getCellAddressString(c, r),
+            ),
             children: this.cellValue(value),
           },
         },
@@ -297,19 +328,22 @@ export class ModifyChart {
 
   sharedString(label: string): ModificationTags {
     return this.cellValue(
-      XmlHelper.appendSharedString(this.sharedStrings, label)
+      XmlHelper.appendSharedString(this.sharedStrings, label),
     );
   }
 
   setWorkbookTable(): void {
     this.workbookTable.modify({
-      'table': {
-        modify: ModifyXmlHelper.attribute('ref', CellIdHelper.getSpanString(0, 1, this.width, this.height))
+      table: {
+        modify: ModifyXmlHelper.attribute(
+          'ref',
+          CellIdHelper.getSpanString(0, 1, this.width, this.height),
+        ),
       },
-      'tableColumns': {
-        modify: ModifyXmlHelper.attribute('count', this.width + 1)
-      }
-    })
+      tableColumns: {
+        modify: ModifyXmlHelper.attribute('count', this.width + 1),
+      },
+    });
 
     this.columns.forEach((addCol, s) => {
       this.setWorkbookTableColumn(s + 1, addCol.label);
@@ -318,13 +352,13 @@ export class ModifyChart {
 
   setWorkbookTableColumn(c: number, label: string): void {
     this.workbookTable.modify({
-      'tableColumn': {
+      tableColumn: {
         index: c,
         modify: [
           ModifyXmlHelper.attribute('id', c + 1),
           ModifyXmlHelper.attribute('name', label),
-        ]
-      }
-    })
+        ],
+      },
+    });
   }
 }
