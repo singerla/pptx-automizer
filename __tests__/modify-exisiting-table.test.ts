@@ -28,11 +28,11 @@ test('create presentation, add and modify an existing table.', async () => {
 
   const pres = automizer
     .loadRoot(`RootTemplate.pptx`)
-    .load(`SlideWithTable.pptx`, 'tables');
+    .load(`SlideWithTables.pptx`, 'tables');
 
   const result = await pres
     .addSlide('tables', 1, (slide) => {
-      slide.modifyElement('TableHeader', (table) => {
+      slide.modifyElement('TableWithHeader', (table) => {
         
         // uncomment next line to dump table's xml in console 
         // modify.dump(table)
