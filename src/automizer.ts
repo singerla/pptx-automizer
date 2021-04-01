@@ -110,6 +110,10 @@ export default class Automizer implements IPresentationProps {
     return template;
   }
 
+  /**
+   * Write all imports and modifications to a file.
+   * @param {string} location - Filename or path for the file. Will be prefixed with 'outputDir'
+   */
   async write(location: string): Promise<AutomizerSummary> {
     const rootArchive = await this.rootTemplate.archive;
 

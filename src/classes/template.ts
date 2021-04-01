@@ -23,7 +23,7 @@ export class Template implements ITemplate {
 
   /**
    * Node file buffer
-   * @type Promise<Buffer>
+   * @type InputType
    */
   file: InputType;
 
