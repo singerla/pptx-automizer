@@ -10,6 +10,7 @@ import {
   setChartData,
   setChartVerticalLines,
   setChartBubbles,
+  setTableData,
   dump,
 } from './helper/modify-helper';
 
@@ -21,5 +22,6 @@ export const modify = {
   setChartData,
   setChartVerticalLines,
   setChartBubbles,
+  setTableData,
   dump,
 };

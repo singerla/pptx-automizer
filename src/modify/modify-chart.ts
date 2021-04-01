@@ -6,15 +6,16 @@ import {
   ChartPoint,
   ChartBubble,
   ChartValue,
-  ModificationTags,
-  ModificationPattern,
   ChartDataMapper,
 } from '../types/chart-types';
+import {
+  ModificationTags,
+  Modification
+} from '../types/modify-types';
 import { XmlHelper } from '../helper/xml-helper';
 import CellIdHelper from '../helper/cell-id-helper';
 import { Workbook } from '../types/types';
 import ModifyXmlHelper from '../helper/modify-xml-helper';
-import { GeneralHelper } from '../helper/general-helper';
 
 export class ModifyChart {
   data: ChartData;
@@ -69,12 +70,12 @@ export class ModifyChart {
         ? slot.isStrRef 
         : true;
 
-      const worksheetCb = (point: number, r: number, category: ChartCategory) => {
+      const worksheetCb = (point: number, r: number, category: ChartCategory): void => {
         return this.workbook.modify(this.rowValues(r, targetCol, mapData(point, category)))
       }
 
       const chartCb = (slot.type !== undefined && this[slot.type] !== undefined && typeof this[slot.type] === 'function') 
-        ? (point: number | ChartPoint | ChartBubble | ChartValue, r: number, category: ChartCategory) => {
+        ? (point: number | ChartPoint | ChartBubble | ChartValue, r: number, category: ChartCategory): ModificationTags => {
             return this[slot.type](r, targetCol, point, category, slot.tag, mapData)
           }
         : null
@@ -178,21 +179,21 @@ export class ModifyChart {
     };
   };
 
-  defaultSeries(r: number, targetCol: number, point:number, category: ChartCategory) {
+  defaultSeries(r: number, targetCol: number, point:number, category: ChartCategory): ModificationTags {
     return {
       'c:val': this.point(r, targetCol, point),
       'c:cat': this.point(r, 0, category.label),
     }
   };
 
-  xySeries(r: number, targetCol: number, point:number, category: ChartCategory) {
+  xySeries(r: number, targetCol: number, point:number, category: ChartCategory): ModificationTags {
     return {
       'c:xVal': this.point(r, targetCol, point),
       'c:yVal': this.point(r, 1, category.y),
     }
   };
 
-  customSeries(r: number, targetCol: number, point:number | ChartPoint | ChartBubble | ChartValue, category: ChartCategory, tag:string, mapData:ChartDataMapper) {
+  customSeries(r: number, targetCol: number, point:number | ChartPoint | ChartBubble | ChartValue, category: ChartCategory, tag:string, mapData:ChartDataMapper): ModificationTags {
     return {
       [tag]: this.point(r, targetCol, mapData(point, category)),
     }
@@ -202,7 +203,7 @@ export class ModifyChart {
     r: number,
     c: number,
     value: number | string,
-  ): ModificationPattern => {
+  ): Modification => {
     return {
       children: {
         'c:pt': {

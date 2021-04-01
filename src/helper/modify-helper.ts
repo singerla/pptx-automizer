@@ -1,7 +1,9 @@
 import { XmlHelper } from './xml-helper';
-import { ChartData, ChartColumn, ChartBubble, ChartSlot, ChartCategory } from '../types/chart-types';
-import { FrameCoordinates, Workbook } from '../types/types';
-import { ModifyChart } from '../modify/chart';
+import { ModifyChart } from '../modify/modify-chart';
+import { Workbook } from '../types/types';
+import { ChartData, ChartBubble, ChartSlot, ChartCategory, ChartSeries } from '../types/chart-types';
+import { TableData } from '../types/table-types';
+import { ShapeCoordinates } from '../types/shape-types';
 
 export const setSolidFill = (element: XMLDocument): void => {
   element
@@ -15,7 +17,7 @@ export const setText = (text: string) => (element: XMLDocument): void => {
 };
 
 // e.g. setPosition({x: 8000000, h:5000000})
-export const setPosition = (pos: FrameCoordinates) => (
+export const setPosition = (pos: ShapeCoordinates) => (
   element: XMLDocument,
 ): void => {
   const map = {
@@ -53,7 +55,7 @@ export const setChartData = (data: ChartData) => (
 ): void => {
   
   const slots = [] as ChartSlot[]
-  data.series.forEach((series, s) => {
+  data.series.forEach((series: ChartSeries, s: number) => {
     slots.push({
       index: s,
       series: series,
@@ -80,7 +82,7 @@ export const setChartVerticalLines = (data: ChartData) => (
     targetCol: 1,
   });
 
-  data.series.forEach((series, s) => {
+  data.series.forEach((series: ChartSeries, s: number) => {
     slots.push({
       index: s,
       series: series,
@@ -99,7 +101,7 @@ export const setChartBubbles = (data: ChartData) => (
 ): void => {
   const slots = [] as ChartSlot[]
 
-  data.series.forEach((series, s) => {
+  data.series.forEach((series: ChartSeries, s: number) => {
     const colId = s * 3;
     slots.push({
       index: s,
@@ -134,6 +136,12 @@ export const setChartBubbles = (data: ChartData) => (
   new ModifyChart(chart, workbook, data, slots).modify();
 };
 
-export const dump = (element: XMLDocument | Document): void => {
+export const setTableData = (data: TableData) => (
+  element: XMLDocument | Document | Element
+): void => {
+  XmlHelper.dump(element);
+};
+
+export const dump = (element: XMLDocument | Document | Element): void => {
   XmlHelper.dump(element);
 };

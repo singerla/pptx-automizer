@@ -12,13 +12,6 @@ export type GetRelationshipsCallback = (
   rels: Target[],
 ) => void;
 
-export type FrameCoordinates = {
-  x?: number;
-  y?: number;
-  w?: number;
-  h?: number;
-};
-
 export type AutomizerParams = {
   templateDir?: string;
   outputDir?: string;

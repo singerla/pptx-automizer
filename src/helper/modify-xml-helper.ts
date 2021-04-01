@@ -1,7 +1,7 @@
 import {
-  ModificationPattern,
+  Modification,
   ModificationTags,
-} from '../types/chart-types';
+} from '../types/modify-types';
 
 import StringIdGenerator from './cell-id-helper';
 import { GeneralHelper } from './general-helper';
@@ -21,7 +21,7 @@ export default class ModifyXmlHelper {
     root = root || this.root;
 
     for (const tag in tags) {
-      const modifier = tags[tag] as ModificationPattern;
+      const modifier = tags[tag] as Modification;
       const index = modifier.index || 0;
 
       this.assertNode(root.getElementsByTagName(tag), index, tag, modifier);

@@ -1,3 +1,5 @@
+import { ModificationTags } from "./modify-types";
+
 export type ChartValue = {
   value: number;
 };
@@ -25,12 +27,12 @@ export type ChartColumn = {
     point: number | ChartPoint | ChartBubble | ChartValue,
     r: number,
     category: ChartCategory,
-  ) => any;
+  ) => void;
   chart?: (
     point: number | ChartPoint | ChartBubble | ChartValue,
     r: number,
     category: ChartCategory,
-  ) => any;
+  ) => ModificationTags;
   isStrRef?: boolean;
 };
 export type ChartData = {
@@ -50,14 +52,3 @@ export type ChartSlot = {
   tag?: string;
   isStrRef?: boolean;
 }
-export type ModificationPatternModifier = {
-  (element: Element);
-};
-export type ModificationPattern = {
-  index?: number;
-  children?: ModificationTags;
-  modify?: ModificationPatternModifier | ModificationPatternModifier[];
-};
-export type ModificationTags = {
-  [tag: string]: ModificationPattern;
-};
