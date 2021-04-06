@@ -115,6 +115,10 @@ export class ModifyChart {
       this.columns
         .filter((col) => col.chart)
         .forEach((col) => {
+          if(category.values[col.series] === undefined) {
+            throw new Error(`No value for category "${category.label}" at series "${(col.label)}".`)
+          }
+
           this.chart.modify(
             this.series(
               col.series,
