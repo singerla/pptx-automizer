@@ -1,6 +1,6 @@
 import Automizer, { modify } from '../src/index';
 
-test('create presentation, add and modify a vertical lines chart.', async () => {
+test('create presentation, add vertical lines chart, add a series, add categories.', async () => {
   const automizer = new Automizer({
     templateDir: `${__dirname}/pptx-templates`,
     outputDir: `${__dirname}/pptx-output`
@@ -14,15 +14,16 @@ test('create presentation, add and modify a vertical lines chart.', async () => 
     series: [
       { label: 'series s1' }, 
       { label: 'series s2' },
-      { label: 'series s3' }
+      { label: 'series s3' },
+      { label: 'series s4' },
     ],
     categories: [
-      { label: 'item test r1', values: [ 10, 16, 12 ] },
-      { label: 'item test r2', values: [ 12, 18, 15 ] },
-      { label: 'item test r3', values: [ 14, 12, 11 ] },
-      { label: 'item test r4', values: [ 8, 11, 9 ] },
-      { label: 'item test r5', values: [ 6, 15, 7 ] },
-      { label: 'item test r6', values: [ 16, 16, 9 ] },
+      { label: 'item test r1', values: [ 10, 16, 12, 15 ] },
+      { label: 'item test r2', values: [ 12, 18, 15, 15 ] },
+      { label: 'item test r3', values: [ 14, 12, 11, 15 ] },
+      { label: 'item test r4', values: [ 8, 11, 9, 15 ] },
+      { label: 'item test r5', values: [ 6, 15, 7, 15 ] },
+      { label: 'item test r6', values: [ 16, 16, 9, 3 ] },
     ],
   }
 

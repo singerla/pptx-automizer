@@ -41,17 +41,20 @@ let pres = automizer.loadRoot(`RootTemplate.pptx`)
   // Skipping the second argument will not set a label.
   .load(`SlideWithImages.pptx`)
 
-// addSlide takes two arguments: The first will specify the source presentation's
-// label to get the template from, the second will set the slide number to require.
+// addSlide takes two arguments: The first will specify the source 
+// presentation's label to get the template from, the second will set the 
+// slide number to require.
 pres.addSlide('graph', 1)
   .addSlide('shapes', 1)
   .addSlide(`SlideWithImages.pptx`, 2)
 
-// You can also select and import a single element from a template slide. The desired
-// shape will be identified by its name from slide-xml's 'p:cNvPr'-element.
+// You can also select and import a single element from a template slide. 
+// The desired shape will be identified by its name from slide-xml's 
+// 'p:cNvPr'-element.
 pres.addSlide('image', 1, (slide) => {
-  // Pass the template name, the slide number, the element's name and (optionally)
-  // a callback function to directly modify the child nodes of <p:sp>
+  // Pass the template name, the slide number, the element's name and 
+  // (optionally) a callback function to directly modify the child nodes 
+  // of <p:sp>
   slide.addElement('shapes', 2, 'Arrow', (element) => {
     element.getElementsByTagName('a:t')[0]
       .firstChild
@@ -73,8 +76,8 @@ pres.addSlide('shapes', 2, (slide) => {
 pres.addSlide('charts', 2, (slide) => {
   slide.modifyElement('ColumnChart', [
     // Use an object like this to inject the new chart data.
-    // Make sure there is enough space in the template chart,
-    // as this will only update existing nodes.
+    // Additional series and categories will be copied from
+    // previous sibling.
     modify.setChartData({
       series: [
         { label: 'series 1' },
@@ -88,6 +91,8 @@ pres.addSlide('charts', 2, (slide) => {
         { label: 'cat 2-4', values: [ 26, 50, 20 ] }
       ]
     })
+    // Please notice: If your template has more data than your data
+    // object, automizer will atm not remove these nodes.
   ])
 })
 
