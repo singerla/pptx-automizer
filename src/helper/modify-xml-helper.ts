@@ -16,6 +16,14 @@ export default class ModifyXmlHelper {
 
     for (const tag in tags) {
       const modifier = tags[tag] as Modification;
+
+      if (GeneralHelper.propertyExists(modifier, 'collection')) {
+        const modifies = GeneralHelper.arrayify(modifier.collection);
+        const collection = root.getElementsByTagName(tag);
+        Object.values(modifies).forEach((modifyXml) => modifyXml(collection));
+        return;
+      }
+
       const index = modifier.index || 0;
 
       this.assertNode(root.getElementsByTagName(tag), index, tag, modifier);

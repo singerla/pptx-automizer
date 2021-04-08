@@ -72,6 +72,7 @@ export const setChartData = (data: ChartData) => (
   new ModifyChart(chart, workbook, data, slots).modify();
 
   // XmlHelper.dump(chart)
+  // XmlHelper.dump(workbook.table)
 };
 
 export const setChartVerticalLines = (data: ChartData) => (
@@ -139,6 +140,8 @@ export const setChartBubbles = (data: ChartData) => (
   });
 
   new ModifyChart(chart, workbook, data, slots).modify();
+
+  // XmlHelper.dump(chart)
 };
 
 export const setTableData = (data: TableData) => (

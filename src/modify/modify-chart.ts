@@ -45,11 +45,15 @@ export class ModifyChart {
     this.width = this.columns.length;
   }
 
-  modify() {
+  modify(): void {
     this.setValues();
     this.setSeries();
+    this.sliceChartSpace();
+
     this.setWorkbook();
+    this.sliceWorkbook();
     this.setWorkbookTable();
+    this.sliceWorkbookTable();
   }
 
   setColumns(slot: ChartSlot[]): ChartColumn[] {
@@ -62,9 +66,10 @@ export class ModifyChart {
 
       const label = slot.label ? slot.label : series.label;
 
-      const mapData = slot.mapData ? slot.mapData : (point: number) => point;
+      const mapData =
+        slot.mapData !== undefined ? slot.mapData : (point: number) => point;
 
-      const isStrRef = slot.isStrRef ? slot.isStrRef : true;
+      const isStrRef = slot.isStrRef !== undefined ? slot.isStrRef : true;
 
       const worksheetCb = (
         point: number,
@@ -115,23 +120,22 @@ export class ModifyChart {
       this.columns
         .filter((col) => col.chart)
         .forEach((col) => {
-          if(category.values[col.series] === undefined) {
-            throw new Error(`No value for category "${category.label}" at series "${(col.label)}".`)
+          if (category.values[col.series] === undefined) {
+            throw new Error(
+              `No value for category "${category.label}" at series "${col.label}".`,
+            );
           }
 
-          this.chart.modify(
-            this.series(
-              col.series,
-              col.chart(category.values[col.series], c, category),
-            ),
-          );
+          col.modTags = col.chart(category.values[col.series], c, category);
+
+          this.chart.modify(this.series(col.series, col.modTags));
         });
     });
   }
 
   setSeries(): void {
     this.columns.forEach((column, colId) => {
-      if (column.isStrRef === undefined || column.isStrRef === true) {
+      if (column.isStrRef === true) {
         this.chart.modify(
           this.series(column.series, {
             ...this.seriesId(column.series),
@@ -140,6 +144,23 @@ export class ModifyChart {
         );
       }
     });
+  }
+
+  sliceChartSpace(): void {
+    this.chart.modify({
+      'c:plotArea': this.slice('c:ser', this.data.series.length),
+    });
+
+    this.columns
+      .filter((column) => column.modTags)
+      .forEach((column) => {
+        const sliceMod = {};
+
+        Object.keys(column.modTags).forEach((tag) => {
+          sliceMod[tag] = this.slice('c:pt', this.height);
+        });
+        this.chart.modify(this.series(column.series, sliceMod));
+      });
   }
 
   setWorkbook(): void {
@@ -158,6 +179,28 @@ export class ModifyChart {
 
     this.columns.forEach((addCol, s) => {
       this.workbook.modify(this.colLabel(s + 1, addCol.label));
+    });
+  }
+
+  sliceWorkbook(): void {
+    this.data.categories.forEach((category, c) => {
+      const r = c + 1;
+      this.workbook.modify({
+        row: {
+          index: r,
+          ...this.slice('c', this.width + 1),
+        },
+      });
+    });
+
+    this.workbook.modify({
+      row: {
+        ...this.slice('c', this.width + 1),
+      },
+    });
+
+    this.workbook.modify({
+      sheetData: this.slice('row', this.height + 1),
     });
   }
 
@@ -311,6 +354,18 @@ export class ModifyChart {
     };
   }
 
+  slice(tag: string, length: number): Modification {
+    return {
+      children: {
+        [tag]: {
+          collection: (collection: HTMLCollectionOf<Element>) => {
+            XmlHelper.sliceCollection(collection, length);
+          },
+        },
+      },
+    };
+  }
+
   spanString(): ModificationTags {
     return {
       dimension: {
@@ -363,6 +418,12 @@ export class ModifyChart {
           ModifyXmlHelper.attribute('name', label),
         ],
       },
+    });
+  }
+
+  sliceWorkbookTable(): void {
+    this.workbookTable.modify({
+      table: this.slice('tableColumn', this.width + 1),
     });
   }
 }

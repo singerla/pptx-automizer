@@ -173,7 +173,7 @@ export class Chart extends Shape implements IChart {
     await this.editTargetWorksheetRel();
   }
 
-  async getWorksheetFilePrefix(targetRelFile: string) {
+  async getWorksheetFilePrefix(targetRelFile: string): Promise<string> {
     const relationTargets = await XmlHelper.getTargetsFromRelationships(
       this.sourceArchive,
       targetRelFile,

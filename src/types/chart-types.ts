@@ -34,6 +34,7 @@ export type ChartColumn = {
     category: ChartCategory,
   ) => ModificationTags;
   isStrRef?: boolean;
+  modTags?: ModificationTags;
 };
 export type ChartData = {
   series: ChartSeries[];

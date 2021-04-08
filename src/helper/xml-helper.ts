@@ -317,6 +317,16 @@ export class XmlHelper {
     referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
   }
 
+  static sliceCollection(
+    collection: HTMLCollectionOf<Element>,
+    length: number,
+  ): void {
+    for (let i = collection.length; i > length; i--) {
+      const toRemove = collection[i - 1];
+      toRemove.parentNode.removeChild(toRemove);
+    }
+  }
+
   static dump(element: XMLDocument | Element): void {
     const s = new XMLSerializer();
     const xmlBuffer = s.serializeToString(element);
