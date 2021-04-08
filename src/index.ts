@@ -2,35 +2,31 @@ import Automizer from './automizer';
 
 export default Automizer;
 
-import {
-  setAttribute,
-  dump,
-} from './helper/modify-helper';
+import ModifyHelper from './helper/modify-helper';
+const dump = ModifyHelper.dump;
+const setAttribute = ModifyHelper.setAttribute;
 
-import {
-  setSolidFill,
-  setText,
-  setPosition,
-} from './helper/modify-shape-helper';
+import ModifyShapeHelper from './helper/modify-shape-helper';
+const setSolidFill = ModifyShapeHelper.setSolidFill;
+const setText = ModifyShapeHelper.setText;
+const setPosition = ModifyShapeHelper.setPosition;
 
-import {
-  setTableData
-} from './helper/modify-table-helper';
+import ModifyTableHelper from './helper/modify-table-helper';
+const setTableData = ModifyTableHelper.setTableData;
 
-import {
-  setChartData,
-  setChartVerticalLines,
-  setChartBubbles,
-} from './helper/modify-chart-helper';
+import ModifyChartHelper from './helper/modify-chart-helper';
+const setChartData = ModifyChartHelper.setChartData;
+const setChartVerticalLines = ModifyChartHelper.setChartVerticalLines;
+const setChartBubbles = ModifyChartHelper.setChartBubbles;
 
 export const modify = {
+  dump,
+  setAttribute,
   setSolidFill,
   setText,
   setPosition,
-  setAttribute,
+  setTableData,
   setChartData,
   setChartVerticalLines,
   setChartBubbles,
-  setTableData,
-  dump,
 };

@@ -8,8 +8,8 @@ import { Template } from './classes/template';
 
 /**
  * Automizer
- * 
- * The basic class for `pptx-automizer` package. 
+ *
+ * The basic class for `pptx-automizer` package.
  * This class will be exported as `Automizer` by `index.ts`.
  */
 export default class Automizer implements IPresentationProps {
@@ -22,7 +22,7 @@ export default class Automizer implements IPresentationProps {
 
   /**
    * Creates an instance of `pptx-automizer`.
-   * @param [params] 
+   * @param [params]
    */
   constructor(params?: AutomizerParams) {
     this.templates = [];
@@ -57,9 +57,9 @@ export default class Automizer implements IPresentationProps {
   /**
    * Loads a pptx file either as a root template as a template file.
    * A name can be specified to give templates an alias.
-   * @param location 
-   * @param [name] 
-   * @returns template 
+   * @param location
+   * @param [name]
+   * @returns template
    */
   private loadTemplate(location: string, name?: string): this {
     location = this.getLocation(location, 'template');
@@ -77,8 +77,8 @@ export default class Automizer implements IPresentationProps {
 
   /**
    * Determines whether template is root or default template.
-   * @param template 
-   * @returns pres template 
+   * @param template
+   * @returns pres template
    */
   private isPresTemplate(
     template: PresTemplate | RootPresTemplate,
@@ -87,7 +87,7 @@ export default class Automizer implements IPresentationProps {
   }
 
   /**
-   * Find a slide in by number in one of the imported templates.
+   * Add a slide from one of the imported templates by slide number.
    * @param name - Name or alias of the template; must have been loaded with `Automizer.load()`
    * @param slideNumber - Number of slide in template presentation
    * @param callback - Executed after slide was added. The newly created slide will be passed to the callback as first argument.
@@ -123,9 +123,9 @@ export default class Automizer implements IPresentationProps {
   /**
    * Searches this.templates to find template by given name.
    * @param name Alias name if given to loaded template.
-   * @returns template 
+   * @returns template
    */
-  private getTemplate(name: string): PresTemplate {
+  public getTemplate(name: string): PresTemplate {
     const template = this.templates.find((t) => t.name === name);
     if (template === undefined) {
       throw new Error(`Template not found: ${name}`);
@@ -155,10 +155,10 @@ export default class Automizer implements IPresentationProps {
   }
 
   /**
-   * Applies path prefix to given location string. 
-   * @param location path and/or filename 
+   * Applies path prefix to given location string.
+   * @param location path and/or filename
    * @param [type] template or output
-   * @returns location 
+   * @returns location
    */
   private getLocation(location: string, type?: string): string {
     switch (type) {
