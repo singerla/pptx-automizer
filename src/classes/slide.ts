@@ -54,6 +54,12 @@ export class Slide implements ISlide {
     this.importElements = [];
   }
 
+  /**
+   * Appends slide
+   * @internal
+   * @param targetTemplate 
+   * @returns append 
+   */
   async append(targetTemplate: RootPresTemplate): Promise<void> {
     this.targetTemplate = targetTemplate;
     this.targetArchive = await targetTemplate.archive;
@@ -83,10 +89,20 @@ export class Slide implements ISlide {
     await this.applyModifications();
   }
 
+  /**
+   * Modifys slide
+   * @internal
+   * @param callback 
+   */
   modify(callback: SlideModificationCallback): void {
     this.modifications.push(callback);
   }
 
+  /**
+   * Adds slide to presentation
+   * @internal
+   * @returns slide to presentation 
+   */
   async addSlideToPresentation(): Promise<void> {
     const relId = await XmlHelper.getNextRelId(
       this.targetArchive,
@@ -143,6 +159,16 @@ export class Slide implements ISlide {
     );
   }
 
+  /**
+   * Adds element to modifications list
+   * @internal
+   * @param presName 
+   * @param slideNumber 
+   * @param selector 
+   * @param mode 
+   * @param [callback] 
+   * @returns element to modifications list 
+   */
   private addElementToModificationsList(
     presName: string,
     slideNumber: number,
@@ -161,6 +187,11 @@ export class Slide implements ISlide {
     return this;
   }
 
+  /**
+   * Imported selected elements
+   * @internal
+   * @returns selected elements 
+   */
   async importedSelectedElements(): Promise<void> {
     for (const element of this.importElements) {
       const info = await this.getElementInfo(element);
@@ -188,6 +219,12 @@ export class Slide implements ISlide {
     }
   }
 
+  /**
+   * Gets element info
+   * @internal
+   * @param importElement 
+   * @returns element info 
+   */
   async getElementInfo(importElement: ImportElement): Promise<ImportedElement> {
     const template = this.root.getTemplate(importElement.presName);
     const sourcePath = `ppt/slides/slide${importElement.slideNumber}.xml`;
@@ -222,6 +259,14 @@ export class Slide implements ISlide {
     };
   }
 
+  /**
+   * Analyzes element
+   * @internal
+   * @param sourceElement 
+   * @param sourceArchive 
+   * @param slideNumber 
+   * @returns element 
+   */
   async analyzeElement(
     sourceElement: XMLDocument,
     sourceArchive: JSZip,
@@ -258,6 +303,11 @@ export class Slide implements ISlide {
     } as AnalyzedElementType;
   }
 
+  /**
+   * Applys modifications
+   * @internal
+   * @returns modifications 
+   */
   async applyModifications(): Promise<void> {
     for (const modification of this.modifications) {
       const xml = await XmlHelper.getXmlFromArchive(
@@ -273,6 +323,11 @@ export class Slide implements ISlide {
     }
   }
 
+  /**
+   * Copys slide files
+   * @internal
+   * @returns slide files 
+   */
   async copySlideFiles(): Promise<void> {
     await FileHelper.zipCopy(
       this.sourceArchive,
@@ -289,6 +344,11 @@ export class Slide implements ISlide {
     );
   }
 
+  /**
+   * Copys slide note files
+   * @internal
+   * @returns slide note files 
+   */
   async copySlideNoteFiles(): Promise<void> {
     await FileHelper.zipCopy(
       this.sourceArchive,
@@ -305,6 +365,11 @@ export class Slide implements ISlide {
     );
   }
 
+  /**
+   * Updates slide note file
+   * @internal
+   * @returns slide note file 
+   */
   async updateSlideNoteFile(): Promise<void> {
     await XmlHelper.replaceAttribute(
       this.targetArchive,
@@ -325,6 +390,14 @@ export class Slide implements ISlide {
     );
   }
 
+  /**
+   * Appends to slide rel
+   * @internal
+   * @param rootArchive 
+   * @param relId 
+   * @param slideCount 
+   * @returns to slide rel 
+   */
   appendToSlideRel(
     rootArchive: JSZip,
     relId: string,
@@ -344,6 +417,13 @@ export class Slide implements ISlide {
     });
   }
 
+  /**
+   * Appends to slide list
+   * @internal
+   * @param rootArchive 
+   * @param relId 
+   * @returns to slide list 
+   */
   appendToSlideList(rootArchive: JSZip, relId: string): Promise<HelperElement> {
     return XmlHelper.append({
       archive: rootArchive,
@@ -358,6 +438,13 @@ export class Slide implements ISlide {
     });
   }
 
+  /**
+   * Appends slide to content type
+   * @internal
+   * @param rootArchive 
+   * @param slideCount 
+   * @returns slide to content type 
+   */
   appendSlideToContentType(
     rootArchive: JSZip,
     slideCount: number,
@@ -370,6 +457,13 @@ export class Slide implements ISlide {
     );
   }
 
+  /**
+   * Appends notes to content type
+   * @internal
+   * @param rootArchive 
+   * @param slideCount 
+   * @returns notes to content type 
+   */
   appendNotesToContentType(
     rootArchive: JSZip,
     slideCount: number,
@@ -382,6 +476,11 @@ export class Slide implements ISlide {
     );
   }
 
+  /**
+   * Copys related content
+   * @internal
+   * @returns related content 
+   */
   async copyRelatedContent(): Promise<void> {
     const charts = await Chart.getAllOnSlide(this.sourceArchive, this.relsPath);
     for (const chart of charts) {
@@ -404,6 +503,11 @@ export class Slide implements ISlide {
     }
   }
 
+  /**
+   * Determines whether slides has notes
+   * @internal
+   * @returns true if notes 
+   */
   hasNotes(): boolean {
     const file = this.sourceArchive.file(
       `ppt/notesSlides/notesSlide${this.sourceNumber}.xml`,
