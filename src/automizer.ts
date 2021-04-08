@@ -130,6 +130,7 @@ export default class Automizer implements IPresentationProps {
 
   /**
    * Searches this.templates to find template by given name.
+   * @internal
    * @param name Alias name if given to loaded template.
    * @returns template
    */

@@ -19,7 +19,7 @@ const setChartData = ModifyChartHelper.setChartData;
 const setChartVerticalLines = ModifyChartHelper.setChartVerticalLines;
 const setChartBubbles = ModifyChartHelper.setChartBubbles;
 
-export { ModifyHelper, ModifyShapeHelper, ModifyTableHelper, ModifyChartHelper }
+export { Automizer, ModifyHelper, ModifyShapeHelper, ModifyTableHelper, ModifyChartHelper }
 
 export const modify = {
   dump,
