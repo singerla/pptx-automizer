@@ -25,19 +25,75 @@ import { GenericShape } from '../shapes/generic';
 import { GeneralHelper } from '../helper/general-helper';
 
 export class Slide implements ISlide {
+  /**
+   * Source template of slide
+   * @internal
+   */
   sourceTemplate: PresTemplate;
+  /**
+   * Target template of slide
+   * @internal
+   */
   targetTemplate: RootPresTemplate;
+  /**
+   * Target number of slide
+   * @internal
+   */
   targetNumber: number;
+  /**
+   * Source number of slide
+   * @internal
+   */
   sourceNumber: number;
+  /**
+   * Target archive of slide
+   * @internal
+   */
   targetArchive: JSZip;
+  /**
+   * Source archive of slide
+   * @internal
+   */
   sourceArchive: JSZip;
+  /**
+   * Source path of slide
+   * @internal
+   */
   sourcePath: string;
+  /**
+   * Target path of slide
+   * @internal
+   */
   targetPath: string;
+  /**
+   * Modifications  of slide
+   * @internal
+   */
   modifications: SlideModificationCallback[];
+  /**
+   * Import elements of slide
+   * @internal
+   */
   importElements: ImportElement[];
+  /**
+   * Rels path of slide
+   * @internal
+   */
   relsPath: string;
+  /**
+   * Root template of slide
+   * @internal
+   */
   rootTemplate: RootPresTemplate;
+  /**
+   * Root  of slide
+   * @internal
+   */
   root: IPresentationProps;
+  /**
+   * Target rels path of slide
+   * @internal
+   */
   targetRelsPath: string;
 
   constructor(params: {

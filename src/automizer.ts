@@ -14,9 +14,17 @@ import { Template } from './classes/template';
  */
 export default class Automizer implements IPresentationProps {
   rootTemplate: RootPresTemplate;
+  /**
+   * Templates  of automizer
+   * @internal
+   */
   templates: PresTemplate[];
   templateDir: string;
   outputDir: string;
+  /**
+   * Timer  of automizer
+   * @internal
+   */
   timer: number;
   params: AutomizerParams;
 
