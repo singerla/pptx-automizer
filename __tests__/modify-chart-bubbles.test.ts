@@ -26,13 +26,28 @@ test('create presentation, add and modify a bubble chart.', async () => {
     ],
   }
 
+  const dataBubblesSmaller = {
+    series: [
+      { label: 'series s1' }, 
+    ],
+    categories: [
+      { label: 'r1', values: [ {x: 10, y: 20, size: 1} ]},
+      { label: 'r2', values: [ {x: 21, y: 11, size: 4} ]},
+    ],
+  }
+
   const result = await pres
     .addSlide('charts', 1, (slide) => {
       slide.modifyElement('Bubbles', [
         modify.setChartBubbles(dataBubbles),
       ]);
     })
+    .addSlide('charts', 1, (slide) => {
+      slide.modifyElement('Bubbles', [
+        modify.setChartBubbles(dataBubblesSmaller),
+      ]);
+    })
     .write(`modify-chart-bubbles.test.pptx`)
 
-  expect(result.charts).toBe(2);
+  expect(result.charts).toBe(4);
 });

@@ -10,7 +10,7 @@ test('create presentation, add and modify a vertical lines chart.', async () => 
   .loadRoot(`RootTemplate.pptx`)
   .load(`ChartLinesVertical.pptx`, 'charts');
 
-  const data3 = {
+  const data = {
     series: [
       { label: 'series s1' }, 
       { label: 'series s2' },
@@ -30,13 +30,29 @@ test('create presentation, add and modify a vertical lines chart.', async () => 
     ],
   }
 
+  const dataSmaller = {
+    series: [
+      { label: 'series s1' },
+    ],
+    categories: [
+      { label: 'item test r1', y: 10, values: [ 10 ] },
+      { label: 'item test r2', y: 9, values: [ 12 ] },
+      { label: 'item test r3', y: 8, values: [ 14 ] },
+    ],
+  }
+
   const result = await pres
     .addSlide('charts', 1, (slide) => {
       slide.modifyElement('DotMatrix', [
-        modify.setChartVerticalLines(data3),
+        modify.setChartVerticalLines(data),
+      ]);
+    })
+    .addSlide('charts', 1, (slide) => {
+      slide.modifyElement('DotMatrix', [
+        modify.setChartVerticalLines(dataSmaller),
       ]);
     })
     .write(`modify-chart-vertical-lines.test.pptx`)
 
-  expect(result.charts).toBe(2);
+  expect(result.charts).toBe(4);
 });
