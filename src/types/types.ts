@@ -13,7 +13,15 @@ export type GetRelationshipsCallback = (
 ) => void;
 
 export type AutomizerParams = {
+  /**
+   * Prefix for all template files. You can set a path here.
+   */
   templateDir?: string;
+
+  /**
+   * Prefix for the output files for `Automizer` instance.
+   * You can set a path here.
+   */
   outputDir?: string;
 };
 export type AutomizerSummary = {

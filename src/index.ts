@@ -3,16 +3,25 @@ import Automizer from './automizer';
 export default Automizer;
 
 import {
+  setAttribute,
+  dump,
+} from './helper/modify-helper';
+
+import {
   setSolidFill,
   setText,
   setPosition,
-  setAttribute,
+} from './helper/modify-shape-helper';
+
+import {
+  setTableData
+} from './helper/modify-table-helper';
+
+import {
   setChartData,
   setChartVerticalLines,
   setChartBubbles,
-  setTableData,
-  dump,
-} from './helper/modify-helper';
+} from './helper/modify-chart-helper';
 
 export const modify = {
   setSolidFill,
