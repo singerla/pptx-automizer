@@ -1,26 +1,42 @@
 # pptx-automizer
 This is a pptx generator for Node.js based on templates. It can read pptx files and insert selected slides or single slide elements into another presentation. *pptx-automizer* will not write files from scratch, but edit and merge existing pptx files. Template slides are styled within PowerPoint and will be merged into the output presentation. Most of the content can be modified by using callbacks with [xmldom](https://github.com/xmldom/xmldom).
 
+*pptx-automizer* will fit best to users who try to maintain their own library of pptx template files. This is perfect to anyone who uses complex and well-styled customized layouts. Any existing slide and even a single element can be a data driven template for output pptx files.
+
 ## Requirements
 This generator can only be used on the server-side and requires a [Node.js](https://nodejs.org/en/download/package-manager/) environment.
 
 ## Limitations
-Please note that this project is *work in progress*. At the moment, you might encounter difficulties for special shape types that require internal relations.
-Although, most shape types are already supported, such as connection shapes or charts.
-
-Importing a single element is limited to shapes that also do not require further relations.
+Please note that this project is *work in progress*. At the moment, you might encounter difficulties for special shape types that require further relations (e.g. links will not work properly). Although, most shape types are already supported, such as connection shapes, tables or charts. You are welcome to [report any issue](https://github.com/singerla/pptx-automizer/issues/new).
 
 All testing focuses on PowerPoint 2019 pptx file format.
 
 ## Install
-You can add this package to your own project using npm or yarn:
+There are basically two ways to use *pptx-automizer*.
+
+### As a cloned repository
+If you want to see how it works and you like to run own tests, you should clone this repository and install the dependencies:
 ```
-yarn add pptx-automizer
+$ git clone git@github.com:singerla/pptx-automizer.git
+$ cd pptx-automizer
+$ yarn install
+```
+You can now run 
+```
+$ yarn dev
+```
+and see the most recent feature from `src/dev.ts`. Every time you change & save this file, you will see new console output and a pptx file in the destination folder. Take a look into `__tests__`-directory to see a lot of examples for several use cases!
+
+### As a package
+If you are working on an existing project, you can add *pptx-automizer* to it using npm or yarn. Run
+```
+$ yarn add pptx-automizer
 ```
 or
 ```
-npm install pptx-automizer
+$ npm install pptx-automizer
 ```
+in the root folder of your project. This will download and install the most recent version into your existing project.
 
 ## Example
 ```js
@@ -51,7 +67,7 @@ pres.addSlide('graph', 1)
 // You can also select and import a single element from a template slide. 
 // The desired shape will be identified by its name from slide-xml's 
 // 'p:cNvPr'-element.
-pres.addSlide('image', 1, (slide) => {
+pres.addSlide('SlideWithImages.pptx', 1, (slide) => {
   // Pass the template name, the slide number, the element's name and 
   // (optionally) a callback function to directly modify the child nodes 
   // of <p:sp>
@@ -92,7 +108,7 @@ pres.addSlide('charts', 2, (slide) => {
       ]
     })
     // Please notice: If your template has more data than your data
-    // object, automizer will atm not remove these nodes.
+    // object, automizer will remove these nodes.
   ])
 })
 
@@ -102,16 +118,8 @@ pres.write(`myPresentation.pptx`).then(summary => {
 })
 ```
 
-### Playground
-If you prefer instant testing, you can clone this repo and install dependencies first. 
-Feel free and run:
-```
-yarn dev
-```
-The output file will demonstrate some of the recently implemented features.
-
 ### Testing
-You can run tests using these commands:
+You can run all unit tests using these commands:
 ```
 yarn test
 yarn test-coverage
