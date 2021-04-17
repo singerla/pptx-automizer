@@ -113,8 +113,8 @@ export class Slide implements ISlide {
   /**
    * Appends slide
    * @internal
-   * @param targetTemplate 
-   * @returns append 
+   * @param targetTemplate
+   * @returns append
    */
   async append(targetTemplate: RootPresTemplate): Promise<void> {
     this.targetTemplate = targetTemplate;
@@ -148,7 +148,7 @@ export class Slide implements ISlide {
   /**
    * Modifys slide
    * @internal
-   * @param callback 
+   * @param callback
    */
   modify(callback: SlideModificationCallback): void {
     this.modifications.push(callback);
@@ -157,7 +157,7 @@ export class Slide implements ISlide {
   /**
    * Adds slide to presentation
    * @internal
-   * @returns slide to presentation 
+   * @returns slide to presentation
    */
   async addSlideToPresentation(): Promise<void> {
     const relId = await XmlHelper.getNextRelId(
@@ -218,12 +218,12 @@ export class Slide implements ISlide {
   /**
    * Adds element to modifications list
    * @internal
-   * @param presName 
-   * @param slideNumber 
-   * @param selector 
-   * @param mode 
-   * @param [callback] 
-   * @returns element to modifications list 
+   * @param presName
+   * @param slideNumber
+   * @param selector
+   * @param mode
+   * @param [callback]
+   * @returns element to modifications list
    */
   private addElementToModificationsList(
     presName: string,
@@ -246,7 +246,7 @@ export class Slide implements ISlide {
   /**
    * Imported selected elements
    * @internal
-   * @returns selected elements 
+   * @returns selected elements
    */
   async importedSelectedElements(): Promise<void> {
     for (const element of this.importElements) {
@@ -278,8 +278,8 @@ export class Slide implements ISlide {
   /**
    * Gets element info
    * @internal
-   * @param importElement 
-   * @returns element info 
+   * @param importElement
+   * @returns element info
    */
   async getElementInfo(importElement: ImportElement): Promise<ImportedElement> {
     const template = this.root.getTemplate(importElement.presName);
@@ -318,10 +318,10 @@ export class Slide implements ISlide {
   /**
    * Analyzes element
    * @internal
-   * @param sourceElement 
-   * @param sourceArchive 
-   * @param slideNumber 
-   * @returns element 
+   * @param sourceElement
+   * @param sourceArchive
+   * @param slideNumber
+   * @returns element
    */
   async analyzeElement(
     sourceElement: XMLDocument,
@@ -362,7 +362,7 @@ export class Slide implements ISlide {
   /**
    * Applys modifications
    * @internal
-   * @returns modifications 
+   * @returns modifications
    */
   async applyModifications(): Promise<void> {
     for (const modification of this.modifications) {
@@ -382,7 +382,7 @@ export class Slide implements ISlide {
   /**
    * Copys slide files
    * @internal
-   * @returns slide files 
+   * @returns slide files
    */
   async copySlideFiles(): Promise<void> {
     await FileHelper.zipCopy(
@@ -403,7 +403,7 @@ export class Slide implements ISlide {
   /**
    * Copys slide note files
    * @internal
-   * @returns slide note files 
+   * @returns slide note files
    */
   async copySlideNoteFiles(): Promise<void> {
     await FileHelper.zipCopy(
@@ -424,7 +424,7 @@ export class Slide implements ISlide {
   /**
    * Updates slide note file
    * @internal
-   * @returns slide note file 
+   * @returns slide note file
    */
   async updateSlideNoteFile(): Promise<void> {
     await XmlHelper.replaceAttribute(
@@ -449,10 +449,10 @@ export class Slide implements ISlide {
   /**
    * Appends to slide rel
    * @internal
-   * @param rootArchive 
-   * @param relId 
-   * @param slideCount 
-   * @returns to slide rel 
+   * @param rootArchive
+   * @param relId
+   * @param slideCount
+   * @returns to slide rel
    */
   appendToSlideRel(
     rootArchive: JSZip,
@@ -474,21 +474,36 @@ export class Slide implements ISlide {
   }
 
   /**
-   * Appends to slide list
+   * Appends a new slide to slide list in presentation.xml.
+   * If rootArchive has no slides, a new node will be created.
+   * "id"-attribute of 'p:sldId'-element must be greater than 255.
    * @internal
-   * @param rootArchive 
-   * @param relId 
-   * @returns to slide list 
+   * @param rootArchive
+   * @param relId
+   * @returns to slide list
    */
   appendToSlideList(rootArchive: JSZip, relId: string): Promise<HelperElement> {
     return XmlHelper.append({
       archive: rootArchive,
       file: `ppt/presentation.xml`,
+      assert: async (xml: XMLDocument) => {
+        if (xml.getElementsByTagName('p:sldIdLst').length === 0) {
+          XmlHelper.insertAfter(
+            xml.createElement('p:sldIdLst'),
+            xml.getElementsByTagName('p:sldMasterIdLst')[0],
+          );
+        }
+      },
       parent: (xml: XMLDocument) => xml.getElementsByTagName('p:sldIdLst')[0],
       tag: 'p:sldId',
       attributes: {
         id: (xml: XMLDocument) =>
-          XmlHelper.getMaxId(xml.getElementsByTagName('p:sldId'), 'id', true),
+          XmlHelper.getMaxId(
+            xml.getElementsByTagName('p:sldId'),
+            'id',
+            true,
+            256,
+          ),
         'r:id': relId,
       } as SlideListAttribute,
     });
@@ -497,9 +512,9 @@ export class Slide implements ISlide {
   /**
    * Appends slide to content type
    * @internal
-   * @param rootArchive 
-   * @param slideCount 
-   * @returns slide to content type 
+   * @param rootArchive
+   * @param slideCount
+   * @returns slide to content type
    */
   appendSlideToContentType(
     rootArchive: JSZip,
@@ -516,9 +531,9 @@ export class Slide implements ISlide {
   /**
    * Appends notes to content type
    * @internal
-   * @param rootArchive 
-   * @param slideCount 
-   * @returns notes to content type 
+   * @param rootArchive
+   * @param slideCount
+   * @returns notes to content type
    */
   appendNotesToContentType(
     rootArchive: JSZip,
@@ -535,7 +550,7 @@ export class Slide implements ISlide {
   /**
    * Copys related content
    * @internal
-   * @returns related content 
+   * @returns related content
    */
   async copyRelatedContent(): Promise<void> {
     const charts = await Chart.getAllOnSlide(this.sourceArchive, this.relsPath);
@@ -562,7 +577,7 @@ export class Slide implements ISlide {
   /**
    * Determines whether slides has notes
    * @internal
-   * @returns true if notes 
+   * @returns true if notes
    */
   hasNotes(): boolean {
     const file = this.sourceArchive.file(

@@ -23,11 +23,12 @@ export type OverrideAttribute = {
 
 export type HelperElement = {
   archive: JSZip;
+  assert?: (xml: XMLDocument) => void;
   clause?: (xml: XMLDocument) => boolean;
   parent: (xml: XMLDocument) => Element;
   file: string;
   tag: string;
-  attributes:
+  attributes?:
     | DefaultAttribute
     | OverrideAttribute
     | SlideListAttribute

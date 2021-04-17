@@ -64,6 +64,10 @@ export class XmlHelper {
       );
     }
 
+    if (element.assert) {
+      element.assert(xml);
+    }
+
     const parent = element.parent(xml);
     parent.appendChild(newElement);
 
@@ -88,6 +92,7 @@ export class XmlHelper {
     rels: NodeListOf<ChildNode> | HTMLCollectionOf<Element>,
     attribute: string,
     increment?: boolean,
+    minId?: number,
   ): number {
     let max = 0;
     for (const i in rels) {
@@ -100,10 +105,15 @@ export class XmlHelper {
 
     switch (typeof increment) {
       case 'boolean':
-        return ++max;
-      default:
-        return max;
+        ++max;
+        break;
     }
+
+    if (max < minId) {
+      return minId;
+    }
+
+    return max;
   }
 
   static async getTargetsFromRelationships(
