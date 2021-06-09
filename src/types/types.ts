@@ -3,7 +3,7 @@ import { ElementType } from '../enums/element-type';
 
 export type SlideModificationCallback = (document: Document) => void;
 export type ShapeModificationCallback = (
-  XMLDocument: XMLDocument,
+  XMLDocument: XMLDocument | Element,
   arg1?: Document,
   arg2?: Workbook,
 ) => void;

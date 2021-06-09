@@ -5,9 +5,9 @@ import { GeneralHelper } from './general-helper';
 import { XmlHelper } from './xml-helper';
 
 export default class ModifyXmlHelper {
-  root: XMLDocument;
+  root: XMLDocument | Element;
 
-  constructor(root: XMLDocument) {
+  constructor(root: XMLDocument | Element) {
     this.root = root;
   }
 
@@ -40,7 +40,7 @@ export default class ModifyXmlHelper {
     }
   }
 
-  static text = (label: string) => (element: Element): void => {
+  static text = (label: number | string) => (element: Element): void => {
     element.firstChild.textContent = String(label);
   };
 
