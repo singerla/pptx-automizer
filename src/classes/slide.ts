@@ -178,7 +178,7 @@ export class Slide implements ISlide {
    */
   modifyElement(
     selector: string,
-    callback: ShapeModificationCallback | ShapeModificationCallback[],
+    callback: ShapeModificationCallback | ShapeModificationCallback[] | Function | Function[],
   ): this {
     const presName = this.sourceTemplate.name;
     const slideNumber = this.sourceNumber;
@@ -204,7 +204,7 @@ export class Slide implements ISlide {
     presName: string,
     slideNumber: number,
     selector: string,
-    callback?: ShapeModificationCallback | ShapeModificationCallback[],
+    callback?: ShapeModificationCallback | ShapeModificationCallback[] | Function | Function[],
   ): this {
     return this.addElementToModificationsList(
       presName,
@@ -230,7 +230,7 @@ export class Slide implements ISlide {
     slideNumber: number,
     selector: string,
     mode: string,
-    callback?: ShapeModificationCallback | ShapeModificationCallback[],
+    callback?: ShapeModificationCallback | ShapeModificationCallback[] | Function | Function[],
   ): this {
     this.importElements.push({
       presName,
