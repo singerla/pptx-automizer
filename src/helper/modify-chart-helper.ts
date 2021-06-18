@@ -14,7 +14,7 @@ export default class ModifyChartHelper {
    * See `__tests__/modify-existing-chart.test.js`
    */
   static setChartData = (data: ChartData) => (
-    element: XMLDocument,
+    element: XMLDocument | Element,
     chart: Document,
     workbook: Workbook,
   ): void => {
@@ -39,7 +39,7 @@ export default class ModifyChartHelper {
    * See `__tests__/modify-chart-vertical-lines.test.js`
    */
   static setChartVerticalLines = (data: ChartData) => (
-    element: XMLDocument,
+    element: XMLDocument | Element,
     chart: Document,
     workbook: Workbook,
   ): void => {
@@ -68,7 +68,7 @@ export default class ModifyChartHelper {
    * See `__tests__/modify-chart-bubbles.test.js`
    */
   static setChartBubbles = (data: ChartData) => (
-    element: XMLDocument,
+    element: XMLDocument | Element,
     chart: Document,
     workbook: Workbook,
   ): void => {

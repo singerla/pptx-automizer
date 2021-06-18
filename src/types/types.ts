@@ -43,7 +43,7 @@ export type ImportElement = {
   slideNumber: number;
   selector: string;
   mode: string;
-  callback?: ShapeModificationCallback | ShapeModificationCallback[] | Function | Function[]
+  callback?: ShapeModificationCallback | ShapeModificationCallback[]
 };
 export type ImportedElement = {
   mode: string;

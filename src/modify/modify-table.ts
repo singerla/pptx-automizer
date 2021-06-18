@@ -7,10 +7,10 @@ import { Modification, ModificationTags } from '../types/modify-types';
 export class ModifyTable {
   data: TableData;
   table: ModifyXmlHelper;
-  xml: Element;
+  xml: XMLDocument | Element;
 
   constructor(
-    table: Element,
+    table: XMLDocument | Element,
     data: TableData,
   ) {
     this.data = data;

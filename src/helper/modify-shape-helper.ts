@@ -4,7 +4,7 @@ export default class ModifyShapeHelper {
   /**
    * Set solid fill of modified shape
    */
-  static setSolidFill = (element: XMLDocument): void => {
+  static setSolidFill = (element: XMLDocument | Element): void => {
     element
       .getElementsByTagName('a:solidFill')[0]
       .getElementsByTagName('a:schemeClr')[0]
@@ -14,7 +14,7 @@ export default class ModifyShapeHelper {
   /**
    * Set text content of modified shape
    */
-  static setText = (text: string) => (element: XMLDocument): void => {
+  static setText = (text: string) => (element: XMLDocument | Element): void => {
     element.getElementsByTagName('a:t')[0].firstChild.textContent = text;
   };
 
@@ -22,7 +22,7 @@ export default class ModifyShapeHelper {
    * Set position and size of modified shape.
    */
   static setPosition = (pos: ShapeCoordinates) => (
-    element: XMLDocument,
+    element: XMLDocument | Element,
   ): void => {
     const map = {
       x: { tag: 'a:off', attribute: 'x' },

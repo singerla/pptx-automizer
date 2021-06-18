@@ -7,7 +7,7 @@ export default class ModifyTableHelper {
    * @TODO: Set table data of modify table helper
    */
   static setTableData = (data: TableData) => (
-    element: Element,
+    element: XMLDocument | Element,
   ): void => {
     const modTable = new ModifyTable(element, data);
 
