@@ -15,8 +15,8 @@ export default class ModifyChartHelper {
    */
   static setChartData = (data: ChartData) => (
     element: XMLDocument | Element,
-    chart: Document,
-    workbook: Workbook,
+    chart?: Document,
+    workbook?: Workbook,
   ): void => {
     const slots = [] as ChartSlot[];
     data.series.forEach((series: ChartSeries, s: number) => {
@@ -40,8 +40,8 @@ export default class ModifyChartHelper {
    */
   static setChartVerticalLines = (data: ChartData) => (
     element: XMLDocument | Element,
-    chart: Document,
-    workbook: Workbook,
+    chart?: Document,
+    workbook?: Workbook,
   ): void => {
     const slots = [] as ChartSlot[];
 
@@ -69,8 +69,8 @@ export default class ModifyChartHelper {
    */
   static setChartBubbles = (data: ChartData) => (
     element: XMLDocument | Element,
-    chart: Document,
-    workbook: Workbook,
+    chart?: Document,
+    workbook?: Workbook,
   ): void => {
     const slots = [] as ChartSlot[];
 
