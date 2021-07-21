@@ -1,5 +1,3 @@
-
-
 export type TableRow = {
   label?: string;
   values: (string | number)[];

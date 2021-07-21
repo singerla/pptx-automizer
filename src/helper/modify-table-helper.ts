@@ -11,10 +11,8 @@ export default class ModifyTableHelper {
   ): void => {
     const modTable = new ModifyTable(element, data);
 
-    modTable
-      .modify()
-      .adjustHeight();
-      
+    modTable.modify().adjustHeight();
+
     // console.log(data);
     // XmlHelper.dump(element);
   };
