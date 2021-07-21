@@ -31,11 +31,12 @@ export default class ModifyShapeHelper {
       h: { tag: 'a:ext', attribute: 'cy' },
     };
 
-    const parent = 'a:xfrm';
+    // const parent = 'a:xfrm';  // for pictures
+    // const parent = 'p:xfrm';  // for shapes
 
     Object.keys(pos).forEach((key) => {
       element
-        .getElementsByTagName(parent)[0]
+        //.getElementsByTagName(parent)[0]
         .getElementsByTagName(map[key].tag)[0]
         .setAttribute(map[key].attribute, pos[key]);
     });
