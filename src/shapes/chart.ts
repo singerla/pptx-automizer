@@ -14,6 +14,12 @@ export class Chart extends Shape implements IChart {
   worksheetFilePrefix: string;
   wbEmbeddingsPath: string;
   wbExtension: string;
+  relTypeChartColorStyle: string;
+  relTypeChartStyle: string;
+  wbRelsPath: string;
+  styleRelationFiles: {
+    [key: string]: string;
+  };
 
   constructor(shape: ImportedElement) {
     super(shape);
@@ -25,6 +31,11 @@ export class Chart extends Shape implements IChart {
 
     this.wbEmbeddingsPath = `../embeddings/`;
     this.wbExtension = '.xlsx';
+    this.relTypeChartColorStyle =
+      'http://schemas.microsoft.com/office/2011/relationships/chartColorStyle';
+    this.relTypeChartStyle =
+      'http://schemas.microsoft.com/office/2011/relationships/chartStyle';
+    this.styleRelationFiles = {};
   }
 
   async modify(
@@ -66,8 +77,10 @@ export class Chart extends Shape implements IChart {
     await this.setTarget(targetTemplate, targetSlideNumber);
 
     this.targetNumber = this.targetTemplate.incrementCounter('charts');
+    this.wbRelsPath = `ppt/charts/_rels/chart${this.sourceNumber}.xml.rels`;
 
     await this.copyFiles();
+    await this.copyChartStyleFiles();
     await this.appendTypes();
     await this.appendToSlideRels();
   }
@@ -154,13 +167,13 @@ export class Chart extends Shape implements IChart {
   async copyFiles(): Promise<void> {
     await this.copyChartFiles();
 
-    const wbRelsPath = `ppt/charts/_rels/chart${this.sourceNumber}.xml.rels`;
-
-    this.worksheetFilePrefix = await this.getWorksheetFilePrefix(wbRelsPath);
+    this.worksheetFilePrefix = await this.getWorksheetFilePrefix(
+      this.wbRelsPath,
+    );
 
     const worksheets = await XmlHelper.getTargetsFromRelationships(
       this.sourceArchive,
-      wbRelsPath,
+      this.wbRelsPath,
       `${this.wbEmbeddingsPath}${this.worksheetFilePrefix}`,
       this.wbExtension,
     );
@@ -207,24 +220,49 @@ export class Chart extends Shape implements IChart {
 
     await FileHelper.zipCopy(
       this.sourceArchive,
-      `ppt/charts/colors${this.sourceNumber}.xml`,
-      this.targetArchive,
-      `ppt/charts/colors${this.targetNumber}.xml`,
-    );
-
-    await FileHelper.zipCopy(
-      this.sourceArchive,
-      `ppt/charts/style${this.sourceNumber}.xml`,
-      this.targetArchive,
-      `ppt/charts/style${this.targetNumber}.xml`,
-    );
-
-    await FileHelper.zipCopy(
-      this.sourceArchive,
       `ppt/charts/_rels/chart${this.sourceNumber}.xml.rels`,
       this.targetArchive,
       `ppt/charts/_rels/chart${this.targetNumber}.xml.rels`,
     );
+  }
+
+  async copyChartStyleFiles(): Promise<void> {
+    await this.getChartStyles();
+
+    if (this.styleRelationFiles.relTypeChartStyle) {
+      await FileHelper.zipCopy(
+        this.sourceArchive,
+        `ppt/charts/${this.styleRelationFiles.relTypeChartStyle}`,
+        this.targetArchive,
+        `ppt/charts/style${this.targetNumber}.xml`,
+      );
+    }
+
+    if (this.styleRelationFiles.relTypeChartColorStyle) {
+      await FileHelper.zipCopy(
+        this.sourceArchive,
+        `ppt/charts/${this.styleRelationFiles.relTypeChartColorStyle}`,
+        this.targetArchive,
+        `ppt/charts/colors${this.targetNumber}.xml`,
+      );
+    }
+  }
+
+  async getChartStyles(): Promise<void> {
+    const styleTypes = ['relTypeChartStyle', 'relTypeChartColorStyle'];
+
+    for (const i in styleTypes) {
+      const styleType = styleTypes[i];
+      const styleRelation = await XmlHelper.getTargetsByRelationshipType(
+        this.sourceArchive,
+        this.wbRelsPath,
+        this[styleType],
+      );
+
+      if (styleRelation.length) {
+        this.styleRelationFiles[styleType] = styleRelation[0].file;
+      }
+    }
   }
 
   async appendToSlideRels(): Promise<HelperElement> {
@@ -268,10 +306,10 @@ export class Chart extends Shape implements IChart {
               `${this.wbEmbeddingsPath}${this.worksheetFilePrefix}${this.targetWorksheet}${this.wbExtension}`,
             );
             break;
-          case 'http://schemas.microsoft.com/office/2011/relationships/chartColorStyle':
+          case this.relTypeChartColorStyle:
             element.setAttribute('Target', `colors${this.targetNumber}.xml`);
             break;
-          case 'http://schemas.microsoft.com/office/2011/relationships/chartStyle':
+          case this.relTypeChartStyle:
             element.setAttribute('Target', `style${this.targetNumber}.xml`);
             break;
         }
