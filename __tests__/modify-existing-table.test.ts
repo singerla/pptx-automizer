@@ -8,15 +8,31 @@ test('create presentation, add and modify an existing table.', async () => {
 
   const data1 = {
     body: [
+      { label: 'item test r1', values: ['test1', 10, 16, 12, 11] },
+      { label: 'item test r2', values: ['test2', 12, 18, 15, 12] },
+      { label: 'item test r3', values: ['test3', 14, 12, 11, 14] },
+    ],
+  };
+
+  const data2 = {
+    body: [
       { label: 'item test r1', values: ['test1', 10, 16, 12] },
       { label: 'item test r2', values: ['test2', 12, 18, 15] },
       { label: 'item test r3', values: ['test3', 14, 12, 11] },
-      // { label: 'item test r4', values: ['test4', 14, 12, 11] },
-      // { label: 'item test r5', values: ['test5', 14, 12, 11] },
-      // { label: 'item test r6', values: ['test6', 999, 12, 11] },
-      // { label: 'item test r6', values: ['test7', 999, 12, 11] },
-      // { label: 'item test r6', values: ['test8', 999, 12, 11] },
-      // { label: 'item test r6', values: ['test9', 999, 12, 11] },
+      { label: 'item test r4', values: ['test4', 14, 12, 18] },
+      { label: 'item test r5', values: ['test5', 14, 13, 15] },
+      { label: 'item test r6', values: ['test6', 999, 14, 14] },
+      { label: 'item test r7', values: ['test7', 998, 15, 13] },
+      { label: 'item test r8', values: ['test8', 997, 16, 19] },
+      { label: 'item test r9', values: ['test9', 996, 17, 18] },
+    ],
+  };
+
+  const data3 = {
+    body: [
+      { label: 'item test r1', values: ['test1', 10, 16] },
+      { label: 'item test r2', values: ['test2', 12, 18] },
+      { label: 'item test r3', values: ['test3', 14, 12] },
     ],
   };
 
@@ -26,7 +42,20 @@ test('create presentation, add and modify an existing table.', async () => {
 
   const result = await pres
     .addSlide('tables', 1, (slide) => {
-      slide.modifyElement('TableWithHeader', [modify.setTableData(data1)]);
+      slide.modifyElement('TableDefault', [
+        modify.setTable(data1),
+      ]);
+
+      slide.modifyElement('TableWithLabels', [
+        modify.setTable(data2),
+        // modify.dump
+      ]);
+
+      slide.modifyElement('TableWithHeader', [
+        modify.setTableData(data3),
+        modify.adjustHeight(data3),
+        modify.adjustWidth(data3),
+      ]);
     })
     .write(`modify-existing-table.test.pptx`);
 

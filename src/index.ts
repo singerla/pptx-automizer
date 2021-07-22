@@ -13,6 +13,9 @@ const setPosition = ModifyShapeHelper.setPosition;
 
 import ModifyTableHelper from './helper/modify-table-helper';
 const setTableData = ModifyTableHelper.setTableData;
+const adjustHeight = ModifyTableHelper.adjustHeight;
+const adjustWidth = ModifyTableHelper.adjustWidth;
+const setTable = ModifyTableHelper.setTable;
 
 import ModifyChartHelper from './helper/modify-chart-helper';
 const setChartData = ModifyChartHelper.setChartData;
@@ -34,6 +37,9 @@ export const modify = {
   setText,
   setPosition,
   setTableData,
+  adjustHeight,
+  adjustWidth,
+  setTable,
   setChartData,
   setChartVerticalLines,
   setChartBubbles,

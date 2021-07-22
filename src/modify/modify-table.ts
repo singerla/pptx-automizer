@@ -8,7 +8,7 @@ export class ModifyTable {
   table: ModifyXmlHelper;
   xml: XMLDocument | Element;
 
-  constructor(table: XMLDocument | Element, data: TableData) {
+  constructor(table: XMLDocument | Element, data?: TableData) {
     this.data = data;
 
     this.table = new ModifyXmlHelper(table);
@@ -16,16 +16,39 @@ export class ModifyTable {
   }
 
   modify(): ModifyTable {
-    this.setContents();
+    this.setRows();
+    this.setGridCols();
+
     this.sliceRows();
+    this.sliceCols();
 
     return this;
   }
 
-  setContents() {
+  setRows() {
     this.data.body.forEach((row: TableRow, r: number) => {
       row.values.forEach((cell: number | string, c: number) => {
         this.table.modify(this.row(r, this.column(c, this.cell(cell))));
+        this.table.modify({
+          'a16:rowId': {
+            index: r,
+            modify: ModifyXmlHelper.attribute('val', r),
+          }
+        })
+      });
+    });
+  }
+
+  setGridCols() {
+    this.data.body[0].values.forEach((cell, c: number) => {
+      this.table.modify({
+        'a:gridCol': {
+          index: c
+        },
+        'a16:colId': {
+          index: c,
+          modify: ModifyXmlHelper.attribute('val', c),
+        }
       });
     });
   }
@@ -33,6 +56,12 @@ export class ModifyTable {
   sliceRows() {
     this.table.modify({
       'a:tbl': this.slice('a:tr', this.data.body.length),
+    });
+  }
+
+  sliceCols() {
+    this.table.modify({
+      'a:tblGrid': this.slice('a:gridCol', this.data.body[0].values.length),
     });
   }
 
@@ -75,13 +104,7 @@ export class ModifyTable {
   }
 
   adjustHeight() {
-    const tableHeight = Number(
-      this.xml
-        .getElementsByTagName('p:xfrm')[0]
-        .getElementsByTagName('a:ext')[0]
-        .getAttribute('cy'),
-    );
-
+    const tableHeight = this.getTableSize('cy')
     const rowHeight = tableHeight / this.data.body.length;
 
     this.data.body.forEach((row: TableRow, r: number) => {
@@ -92,5 +115,32 @@ export class ModifyTable {
         },
       });
     });
+
+    return this
+  }
+
+  adjustWidth() {
+    const tableWidth = this.getTableSize('cx')
+    const rowWidth = tableWidth / this.data.body[0].values.length;
+
+    this.data.body[0].values.forEach((cell, c: number) => {
+      this.table.modify({
+        'a:gridCol': {
+          index: c,
+          modify: ModifyXmlHelper.attribute('w', Math.round(rowWidth)),
+        },
+      });
+    });
+
+    return this
+  }
+
+  getTableSize(orientation: string): number {
+    return Number(
+      this.xml
+        .getElementsByTagName('p:xfrm')[0]
+        .getElementsByTagName('a:ext')[0]
+        .getAttribute(orientation),
+    );
   }
 }
