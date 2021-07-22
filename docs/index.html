@@ -62,6 +62,7 @@
 					<h1>pptx-automizer</h1>
 				</a>
 				<p>This is a pptx generator for Node.js based on templates. It can read pptx files and insert selected slides or single slide elements into another presentation. <em>pptx-automizer</em> will not write files from scratch, but edit and merge existing pptx files. Template slides are styled within PowerPoint and will be merged into the output presentation. Most of the content can be modified by using callbacks with <a href="https://github.com/xmldom/xmldom">xmldom</a>.</p>
+				<p><em>pptx-automizer</em> will fit best to users who try to maintain their own library of pptx template files. This is perfect to anyone who uses complex and well-styled customized layouts. Any existing slide and even a single element can be a data driven template for output pptx files.</p>
 				<a href="#requirements" id="requirements" style="color: inherit; text-decoration: none;">
 					<h2>Requirements</h2>
 				</a>
@@ -69,19 +70,34 @@
 				<a href="#limitations" id="limitations" style="color: inherit; text-decoration: none;">
 					<h2>Limitations</h2>
 				</a>
-				<p>Please note that this project is <em>work in progress</em>. At the moment, you might encounter difficulties for special shape types that require internal relations.
-				Although, most shape types are already supported, such as connection shapes or charts.</p>
-				<p>Importing a single element is limited to shapes that also do not require further relations.</p>
+				<p>Please note that this project is <em>work in progress</em>. At the moment, you might encounter difficulties for special shape types that require further relations (e.g. links will not work properly). Although, most shape types are already supported, such as connection shapes, tables or charts. You are welcome to <a href="https://github.com/singerla/pptx-automizer/issues/new">report any issue</a>.</p>
 				<p>All testing focuses on PowerPoint 2019 pptx file format.</p>
 				<a href="#install" id="install" style="color: inherit; text-decoration: none;">
 					<h2>Install</h2>
 				</a>
-				<p>You can add this package to your own project using npm or yarn:</p>
-				<pre><code><span style="color: #001080">yarn</span><span style="color: #000000"> </span><span style="color: #001080">add</span><span style="color: #000000"> </span><span style="color: #001080">pptx</span><span style="color: #000000">-</span><span style="color: #001080">automizer</span>
+				<p>There are basically two ways to use <em>pptx-automizer</em>.</p>
+				<a href="#as-a-cloned-repository" id="as-a-cloned-repository" style="color: inherit; text-decoration: none;">
+					<h3>As a cloned repository</h3>
+				</a>
+				<p>If you want to see how it works and you like to run own tests, you should clone this repository and install the dependencies:</p>
+				<pre><code><span style="color: #001080">$</span><span style="color: #000000"> </span><span style="color: #001080">git</span><span style="color: #000000"> </span><span style="color: #001080">clone</span><span style="color: #000000"> </span><span style="color: #001080">git</span><span style="color: #000000">@</span><span style="color: #001080">github</span><span style="color: #000000">.</span><span style="color: #001080">com</span><span style="color: #000000">:</span><span style="color: #001080">singerla</span><span style="color: #000000">/</span><span style="color: #001080">pptx</span><span style="color: #000000">-</span><span style="color: #001080">automizer</span><span style="color: #000000">.</span><span style="color: #001080">git</span>
+<span style="color: #001080">$</span><span style="color: #000000"> </span><span style="color: #001080">cd</span><span style="color: #000000"> </span><span style="color: #001080">pptx</span><span style="color: #000000">-</span><span style="color: #001080">automizer</span>
+<span style="color: #001080">$</span><span style="color: #000000"> </span><span style="color: #001080">yarn</span><span style="color: #000000"> </span><span style="color: #001080">install</span>
+</code></pre>
+				<p>You can now run </p>
+				<pre><code><span style="color: #001080">$</span><span style="color: #000000"> </span><span style="color: #001080">yarn</span><span style="color: #000000"> </span><span style="color: #001080">dev</span>
+</code></pre>
+				<p>and see the most recent feature from <code>src/dev.ts</code>. Every time you change &amp; save this file, you will see new console output and a pptx file in the destination folder. Take a look into <code>__tests__</code>-directory to see a lot of examples for several use cases!</p>
+				<a href="#as-a-package" id="as-a-package" style="color: inherit; text-decoration: none;">
+					<h3>As a package</h3>
+				</a>
+				<p>If you are working on an existing project, you can add <em>pptx-automizer</em> to it using npm or yarn. Run</p>
+				<pre><code><span style="color: #001080">$</span><span style="color: #000000"> </span><span style="color: #001080">yarn</span><span style="color: #000000"> </span><span style="color: #001080">add</span><span style="color: #000000"> </span><span style="color: #001080">pptx</span><span style="color: #000000">-</span><span style="color: #001080">automizer</span>
 </code></pre>
 				<p>or</p>
-				<pre><code><span style="color: #001080">npm</span><span style="color: #000000"> </span><span style="color: #001080">install</span><span style="color: #000000"> </span><span style="color: #001080">pptx</span><span style="color: #000000">-</span><span style="color: #001080">automizer</span>
+				<pre><code><span style="color: #001080">$</span><span style="color: #000000"> </span><span style="color: #001080">npm</span><span style="color: #000000"> </span><span style="color: #001080">install</span><span style="color: #000000"> </span><span style="color: #001080">pptx</span><span style="color: #000000">-</span><span style="color: #001080">automizer</span>
 </code></pre>
+				<p>in the root folder of your project. This will download and install the most recent version into your existing project.</p>
 				<a href="#example" id="example" style="color: inherit; text-decoration: none;">
 					<h2>Example</h2>
 				</a>
@@ -112,7 +128,7 @@
 <span style="color: #008000">// You can also select and import a single element from a template slide. </span>
 <span style="color: #008000">// The desired shape will be identified by its name from slide-xml&#039;s </span>
 <span style="color: #008000">// &#039;p:cNvPr&#039;-element.</span>
-<span style="color: #001080">pres</span><span style="color: #000000">.</span><span style="color: #795E26">addSlide</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;image&#039;</span><span style="color: #000000">, </span><span style="color: #098658">1</span><span style="color: #000000">, (</span><span style="color: #001080">slide</span><span style="color: #000000">) </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
+<span style="color: #001080">pres</span><span style="color: #000000">.</span><span style="color: #795E26">addSlide</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;SlideWithImages.pptx&#039;</span><span style="color: #000000">, </span><span style="color: #098658">1</span><span style="color: #000000">, (</span><span style="color: #001080">slide</span><span style="color: #000000">) </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
 <span style="color: #000000">  </span><span style="color: #008000">// Pass the template name, the slide number, the element&#039;s name and </span>
 <span style="color: #000000">  </span><span style="color: #008000">// (optionally) a callback function to directly modify the child nodes </span>
 <span style="color: #000000">  </span><span style="color: #008000">// of &lt;p:sp&gt;</span>
@@ -153,7 +169,7 @@
 <span style="color: #000000">      ]</span>
 <span style="color: #000000">    })</span>
 <span style="color: #000000">    </span><span style="color: #008000">// Please notice: If your template has more data than your data</span>
-<span style="color: #000000">    </span><span style="color: #008000">// object, automizer will atm not remove these nodes.</span>
+<span style="color: #000000">    </span><span style="color: #008000">// object, automizer will remove these nodes.</span>
 <span style="color: #000000">  ])</span>
 <span style="color: #000000">})</span>
 
@@ -162,18 +178,10 @@
 <span style="color: #000000">  </span><span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #001080">summary</span><span style="color: #000000">)</span>
 <span style="color: #000000">})</span>
 </code></pre>
-				<a href="#playground" id="playground" style="color: inherit; text-decoration: none;">
-					<h3>Playground</h3>
-				</a>
-				<p>If you prefer instant testing, you can clone this repo and install dependencies first.
-				Feel free and run:</p>
-				<pre><code><span style="color: #001080">yarn</span><span style="color: #000000"> </span><span style="color: #001080">dev</span>
-</code></pre>
-				<p>The output file will demonstrate some of the recently implemented features.</p>
 				<a href="#testing" id="testing" style="color: inherit; text-decoration: none;">
 					<h3>Testing</h3>
 				</a>
-				<p>You can run tests using these commands:</p>
+				<p>You can run all unit tests using these commands:</p>
 				<pre><code><span style="color: #001080">yarn</span><span style="color: #000000"> </span><span style="color: #001080">test</span>
 <span style="color: #001080">yarn</span><span style="color: #000000"> </span><span style="color: #001080">test</span><span style="color: #000000">-</span><span style="color: #001080">coverage</span>
 </code></pre>
@@ -193,18 +201,33 @@
 			<nav class="tsd-navigation primary">
 				<ul>
 					<li class=" ">
-						<a href="modules.html">Modules</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/classes_slide.html">classes/slide</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/index.html">index</a>
+						<a href="modules.html">Exports</a>
 					</li>
 				</ul>
 			</nav>
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
+					<li class=" tsd-kind-reference">
+						<a href="modules.html#automizer" class="tsd-kind-icon">Automizer</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/modifycharthelper.html" class="tsd-kind-icon">Modify<wbr>Chart<wbr>Helper</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/modifyhelper.html" class="tsd-kind-icon">Modify<wbr>Helper</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/modifyshapehelper.html" class="tsd-kind-icon">Modify<wbr>Shape<wbr>Helper</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/modifytablehelper.html" class="tsd-kind-icon">Modify<wbr>Table<wbr>Helper</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/default.html" class="tsd-kind-icon">default</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="modules.html#modify" class="tsd-kind-icon">modify</a>
+					</li>
 				</ul>
 			</nav>
 		</div>
@@ -215,10 +238,15 @@
 		<h2>Legend</h2>
 		<div class="tsd-legend-group">
 			<ul class="tsd-legend">
-				<li class="tsd-kind-variable"><span class="tsd-kind-icon">Variable</span></li>
+				<li class="tsd-kind-constructor tsd-parent-kind-class"><span class="tsd-kind-icon">Constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
 			</ul>
 			<ul class="tsd-legend">
-				<li class="tsd-kind-class"><span class="tsd-kind-icon">Class</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private method</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li>
 			</ul>
 		</div>
 	</div>
