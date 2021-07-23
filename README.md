@@ -3,6 +3,8 @@ This is a pptx generator for Node.js based on templates. It can read pptx files 
 
 *pptx-automizer* will fit best to users who try to maintain their own library of pptx template files. This is perfect to anyone who uses complex and well-styled customized layouts. Any existing slide and even a single element can be a data driven template for output pptx files.
 
+This project comes along with [automizer-data](https://github.com/singerla/automizer-data). You can use *automizer-data* to import, browse and transform XSLX-data into perfectly fitting graph or table data.
+
 ## Requirements
 This generator can only be used on the server-side and requires a [Node.js](https://nodejs.org/en/download/package-manager/) environment.
 
