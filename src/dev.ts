@@ -7,7 +7,16 @@ const automizer = new Automizer({
 
 const pres = automizer
   .loadRoot(`EmptyTemplate.pptx`)
-  .load(`SlideWithTables.pptx`, 'table');
+  .load(`SlideWithTables.pptx`, 'table')
+  .load('SlideWithImages.pptx')
+  .load(`RootTemplateWithCharts.pptx`);
+
+
+//
+// pres.getCreationIds()
+//   .then(response => {
+//     console.dir(response, {depth: 5})
+//   })
 
 const data1 = {
   body: [
@@ -29,15 +38,26 @@ const data2 = [
   [14, 12, 11],
 ];
 
-pres
-  .addSlide('table', 1, (slide) => {
-    slide.modifyElement('TableWithHeader', [modify.setTableData(data1)]);
-  })
-  .write(`modify-table.test.pptx`)
+const run = async() => {
+  const info = await pres.setCreationIds()
+  // console.dir(info, {depth: 5})
 
-  .then((result) => {
-    console.info(result);
-  })
+  await pres
+    .addSlide('table', 1950777067, (slide) => {
+      slide.modifyElement(
+        '{EFC74B4C-D832-409B-9CF4-73C1EFF132D8}',
+        [modify.setTableData(data1)]);
+    })
+    .write(`modify-table.test.pptx`)
+    .then((result) => {
+      console.info(result);
+    })
+
+  return pres
+}
+
+run()
   .catch((error) => {
     console.error(error);
   });
+

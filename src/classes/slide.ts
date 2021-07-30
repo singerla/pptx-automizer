@@ -285,7 +285,12 @@ export class Slide implements ISlide {
     const template = this.root.getTemplate(importElement.presName);
     const sourcePath = `ppt/slides/slide${importElement.slideNumber}.xml`;
     const sourceArchive = await template.archive;
-    const sourceElement = await XmlHelper.findByElementName(
+    const hasCreationId = (template.creationIds !== undefined)
+    const method = (hasCreationId)
+      ? 'findByElementCreationId'
+      : 'findByElementName';
+
+    const sourceElement = await XmlHelper[method](
       sourceArchive,
       sourcePath,
       importElement.selector,
@@ -306,6 +311,7 @@ export class Slide implements ISlide {
     return {
       mode: importElement.mode,
       name: importElement.selector,
+      hasCreationId: hasCreationId,
       sourceArchive,
       sourceSlideNumber: importElement.slideNumber,
       sourceElement,

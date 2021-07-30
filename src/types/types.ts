@@ -48,6 +48,7 @@ export type ImportElement = {
 export type ImportedElement = {
   mode: string;
   name?: string;
+  hasCreationId?: boolean;
   sourceArchive: JSZip;
   sourceSlideNumber: number;
   callback?: ImportElement['callback'];

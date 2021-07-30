@@ -11,6 +11,7 @@ import {
 import { TargetByRelIdMap } from '../constants/constants';
 import { XmlPrettyPrint } from './xml-pretty-print';
 import { GetRelationshipsCallback, Target } from '../types/types';
+import { XmlTemplateHelper } from './xml-template-helper';
 
 export class XmlHelper {
   static async getXmlFromArchive(
@@ -71,7 +72,7 @@ export class XmlHelper {
     const parent = element.parent(xml);
     parent.appendChild(newElement);
 
-    XmlHelper.writeXmlToArchive(element.archive, element.file, xml);
+    await XmlHelper.writeXmlToArchive(element.archive, element.file, xml);
 
     return (newElement as unknown) as HelperElement;
   }
@@ -239,6 +240,16 @@ export class XmlHelper {
     return target;
   }
 
+  static async findByElementCreationId(
+    archive: JSZip,
+    path: string,
+    creationId: string,
+  ): Promise<XMLDocument> {
+    const slideXml = await XmlHelper.getXmlFromArchive(archive, path);
+
+    return XmlHelper.findByCreationId(slideXml, creationId);
+  }
+
   static async findByElementName(
     archive: JSZip,
     path: string,
@@ -254,7 +265,26 @@ export class XmlHelper {
 
     for (const i in names) {
       if (names[i].getAttribute && names[i].getAttribute('name') === name) {
-        return names[i].parentNode.parentNode as XMLDocument;
+        return names[i]
+          .parentNode
+          .parentNode as XMLDocument;
+      }
+    }
+
+    return null;
+  }
+
+  static findByCreationId(doc: Document, creationId: string): XMLDocument {
+    const creationIds = doc.getElementsByTagName('a16:creationId')
+
+    for (const i in creationIds) {
+      if (creationIds[i].getAttribute && creationIds[i].getAttribute('id') === creationId) {
+        return creationIds[i]
+          .parentNode
+          .parentNode
+          .parentNode
+          .parentNode
+          .parentNode as XMLDocument;
       }
     }
 

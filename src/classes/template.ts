@@ -7,6 +7,8 @@ import { ISlide } from '../interfaces/islide';
 import { PresTemplate } from '../interfaces/pres-template';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { ITemplate } from '../interfaces/itemplate';
+import { XmlTemplateHelper } from '../helper/xml-template-helper';
+import { SlideInfo } from '../types/xml-types';
 
 export class Template implements ITemplate {
   /**
@@ -45,6 +47,8 @@ export class Template implements ITemplate {
    */
   counter: ICounter[];
 
+  creationIds: SlideInfo[];
+
   constructor(location: string) {
     this.location = location;
     const file = FileHelper.readFile(location);
@@ -71,6 +75,15 @@ export class Template implements ITemplate {
     }
 
     return newTemplate;
+  }
+
+  async setCreationIds(): Promise<SlideInfo[]> {
+    const archive = await this.archive
+
+    const xmlTemplateHelper = new XmlTemplateHelper(archive)
+    this.creationIds = await xmlTemplateHelper.getCreationIds()
+
+    return this.creationIds
   }
 
   async appendSlide(slide: ISlide): Promise<void> {

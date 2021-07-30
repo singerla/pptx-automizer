@@ -5,6 +5,7 @@ import { IPresentationProps } from './interfaces/ipresentation-props';
 import { PresTemplate } from './interfaces/pres-template';
 import { RootPresTemplate } from './interfaces/root-pres-template';
 import { Template } from './classes/template';
+import { TemplateInfo } from './types/xml-types';
 
 /**
  * Automizer
@@ -84,6 +85,24 @@ export default class Automizer implements IPresentationProps {
   }
 
   /**
+   * Parses all loaded templates and collects creationIds for slides and
+   * elements. This will make finding templates and elements independent
+   * from slide number and element name.
+   * @returns Promise<TemplateInfo[]>
+   */
+  public async setCreationIds(): Promise<TemplateInfo[]> {
+    const templateCreationId = []
+    for(const template of this.templates) {
+      const slideInfo = await template.setCreationIds()
+      templateCreationId.push({
+        name: template.name,
+        slides: slideInfo
+      })
+    }
+    return templateCreationId
+  }
+
+  /**
    * Determines whether template is root or default template.
    * @param template
    * @returns pres template
@@ -111,6 +130,12 @@ export default class Automizer implements IPresentationProps {
     }
 
     const template = this.getTemplate(name);
+
+    if(template.creationIds !== undefined) {
+      slideNumber = template.creationIds
+        .find(slideInfo => slideInfo.id === slideNumber)
+        .number
+    }
 
     const newSlide = new Slide({
       presentation: this,

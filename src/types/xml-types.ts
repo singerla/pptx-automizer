@@ -34,3 +34,21 @@ export type HelperElement = {
     | SlideListAttribute
     | RelationshipAttribute;
 };
+
+
+export type TemplateInfo = {
+  name: string
+  slides: SlideInfo[]
+}
+
+export type SlideInfo = {
+  id: number
+  number: number
+  elements: ElementInfo[]
+}
+
+export type ElementInfo = {
+  name: string
+  type: string
+  id: string
+}

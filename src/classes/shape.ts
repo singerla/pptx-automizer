@@ -38,6 +38,7 @@ export class Shape {
   targetElement: XMLDocument;
 
   callbacks: ShapeModificationCallback[];
+  hasCreationId: boolean;
 
   constructor(shape: ImportedElement) {
     this.mode = shape.mode;
@@ -47,6 +48,7 @@ export class Shape {
     this.sourceSlideNumber = shape.sourceSlideNumber;
     this.sourceSlideFile = `ppt/slides/slide${this.sourceSlideNumber}.xml`;
     this.sourceElement = shape.sourceElement;
+    this.hasCreationId = shape.hasCreationId;
 
     this.callbacks = GeneralHelper.arrayify(shape.callback);
 
@@ -93,7 +95,12 @@ export class Shape {
       this.targetArchive,
       this.targetSlideFile,
     );
-    const sourceElementOnTargetSlide = await XmlHelper.findByName(
+
+    const findMethod = (this.hasCreationId)
+      ? 'findByCreationId'
+      : 'findByName'
+
+    const sourceElementOnTargetSlide = await XmlHelper[findMethod](
       targetSlideXml,
       this.name,
     );
