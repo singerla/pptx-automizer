@@ -22,6 +22,9 @@ const setChartData = ModifyChartHelper.setChartData;
 const setChartVerticalLines = ModifyChartHelper.setChartVerticalLines;
 const setChartBubbles = ModifyChartHelper.setChartBubbles;
 
+import { AutomizerSummary } from './types/types';
+export type { AutomizerSummary };
+
 export {
   Automizer,
   ModifyHelper,
