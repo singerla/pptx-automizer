@@ -23,6 +23,7 @@ export class FileHelper {
     }
 
     if (archive.files[file] === undefined) {
+      console.trace()
       throw new Error('Archived file not found: ' + file);
     }
     return archive.files[file].async(type || 'string');

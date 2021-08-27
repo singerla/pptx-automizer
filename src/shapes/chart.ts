@@ -315,7 +315,7 @@ export class Chart extends Shape implements IChart {
         }
       });
 
-    XmlHelper.writeXmlToArchive(this.targetArchive, targetRelFile, relXml);
+    await XmlHelper.writeXmlToArchive(this.targetArchive, targetRelFile, relXml);
   }
 
   async copyWorksheetFile(): Promise<void> {

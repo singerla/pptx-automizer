@@ -103,11 +103,22 @@ export class Slide implements ISlide {
   }) {
     this.sourceTemplate = params.template;
     this.sourceNumber = params.slideNumber;
+    this.sourceNumber = this.getSlideNumber(params.template, params.slideNumber);
+
     this.sourcePath = `ppt/slides/slide${this.sourceNumber}.xml`;
     this.relsPath = `ppt/slides/_rels/slide${this.sourceNumber}.xml.rels`;
 
     this.modifications = [];
     this.importElements = [];
+  }
+
+  getSlideNumber(template, slideNumber) {
+    if(template.creationIds !== undefined) {
+      return template.creationIds
+        .find(slideInfo => slideInfo.id === slideNumber)
+        .number
+    }
+    return slideNumber
   }
 
   /**
@@ -283,7 +294,12 @@ export class Slide implements ISlide {
    */
   async getElementInfo(importElement: ImportElement): Promise<ImportedElement> {
     const template = this.root.getTemplate(importElement.presName);
-    const sourcePath = `ppt/slides/slide${importElement.slideNumber}.xml`;
+
+    const slideNumber = (importElement.mode === 'append')
+      ? this.getSlideNumber(template, importElement.slideNumber) : importElement.slideNumber
+
+    const sourcePath = `ppt/slides/slide${slideNumber}.xml`;
+
     const sourceArchive = await template.archive;
     const hasCreationId = (template.creationIds !== undefined)
     const method = (hasCreationId)
@@ -298,14 +314,14 @@ export class Slide implements ISlide {
 
     if (!sourceElement) {
       throw new Error(
-        `Can't find ${importElement.selector} on slide ${importElement.slideNumber} in ${importElement.presName}`,
+        `Can't find ${importElement.selector} on slide ${slideNumber} in ${importElement.presName}`,
       );
     }
 
     const appendElementParams = await this.analyzeElement(
       sourceElement,
       sourceArchive,
-      importElement.slideNumber,
+      slideNumber,
     );
 
     return {
@@ -313,7 +329,7 @@ export class Slide implements ISlide {
       name: importElement.selector,
       hasCreationId: hasCreationId,
       sourceArchive,
-      sourceSlideNumber: importElement.slideNumber,
+      sourceSlideNumber: slideNumber,
       sourceElement,
       callback: importElement.callback,
       target: appendElementParams.target,

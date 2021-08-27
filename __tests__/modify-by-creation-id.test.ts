@@ -25,6 +25,12 @@ test('create presentation, add and modify an existing table by creation id.', as
       slide.modifyElement(
         '{EFC74B4C-D832-409B-9CF4-73C1EFF132D8}',
         [modify.setTableData(data1)]);
+
+      slide.addElement(
+        'tables',
+        1950777067,
+        '{EFC74B4C-D832-409B-9CF4-73C1EFF132D8}',
+        [modify.setTableData(data1)]);
     })
     .write(`modify-existing-table.test.pptx`);
 

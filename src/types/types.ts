@@ -23,6 +23,9 @@ export type AutomizerParams = {
    * You can set a path here.
    */
   outputDir?: string;
+  rootTemplate?: string;
+  presTemplates?: string[];
+  useCreationIds?: boolean;
 };
 export type AutomizerSummary = {
   status: string;

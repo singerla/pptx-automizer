@@ -33,7 +33,7 @@ export default class Automizer implements IPresentationProps {
    * Creates an instance of `pptx-automizer`.
    * @param [params]
    */
-  constructor(params?: AutomizerParams) {
+  constructor(params: AutomizerParams) {
     this.templates = [];
     this.params = params;
 
@@ -41,6 +41,29 @@ export default class Automizer implements IPresentationProps {
     this.outputDir = params?.outputDir ? params.outputDir + '/' : '';
 
     this.timer = Date.now();
+
+    if(params.rootTemplate) {
+      const location = this.getLocation(params.rootTemplate, 'template');
+      this.rootTemplate = Template.import(location) as RootPresTemplate;
+    }
+
+    if(params.presTemplates) {
+      this.params.presTemplates.forEach(file => {
+        const location = this.getLocation(file, 'template');
+        const newTemplate = Template.import(location, file) as PresTemplate;
+        this.templates.push(newTemplate);
+      })
+    }
+  }
+
+  /**
+
+   */
+  public async presentation(): Promise<this> {
+    if(this.params?.useCreationIds === true) {
+      await this.setCreationIds()
+    }
+    return this;
   }
 
   /**
@@ -130,12 +153,6 @@ export default class Automizer implements IPresentationProps {
     }
 
     const template = this.getTemplate(name);
-
-    if(template.creationIds !== undefined) {
-      slideNumber = template.creationIds
-        .find(slideInfo => slideInfo.id === slideNumber)
-        .number
-    }
 
     const newSlide = new Slide({
       presentation: this,
