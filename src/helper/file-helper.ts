@@ -77,6 +77,7 @@ export class FileHelper {
       status: 'finished',
       duration,
       file: location,
+      filename: path.basename(location),
       templates: automizer.templates.length,
       slides: automizer.rootTemplate.count('slides'),
       charts: automizer.rootTemplate.count('charts'),

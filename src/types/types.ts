@@ -31,6 +31,7 @@ export type AutomizerSummary = {
   status: string;
   duration: number;
   file: string;
+  filename: string;
   templates: number;
   slides: number;
   charts: number;
