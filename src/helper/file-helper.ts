@@ -60,16 +60,16 @@ export class FileHelper {
     return targetArchive.file(targetFile || sourceFile, content);
   }
 
-  static writeOutputFile(
+  static async writeOutputFile(
     location: string,
     content: Buffer,
     automizer: IPresentationProps,
-  ): AutomizerSummary {
-    fs.writeFile(location, content, (err: { message: string }) => {
-      if (err) {
-        throw new Error(`Error writing output: ${err.message}`);
-      }
-    });
+  ): Promise<AutomizerSummary> {
+    await fs.promises.writeFile(location, content)
+      .catch((err) => {
+        console.error(err)
+        throw new Error(`Could not write output file: ${location}`);
+      })
 
     const duration: number = (Date.now() - automizer.timer) / 600;
 
