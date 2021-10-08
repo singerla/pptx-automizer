@@ -50,6 +50,7 @@ export class ModifyChart {
     this.setSeries();
     this.sliceChartSpace();
 
+    this.prepareWorkbook();
     this.setWorkbook();
     this.sliceWorkbook();
     this.setWorkbookTable();
@@ -161,6 +162,24 @@ export class ModifyChart {
         });
         this.chart.modify(this.series(column.series, sliceMod));
       });
+  }
+
+  /*
+    There might be rows in an excel workbook that appear to be empty, but
+    contain either no cells or none with a "v"-tag. These rows are removed
+    by prepareWorkbook(). See https://github.com/singerla/pptx-automizer/issues/11
+   */
+  prepareWorkbook(): void {
+    const rows = this.workbook.root.getElementsByTagName('row')
+    for(const r in rows) {
+      if(!rows[r].getElementsByTagName) continue
+
+      const values = rows[r].getElementsByTagName('v')
+      if(values.length === 0) {
+        const toRemove = rows[r];
+        toRemove.parentNode.removeChild(toRemove);
+      }
+    }
   }
 
   setWorkbook(): void {
