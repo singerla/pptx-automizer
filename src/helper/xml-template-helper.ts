@@ -74,7 +74,8 @@ export class XmlTemplateHelper {
 
   getElementInfo(slideElement, archive): ElementInfo {
     const elementName = slideElement.getAttribute('name')
-    let type = slideElement.parentNode.parentNode.tagName
+    const slideElementParent = slideElement.parentNode.parentNode
+    let type = slideElementParent.tagName
     const creationId = slideElement
       .getElementsByTagName('a16:creationId')
       .item(0)
@@ -86,29 +87,36 @@ export class XmlTemplateHelper {
     }
 
     type = type.replace('p:', '')
+    const position = {
+      x: 0, y: 0, cx: 0, cy: 0
+    }
+    let xFrmTag = 'a:xfrm'
 
     switch(type) {
       case 'graphicFrame':
-        const graphicData = slideElement.parentNode.parentNode.getElementsByTagName('a:graphicData')[0]
+        const graphicData = slideElementParent.getElementsByTagName('a:graphicData')[0]
         const uri = graphicData.getAttribute('uri')
         type = (mapUriType[uri]) ? mapUriType[uri] : type
+        xFrmTag = 'p:xfrm'
         break
     }
 
-    switch(type) {
-      case 'chart':
-        // const slideXml = await XmlHelper.getXmlFromArchive(
-        //   archive,
-        //   'ppt/' + slideRel.file
-        // )
-        // XmlHelper.dump(slideElement.parentNode.parentNode)
-        break
+    const xFrm = slideElementParent.getElementsByTagName(xFrmTag)
+    if(xFrm && xFrm.length) {
+      const Off = xFrm[0].getElementsByTagName('a:off')
+      const Ext = xFrm[0].getElementsByTagName('a:ext')
+
+      position.x = Number(Off[0].getAttribute('x'))
+      position.y = Number(Off[0].getAttribute('y'))
+      position.cx = Number(Ext[0].getAttribute('cx'))
+      position.cy = Number(Ext[0].getAttribute('cy'))
     }
 
     return {
       name: elementName,
       type: type,
-      id: creationId
+      id: creationId,
+      position: position
     }
   }
 }

@@ -51,4 +51,10 @@ export type ElementInfo = {
   name: string
   type: string
   id: string
+  position: {
+    x: number,
+    y: number,
+    cx: number,
+    cy: number
+  }
 }
