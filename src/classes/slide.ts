@@ -140,9 +140,10 @@ export class Slide implements ISlide {
     await this.copyRelatedContent();
     await this.addSlideToPresentation();
 
-    if (this.hasNotes()) {
-      await this.copySlideNoteFiles();
-      await this.updateSlideNoteFile();
+    const sourceNotesNumber = await this.getSlideNoteSourceNumber();
+    if (sourceNotesNumber) {
+      await this.copySlideNoteFiles(sourceNotesNumber);
+      await this.updateSlideNoteFile(sourceNotesNumber);
       await this.appendNotesToContentType(
         this.targetArchive,
         this.targetNumber,
@@ -423,21 +424,44 @@ export class Slide implements ISlide {
   }
 
   /**
+   * slideNote numbers differ from slide numbers if presentation
+   * contains slides without notes. We need to find out
+   * the proper enumeration of slideNote xml files.
+   * @internal
+   * @returns slide note file number
+   */
+  async getSlideNoteSourceNumber(): Promise<number|undefined> {
+    const targets = await XmlHelper.getTargetsByRelationshipType(
+      this.sourceArchive,
+      `ppt/slides/_rels/slide${this.sourceNumber}.xml.rels`,
+      'http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide'
+    )
+
+    if(targets.length) {
+      const targetNumber = targets[0].file
+        .replace('../notesSlides/notesSlide', '')
+        .replace('.xml', '')
+      return Number(targetNumber)
+    }
+  }
+
+  /**
    * Copys slide note files
    * @internal
    * @returns slide note files
    */
-  async copySlideNoteFiles(): Promise<void> {
+  async copySlideNoteFiles(sourceNotesNumber:number): Promise<void> {
     await FileHelper.zipCopy(
       this.sourceArchive,
-      `ppt/notesSlides/notesSlide${this.sourceNumber}.xml`,
+      `ppt/notesSlides/notesSlide${sourceNotesNumber}.xml`,
       this.targetArchive,
       `ppt/notesSlides/notesSlide${this.targetNumber}.xml`,
     );
 
+
     await FileHelper.zipCopy(
       this.sourceArchive,
-      `ppt/notesSlides/_rels/notesSlide${this.sourceNumber}.xml.rels`,
+      `ppt/notesSlides/_rels/notesSlide${sourceNotesNumber}.xml.rels`,
       this.targetArchive,
       `ppt/notesSlides/_rels/notesSlide${this.targetNumber}.xml.rels`,
     );
@@ -448,7 +472,7 @@ export class Slide implements ISlide {
    * @internal
    * @returns slide note file
    */
-  async updateSlideNoteFile(): Promise<void> {
+  async updateSlideNoteFile(sourceNotesNumber:number): Promise<void> {
     await XmlHelper.replaceAttribute(
       this.targetArchive,
       `ppt/notesSlides/_rels/notesSlide${this.targetNumber}.xml.rels`,
@@ -463,7 +487,7 @@ export class Slide implements ISlide {
       `ppt/slides/_rels/slide${this.targetNumber}.xml.rels`,
       'Relationship',
       'Target',
-      `../notesSlides/notesSlide${this.sourceNumber}.xml`,
+      `../notesSlides/notesSlide${sourceNotesNumber}.xml`,
       `../notesSlides/notesSlide${this.targetNumber}.xml`,
     );
   }
@@ -594,17 +618,5 @@ export class Slide implements ISlide {
         sourceSlideNumber: this.sourceNumber,
       }).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);
     }
-  }
-
-  /**
-   * Determines whether slides has notes
-   * @internal
-   * @returns true if notes
-   */
-  hasNotes(): boolean {
-    const file = this.sourceArchive.file(
-      `ppt/notesSlides/notesSlide${this.sourceNumber}.xml`,
-    );
-    return GeneralHelper.propertyExists(file, 'name');
   }
 }
