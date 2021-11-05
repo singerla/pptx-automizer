@@ -1,16 +1,21 @@
 import JSZip from "jszip";
-import {ElementInfo, SlideInfo} from "../types/xml-types";
+import { Target } from "../types/types";
+import {ElementInfo, SlideInfo, TemplateSlideInfo} from "../types/xml-types";
 import {XmlHelper} from "./xml-helper";
 
 export class XmlTemplateHelper {
   archive: JSZip;
   relType: string;
+  relTypeNotes: string;
   path: string;
+  defaultSlideName: string;
 
   constructor(archive: JSZip) {
     this.relType = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide'
+    this.relTypeNotes = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide'
     this.archive = archive
     this.path = 'ppt/_rels/presentation.xml.rels'
+    this.defaultSlideName = 'untitled'
   }
 
   async getCreationIds(): Promise<SlideInfo[]> {
@@ -34,11 +39,13 @@ export class XmlTemplateHelper {
         .getAttribute('val')
 
       const elementIds = this.elementCreationIds(slideXml, archive)
+      const slideInfo = await this.getSlideInfo(slideXml, archive, slideRel.file)
 
       creationIds.push({
         id: Number(creationIdSlide),
         number: this.parseSlideRelFile(slideRel.file),
-        elements: elementIds
+        elements: elementIds,
+        info: slideInfo
       })
     }
 
@@ -50,6 +57,81 @@ export class XmlTemplateHelper {
       .replace('slides/slide', '')
       .replace('.xml', '')
     )
+  }
+
+  async getSlideInfo(slideXml, archive, slideRelFile:string): Promise<TemplateSlideInfo> {
+    let name
+
+    const slideNoteRels = await this.getSlideNoteRels(archive, slideRelFile)
+    if(slideNoteRels.length > 0) {
+      name = await this.getSlideNameFromNotes(archive, slideNoteRels)
+    }
+
+    if(!name) {
+      name = this.getNameFromSlideInfo(slideXml)
+    }
+
+    name = (!name) ? this.defaultSlideName : name
+
+    return {
+      name: name
+    }
+  }
+
+  getNameFromSlideInfo(slideXml): string {
+    const slideTitle = slideXml
+      .getElementsByTagName('p:ph')
+
+    if(slideTitle.length && slideTitle[0].getAttribute('type') === 'title') {
+      const titleElement = slideTitle[0].parentNode.parentNode.parentNode
+      const nameFragments = this.parseTitleElement(titleElement)
+
+      if(nameFragments.length) {
+        return nameFragments.join(' ')
+      }
+    }
+  }
+
+
+  async getSlideNoteRels(archive: JSZip, slideRelFile: string): Promise<Target[]> {
+    const relFileName = slideRelFile.replace('slides', '')
+    const slideRels = await XmlHelper.getTargetsByRelationshipType(
+      archive,
+      `ppt/slides/_rels${relFileName}.rels`,
+      this.relTypeNotes
+    )
+    return slideRels
+  }
+
+  async getSlideNameFromNotes(archive, slideNoteRels): Promise<string> {
+    const notesFile = slideNoteRels[0].file.replace('../', '')
+    const notesXml = await XmlHelper.getXmlFromArchive(
+      archive,
+      'ppt/' + notesFile
+    )
+
+    const titleElements = notesXml.getElementsByTagName('a:p')
+    if(titleElements.length > 0) {
+      const nameFragments = this.parseTitleElement(titleElements[0])
+      if(nameFragments.length) {
+        return nameFragments[0]
+      }
+    }
+  }
+
+  parseTitleElement(titleElement): string[] {
+    const nameFragments = []
+    const titleText = titleElement.getElementsByTagName('a:t')
+
+    if(titleText.length) {
+      for(let titleTextNode in titleText) {
+        if(titleText[titleTextNode].firstChild?.nodeValue) {
+          nameFragments.push(titleText[titleTextNode].firstChild.nodeValue)
+        }
+      }
+    }
+
+    return nameFragments
   }
 
   elementCreationIds(slideXml, archive): ElementInfo[] {

@@ -44,7 +44,12 @@ export type TemplateInfo = {
 export type SlideInfo = {
   id: number
   number: number
+  info: TemplateSlideInfo
   elements: ElementInfo[]
+}
+
+export type TemplateSlideInfo = {
+  name: string
 }
 
 export type ElementInfo = {

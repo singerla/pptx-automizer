@@ -18,7 +18,7 @@ test('create presentation, add and modify an existing table by creation id.', as
     .loadRoot(`RootTemplate.pptx`)
     .load(`SlideWithTables.pptx`, 'tables');
 
-  await pres.setCreationIds()
+  const creationIds = await pres.setCreationIds()
 
   const result = await pres
     .addSlide('tables', 1950777067, (slide) => {
