@@ -114,7 +114,7 @@ export class XmlTemplateHelper {
     if(titleElements.length > 0) {
       const nameFragments = this.parseTitleElement(titleElements[0])
       if(nameFragments.length) {
-        return nameFragments[0]
+        return nameFragments.join('')
       }
     }
   }
