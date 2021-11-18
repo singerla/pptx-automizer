@@ -166,6 +166,10 @@ export class Shape {
     arg1?: Document,
     arg2?: Workbook,
   ): void {
-    callbacks.forEach((callback) => callback(element, arg1, arg2));
+    callbacks.forEach((callback) => {
+      if(typeof callback === 'function') {
+        callback(element, arg1, arg2)
+      }
+    });
   }
 }
