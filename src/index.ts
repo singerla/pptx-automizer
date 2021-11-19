@@ -9,6 +9,7 @@ const setAttribute = ModifyHelper.setAttribute;
 import ModifyShapeHelper from './helper/modify-shape-helper';
 const setSolidFill = ModifyShapeHelper.setSolidFill;
 const setText = ModifyShapeHelper.setText;
+const replaceText = ModifyShapeHelper.replaceText;
 const setPosition = ModifyShapeHelper.setPosition;
 
 import ModifyTableHelper from './helper/modify-table-helper';
@@ -38,6 +39,7 @@ export const modify = {
   setAttribute,
   setSolidFill,
   setText,
+  replaceText,
   setPosition,
   setTableData,
   adjustHeight,

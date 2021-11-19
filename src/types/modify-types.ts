@@ -13,3 +13,7 @@ export type Modification = {
 export type ModificationTags = {
   [tag: string]: Modification;
 };
+export type ReplaceText = {
+  replace: string;
+  by: string;
+}

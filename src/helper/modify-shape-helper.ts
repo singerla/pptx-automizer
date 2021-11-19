@@ -1,4 +1,6 @@
+import { ReplaceText } from '../types/modify-types';
 import { ShapeCoordinates } from '../types/shape-types';
+import {XmlHelper} from './xml-helper';
 
 export default class ModifyShapeHelper {
   /**
@@ -15,7 +17,26 @@ export default class ModifyShapeHelper {
    * Set text content of modified shape
    */
   static setText = (text: string) => (element: XMLDocument | Element): void => {
-    element.getElementsByTagName('a:t')[0].firstChild.textContent = text;
+    const textNodes = element.getElementsByTagName('a:t')
+    textNodes[0].firstChild.textContent = text;
+    // TODO: get rid of remaining text nodes
+    // XmlHelper.sliceCollection(textNodes, textNodes.length-1)
+    // XmlHelper.dump(element)
+  };
+
+  /**
+   * Replace text content within modified shape
+   */
+  static replaceText = (replaceText: ReplaceText[]) => (element: XMLDocument | Element): void => {
+    const textNodes = element.getElementsByTagName('a:t')
+    for(const i in textNodes) {
+      if(!textNodes[i].firstChild?.textContent) continue
+      const textContent = textNodes[i].firstChild.textContent
+      replaceText.forEach(item => {
+        const replacedContent = textContent.replace(item.replace, item.by)
+        textNodes[i].firstChild.textContent = replacedContent
+      })
+    }
   };
 
   /**
@@ -29,16 +50,15 @@ export default class ModifyShapeHelper {
       y: { tag: 'a:off', attribute: 'y' },
       w: { tag: 'a:ext', attribute: 'cx' },
       h: { tag: 'a:ext', attribute: 'cy' },
+      cx: { tag: 'a:ext', attribute: 'cx' },
+      cy: { tag: 'a:ext', attribute: 'cy' },
     };
 
-    // const parent = 'a:xfrm';  // for pictures
-    // const parent = 'p:xfrm';  // for shapes
+    const xfrm = element.getElementsByTagName('a:off')[0].parentNode as Element
 
     Object.keys(pos).forEach((key) => {
-      element
-        //.getElementsByTagName(parent)[0]
-        .getElementsByTagName(map[key].tag)[0]
-        .setAttribute(map[key].attribute, pos[key]);
+      xfrm.getElementsByTagName(map[key].tag)[0]
+        .setAttribute(map[key].attribute, Math.round(pos[key]));
     });
   };
 }
