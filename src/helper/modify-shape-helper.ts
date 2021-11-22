@@ -1,6 +1,8 @@
-import { ReplaceText } from '../types/modify-types';
+import { ReplaceText, ReplaceTextOptions } from '../types/modify-types';
 import { ShapeCoordinates } from '../types/shape-types';
 import {XmlHelper} from './xml-helper';
+import {GeneralHelper, vd} from './general-helper';
+import TextReplaceHelper from './text-replace-helper';
 
 export default class ModifyShapeHelper {
   /**
@@ -27,17 +29,65 @@ export default class ModifyShapeHelper {
   /**
    * Replace text content within modified shape
    */
-  static replaceText = (replaceText: ReplaceText[]) => (element: XMLDocument | Element): void => {
-    const textNodes = element.getElementsByTagName('a:t')
-    for(const i in textNodes) {
-      if(!textNodes[i].firstChild?.textContent) continue
-      const textContent = textNodes[i].firstChild.textContent
-      replaceText.forEach(item => {
-        const replacedContent = textContent.replace(item.replace, item.by)
-        textNodes[i].firstChild.textContent = replacedContent
+  static replaceText = (replaceText: ReplaceText|ReplaceText[], options?: ReplaceTextOptions) => (element: XMLDocument | Element): void => {
+    const replaceTexts = GeneralHelper.arrayify(replaceText);
+    const defaultOptions = {
+      openingTag: '${',
+      closingTag: '}'
+    }
+    options = (!options) ? defaultOptions : {...defaultOptions, ...options}
+
+    ModifyShapeHelper.isolateTags(element, options)
+
+    const textBlocks = element.getElementsByTagName('a:r')
+    const length = textBlocks.length
+    for(let i=0; i<length; i++) {
+      const textBlock = textBlocks[i]
+
+      replaceTexts.forEach(item => {
+        const replace = defaultOptions.openingTag + item.replace + defaultOptions.closingTag
+        const textNode = textBlock.getElementsByTagName('a:t')[0]
+        const sourceText = textNode.firstChild.textContent
+        const match = sourceText.includes(replace)
+        const bys = GeneralHelper.arrayify(item.by);
+
+        if(match === true) {
+          // TODO: clone original text block to add more than one replacement
+          // if(bys.length > 1) {
+          //   for(i=1;i<=bys.length;i++) {
+          //     textBlock.parentNode.appendChild(textBlock.cloneNode(true))
+          //   }
+          // }
+
+          bys.forEach((by,i) => {
+            textNode.firstChild.textContent = textNode.firstChild.textContent.replace(replace, by.text)
+          })
+        }
       })
     }
   };
+
+  /**
+   * Assert all tags to be isolated (separated) into a single <a:r>-element.
+   * This is required to have a clean source object for possibly cloned text nodes.
+   * @param element
+   */
+  static isolateTags = (element: XMLDocument | Element, options: ReplaceTextOptions): void => {
+    const paragraphs = element.getElementsByTagName('a:p')
+    const length = paragraphs.length
+
+    for(let p=0; p<length; p++) {
+      const paragraph = paragraphs[p]
+      const textBlocks = paragraph.getElementsByTagName('a:r')
+
+      if(textBlocks.length === 0) continue
+
+      const textReplacementHelper = new TextReplaceHelper(options)
+      textReplacementHelper
+        .run(textBlocks)
+        .replaceChildren(paragraphs[p])
+    }
+  }
 
   /**
    * Set position and size of modified shape.

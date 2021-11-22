@@ -14,3 +14,7 @@ export class GeneralHelper {
     return !!Object.getOwnPropertyDescriptor(object, property);
   }
 }
+
+export const vd = (v:any): void => {
+  console.dir(v, {depth:10})
+}

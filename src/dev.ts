@@ -7,7 +7,8 @@ const automizer = new Automizer({
 
 const pres = automizer
   .loadRoot(`EmptyTemplate.pptx`)
-  .load(`SlideTitles.pptx`, 'table')
+  .load(`TextReplace.pptx`)
+  // .load(`Library - Retailer.pptx`)
   // .load(`SlideWithTables.pptx`, 'table')
   // .load('SlideWithImages.pptx')
   // .load(`RootTemplateWithCharts.pptx`);
@@ -40,18 +41,52 @@ const data2 = [
 ];
 
 const run = async() => {
-  const info = await pres.setCreationIds()
-  console.dir(info, {depth: 5})
+  // const info = await pres.setCreationIds()
+  // console.dir(info, {depth: 5})
 
   await pres
-    .addSlide('table', 1950777067, (slide) => {
-      // slide.modifyElement(
-      //   '{EFC74B4C-D832-409B-9CF4-73C1EFF132D8}',
-      //   [modify.setTableData(data1)]);
+    .addSlide('TextReplace.pptx', 1, (slide) => {
+      slide.modifyElement(
+        'Text',
+        modify.replaceText([
+          {
+            replace: 'replace',
+            by: {
+              text: 'Apples'
+            }
+          },
+          {
+            replace: 'by',
+            by: {
+              text: 'Bananas'
+            }
+          },
+          {
+            replace: 'replacement',
+            by: [
+              {
+                text: 'Really!',
+                style: {
+                  size: 10000
+                }
+              },
+              {
+                text: 'Fine!',
+                style: {
+                  size: 10000
+                }
+              }
+            ]
+          },
+        ], {
+          openingTag: '${',
+          closingTag: '}'
+        })
+      )
     })
-    .write(`modify-table.test.pptx`)
+    .write(`text-replacement.test.pptx`)
     .then((result) => {
-      console.info(result);
+      // console.info(result);
     })
 
   return pres
