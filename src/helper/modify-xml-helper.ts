@@ -44,6 +44,10 @@ export default class ModifyXmlHelper {
     element.firstChild.textContent = String(label);
   };
 
+  static getText = (element: Element): string => {
+    return element.firstChild.textContent;
+  };
+
   static value = (value: number | string, index?: number) => (
     element: Element,
   ): void => {

@@ -1,6 +1,7 @@
-import {vd} from './general-helper';
+import {GeneralHelper, vd} from './general-helper';
 import escape from 'regexp.escape';
 import {XmlHelper} from './xml-helper';
+import { ReplaceText, ReplaceTextOptions } from '../types/modify-types';
 
 type MatchType = 'openingTag'|'closingTag'
 type MatchedTag = {
@@ -21,9 +22,21 @@ type Expressions = {
 export default class TextReplaceHelper {
   expressions: Expressions
   matches: MatchedTag[]
+  element: XMLDocument
   newNodes: Element[]
+  options: ReplaceTextOptions
 
-  constructor(options) {
+  constructor(options: ReplaceTextOptions, element:XMLDocument) {
+    const defaultOptions = {
+      openingTag: '{{',
+      closingTag: '}}'
+    }
+
+    this.options = (!options) 
+      ? defaultOptions 
+      : {...defaultOptions, ...options}
+
+    this.element = element
     this.expressions = {
       openingTag: {
         escaped: escape(options.openingTag),
@@ -34,17 +47,65 @@ export default class TextReplaceHelper {
         length: options.closingTag.length
       }
     }
-
-    this.matches = <MatchedTag[]>[]
-    this.newNodes = <Element[]>[]
   }
 
-  run(textNodes:HTMLCollectionOf<Element>): this {
-    const length = textNodes.length
-    for(let i=0; i<length; i++) {
-      let nodeId = Number(i)
+  isolateTaggedNodes(): this {
+    const paragraphs = this.element.getElementsByTagName('a:p')
+    const length = paragraphs.length
 
-      const textNode = textNodes[i].getElementsByTagName('a:t')[0]
+    for(let p=0; p<length; p++) {
+      const paragraph = paragraphs[p]
+      const textBlocks = paragraph.getElementsByTagName('a:r')
+
+      if(textBlocks.length === 0) continue
+
+      this.getSortedTextBlocks(textBlocks)
+        .replaceChildren(paragraphs[p])
+    }
+
+    // XmlHelper.dump(this.element)
+    
+    return this
+  }
+
+  applyReplacements(replaceTexts:ReplaceText[]): void {
+    const textBlocks = this.element.getElementsByTagName('a:r')
+    const length = textBlocks.length
+
+    for(let i=0; i<length; i++) {
+      const textBlock = textBlocks[i]
+
+      replaceTexts.forEach(item => {
+        const replace = this.options.openingTag + item.replace + this.options.closingTag
+        let textNode = textBlock.getElementsByTagName('a:t')[0]
+        const sourceText = textNode.firstChild.textContent
+        const match = sourceText.includes(replace)
+        const bys = GeneralHelper.arrayify(item.by);
+
+        if(match === true) {
+          bys.forEach((by,i) => {
+            const replacedText = sourceText.replace(replace, by.text)
+            if(i >= 1) {
+              const addedTextBlock = textBlock.cloneNode(true) as Element
+              XmlHelper.insertAfter(addedTextBlock, textBlock)
+              textNode = addedTextBlock.getElementsByTagName('a:t')[0]
+            }
+            textNode.firstChild.textContent = replacedText
+          })
+        }
+      })
+    }
+  }
+
+  getSortedTextBlocks(textBlocks:HTMLCollectionOf<Element>): this {
+    this.matches = <MatchedTag[]>[]
+    this.newNodes = <Element[]>[]
+
+    const length = textBlocks.length
+    for(let i=0; i<length; i++) {
+      const nodeId = Number(i)
+
+      const textNode = textBlocks[i].getElementsByTagName('a:t')[0]
       const text = textNode.firstChild.textContent
 
       this.testForMatches(text, 'openingTag', nodeId)
@@ -52,15 +113,15 @@ export default class TextReplaceHelper {
     }
 
     this.sortMatches()
-    this.cloneNodes(textNodes)
+    this.cloneNodes(textBlocks)
 
     return this
   }
 
-  replaceChildren(parent: Element) {
+  replaceChildren(paragraph: Element): Element {
     if(this.newNodes.length === 0) return
 
-    const blocks = parent.getElementsByTagName('a:r')
+    const blocks = paragraph.getElementsByTagName('a:r')
     const length = blocks.length
     for(let i=0; i<length; i++) {
       const block = blocks[i]
@@ -68,13 +129,13 @@ export default class TextReplaceHelper {
     }
 
     this.newNodes.forEach(newNode => {
-      parent.appendChild(newNode)
+      paragraph.appendChild(newNode)
     })
 
-    return parent
+    return paragraph
   }
 
-  cloneNodes = (textNodes) => {
+  cloneNodes = (textNodes: Element[]|HTMLCollectionOf<Element>): void => {
     let lastNode = 0
     this.matches.forEach((match,m) => {
       if(match.type === 'openingTag') {
@@ -100,7 +161,7 @@ export default class TextReplaceHelper {
     })
   }
 
-  getTextNode(block:Element) {
+  getTextNode(block:Element): Element {
     return block.getElementsByTagName('a:t')[0]
   }
 
@@ -121,7 +182,7 @@ export default class TextReplaceHelper {
     this.newNodes.push(newBlock)
   }
 
-  pushMatchedNode = (sourceNodes: Element[], openingMatch:MatchedTag, endingMatch:MatchedTag): void => {
+  pushMatchedNode = (sourceNodes: Element[]|HTMLCollectionOf<Element>, openingMatch:MatchedTag, endingMatch:MatchedTag): void => {
     const sourceNodeId = openingMatch.nodeId
     const newBlock = sourceNodes[sourceNodeId].cloneNode(true) as Element
     const newNode = this.getTextNode(newBlock)
@@ -135,7 +196,8 @@ export default class TextReplaceHelper {
       } else if(i === endingMatch.nodeId && endingMatch.remaining > 0) {
         tagParts.push(this.stripAppendingText(sourceText, endingMatch))
       } else if(i === openingMatch.nodeId && openingMatch.nodeId === endingMatch.nodeId) {
-        tagParts.push(sourceText.slice(openingMatch.index, endingMatch.index+1))
+        const length = endingMatch.index + this.expressions.closingTag.length
+        tagParts.push(sourceText.slice(openingMatch.index, length))
       } else {
         tagParts.push(sourceText)
       }
@@ -146,27 +208,26 @@ export default class TextReplaceHelper {
     this.newNodes.push(newBlock)
   }
 
-  stripPrependingTextTag(text:string, match:MatchedTag) {
-    return text.slice(0, match.index - 1)
+  stripPrependingTextTag(text:string, match:MatchedTag): string {
+    return text.slice(0, match.index)
   }
-  stripAppendingTextTag(text, match:MatchedTag) {
-    return text.slice(match.index + 1)
+  stripAppendingTextTag(text:string, match:MatchedTag): string {
+    return text.slice(match.index + this.options.closingTag.length)
   }
-
-  stripPrependingText(text:string, match:MatchedTag) {
+  stripPrependingText(text:string, match:MatchedTag): string {
     return text.slice(match.index)
   }
-  stripAppendingText(text, match:MatchedTag) {
-    return text.slice(0, match.index + 1)
+  stripAppendingText(text:string, match:MatchedTag): string {
+    return text.slice(0, match.index + this.options.closingTag.length)
   }
 
-  testForMatches = (text:string, type:MatchType, nodeId:number) => {
+  testForMatches = (text:string, type:MatchType, nodeId:number): void => {
     const regExp = new RegExp(this.expressions[type].escaped, 'g')
     const allMatches = [...text.matchAll(regExp)]
     this.parseMatches(allMatches, type, nodeId, text)
   }
 
-  parseMatches = (matchedAll:RegExpMatchArray[], type:MatchType, nodeId:number, text:string) => {
+  parseMatches = (matchedAll:RegExpMatchArray[], type:MatchType, nodeId:number, text:string): void => {
     matchedAll.forEach(match => {
       if(match.length > 0) {
         this.matches.push({
@@ -185,26 +246,28 @@ export default class TextReplaceHelper {
     const length = match.input.length
     const index = match.index
 
-
     if(type === 'openingTag' && index > 0) {
-      const remainingText = match.input.slice(0, match.index)
-      if(remainingText.match(this.expressions.openingTag.escaped)) {
-        return 0
-      }
+      // const remainingText = match.input.slice(0, match.index)
+      // const hasClosingTag = remainingText.match(this.expressions.closingTag.escaped)
+      // if(hasClosingTag) {
+      //   return remainingText.length - hasClosingTag.index
+      // }
       return index - 1
     }
 
     if(type === 'closingTag' && length > index) {
-      const remainingText = match.input.slice(match.index+1)
-      if(remainingText.match(this.expressions.openingTag.escaped)) {
-        return 0
-      }
-      return length - index - 1
+      const closingTagLength = this.options.closingTag.length
+      // const remainingText = match.input.slice(match.index + closingTagLength)
+      // const hasOpeningTag = remainingText.match(this.expressions.openingTag.escaped)
+      // if(hasOpeningTag) {
+      //   return 0
+      // }
+      return length - index - closingTagLength
     }
     return 0
   }
 
-  sortMatches() {
+  sortMatches(): void {
     this.matches.sort((a, b) => {
       return a.nodeId - b.nodeId || a.index - b.index
     })
