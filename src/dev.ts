@@ -47,10 +47,10 @@ const run = async() => {
   await pres
     .addSlide('TextReplace.pptx', 1, (slide) => {
       slide.modifyElement(
-        'replaceText',
+        'setText',
         modify.setText('Test')
       )
-      
+
       slide.modifyElement(
         'replaceText',
         modify.replaceText([
