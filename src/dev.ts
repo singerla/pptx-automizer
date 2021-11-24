@@ -72,13 +72,21 @@ const run = async() => {
               {
                 text: 'Really!',
                 style: {
-                  size: 10000
+                  size: 10000,
+                  color: {
+                    type: 'srgbClr',
+                    value: 'ccaa4f'
+                  }
                 }
               },
               {
                 text: 'Fine!',
                 style: {
-                  size: 10000
+                  size: 10000,
+                  color: {
+                    type: 'schemeClr',
+                    value: 'accent2'
+                  }
                 }
               }
             ]

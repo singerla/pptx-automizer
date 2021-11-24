@@ -1,7 +1,6 @@
 import { ReplaceText, ReplaceTextOptions } from '../types/modify-types';
 import { ShapeCoordinates } from '../types/shape-types';
-import {XmlHelper} from './xml-helper';
-import {GeneralHelper, vd} from './general-helper';
+import { GeneralHelper } from './general-helper';
 import TextReplaceHelper from './text-replace-helper';
 
 export default class ModifyShapeHelper {
