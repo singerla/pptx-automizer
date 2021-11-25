@@ -8,3 +8,8 @@ export type TableData = {
   body?: TableRow[];
   footer?: TableRow | TableRow[];
 };
+
+export type ModifyTableParams = {
+  adjustWidth: boolean;
+  adjustHeight: boolean;
+}

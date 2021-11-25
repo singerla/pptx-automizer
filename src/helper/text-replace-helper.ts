@@ -32,8 +32,8 @@ export default class TextReplaceHelper {
 
     this.element = element
     this.expressions = {
-      openingTag: escape(options.openingTag),
-      closingTag: escape(options.closingTag)
+      openingTag: escape(this.options.openingTag),
+      closingTag: escape(this.options.closingTag)
     }
   }
 
@@ -47,7 +47,7 @@ export default class TextReplaceHelper {
       for(let r = 0; r<blocks.length; r++) {
         const block = blocks[r]
         const textContent = this.getTextElement(block).textContent
-        
+
         const match = textContent.matchAll(pattern)
         const matches = [...match]
 
@@ -56,6 +56,8 @@ export default class TextReplaceHelper {
         }
       }
     }
+
+    // XmlHelper.dump(this.element)
 
     return this
   }
@@ -98,7 +100,7 @@ export default class TextReplaceHelper {
 
   pushCharacterSplit(split:CharacterSplit[], from:number, to:number, text:string): void {
     split.push({
-      from: from, 
+      from: from,
       to: to,
       text: text.slice(from,to)
     })
@@ -108,7 +110,7 @@ export default class TextReplaceHelper {
     const newBlock = block.cloneNode(true) as Element
     const newTextElement = this.getTextElement(newBlock)
     newTextElement.firstChild.textContent = text
-    
+
     XmlHelper.insertAfter(newBlock, block)
 
     return newBlock
@@ -130,8 +132,8 @@ export default class TextReplaceHelper {
   applyReplacement(replaceText: ReplaceText, textBlock: Element): void {
     const replace = this.options.openingTag + replaceText.replace + this.options.closingTag
     let textNode = this.getTextElement(textBlock)
-
     const sourceText = textNode.firstChild.textContent
+
     if(sourceText.includes(replace)) {
       const bys = GeneralHelper.arrayify(replaceText.by);
       bys.forEach((by,i) => {
