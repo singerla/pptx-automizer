@@ -7,13 +7,13 @@ export default class ModifyTableHelper {
     element: XMLDocument | Element,
   ): void => {
     const modTable = new ModifyTable(element, data);
-    modTable.modify()
+    modTable.modify();
 
-    if(!params || params?.adjustHeight) {
+    if (!params || params?.adjustHeight) {
       modTable.adjustHeight();
     }
-    if(!params || params?.adjustWidth) {
-      modTable.adjustWidth()
+    if (!params || params?.adjustWidth) {
+      modTable.adjustWidth();
     }
   };
 

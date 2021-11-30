@@ -265,9 +265,7 @@ export class XmlHelper {
 
     for (const i in names) {
       if (names[i].getAttribute && names[i].getAttribute('name') === name) {
-        return names[i]
-          .parentNode
-          .parentNode as XMLDocument;
+        return names[i].parentNode.parentNode as XMLDocument;
       }
     }
 
@@ -275,15 +273,14 @@ export class XmlHelper {
   }
 
   static findByCreationId(doc: Document, creationId: string): XMLDocument {
-    const creationIds = doc.getElementsByTagName('a16:creationId')
+    const creationIds = doc.getElementsByTagName('a16:creationId');
 
     for (const i in creationIds) {
-      if (creationIds[i].getAttribute && creationIds[i].getAttribute('id') === creationId) {
-        return creationIds[i]
-          .parentNode
-          .parentNode
-          .parentNode
-          .parentNode
+      if (
+        creationIds[i].getAttribute &&
+        creationIds[i].getAttribute('id') === creationId
+      ) {
+        return creationIds[i].parentNode.parentNode.parentNode.parentNode
           .parentNode as XMLDocument;
       }
     }

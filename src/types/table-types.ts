@@ -12,4 +12,4 @@ export type TableData = {
 export type ModifyTableParams = {
   adjustWidth: boolean;
   adjustHeight: boolean;
-}
+};

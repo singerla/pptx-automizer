@@ -96,9 +96,7 @@ export class Shape {
       this.targetSlideFile,
     );
 
-    const findMethod = (this.hasCreationId)
-      ? 'findByCreationId'
-      : 'findByName'
+    const findMethod = this.hasCreationId ? 'findByCreationId' : 'findByName';
 
     const sourceElementOnTargetSlide = await XmlHelper[findMethod](
       targetSlideXml,
@@ -167,8 +165,8 @@ export class Shape {
     arg2?: Workbook,
   ): void {
     callbacks.forEach((callback) => {
-      if(typeof callback === 'function') {
-        callback(element, arg1, arg2)
+      if (typeof callback === 'function') {
+        callback(element, arg1, arg2);
       }
     });
   }

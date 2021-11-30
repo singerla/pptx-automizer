@@ -26,13 +26,10 @@ const setChartBubbles = ModifyChartHelper.setChartBubbles;
 import { AutomizerSummary } from './types/types';
 export type { AutomizerSummary };
 
-import { ModifyTableParams } from './types/table-types'
-import { ChartData } from './types/chart-types'
+import { ModifyTableParams } from './types/table-types';
+import { ChartData } from './types/chart-types';
 
-export type { 
-  ModifyTableParams,
-  ChartData
-}
+export type { ModifyTableParams, ChartData };
 
 export {
   Automizer,

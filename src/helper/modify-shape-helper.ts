@@ -18,17 +18,17 @@ export default class ModifyShapeHelper {
    * Set text content of modified shape
    */
   static setText = (text: string) => (element: XMLDocument | Element): void => {
-    const paragraphs = element.getElementsByTagName('a:p')
-    const length = paragraphs.length
-    for(let i=0; i<length; i++) {
-      const paragraph = paragraphs[i]
-      if(i === 0) {
-        const blocks = element.getElementsByTagName('a:r')
-        const length = blocks.length
-        for(let j=0; j<length; j++) {
-          const block = blocks[j]
-          if(j === 0) {
-            const textNode = block.getElementsByTagName('a:t')[0]
+    const paragraphs = element.getElementsByTagName('a:p');
+    const length = paragraphs.length;
+    for (let i = 0; i < length; i++) {
+      const paragraph = paragraphs[i];
+      if (i === 0) {
+        const blocks = element.getElementsByTagName('a:r');
+        const length = blocks.length;
+        for (let j = 0; j < length; j++) {
+          const block = blocks[j];
+          if (j === 0) {
+            const textNode = block.getElementsByTagName('a:t')[0];
             textNode.firstChild.textContent = text;
           } else {
             block.parentNode.removeChild(block);
@@ -44,12 +44,15 @@ export default class ModifyShapeHelper {
   /**
    * Replace text content within modified shape
    */
-  static replaceText = (replaceText: ReplaceText|ReplaceText[], options?: ReplaceTextOptions) => (element: XMLDocument | Element): void => {
+  static replaceText = (
+    replaceText: ReplaceText | ReplaceText[],
+    options?: ReplaceTextOptions,
+  ) => (element: XMLDocument | Element): void => {
     const replaceTexts = GeneralHelper.arrayify(replaceText);
 
     new TextReplaceHelper(options, element as XMLDocument)
       .isolateTaggedNodes()
-      .applyReplacements(replaceTexts)
+      .applyReplacements(replaceTexts);
   };
 
   /**
@@ -67,10 +70,11 @@ export default class ModifyShapeHelper {
       cy: { tag: 'a:ext', attribute: 'cy' },
     };
 
-    const xfrm = element.getElementsByTagName('a:off')[0].parentNode as Element
+    const xfrm = element.getElementsByTagName('a:off')[0].parentNode as Element;
 
     Object.keys(pos).forEach((key) => {
-      xfrm.getElementsByTagName(map[key].tag)[0]
+      xfrm
+        .getElementsByTagName(map[key].tag)[0]
         .setAttribute(map[key].attribute, Math.round(pos[key]));
     });
   };

@@ -103,7 +103,10 @@ export class Slide implements ISlide {
   }) {
     this.sourceTemplate = params.template;
     this.sourceNumber = params.slideNumber;
-    this.sourceNumber = this.getSlideNumber(params.template, params.slideNumber);
+    this.sourceNumber = this.getSlideNumber(
+      params.template,
+      params.slideNumber,
+    );
 
     this.sourcePath = `ppt/slides/slide${this.sourceNumber}.xml`;
     this.relsPath = `ppt/slides/_rels/slide${this.sourceNumber}.xml.rels`;
@@ -113,12 +116,12 @@ export class Slide implements ISlide {
   }
 
   getSlideNumber(template, slideNumber) {
-    if(template.creationIds !== undefined) {
-      return template.creationIds
-        .find(slideInfo => slideInfo.id === slideNumber)
-        .number
+    if (template.creationIds !== undefined) {
+      return template.creationIds.find(
+        (slideInfo) => slideInfo.id === slideNumber,
+      ).number;
     }
-    return slideNumber
+    return slideNumber;
   }
 
   /**
@@ -296,14 +299,16 @@ export class Slide implements ISlide {
   async getElementInfo(importElement: ImportElement): Promise<ImportedElement> {
     const template = this.root.getTemplate(importElement.presName);
 
-    const slideNumber = (importElement.mode === 'append')
-      ? this.getSlideNumber(template, importElement.slideNumber) : importElement.slideNumber
+    const slideNumber =
+      importElement.mode === 'append'
+        ? this.getSlideNumber(template, importElement.slideNumber)
+        : importElement.slideNumber;
 
     const sourcePath = `ppt/slides/slide${slideNumber}.xml`;
 
     const sourceArchive = await template.archive;
-    const hasCreationId = (template.creationIds !== undefined)
-    const method = (hasCreationId)
+    const hasCreationId = template.creationIds !== undefined;
+    const method = hasCreationId
       ? 'findByElementCreationId'
       : 'findByElementName';
 
@@ -430,18 +435,18 @@ export class Slide implements ISlide {
    * @internal
    * @returns slide note file number
    */
-  async getSlideNoteSourceNumber(): Promise<number|undefined> {
+  async getSlideNoteSourceNumber(): Promise<number | undefined> {
     const targets = await XmlHelper.getTargetsByRelationshipType(
       this.sourceArchive,
       `ppt/slides/_rels/slide${this.sourceNumber}.xml.rels`,
-      'http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide'
-    )
+      'http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide',
+    );
 
-    if(targets.length) {
+    if (targets.length) {
       const targetNumber = targets[0].file
         .replace('../notesSlides/notesSlide', '')
-        .replace('.xml', '')
-      return Number(targetNumber)
+        .replace('.xml', '');
+      return Number(targetNumber);
     }
   }
 
@@ -450,14 +455,13 @@ export class Slide implements ISlide {
    * @internal
    * @returns slide note files
    */
-  async copySlideNoteFiles(sourceNotesNumber:number): Promise<void> {
+  async copySlideNoteFiles(sourceNotesNumber: number): Promise<void> {
     await FileHelper.zipCopy(
       this.sourceArchive,
       `ppt/notesSlides/notesSlide${sourceNotesNumber}.xml`,
       this.targetArchive,
       `ppt/notesSlides/notesSlide${this.targetNumber}.xml`,
     );
-
 
     await FileHelper.zipCopy(
       this.sourceArchive,
@@ -472,7 +476,7 @@ export class Slide implements ISlide {
    * @internal
    * @returns slide note file
    */
-  async updateSlideNoteFile(sourceNotesNumber:number): Promise<void> {
+  async updateSlideNoteFile(sourceNotesNumber: number): Promise<void> {
     await XmlHelper.replaceAttribute(
       this.targetArchive,
       `ppt/notesSlides/_rels/notesSlide${this.targetNumber}.xml.rels`,

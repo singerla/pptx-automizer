@@ -33,8 +33,8 @@ export class ModifyTable {
           'a16:rowId': {
             index: r,
             modify: ModifyXmlHelper.attribute('val', r),
-          }
-        })
+          },
+        });
       });
     });
   }
@@ -43,12 +43,12 @@ export class ModifyTable {
     this.data.body[0].values.forEach((cell, c: number) => {
       this.table.modify({
         'a:gridCol': {
-          index: c
+          index: c,
         },
         'a16:colId': {
           index: c,
           modify: ModifyXmlHelper.attribute('val', c),
-        }
+        },
       });
     });
   }
@@ -104,7 +104,7 @@ export class ModifyTable {
   }
 
   adjustHeight() {
-    const tableHeight = this.getTableSize('cy')
+    const tableHeight = this.getTableSize('cy');
     const rowHeight = tableHeight / this.data.body.length;
 
     this.data.body.forEach((row: TableRow, r: number) => {
@@ -116,11 +116,11 @@ export class ModifyTable {
       });
     });
 
-    return this
+    return this;
   }
 
   adjustWidth() {
-    const tableWidth = this.getTableSize('cx')
+    const tableWidth = this.getTableSize('cx');
     const rowWidth = tableWidth / this.data.body[0].values.length;
 
     this.data.body[0].values.forEach((cell, c: number) => {
@@ -132,7 +132,7 @@ export class ModifyTable {
       });
     });
 
-    return this
+    return this;
   }
 
   getTableSize(orientation: string): number {

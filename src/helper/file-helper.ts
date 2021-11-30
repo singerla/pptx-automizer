@@ -23,7 +23,7 @@ export class FileHelper {
     }
 
     if (archive.files[file] === undefined) {
-      console.trace()
+      console.trace();
       throw new Error('Archived file not found: ' + file);
     }
     return archive.files[file].async(type || 'string');
@@ -65,11 +65,10 @@ export class FileHelper {
     content: Buffer,
     automizer: IPresentationProps,
   ): Promise<AutomizerSummary> {
-    await fs.promises.writeFile(location, content)
-      .catch((err) => {
-        console.error(err)
-        throw new Error(`Could not write output file: ${location}`);
-      })
+    await fs.promises.writeFile(location, content).catch((err) => {
+      console.error(err);
+      throw new Error(`Could not write output file: ${location}`);
+    });
 
     const duration: number = (Date.now() - automizer.timer) / 600;
 

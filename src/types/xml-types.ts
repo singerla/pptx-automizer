@@ -35,31 +35,30 @@ export type HelperElement = {
     | RelationshipAttribute;
 };
 
-
 export type TemplateInfo = {
-  name: string
-  slides: SlideInfo[]
-}
+  name: string;
+  slides: SlideInfo[];
+};
 
 export type SlideInfo = {
-  id: number
-  number: number
-  info: TemplateSlideInfo
-  elements: ElementInfo[]
-}
+  id: number;
+  number: number;
+  info: TemplateSlideInfo;
+  elements: ElementInfo[];
+};
 
 export type TemplateSlideInfo = {
-  name: string
-}
+  name: string;
+};
 
 export type ElementInfo = {
-  name: string
-  type: string
-  id: string
+  name: string;
+  type: string;
+  id: string;
   position: {
-    x: number,
-    y: number,
-    cx: number,
-    cy: number
-  }
-}
+    x: number;
+    y: number;
+    cx: number;
+    cy: number;
+  };
+};

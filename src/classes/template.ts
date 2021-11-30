@@ -78,12 +78,12 @@ export class Template implements ITemplate {
   }
 
   async setCreationIds(): Promise<SlideInfo[]> {
-    const archive = await this.archive
+    const archive = await this.archive;
 
-    const xmlTemplateHelper = new XmlTemplateHelper(archive)
-    this.creationIds = await xmlTemplateHelper.getCreationIds()
+    const xmlTemplateHelper = new XmlTemplateHelper(archive);
+    this.creationIds = await xmlTemplateHelper.getCreationIds();
 
-    return this.creationIds
+    return this.creationIds;
   }
 
   async appendSlide(slide: ISlide): Promise<void> {

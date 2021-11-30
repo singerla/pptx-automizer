@@ -170,12 +170,12 @@ export class ModifyChart {
     by prepareWorkbook(). See https://github.com/singerla/pptx-automizer/issues/11
    */
   prepareWorkbook(): void {
-    const rows = this.workbook.root.getElementsByTagName('row')
-    for(const r in rows) {
-      if(!rows[r].getElementsByTagName) continue
+    const rows = this.workbook.root.getElementsByTagName('row');
+    for (const r in rows) {
+      if (!rows[r].getElementsByTagName) continue;
 
-      const values = rows[r].getElementsByTagName('v')
-      if(values.length === 0) {
+      const values = rows[r].getElementsByTagName('v');
+      if (values.length === 0) {
         const toRemove = rows[r];
         toRemove.parentNode.removeChild(toRemove);
       }

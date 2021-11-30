@@ -42,17 +42,17 @@ export default class Automizer implements IPresentationProps {
 
     this.timer = Date.now();
 
-    if(params.rootTemplate) {
+    if (params.rootTemplate) {
       const location = this.getLocation(params.rootTemplate, 'template');
       this.rootTemplate = Template.import(location) as RootPresTemplate;
     }
 
-    if(params.presTemplates) {
-      this.params.presTemplates.forEach(file => {
+    if (params.presTemplates) {
+      this.params.presTemplates.forEach((file) => {
         const location = this.getLocation(file, 'template');
         const newTemplate = Template.import(location, file) as PresTemplate;
         this.templates.push(newTemplate);
-      })
+      });
     }
   }
 
@@ -60,8 +60,8 @@ export default class Automizer implements IPresentationProps {
 
    */
   public async presentation(): Promise<this> {
-    if(this.params?.useCreationIds === true) {
-      await this.setCreationIds()
+    if (this.params?.useCreationIds === true) {
+      await this.setCreationIds();
     }
     return this;
   }
@@ -114,15 +114,15 @@ export default class Automizer implements IPresentationProps {
    * @returns Promise<TemplateInfo[]>
    */
   public async setCreationIds(): Promise<TemplateInfo[]> {
-    const templateCreationId = []
-    for(const template of this.templates) {
-      const slideInfo = await template.setCreationIds()
+    const templateCreationId = [];
+    for (const template of this.templates) {
+      const slideInfo = await template.setCreationIds();
       templateCreationId.push({
         name: template.name,
-        slides: slideInfo
-      })
+        slides: slideInfo,
+      });
     }
-    return templateCreationId
+    return templateCreationId;
   }
 
   /**

@@ -15,6 +15,6 @@ export class GeneralHelper {
   }
 }
 
-export const vd = (v:any): void => {
-  console.dir(v, {depth:10})
-}
+export const vd = (v: any): void => {
+  console.dir(v, { depth: 10 });
+};

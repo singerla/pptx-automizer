@@ -7,12 +7,11 @@ const automizer = new Automizer({
 
 const pres = automizer
   .loadRoot(`EmptyTemplate.pptx`)
-  .load(`TextReplace.pptx`)
-  // .load(`Library - Retailer.pptx`)
-  // .load(`SlideWithTables.pptx`, 'table')
-  // .load('SlideWithImages.pptx')
-  // .load(`RootTemplateWithCharts.pptx`);
-
+  .load(`SlideWithTables.pptx`, 'tables');
+// .load(`Library - Retailer.pptx`)
+// .load(`SlideWithTables.pptx`, 'table')
+// .load('SlideWithImages.pptx')
+// .load(`RootTemplateWithCharts.pptx`);
 
 //
 // pres.getCreationIds()
@@ -40,73 +39,25 @@ const data2 = [
   [14, 12, 11],
 ];
 
-const run = async() => {
+const run = async () => {
   // const info = await pres.setCreationIds()
   // console.dir(info, {depth: 5})
 
   await pres
-    .addSlide('TextReplace.pptx', 1, (slide) => {
-      slide.modifyElement(
-        'setText',
-        modify.setText('Test')
-      )
-
-      slide.modifyElement(
-        'replaceText',
-        modify.replaceText([
-          {
-            replace: 'replace',
-            by: {
-              text: 'Apples'
-            }
-          },
-          {
-            replace: 'by',
-            by: {
-              text: 'Bananas'
-            }
-          },
-          {
-            replace: 'replacement',
-            by: [
-              {
-                text: 'Really!',
-                style: {
-                  size: 10000,
-                  color: {
-                    type: 'srgbClr',
-                    value: 'ccaa4f'
-                  }
-                }
-              },
-              {
-                text: 'Fine!',
-                style: {
-                  size: 10000,
-                  color: {
-                    type: 'schemeClr',
-                    value: 'accent2'
-                  }
-                }
-              }
-            ]
-          },
-        ], {
-          openingTag: '{{',
-          closingTag: '}}'
-        })
-      )
+    .addSlide('tables', 3, (slide) => {
+      slide.modifyElement('TableWithEmptyCells', [
+        modify.setTable(data1),
+        // modify.dump
+      ]);
     })
-    .write(`text-replacement.test.pptx`)
+    .write(`modify-existing-table-create-text.test.pptx`)
     .then((result) => {
       // console.info(result);
-    })
+    });
 
-  return pres
-}
+  return pres;
+};
 
-run()
-  .catch((error) => {
-    console.error(error);
-  });
-
+run().catch((error) => {
+  console.error(error);
+});

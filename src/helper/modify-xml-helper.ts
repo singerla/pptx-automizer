@@ -1,8 +1,9 @@
 import { Modification, ModificationTags } from '../types/modify-types';
 
 import StringIdGenerator from './cell-id-helper';
-import { GeneralHelper } from './general-helper';
+import { GeneralHelper, vd } from './general-helper';
 import { XmlHelper } from './xml-helper';
+import XmlElements, { XmlElementParams } from './xml-elements';
 
 export default class ModifyXmlHelper {
   root: XMLDocument | Element;
@@ -26,7 +27,7 @@ export default class ModifyXmlHelper {
 
       const index = modifier.index || 0;
 
-      this.assertNode(root.getElementsByTagName(tag), index, tag, modifier);
+      this.assertNode(root.getElementsByTagName(tag), index, tag, root);
       const element = root.getElementsByTagName(tag)[index];
 
       if (GeneralHelper.propertyExists(modifier, 'modify')) {
@@ -79,17 +80,29 @@ export default class ModifyXmlHelper {
   assertNode(
     collection: HTMLCollectionOf<Element>,
     index: number,
-    tag?: string,
-    info?,
+    tag: string,
+    parent: XMLDocument | Element,
   ): void {
     if (!collection[index]) {
       if (collection[collection.length - 1] === undefined) {
-        console.log(info);
-        throw new Error(`Index ${index} not found at "${tag}"`);
+        this.createNode(parent, tag, index);
+      } else {
+        const tplNode = collection[collection.length - 1];
+        const newChild = tplNode.cloneNode(true);
+        XmlHelper.insertAfter(newChild, tplNode);
       }
-      const tplNode = collection[collection.length - 1];
-      const newChild = tplNode.cloneNode(true);
-      XmlHelper.insertAfter(newChild, tplNode);
     }
+  }
+
+  createNode(parent: XMLDocument | Element, tag: string, index: number): void {
+    switch (tag) {
+      case 'a:t':
+        new XmlElements(parent).text();
+        return;
+    }
+
+    throw new Error(
+      `Could not create new node at index ${index}; Tag "${tag}"`,
+    );
   }
 }
