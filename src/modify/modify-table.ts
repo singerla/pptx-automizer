@@ -1,7 +1,9 @@
 import { XmlHelper } from '../helper/xml-helper';
 import ModifyXmlHelper from '../helper/modify-xml-helper';
 import { TableData, TableRow } from '../types/table-types';
-import { Modification, ModificationTags } from '../types/modify-types';
+import {Color, Modification, ModificationTags, TextStyle} from '../types/modify-types';
+import { vd } from '../helper/general-helper';
+import ModifyTextHelper from '../helper/modify-text-helper';
 
 export class ModifyTable {
   data: TableData;
@@ -28,7 +30,14 @@ export class ModifyTable {
   setRows() {
     this.data.body.forEach((row: TableRow, r: number) => {
       row.values.forEach((cell: number | string, c: number) => {
-        this.table.modify(this.row(r, this.column(c, this.cell(cell))));
+        const rowStyles = (row.styles && row.styles[c]) ? row.styles[c] : {}
+        this.table.modify(
+          this.row(r,
+            this.column(c,
+              this.cell(cell, rowStyles)
+            )
+          )
+        );
         this.table.modify({
           'a16:rowId': {
             index: r,
@@ -83,10 +92,13 @@ export class ModifyTable {
     };
   };
 
-  cell = (value: number | string): ModificationTags => {
+  cell = (value: number | string, style?: TextStyle): ModificationTags => {
     return {
       'a:t': {
         modify: ModifyXmlHelper.text(value),
+      },
+      'a:rPr': {
+        modify: ModifyTextHelper.setColor(style.color),
       },
     };
   };

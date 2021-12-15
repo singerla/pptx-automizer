@@ -1,5 +1,6 @@
 import { Color } from '../types/modify-types';
 import { XmlHelper } from './xml-helper';
+import {vd} from './general-helper';
 
 export type XmlElementParams = {
   color?: Color;
@@ -67,23 +68,41 @@ export default class XmlElements {
   }
 
   solidFill(): this {
-    const solidFill = this.document.createElement('a:solidFill');
-    const colorType = this.colorType();
-    solidFill.appendChild(colorType);
-
-    this.element.appendChild(solidFill);
+    const solidFill = this.assertTag('a:solidFill')
+    this.colorType(solidFill);
 
     return this;
   }
 
-  colorType() {
+  colorType(parent) {
     const tag = 'a:' + this.params.color.type;
-    const colorType = this.document.createElement(tag);
+    this.removeChildren(parent)
+    const colorType = this.assertTag(tag, parent)
     this.colorValue(colorType);
     return colorType;
   }
 
   colorValue(colorType: Element) {
     colorType.setAttribute('val', this.params.color.value);
+  }
+
+  removeChildren(parent: Element) {
+    XmlHelper.sliceCollection(parent.childNodes as unknown as HTMLCollectionOf<Element>, 0)
+  }
+
+  assertTag(tag: string, parent?:Element) {
+    const existing = this.element.getElementsByTagName(tag)
+    if(existing.length) {
+      return existing[0]
+    }
+
+    const created = this.document.createElement(tag)
+    if(parent) {
+      parent.appendChild(created);
+    } else {
+      this.element.appendChild(created);
+    }
+
+    return created
   }
 }

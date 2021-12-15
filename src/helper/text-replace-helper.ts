@@ -169,10 +169,10 @@ export default class TextReplaceHelper {
 
   applyTextStyle(style: TextStyle, styleElement: Element): void {
     if (style.color) {
-      ModifyTextHelper.setColor(styleElement, style.color);
+      ModifyTextHelper.setColor(style.color)(styleElement);
     }
     if (style.size) {
-      ModifyTextHelper.setSize(styleElement, style.size);
+      ModifyTextHelper.setSize(style.size)(styleElement);
     }
   }
 
