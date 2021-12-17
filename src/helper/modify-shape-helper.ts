@@ -2,6 +2,7 @@ import { ReplaceText, ReplaceTextOptions } from '../types/modify-types';
 import { ShapeCoordinates } from '../types/shape-types';
 import { GeneralHelper } from './general-helper';
 import TextReplaceHelper from './text-replace-helper';
+import ModifyTextHelper from './modify-text-helper';
 
 export default class ModifyShapeHelper {
   /**
@@ -18,31 +19,11 @@ export default class ModifyShapeHelper {
    * Set text content of modified shape
    */
   static setText = (text: string) => (element: XMLDocument | Element): void => {
-    const paragraphs = element.getElementsByTagName('a:p');
-    const length = paragraphs.length;
-    for (let i = 0; i < length; i++) {
-      const paragraph = paragraphs[i];
-      if (i === 0) {
-        const blocks = element.getElementsByTagName('a:r');
-        const length = blocks.length;
-        for (let j = 0; j < length; j++) {
-          const block = blocks[j];
-          if (j === 0) {
-            const textNode = block.getElementsByTagName('a:t')[0];
-            textNode.firstChild.textContent = text;
-          } else {
-            block.parentNode.removeChild(block);
-          }
-        }
-      } else {
-        paragraph.parentNode.removeChild(paragraph);
-      }
-    }
-    // XmlHelper.dump(element)
+    ModifyTextHelper.setText(text)(element as Element)
   };
 
   /**
-   * Replace text content within modified shape
+   * Replace tagged text content within modified shape
    */
   static replaceText = (
     replaceText: ReplaceText | ReplaceText[],

@@ -125,7 +125,7 @@ export default class TextReplaceHelper {
   insertBlock(block: Element, text: string): Element {
     const newBlock = block.cloneNode(true) as Element;
     const newTextElement = this.getTextElement(newBlock);
-    newTextElement.firstChild.textContent = text;
+    ModifyTextHelper.content(text)(newTextElement)
 
     XmlHelper.insertAfter(newBlock, block);
 
@@ -156,23 +156,14 @@ export default class TextReplaceHelper {
       bys.forEach((by, i) => {
         const replacedText = sourceText.replace(replace, by.text);
         textNode = this.assertTextNode(i, textBlock, textNode);
-        textNode.firstChild.textContent = replacedText;
+        ModifyTextHelper.content(replacedText)(textNode)
 
         if (by.style) {
           const styleParent = textNode.parentNode as Element;
           const styleElement = styleParent.getElementsByTagName('a:rPr')[0];
-          this.applyTextStyle(by.style, styleElement);
+          ModifyTextHelper.style(by.style)(styleElement)
         }
       });
-    }
-  }
-
-  applyTextStyle(style: TextStyle, styleElement: Element): void {
-    if (style.color) {
-      ModifyTextHelper.setColor(style.color)(styleElement);
-    }
-    if (style.size) {
-      ModifyTextHelper.setSize(style.size)(styleElement);
     }
   }
 

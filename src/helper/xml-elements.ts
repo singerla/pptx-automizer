@@ -67,42 +67,21 @@ export default class XmlElements {
     return ln;
   }
 
-  solidFill(): this {
-    const solidFill = this.assertTag('a:solidFill')
-    this.colorType(solidFill);
-
-    return this;
+  solidFill(): Element {
+    const solidFill = this.document.createElement('a:solidFill')
+    const colorType = this.colorType();
+    solidFill.appendChild(colorType);
+    return solidFill;
   }
 
-  colorType(parent) {
+  colorType(): Element {
     const tag = 'a:' + this.params.color.type;
-    this.removeChildren(parent)
-    const colorType = this.assertTag(tag, parent)
+    const colorType = this.document.createElement(tag)
     this.colorValue(colorType);
     return colorType;
   }
 
   colorValue(colorType: Element) {
     colorType.setAttribute('val', this.params.color.value);
-  }
-
-  removeChildren(parent: Element) {
-    XmlHelper.sliceCollection(parent.childNodes as unknown as HTMLCollectionOf<Element>, 0)
-  }
-
-  assertTag(tag: string, parent?:Element) {
-    const existing = this.element.getElementsByTagName(tag)
-    if(existing.length) {
-      return existing[0]
-    }
-
-    const created = this.document.createElement(tag)
-    if(parent) {
-      parent.appendChild(created);
-    } else {
-      this.element.appendChild(created);
-    }
-
-    return created
   }
 }

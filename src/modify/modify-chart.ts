@@ -13,6 +13,7 @@ import { XmlHelper } from '../helper/xml-helper';
 import CellIdHelper from '../helper/cell-id-helper';
 import { Workbook } from '../types/types';
 import ModifyXmlHelper from '../helper/modify-xml-helper';
+import ModifyTextHelper from '../helper/modify-text-helper';
 
 export class ModifyChart {
   data: ChartData;
@@ -249,7 +250,7 @@ export class ModifyChart {
         modify: ModifyXmlHelper.range(series + 1),
       },
       'c:v': {
-        modify: ModifyXmlHelper.text(label),
+        modify: ModifyTextHelper.content(label),
       },
     };
   };
@@ -399,7 +400,7 @@ export class ModifyChart {
   cellValue(value: number): ModificationTags {
     return {
       v: {
-        modify: ModifyXmlHelper.text(String(value)),
+        modify: ModifyTextHelper.content(value),
       },
     };
   }

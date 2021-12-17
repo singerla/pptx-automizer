@@ -41,10 +41,6 @@ export default class ModifyXmlHelper {
     }
   }
 
-  static text = (label: number | string) => (element: Element): void => {
-    element.firstChild.textContent = String(label);
-  };
-
   static getText = (element: Element): string => {
     return element.firstChild.textContent;
   };
@@ -65,6 +61,10 @@ export default class ModifyXmlHelper {
   ): void => {
     element.setAttribute(attribute, String(value));
   };
+
+  static booleanAttribute = (attribute: string, state: boolean) => (element: Element): void => {
+    element.setAttribute(attribute, (state === true) ? '1' : '0');
+  }
 
   static range = (series: number, length?: number) => (
     element: Element,

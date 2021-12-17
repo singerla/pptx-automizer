@@ -95,10 +95,10 @@ export class ModifyTable {
   cell = (value: number | string, style?: TextStyle): ModificationTags => {
     return {
       'a:t': {
-        modify: ModifyXmlHelper.text(value),
+        modify: ModifyTextHelper.content(value),
       },
       'a:rPr': {
-        modify: ModifyTextHelper.setColor(style.color),
+        modify: ModifyTextHelper.style(style),
       },
     };
   };
