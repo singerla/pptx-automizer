@@ -1,14 +1,12 @@
-import {Color} from './modify-types';
+import {Color, TextStyle} from './modify-types';
 
 export type TableRow = {
   label?: string;
   values: (string | number)[];
-  styles?: TableRowStyle[];
+  styles?: (null|TableRowStyle)[];
 };
 
-export type TableRowStyle = {
-  color: Color
-}
+export type TableRowStyle = TextStyle
 
 export type TableData = {
   header?: TableRow | TableRow[];

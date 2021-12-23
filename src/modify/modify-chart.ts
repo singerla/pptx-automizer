@@ -5,15 +5,17 @@ import {
   ChartCategory,
   ChartPoint,
   ChartBubble,
-  ChartValue,
   ChartDataMapper,
+  ChartSeries, ChartValueStyle,
 } from '../types/chart-types';
-import { ModificationTags, Modification } from '../types/modify-types';
+import {ModificationTags, Modification, Color} from '../types/modify-types';
 import { XmlHelper } from '../helper/xml-helper';
 import CellIdHelper from '../helper/cell-id-helper';
 import { Workbook } from '../types/types';
 import ModifyXmlHelper from '../helper/modify-xml-helper';
 import ModifyTextHelper from '../helper/modify-text-helper';
+import { vd } from '../helper/general-helper';
+import ModifyColorHelper from '../helper/modify-color-helper';
 
 export class ModifyChart {
   data: ChartData;
@@ -35,6 +37,8 @@ export class ModifyChart {
   ) {
     this.data = data;
 
+    // XmlHelper.dump(chart)
+
     this.chart = new ModifyXmlHelper(chart);
     this.workbook = new ModifyXmlHelper(workbook.sheet);
     this.workbookTable = new ModifyXmlHelper(workbook.table);
@@ -44,11 +48,13 @@ export class ModifyChart {
     this.columns = this.setColumns(slot);
     this.height = this.data.categories.length;
     this.width = this.columns.length;
+
   }
 
   modify(): void {
     this.setValues();
     this.setSeries();
+    this.setPointStyles();
     this.sliceChartSpace();
 
     this.prepareWorkbook();
@@ -56,6 +62,8 @@ export class ModifyChart {
     this.sliceWorkbook();
     this.setWorkbookTable();
     this.sliceWorkbookTable();
+
+    // XmlHelper.dump(this.chart.root as XMLDocument)
   }
 
   setColumns(slot: ChartSlot[]): ChartColumn[] {
@@ -88,7 +96,7 @@ export class ModifyChart {
         this[slot.type] !== undefined &&
         typeof this[slot.type] === 'function'
           ? (
-              point: number | ChartPoint | ChartBubble | ChartValue,
+              point: number | null | ChartPoint | ChartBubble,
               r: number,
               category: ChartCategory,
             ): ModificationTags => {
@@ -121,7 +129,7 @@ export class ModifyChart {
     this.data.categories.forEach((category, c) => {
       this.columns
         .filter((col) => col.chart)
-        .forEach((col) => {
+        .forEach((col, s) => {
           if (category.values[col.series] === undefined) {
             throw new Error(
               `No value for category "${category.label}" at series "${col.label}".`,
@@ -135,6 +143,22 @@ export class ModifyChart {
     });
   }
 
+  setPointStyles(): void {
+    const count = {}
+    this.data.categories.forEach((category, c) => {
+      if(category.styles) {
+        category.styles.forEach((style, s) => {
+          if(style === null) return
+          count[s] = (!count[s]) ? 0 : count[s]
+          this.chart.modify(
+            this.series(s, this.chartPoint(count[s], c, style))
+          )
+          count[s]++
+        })
+      }
+    })
+  }
+
   setSeries(): void {
     this.columns.forEach((column, colId) => {
       if (column.isStrRef === true) {
@@ -142,6 +166,7 @@ export class ModifyChart {
           this.series(column.series, {
             ...this.seriesId(column.series),
             ...this.seriesLabel(column.label, colId),
+            ...this.seriesStyle(this.data.series[colId]),
           }),
         );
       }
@@ -233,6 +258,22 @@ export class ModifyChart {
     };
   };
 
+  chartPoint = (index: number, idx: number, style: ChartValueStyle): ModificationTags => {
+    return {
+      'c:dPt': {
+        index: index,
+        children: {
+          'c:idx': {
+            modify: ModifyXmlHelper.attribute('val', idx)
+          },
+          'c:spPr': {
+            modify: ModifyColorHelper.solidFill(style.color),
+          }
+        }
+      }
+    }
+  }
+
   seriesId = (series: number): ModificationTags => {
     return {
       'c:idx': {
@@ -251,6 +292,15 @@ export class ModifyChart {
       },
       'c:v': {
         modify: ModifyTextHelper.content(label),
+      },
+    };
+  };
+
+  seriesStyle = (series: ChartSeries): ModificationTags => {
+    if(!series.style) return
+    return {
+      'c:spPr': {
+        modify: ModifyColorHelper.solidFill(series.style.color),
       },
     };
   };
@@ -282,7 +332,7 @@ export class ModifyChart {
   customSeries(
     r: number,
     targetCol: number,
-    point: number | ChartPoint | ChartBubble | ChartValue,
+    point: number | ChartPoint | ChartBubble,
     category: ChartCategory,
     tag: string,
     mapData: ChartDataMapper,
@@ -292,7 +342,7 @@ export class ModifyChart {
     };
   }
 
-  point = (r: number, c: number, value: number | string): Modification => {
+  point = (r: number, c: number, value: string|number): Modification => {
     return {
       children: {
         'c:pt': {

@@ -75,13 +75,39 @@ export default class XmlElements {
   }
 
   colorType(): Element {
-    const tag = 'a:' + this.params.color.type;
+    const tag = 'a:' + (this.params?.color?.type || 'srgbClr');
     const colorType = this.document.createElement(tag)
     this.colorValue(colorType);
     return colorType;
   }
 
   colorValue(colorType: Element) {
-    colorType.setAttribute('val', this.params.color.value);
+    colorType.setAttribute('val', this.params?.color?.value || 'cccccc');
+  }
+
+  dataPoint(): this {
+    const dPt = this.document.createElement('c:dPt');
+    dPt.appendChild(this.idx());
+    dPt.appendChild(this.spPr());
+
+    const nextSibling = this.element.getElementsByTagName('c:cat')[0];
+    nextSibling.parentNode.insertBefore(dPt, nextSibling)
+
+    return this;
+  }
+
+  spPr(): Element {
+    const spPr = this.document.createElement('c:spPr')
+    spPr.appendChild(this.solidFill());
+    spPr.appendChild(this.line());
+    spPr.appendChild(this.effectLst());
+
+    return spPr
+  }
+
+  idx(): Element {
+    const idx = this.document.createElement('c:idx')
+    idx.setAttribute('val', String(0))
+    return idx
   }
 }

@@ -1,4 +1,5 @@
 import Automizer, { modify } from '../src/index';
+import {TableRow, TableRowStyle} from '../dist/types/table-types';
 
 test('create presentation, add and modify an existing table.', async () => {
   const automizer = new Automizer({
@@ -30,7 +31,20 @@ test('create presentation, add and modify an existing table.', async () => {
 
   const data3 = {
     body: [
-      { label: 'item test r1', values: ['test1', 10, 16] },
+      <TableRow> {
+        label: 'item test r1',
+        values: ['test1', 10, 16],
+        styles:
+          [
+            null,
+            <TableRowStyle> {
+              color: {
+                type: 'srgbClr', value: 'cccccc'
+              },
+              size: 1400
+            }
+          ]
+        },
       { label: 'item test r2', values: ['test2', 12, 18] },
       { label: 'item test r3', values: ['test3', 14, 12] },
     ],

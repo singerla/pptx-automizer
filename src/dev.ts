@@ -1,4 +1,5 @@
-import Automizer, { modify } from './index';
+import Automizer, {ChartData, modify} from './index';
+import {vd} from './helper/general-helper';
 
 const automizer = new Automizer({
   templateDir: `${__dirname}/../__tests__/pptx-templates`,
@@ -6,54 +7,71 @@ const automizer = new Automizer({
 });
 
 const pres = automizer
-  .loadRoot(`EmptyTemplate.pptx`)
-  .load(`SlideWithTables.pptx`, 'tables');
-// .load(`Library - Retailer.pptx`)
-// .load(`SlideWithTables.pptx`, 'table')
-// .load('SlideWithImages.pptx')
-// .load(`RootTemplateWithCharts.pptx`);
-
-//
-// pres.getCreationIds()
-//   .then(response => {
-//     console.dir(response, {depth: 5})
-//   })
-
-const data1 = {
-  body: [
-    { label: 'item test r1', values: ['test1', 10, 16, 12] },
-    { label: 'item test r2', values: ['test2', 12, 18, 15] },
-    { label: 'item test r3', values: ['test3', 14, 12, 11] },
-    // { label: 'item test r4', values: ['test4', 14, 12, 11] },
-    // { label: 'item test r5', values: ['test5', 14, 12, 11] },
-    // { label: 'item test r6', values: ['test6', 999, 12, 11] },
-    // { label: 'item test r6', values: ['test7', 999, 12, 11] },
-    // { label: 'item test r6', values: ['test8', 999, 12, 11] },
-    // { label: 'item test r6', values: ['test9', 999, 12, 11] },
-  ],
-};
-
-const data2 = [
-  [10, 16, 12],
-  [12, 18, 15],
-  [14, 12, 11],
-];
+  .loadRoot(`RootTemplate.pptx`)
+  .load(`SlideWithChartPoints.pptx`, 'charts');
 
 const run = async () => {
-  // const info = await pres.setCreationIds()
-  // console.dir(info, {depth: 5})
-
   await pres
-    .addSlide('tables', 3, (slide) => {
-      slide.modifyElement('TableWithEmptyCells', [
-        modify.setTable(data1),
-        // modify.dump
+    .addSlide('charts', 1, (slide) => {
+      slide.modifyElement('ColumnChart', [
+        modify.setChartData(<ChartData>{
+          series: [
+            {
+              label: 'series 1',
+              style: {
+                color: {
+                  type: 'schemeClr', value: 'accent1'
+                }
+              }
+            },
+            {label: 'series 2'},
+            {label: 'series 3'},
+          ],
+          categories: [
+            {
+              label: 'cat 2-1',
+              values: [50, 50, 20],
+              styles: [
+                {
+                  color: {
+                    type: 'srgbClr', value: '333333'
+                  }
+                }
+              ]
+            },
+            {
+              label: 'cat 2-2',
+              values: [25, 10, 20],
+              styles: [
+                null,
+                {
+                  color: {
+                    type: 'srgbClr', value: 'efefef'
+                  }
+                },
+                {
+                  color: {
+                    type: 'srgbClr', value: 'eecc00'
+                  }
+                }
+              ]
+            },
+            {label: 'cat 2-3', values: [15, 50, 20]},
+            {label: 'cat 2-4', values: [26, 50, 20], styles: [
+              null,
+              null,
+              {
+                color: {
+                  type: 'srgbClr', value: 'eeccff'
+                }
+              }
+            ]}
+          ],
+
+        })
       ]);
     })
-    .write(`modify-existing-table-create-text.test.pptx`)
-    .then((result) => {
-      // console.info(result);
-    });
+    .write(`modify-existing-chart-style.test.pptx`);
 
   return pres;
 };

@@ -86,6 +86,7 @@ export default class ModifyXmlHelper {
     if (!collection[index]) {
       if (collection[collection.length - 1] === undefined) {
         this.createNode(parent, tag, index);
+        vd('created ' + tag + '@' + index)
       } else {
         const tplNode = collection[collection.length - 1];
         const newChild = tplNode.cloneNode(true);
@@ -98,6 +99,9 @@ export default class ModifyXmlHelper {
     switch (tag) {
       case 'a:t':
         new XmlElements(parent).text();
+        return;
+      case 'c:dPt':
+        new XmlElements(parent).dataPoint();
         return;
     }
 

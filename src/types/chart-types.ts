@@ -1,35 +1,38 @@
-import { ModificationTags } from './modify-types';
+import {Color, ModificationTags} from './modify-types';
 
-export type ChartValue = {
-  value: number;
+export type ChartPointValue = null|number
+export type ChartValueStyle = {
+  color?: Color
 };
 export type ChartPoint = {
-  x: number;
-  y: number;
+  x: ChartPointValue;
+  y: ChartPointValue;
 };
 export type ChartBubble = {
-  x: number;
-  y: number;
+  x: ChartPointValue;
+  y: ChartPointValue;
   size: number;
 };
 export type ChartSeries = {
   label: string;
+  style?: ChartValueStyle;
 };
 export type ChartCategory = {
   label: string;
-  y?: number;
-  values: number[] | ChartValue[] | ChartPoint[] | ChartBubble[];
+  y?: ChartPointValue;
+  values: ChartPointValue[];
+  styles?: ChartValueStyle[]
 };
 export type ChartColumn = {
   series?: number;
   label: string;
   worksheet: (
-    point: number | ChartPoint | ChartBubble | ChartValue,
+    point: ChartPointValue | ChartPoint | ChartBubble,
     r: number,
     category: ChartCategory,
   ) => void;
   chart?: (
-    point: number | ChartPoint | ChartBubble | ChartValue,
+    point: ChartPointValue | ChartPoint | ChartBubble,
     r: number,
     category: ChartCategory,
   ) => ModificationTags;
@@ -42,7 +45,7 @@ export type ChartData = {
 };
 export type ChartDataMapper = {
   (
-    point: number | ChartPoint | ChartBubble | ChartValue,
+    point: number | ChartPoint | ChartBubble,
     category?: ChartCategory,
   ): number;
 };
