@@ -279,6 +279,14 @@ export class ModifyChart {
           },
           'c:spPr': {
             modify: ModifyColorHelper.solidFill(style.color),
+          },
+          'c:marker': {
+            isRequired: false,
+            children: {
+              'c:spPr': {
+                modify: ModifyColorHelper.solidFill(style.marker?.color),
+              }
+            }
           }
         }
       }
