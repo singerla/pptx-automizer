@@ -5,7 +5,7 @@ import {
   ChartBubble,
   ChartSlot,
   ChartCategory,
-  ChartSeries,
+  ChartSeries, ChartPoint,
 } from '../types/chart-types';
 
 export default class ModifyChartHelper {
@@ -61,6 +61,44 @@ export default class ModifyChartHelper {
     });
 
     new ModifyChart(chart, workbook, data, slots).modify();
+  };
+
+  /**
+   * Set chart data to modify scatter charts.
+   * See `__tests__/modify-chart-scatter.test.js`
+   */
+  static setChartScatter = (data: ChartData) => (
+    element: XMLDocument | Element,
+    chart?: Document,
+    workbook?: Workbook,
+  ): void => {
+    const slots = [] as ChartSlot[];
+
+    data.series.forEach((series: ChartSeries, s: number) => {
+      const colId = s * 2;
+      slots.push({
+        index: s,
+        series: series,
+        targetCol: colId + 1,
+        type: 'customSeries',
+        tag: 'c:xVal',
+        mapData: (point: ChartPoint): number => point.x,
+      });
+      slots.push({
+        label: `${series.label}-Y-Value`,
+        index: s,
+        series: series,
+        targetCol: colId + 2,
+        type: 'customSeries',
+        tag: 'c:yVal',
+        mapData: (point: ChartPoint): number => point.y,
+        isStrRef: false,
+      });
+    });
+
+    new ModifyChart(chart, workbook, data, slots).modify();
+
+    // XmlHelper.dump(chart)
   };
 
   /**

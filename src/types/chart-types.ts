@@ -2,7 +2,10 @@ import {Color, ModificationTags} from './modify-types';
 
 export type ChartPointValue = null|number
 export type ChartValueStyle = {
-  color?: Color
+  color?: Color;
+  marker?: {
+    color?: Color;
+  }
 };
 export type ChartPoint = {
   x: ChartPointValue;
@@ -20,7 +23,7 @@ export type ChartSeries = {
 export type ChartCategory = {
   label: string;
   y?: ChartPointValue;
-  values: ChartPointValue[];
+  values: (ChartPointValue | ChartPoint | ChartBubble)[];
   styles?: ChartValueStyle[]
 };
 export type ChartColumn = {

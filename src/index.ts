@@ -21,6 +21,7 @@ const setTable = ModifyTableHelper.setTable;
 import ModifyChartHelper from './helper/modify-chart-helper';
 const setChartData = ModifyChartHelper.setChartData;
 const setChartVerticalLines = ModifyChartHelper.setChartVerticalLines;
+const setChartScatter = ModifyChartHelper.setChartScatter;
 const setChartBubbles = ModifyChartHelper.setChartBubbles;
 
 import { AutomizerSummary } from './types/types';
@@ -52,5 +53,6 @@ export const modify = {
   setTable,
   setChartData,
   setChartVerticalLines,
+  setChartScatter,
   setChartBubbles,
 };

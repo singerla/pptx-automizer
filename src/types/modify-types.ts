@@ -9,6 +9,7 @@ export type Modification = {
   collection?: ModifyCollectionCallback | ModifyCollectionCallback;
   children?: ModificationTags;
   modify?: ModifyCallback | ModifyCallback[];
+  isRequired?: boolean;
 };
 export type ModificationTags = {
   [tag: string]: Modification;

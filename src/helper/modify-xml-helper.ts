@@ -26,8 +26,19 @@ export default class ModifyXmlHelper {
       }
 
       const index = modifier.index || 0;
+      const isRequired = (modifier.isRequired !== undefined)
+        ? modifier.isRequired : true;
 
-      this.assertNode(root.getElementsByTagName(tag), index, tag, root);
+      const asserted = this.assertNode(root.getElementsByTagName(tag), index, tag, root, isRequired);
+      if(asserted === false) {
+        if(isRequired === true) {
+          // XmlHelper.dump(root)
+          // vd(tags)
+          vd('Could not assert required tag: ' + tag + '@index:' + index)
+        }
+        return
+      }
+
       const element = root.getElementsByTagName(tag)[index];
 
       if (GeneralHelper.propertyExists(modifier, 'modify')) {
@@ -82,31 +93,36 @@ export default class ModifyXmlHelper {
     index: number,
     tag: string,
     parent: XMLDocument | Element,
-  ): void {
+    required: boolean
+  ): boolean {
     if (!collection[index]) {
       if (collection[collection.length - 1] === undefined) {
-        this.createNode(parent, tag, index);
-        vd('created ' + tag + '@' + index)
+        return this.createNode(parent, tag, index, required);
       } else {
         const tplNode = collection[collection.length - 1];
         const newChild = tplNode.cloneNode(true);
         XmlHelper.insertAfter(newChild, tplNode);
       }
     }
+    return true
   }
 
-  createNode(parent: XMLDocument | Element, tag: string, index: number): void {
+  createNode(parent: XMLDocument | Element, tag: string, index: number, required:boolean): boolean {
     switch (tag) {
       case 'a:t':
         new XmlElements(parent).text();
-        return;
+        return true;
       case 'c:dPt':
         new XmlElements(parent).dataPoint();
-        return;
+        return true;
     }
+    //
+    // if(required === true) {
+    //   throw new Error(
+    //     `Could not create new node at index ${index}; Tag "${tag}"`,
+    //   );
+    // }
 
-    throw new Error(
-      `Could not create new node at index ${index}; Tag "${tag}"`,
-    );
+    return false
   }
 }

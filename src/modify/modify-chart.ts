@@ -54,6 +54,7 @@ export class ModifyChart {
   modify(): void {
     this.setValues();
     this.setSeries();
+    this.setSeriesDataLabels();
     this.setPointStyles();
     this.sliceChartSpace();
 
@@ -171,6 +172,16 @@ export class ModifyChart {
         );
       }
     });
+  }
+
+  setSeriesDataLabels = (): void => {
+    this.data.series.forEach((series, s) => {
+      this.data.categories.forEach((category, c) => {
+        this.chart.modify(
+          this.series(s, this.seriesDataLabel(c, s, category.label))
+        )
+      })
+    })
   }
 
   sliceChartSpace(): void {
@@ -297,11 +308,40 @@ export class ModifyChart {
   };
 
   seriesStyle = (series: ChartSeries): ModificationTags => {
-    if(!series.style) return
+    if(!series?.style) return
+
     return {
       'c:spPr': {
         modify: ModifyColorHelper.solidFill(series.style.color),
       },
+      'c:marker': {
+        isRequired: false,
+        children: {
+          'c:spPr': {
+            modify: ModifyColorHelper.solidFill(series.style.marker?.color),
+          }
+        }
+      },
+    };
+  };
+
+  seriesDataLabel = (r: number, c: number, value: string|number): ModificationTags => {
+    return {
+      'c15:datalabelsRange': {
+        isRequired: false,
+        children: {
+          'c:pt': {
+            index: r,
+            modify: ModifyXmlHelper.value(value, r),
+          },
+          'c15:f': {
+            modify: ModifyXmlHelper.range(0, this.height),
+          },
+          'c:ptCount': {
+            modify: ModifyXmlHelper.attribute('val', this.height),
+          },
+        }
+      }
     };
   };
 
@@ -311,6 +351,7 @@ export class ModifyChart {
     point: number,
     category: ChartCategory,
   ): ModificationTags {
+    vd('bla')
     return {
       'c:val': this.point(r, targetCol, point),
       'c:cat': this.point(r, 0, category.label),
