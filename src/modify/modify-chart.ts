@@ -351,7 +351,6 @@ export class ModifyChart {
     point: number,
     category: ChartCategory,
   ): ModificationTags {
-    vd('bla')
     return {
       'c:val': this.point(r, targetCol, point),
       'c:cat': this.point(r, 0, category.label),
