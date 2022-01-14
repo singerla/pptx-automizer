@@ -7,6 +7,8 @@ import {
   ChartCategory,
   ChartSeries, ChartPoint,
 } from '../types/chart-types';
+import { vd } from './general-helper';
+import {XmlHelper} from './xml-helper';
 
 export default class ModifyChartHelper {
   /**
@@ -99,6 +101,49 @@ export default class ModifyChartHelper {
     new ModifyChart(chart, workbook, data, slots).modify();
 
     // XmlHelper.dump(chart)
+  };
+
+  /**
+   * Set chart data to modify combo charts.
+   * This type is prepared for
+   * first series: bar chart (e.g. total)
+   * other series: vertical lines
+   * See `__tests__/modify-chart-scatter.test.js`
+   */
+  static setChartCombo = (data: ChartData) => (
+    element: XMLDocument | Element,
+    chart?: Document,
+    workbook?: Workbook,
+  ): void => {
+    const slots = [] as ChartSlot[];
+
+    slots.push({
+      index: 0,
+      series: data.series[0],
+      targetCol: 1,
+      type: 'defaultSeries',
+    });
+
+    slots.push({
+      index: 1,
+      label: `Y-Values`,
+      mapData: (point: number, category: ChartCategory) => category.y,
+      targetCol: 2,
+    });
+
+    data.series.forEach((series: ChartSeries, s: number) => {
+      if(s > 0)
+        slots.push({
+          index: s,
+          series: series,
+          targetCol: s + 2,
+          targetYCol: 2,
+          type: 'xySeries',
+        });
+      }
+    );
+
+    new ModifyChart(chart, workbook, data, slots).modify();
   };
 
   /**

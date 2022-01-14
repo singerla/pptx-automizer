@@ -67,13 +67,14 @@ export class ModifyChart {
     // XmlHelper.dump(this.chart.root as XMLDocument)
   }
 
-  setColumns(slot: ChartSlot[]): ChartColumn[] {
+  setColumns(slots: ChartSlot[]): ChartColumn[] {
     const columns = [] as ChartColumn[];
 
-    slot.forEach((slot) => {
+    slots.forEach((slot) => {
       const series = slot.series;
       const index = slot.index;
       const targetCol = slot.targetCol;
+      const targetYCol = slot.targetYCol || 1;
 
       const label = slot.label ? slot.label : series.label;
 
@@ -108,6 +109,7 @@ export class ModifyChart {
                 category,
                 slot.tag,
                 mapData,
+                targetYCol
               );
             }
           : null;
@@ -167,7 +169,7 @@ export class ModifyChart {
           this.series(column.series, {
             ...this.seriesId(column.series),
             ...this.seriesLabel(column.label, colId),
-            ...this.seriesStyle(this.data.series[colId]),
+            ...this.seriesStyle(this.data.series[column.series]),
           }),
         );
       }
@@ -334,6 +336,7 @@ export class ModifyChart {
         isRequired: false,
         children: {
           'c:spPr': {
+            isRequired: false,
             modify: ModifyColorHelper.solidFill(series.style.marker?.color),
           }
         }
@@ -378,10 +381,13 @@ export class ModifyChart {
     targetCol: number,
     point: number,
     category: ChartCategory,
+    tag: string,
+    mapData: ChartDataMapper,
+    targetYCol: number,
   ): ModificationTags {
     return {
       'c:xVal': this.point(r, targetCol, point),
-      'c:yVal': this.point(r, 1, category.y),
+      'c:yVal': this.point(r, targetYCol, category.y),
     };
   }
 

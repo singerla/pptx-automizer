@@ -58,6 +58,7 @@ export type ChartSlot = {
   series?: ChartSeries;
   index?: number;
   targetCol: number;
+  targetYCol?: number;
   type?: string;
   tag?: string;
   isStrRef?: boolean;

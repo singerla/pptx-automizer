@@ -23,6 +23,7 @@ const setChartData = ModifyChartHelper.setChartData;
 const setChartVerticalLines = ModifyChartHelper.setChartVerticalLines;
 const setChartScatter = ModifyChartHelper.setChartScatter;
 const setChartBubbles = ModifyChartHelper.setChartBubbles;
+const setChartCombo = ModifyChartHelper.setChartCombo;
 
 import { AutomizerSummary } from './types/types';
 export type { AutomizerSummary };
@@ -54,5 +55,6 @@ export const modify = {
   setChartData,
   setChartVerticalLines,
   setChartScatter,
+  setChartCombo,
   setChartBubbles,
 };
