@@ -110,4 +110,35 @@ export default class XmlElements {
     idx.setAttribute('val', String(0))
     return idx
   }
+
+  cellBorder(tag:'lnL'|'lnR'|'lnT'|'lnB'): this {
+    const border = this.document.createElement(tag);
+
+    border.appendChild(this.solidFill());
+    border.appendChild(this.prstDash());
+    border.appendChild(this.round());
+    border.appendChild(this.lineEnd('headEnd'));
+    border.appendChild(this.lineEnd('tailEnd'));
+
+    return this;
+  }
+
+  prstDash() {
+    const prstDash = this.document.createElement('a:prstDash')
+    prstDash.setAttribute('val', 'solid')
+    return prstDash
+  }
+
+  round() {
+    const round = this.document.createElement('a:round')
+    return round
+  }
+
+  lineEnd(type:'headEnd'|'tailEnd') {
+    const lineEnd = this.document.createElement(type)
+    lineEnd.setAttribute('type', 'none')
+    lineEnd.setAttribute('w', 'med')
+    lineEnd.setAttribute('len', 'med')
+    return lineEnd
+  }
 }
