@@ -44,19 +44,28 @@ export default class ModifyShapeHelper {
   ): void => {
     const map = {
       x: { tag: 'a:off', attribute: 'x' },
+      l: { tag: 'a:off', attribute: 'x' },
+      left: { tag: 'a:off', attribute: 'x' },
       y: { tag: 'a:off', attribute: 'y' },
-      w: { tag: 'a:ext', attribute: 'cx' },
-      h: { tag: 'a:ext', attribute: 'cy' },
+      t: { tag: 'a:off', attribute: 'y' },
+      top: { tag: 'a:off', attribute: 'y' },
       cx: { tag: 'a:ext', attribute: 'cx' },
+      w: { tag: 'a:ext', attribute: 'cx' },
+      width: { tag: 'a:ext', attribute: 'cx' },
       cy: { tag: 'a:ext', attribute: 'cy' },
+      h: { tag: 'a:ext', attribute: 'cy' },
+      height: { tag: 'a:ext', attribute: 'cy' },
     };
 
     const xfrm = element.getElementsByTagName('a:off')[0].parentNode as Element;
 
     Object.keys(pos).forEach((key) => {
+      const value = Math.round(pos[key]);
+      if(typeof value !== 'number') return;
+
       xfrm
         .getElementsByTagName(map[key].tag)[0]
-        .setAttribute(map[key].attribute, Math.round(pos[key]));
+        .setAttribute(map[key].attribute, value);
     });
   };
 }
