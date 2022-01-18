@@ -536,8 +536,18 @@ export class ModifyChart {
       },
     });
 
+    this.setWorkbookTableFirstColumn()
     this.columns.forEach((addCol, s) => {
       this.setWorkbookTableColumn(s + 1, addCol.label);
+    });
+  }
+
+  setWorkbookTableFirstColumn(): void {
+    this.workbookTable.modify({
+      tableColumn: {
+        index: 0,
+        modify: ModifyXmlHelper.attribute('id', 1)
+      },
     });
   }
 
