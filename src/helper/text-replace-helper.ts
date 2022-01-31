@@ -140,40 +140,52 @@ export default class TextReplaceHelper {
       const textBlock = textBlocks[i];
 
       replaceTexts.forEach((item) => {
-        this.applyReplacement(item, textBlock);
+        this.applyReplacement(item, textBlock, i);
       });
     }
   }
 
-  applyReplacement(replaceText: ReplaceText, textBlock: Element): void {
-    const replace =
-      this.options.openingTag + replaceText.replace + this.options.closingTag;
+  applyReplacement(replaceText: ReplaceText, textBlock: Element, currentIndex:number): void {
+    const replace = this.options.openingTag
+      + replaceText.replace
+      + this.options.closingTag;
     let textNode = this.getTextElement(textBlock);
     const sourceText = textNode.firstChild.textContent;
 
     if (sourceText.includes(replace)) {
       const bys = GeneralHelper.arrayify(replaceText.by);
-      bys.forEach((by, i) => {
-        const replacedText = sourceText.replace(replace, by.text);
-        textNode = this.assertTextNode(i, textBlock, textNode);
-        ModifyTextHelper.content(replacedText)(textNode)
+      const modifyBlocks = this.assertTextBlocks(bys.length, textBlock)
 
-        if (by.style) {
-          const styleParent = textNode.parentNode as Element;
-          const styleElement = styleParent.getElementsByTagName('a:rPr')[0];
-          ModifyTextHelper.style(by.style)(styleElement)
-        }
+      bys.forEach((by, blockIndex) => {
+        const textNode = modifyBlocks[blockIndex].getElementsByTagName('a:t')[0]
+        this.updateTextNode(textNode, sourceText, replace, by)
       });
     }
   }
 
-  assertTextNode(i: number, textBlock: Element, textNode: Element): Element {
-    if (i >= 1) {
-      const addedTextBlock = textBlock.cloneNode(true) as Element;
-      XmlHelper.insertAfter(addedTextBlock, textBlock);
-      return this.getTextElement(addedTextBlock);
+  assertTextBlocks(length: number, textBlock:any): Element[] {
+    const modifyBlocks = []
+    if(length > 1) {
+      for(let i=1; i<length; i++) {
+        const addedTextBlock = textBlock.cloneNode(true) as Element;
+        XmlHelper.insertAfter(addedTextBlock, textBlock);
+        modifyBlocks.push(addedTextBlock)
+      }
     }
-    return textNode;
+    modifyBlocks.push(textBlock)
+    modifyBlocks.reverse()
+    return modifyBlocks
+  }
+
+  updateTextNode(textNode: Element, sourceText, replace, by): void {
+    const replacedText = sourceText.replace(replace, by.text);
+    ModifyTextHelper.content(replacedText)(textNode)
+
+    if (by.style) {
+      const styleParent = textNode.parentNode as Element;
+      const styleElement = styleParent.getElementsByTagName('a:rPr')[0];
+      ModifyTextHelper.style(by.style)(styleElement)
+    }
   }
 
   getTextElement(block: Element): Element {
