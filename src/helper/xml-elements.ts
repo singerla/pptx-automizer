@@ -141,4 +141,9 @@ export default class XmlElements {
     lineEnd.setAttribute('len', 'med')
     return lineEnd
   }
+
+  shapeProperties() {
+    const spPr = this.spPr();
+    this.element.appendChild(spPr)
+  }
 }

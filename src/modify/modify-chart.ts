@@ -180,8 +180,17 @@ export class ModifyChart {
     this.data.series.forEach((series, s) => {
       this.data.categories.forEach((category, c) => {
         this.chart.modify(
-          this.series(s, this.seriesDataLabel(c, s, category.label))
+          this.series(s, this.seriesDataLabelsRange(c, s, category.label))
         )
+        // if(category.styles && category.styles[s]) {
+        //   const pointStyle = category.styles[s]
+        //   if(pointStyle.label) {
+        //     vd(this.series(s, this.seriesDataLabel(c, pointStyle.label)))
+        //     // this.chart.modify(
+        //     //   this.series(s, this.seriesDataLabel(c, pointStyle.label))
+        //     // )
+        //   }
+        // }
       })
     })
   }
@@ -344,7 +353,7 @@ export class ModifyChart {
     };
   };
 
-  seriesDataLabel = (r: number, c: number, value: string|number): ModificationTags => {
+  seriesDataLabelsRange = (r: number, c: number, value: string|number): ModificationTags => {
     return {
       'c15:datalabelsRange': {
         isRequired: false,
@@ -363,6 +372,27 @@ export class ModifyChart {
       }
     };
   };
+  //
+  // seriesDataLabel = (c: number, style: ChartValueStyle['label']): ModificationTags => {
+  //   vd(c)
+  //   return {
+  //     'c:dLbls': {
+  //       children: {
+  //         'c:dLbl': {
+  //           index: c,
+  //           children: {
+  //             'c:idx': {
+  //               modify: ModifyXmlHelper.attribute('val', '123')
+  //             },
+  //             'c:dLblPos': {
+  //               modify: ModifyXmlHelper.attribute('val', 'test')
+  //             },
+  //           }
+  //         }
+  //       }
+  //     }
+  //   };
+  // };
 
   defaultSeries(
     r: number,

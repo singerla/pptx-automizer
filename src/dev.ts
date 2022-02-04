@@ -8,49 +8,18 @@ const automizer = new Automizer({
 
 const pres = automizer
   .loadRoot(`RootTemplate.pptx`)
-  .load(`ChartScatter.pptx`, 'charts');
+  .load(`TemplateWithMaster.pptx`, 'master');
 
-const dataScatter = <ChartData><unknown>{
-  series: [
-    {label: 'series s1'},
-    {label: 'series s2'},
-    {label: 'series s3'}
-  ],
-  categories: [
-    {
-      label: 'r1', values: [
-        {x: 10, y: 20}, {x: 9, y: 30}, {x: 19, y: 40}
-      ], styles: [
-        {
-          color: {
-            type: 'srgbClr',
-            value: 'cccccc'
-          }
-        }
-      ]
-    },
-    {label: 'r2', values: [{x: 21, y: 11}, {x: 8, y: 31}, {x: 18, y: 41}]},
-    {label: 'r3', values: [{x: 22, y: 28}, {x: 7, y: 26}, {x: 17, y: 36}]},
-    {label: 'r4', values: [{x: 13, y: 13}, {x: 16, y: 28}, {x: 26, y: 38}]},
-    {label: 'r5', values: [{x: 18, y: 24}, {x: 15, y: 24}, {x: 25, y: 34}]},
-    {label: 'r6', values: [{x: 28, y: 34}, {x: 25, y: 34}, {x: 35, y: 44}]},
-    // {label: 'r1', values: [{x: 10, y: 20, label: "s1-1"}, {x: 9, y: 30, label: "s2-1"}, {x: 19, y: 40, label: "s3-1"}]},
-    // {label: 'r2', values: [{x: 21, y: 11, label: "s1-2"}, {x: 8, y: 31, label: "s2-2"}, {x: 18, y: 41, label: "s3-2"}]},
-    // {label: 'r3', values: [{x: 22, y: 28, label: "s1-3"}, {x: 7, y: 26, label: "s2-3"}, {x: 17, y: 36, label: "s3-3"}]},
-    // {label: 'r4', values: [{x: 13, y: 13, label: "s1-4"}, {x: 16, y: 28, label: "s2-4"}, {x: 26, y: 38, label: "s3-4"}]},
-    // {label: 'r5', values: [{x: 18, y: 24, label: "s1-5"}, {x: 15, y: 24, label: "s2-5"}, {x: 25, y: 34, label: "s3-5"}]},
-    // {label: 'r6', values: [{x: 28, y: 34, label: "s1-6"}, {x: 25, y: 34, label: "s2-6"}, {x: 35, y: 44, label: "s3-6"}]},
-  ],
 
-}
 const run = async () => {
   await pres
-    .addSlide('charts', 2, (slide) => {
-      slide.modifyElement('ScatterPoint', [
-        modify.setChartScatter(dataScatter),
-      ]);
+    .addMaster('master', 2, (slide) => {
+
     })
-    .write(`modify-chart-scatter-point.test.pptx`)
+    .addSlide('master', 2, (slide) => {
+
+    })
+    .write(`add-master.test.pptx`)
 
   return pres;
 };

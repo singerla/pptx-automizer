@@ -6,6 +6,8 @@ import { PresTemplate } from './interfaces/pres-template';
 import { RootPresTemplate } from './interfaces/root-pres-template';
 import { Template } from './classes/template';
 import { TemplateInfo } from './types/xml-types';
+import { vd } from './helper/general-helper';
+import {Master} from './classes/master';
 
 /**
  * Automizer
@@ -96,6 +98,11 @@ export default class Automizer implements IPresentationProps {
   private loadTemplate(location: string, name?: string): this {
     location = this.getLocation(location, 'template');
 
+    const alreadyLoaded = this.templates.find(template => template.name === name)
+    if(alreadyLoaded) {
+      return this
+    }
+
     const newTemplate = Template.import(location, name);
 
     if (!this.isPresTemplate(newTemplate)) {
@@ -116,10 +123,10 @@ export default class Automizer implements IPresentationProps {
   public async setCreationIds(): Promise<TemplateInfo[]> {
     const templateCreationId = [];
     for (const template of this.templates) {
-      const slideInfo = await template.setCreationIds();
+      const creationIds = template.creationIds || await template.setCreationIds()
       templateCreationId.push({
         name: template.name,
-        slides: slideInfo,
+        slides: creationIds,
       });
     }
     return templateCreationId;
@@ -166,6 +173,25 @@ export default class Automizer implements IPresentationProps {
     }
 
     this.rootTemplate.slides.push(newSlide);
+
+    return this;
+  }
+
+  public addMaster(
+    name: string,
+    masterNumber: number,
+    callback?: (slide: Slide) => void,
+  ): this {
+
+    const template = this.getTemplate(name);
+
+    const newMaster = new Master({
+      presentation: this,
+      template,
+      masterNumber,
+    });
+
+    // this.rootTemplate.slides.push(newMaster);
 
     return this;
   }

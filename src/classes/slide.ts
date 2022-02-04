@@ -22,7 +22,7 @@ import {
 import { Image } from '../shapes/image';
 import { Chart } from '../shapes/chart';
 import { GenericShape } from '../shapes/generic';
-import { GeneralHelper } from '../helper/general-helper';
+import {GeneralHelper, vd} from '../helper/general-helper';
 
 export class Slide implements ISlide {
   /**
@@ -132,12 +132,14 @@ export class Slide implements ISlide {
    */
   async append(targetTemplate: RootPresTemplate): Promise<void> {
     this.targetTemplate = targetTemplate;
+
     this.targetArchive = await targetTemplate.archive;
     this.targetNumber = targetTemplate.incrementCounter('slides');
     this.targetPath = `ppt/slides/slide${this.targetNumber}.xml`;
     this.targetRelsPath = `ppt/slides/_rels/slide${this.targetNumber}.xml.rels`;
-
     this.sourceArchive = await this.sourceTemplate.archive;
+
+    console.log('Appending slide ' + this.targetNumber)
 
     await this.copySlideFiles();
     await this.copyRelatedContent();
@@ -410,7 +412,6 @@ export class Slide implements ISlide {
   /**
    * Copys slide files
    * @internal
-   * @returns slide files
    */
   async copySlideFiles(): Promise<void> {
     await FileHelper.zipCopy(

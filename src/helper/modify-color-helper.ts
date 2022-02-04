@@ -7,7 +7,7 @@ export default class ModifyColorHelper {
   /**
    * Replaces or creates an <a:solidFill> Element
    */
-  static solidFill = (color: Color) => (element: Element): void => {
+  static solidFill = (color: Color, index?:number|'last') => (element: Element): void => {
     const solidFills = element.getElementsByTagName('a:solidFill')
 
     if(!solidFills.length) {
@@ -18,7 +18,13 @@ export default class ModifyColorHelper {
       return
     }
 
-    const solidFill = solidFills[0] as Element
+    let targetIndex = (!index)
+      ? 0
+      : ((index === 'last')
+        ? solidFills.length-1
+        : index)
+
+    const solidFill = solidFills[targetIndex] as Element
     const colorType = new XmlElements(element, {
       color: color
     }).colorType()

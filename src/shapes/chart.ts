@@ -7,6 +7,7 @@ import { RelationshipAttribute, HelperElement } from '../types/xml-types';
 import { ImportedElement, Target, Workbook } from '../types/types';
 import { IChart } from '../interfaces/ichart';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
+import { vd } from '../helper/general-helper';
 
 export class Chart extends Shape implements IChart {
   sourceWorksheet: number | string;
@@ -180,7 +181,7 @@ export class Chart extends Shape implements IChart {
     const worksheet = worksheets[0];
 
     this.sourceWorksheet = worksheet.number === 0 ? '' : worksheet.number;
-    this.targetWorksheet = this.targetNumber;
+    this.targetWorksheet = '-created-' + this.targetNumber;
 
     await this.copyWorksheetFile();
     await this.editTargetWorksheetRel();

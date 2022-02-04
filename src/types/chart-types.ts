@@ -6,6 +6,10 @@ export type ChartValueStyle = {
   marker?: {
     color?: Color;
   }
+  label?: {
+    color?: Color;
+    isBold?: Boolean
+  }
 };
 export type ChartPoint = {
   x: ChartPointValue;
@@ -24,7 +28,7 @@ export type ChartCategory = {
   label: string;
   y?: ChartPointValue;
   values: (ChartPointValue | ChartPoint | ChartBubble)[];
-  styles?: ChartValueStyle[]
+  styles?: (ChartValueStyle|null)[]
 };
 export type ChartColumn = {
   series?: number;

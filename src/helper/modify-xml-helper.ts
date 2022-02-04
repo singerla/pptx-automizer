@@ -115,6 +115,9 @@ export default class ModifyXmlHelper {
       case 'c:dPt':
         new XmlElements(parent).dataPoint();
         return true;
+      case 'c:spPr':
+        new XmlElements(parent).shapeProperties();
+        return true;
     }
     //
     // if(required === true) {

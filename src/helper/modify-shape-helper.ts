@@ -61,7 +61,7 @@ export default class ModifyShapeHelper {
 
     Object.keys(pos).forEach((key) => {
       const value = Math.round(pos[key]);
-      if(typeof value !== 'number') return;
+      if(typeof value !== 'number' || !map[key]) return;
 
       xfrm
         .getElementsByTagName(map[key].tag)[0]
