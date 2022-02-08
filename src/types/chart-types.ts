@@ -5,7 +5,11 @@ export type ChartValueStyle = {
   color?: Color;
   marker?: {
     color?: Color;
-  }
+  };
+  border?: {
+    color?: Color;
+    weight?: number;
+  };
   label?: {
     color?: Color;
     isBold?: Boolean

@@ -8,6 +8,8 @@ export default class ModifyColorHelper {
    * Replaces or creates an <a:solidFill> Element
    */
   static solidFill = (color: Color, index?:number|'last') => (element: Element): void => {
+    if(!color?.type) return
+
     const solidFills = element.getElementsByTagName('a:solidFill')
 
     if(!solidFills.length) {
@@ -31,5 +33,13 @@ export default class ModifyColorHelper {
 
     XmlHelper.sliceCollection(solidFill.childNodes as unknown as HTMLCollectionOf<Element>, 0)
     solidFill.appendChild(colorType)
+
+  }
+
+  static removeNoFill = () => (element: Element): void => {
+    const hasNoFill = element.getElementsByTagName('a:noFill')[0]
+    if(hasNoFill) {
+      element.removeChild(hasNoFill)
+    }
   }
 }

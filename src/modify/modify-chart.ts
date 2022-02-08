@@ -8,7 +8,7 @@ import {
   ChartDataMapper,
   ChartSeries, ChartValueStyle,
 } from '../types/chart-types';
-import {ModificationTags, Modification, Color} from '../types/modify-types';
+import {ModificationTags, Modification, Color, ModifyCallback} from '../types/modify-types';
 import { XmlHelper } from '../helper/xml-helper';
 import CellIdHelper from '../helper/cell-id-helper';
 import { Workbook } from '../types/types';
@@ -289,9 +289,10 @@ export class ModifyChart {
             modify: ModifyXmlHelper.attribute('val', idx)
           },
           'c:spPr': {
-            modify: ModifyColorHelper.solidFill(style.color),
+            modify: ModifyColorHelper.solidFill(style?.color),
           },
-          ...this.chartPointMarker(style.marker)
+          ...this.chartPointBorder(style?.border),
+          ...this.chartPointMarker(style?.marker)
         }
       }
     }
@@ -308,6 +309,24 @@ export class ModifyChart {
             modify: ModifyColorHelper.solidFill(markerStyle.color),
           }
         }
+      }
+    }
+  }
+  chartPointBorder = (style: ChartValueStyle['border']): ModificationTags => {
+    if(!style) return
+    const modify = <ModifyCallback[]>[]
+
+    if(style.color) {
+      modify.push(ModifyColorHelper.solidFill(style.color))
+      modify.push(ModifyColorHelper.removeNoFill())
+    }
+    if(style.weight) {
+      modify.push(ModifyXmlHelper.attribute('w', style.weight))
+    }
+
+    return {
+      'a:ln': {
+        modify: modify
       }
     }
   }
