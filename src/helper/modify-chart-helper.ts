@@ -5,7 +5,7 @@ import {
   ChartBubble,
   ChartSlot,
   ChartCategory,
-  ChartSeries, ChartPoint,
+  ChartSeries, ChartPoint, ChartAxisRange,
 } from '../types/chart-types';
 import { vd } from './general-helper';
 import {XmlHelper} from './xml-helper';
@@ -193,4 +193,19 @@ export default class ModifyChartHelper {
 
     // XmlHelper.dump(chart)
   };
+
+  static setAxisRange = (range: ChartAxisRange) => (
+    chart: XMLDocument,
+  ): void =>  {
+    const axis = chart.getElementsByTagName('c:valAx')[range.axisIndex || 0]
+    if(!axis) return
+
+    const scaling = axis.getElementsByTagName('c:scaling')[0]
+
+    scaling.getElementsByTagName('c:min')[0]
+      .setAttribute('val', String(range.min))
+    scaling.getElementsByTagName('c:max')[0]
+      .setAttribute('val', String(range.max))
+  }
+
 }

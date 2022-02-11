@@ -71,3 +71,8 @@ export type ChartSlot = {
   tag?: string;
   isStrRef?: boolean;
 };
+export type ChartAxisRange = {
+  axisIndex?: number;
+  min:number;
+  max:number;
+}
