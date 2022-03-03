@@ -6,7 +6,7 @@ export type ModifyCollectionCallback = {
 };
 export type Modification = {
   index?: number;
-  collection?: ModifyCollectionCallback | ModifyCollectionCallback;
+  collection?: ModifyCollectionCallback;
   children?: ModificationTags;
   modify?: ModifyCallback | ModifyCallback[];
   isRequired?: boolean;
@@ -18,6 +18,7 @@ export type Color = {
   type?: 'schemeClr' | 'srgbClr';
   value: string;
 };
+
 export type TextStyle = {
   size?: number;
   color?: Color;
