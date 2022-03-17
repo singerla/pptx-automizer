@@ -1,10 +1,10 @@
 import JSZip from 'jszip';
 import { RootPresTemplate } from './root-pres-template';
-import { SlideModificationCallback } from '../types/types';
+import { SlideModificationCallback, SourceSlideIdentifier } from '../types/types';
 
 export interface ISlide {
   sourceArchive: JSZip;
-  sourceNumber: number;
+  sourceNumber: SourceSlideIdentifier;
   modifications: SlideModificationCallback[];
 
   modify(callback: SlideModificationCallback): void;

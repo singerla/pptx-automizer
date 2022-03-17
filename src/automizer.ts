@@ -1,6 +1,6 @@
 import { Slide } from './classes/slide';
 import { FileHelper } from './helper/file-helper';
-import { AutomizerParams, AutomizerSummary } from './types/types';
+import {AutomizerParams, AutomizerSummary, SourceSlideIdentifier} from './types/types';
 import { IPresentationProps } from './interfaces/ipresentation-props';
 import { PresTemplate } from './interfaces/pres-template';
 import { RootPresTemplate } from './interfaces/root-pres-template';
@@ -144,15 +144,15 @@ export default class Automizer implements IPresentationProps {
   }
 
   /**
-   * Add a slide from one of the imported templates by slide number.
+   * Add a slide from one of the imported templates by slide number or creationId.
    * @param name - Name or alias of the template; must have been loaded with `Automizer.load()`
-   * @param slideNumber - Number of slide in template presentation
+   * @param slideIdentifier - Number or creationId of slide in template presentation
    * @param callback - Executed after slide was added. The newly created slide will be passed to the callback as first argument.
    * @returns Instance of Automizer
    */
   public addSlide(
     name: string,
-    slideNumber: number,
+    slideIdentifier: SourceSlideIdentifier,
     callback?: (slide: Slide) => void,
   ): this {
     if (this.rootTemplate === undefined) {
@@ -164,7 +164,7 @@ export default class Automizer implements IPresentationProps {
     const newSlide = new Slide({
       presentation: this,
       template,
-      slideNumber,
+      slideIdentifier,
     });
 
     if (callback !== undefined) {

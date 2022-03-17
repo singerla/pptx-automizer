@@ -7,7 +7,7 @@ import {
   ImportedElement,
   ImportElement,
   SlideModificationCallback,
-  ShapeModificationCallback,
+  ShapeModificationCallback, SourceSlideIdentifier,
 } from '../types/types';
 import { ISlide } from '../interfaces/islide';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
@@ -99,13 +99,12 @@ export class Slide implements ISlide {
   constructor(params: {
     presentation: IPresentationProps;
     template: PresTemplate;
-    slideNumber: number;
+    slideIdentifier: SourceSlideIdentifier;
   }) {
     this.sourceTemplate = params.template;
-    this.sourceNumber = params.slideNumber;
     this.sourceNumber = this.getSlideNumber(
       params.template,
-      params.slideNumber,
+      params.slideIdentifier,
     );
 
     this.sourcePath = `ppt/slides/slide${this.sourceNumber}.xml`;
@@ -115,13 +114,27 @@ export class Slide implements ISlide {
     this.importElements = [];
   }
 
-  getSlideNumber(template, slideNumber) {
+  /**
+   * Try to convert a given slide's creationId to corresponding slide number.
+   * Used if automizer is run with useCreationIds: true
+   * @internal
+   * @param PresTemplate
+   * @slideNumber SourceSlideIdentifier
+   * @returns number
+   */
+  getSlideNumber(template: PresTemplate, slideIdentifier: SourceSlideIdentifier): number {
     if (template.creationIds !== undefined) {
-      return template.creationIds.find(
-        (slideInfo) => slideInfo.id === slideNumber,
-      ).number;
+      const matchCreationId =  template.creationIds.find(
+        (slideInfo) => slideInfo.id === Number(slideIdentifier),
+      )
+
+      if(matchCreationId) {
+        return matchCreationId.number
+      }
+
+      throw('Could not find slide number for creationId: ' + slideIdentifier + '@' + template.name)
     }
-    return slideNumber;
+    return slideIdentifier as number;
   }
 
   /**

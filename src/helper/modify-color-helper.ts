@@ -33,7 +33,6 @@ export default class ModifyColorHelper {
 
     XmlHelper.sliceCollection(solidFill.childNodes as unknown as HTMLCollectionOf<Element>, 0)
     solidFill.appendChild(colorType)
-
   }
 
   static removeNoFill = () => (element: Element): void => {

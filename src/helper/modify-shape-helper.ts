@@ -60,8 +60,9 @@ export default class ModifyShapeHelper {
     const xfrm = element.getElementsByTagName('a:off')[0].parentNode as Element;
 
     Object.keys(pos).forEach((key) => {
-      const value = Math.round(pos[key]);
+      let value = Math.round(pos[key]);
       if(typeof value !== 'number' || !map[key]) return;
+      value = (value < 0) ? 0 : value
 
       xfrm
         .getElementsByTagName(map[key].tag)[0]

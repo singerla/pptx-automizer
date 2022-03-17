@@ -10,7 +10,7 @@ import {
 } from '../types/xml-types';
 import { TargetByRelIdMap } from '../constants/constants';
 import { XmlPrettyPrint } from './xml-pretty-print';
-import { GetRelationshipsCallback, Target } from '../types/types';
+import {GetRelationshipsCallback, SourceSlideIdentifier, Target} from '../types/types';
 import { XmlTemplateHelper } from './xml-template-helper';
 
 export class XmlHelper {

@@ -1,6 +1,7 @@
 import JSZip from 'jszip';
 import { ElementType } from '../enums/element-type';
 
+export type SourceSlideIdentifier = number | string
 export type SlideModificationCallback = (document: Document) => void;
 export type ShapeModificationCallback = (
   XMLDocument: XMLDocument | Element,
