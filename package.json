@@ -27,8 +27,10 @@
     "dist",
     "README"
   ],
-  "main": "dist/index.js",
-  "types": "dist/index.d.js",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "mainBuild": "dist/index.js",
+  "typesBuild": "dist/index.d.js",
   "keywords": [
     "js-create-powerpoint",
     "js-create-pptx",

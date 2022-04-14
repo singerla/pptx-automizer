@@ -28,10 +28,23 @@ const setChartCombo = ModifyChartHelper.setChartCombo;
 import { AutomizerSummary } from './types/types';
 export type { AutomizerSummary };
 
-import { ModifyTableParams } from './types/table-types';
-import { ChartData } from './types/chart-types';
+import { ModifyTableParams, TableData, TableRow, TableRowStyle } from './types/table-types';
+import {ChartBubble, ChartCategory, ChartData, ChartSeries, ChartValueStyle } from './types/chart-types';
+import {Color, ReplaceText, TextStyle } from './types/modify-types';
+import { ShapeCoordinates } from './types/shape-types';
 
-export type { ModifyTableParams, ChartData };
+export type {
+  ChartBubble, ChartCategory, ChartSeries,
+  TableData, TableRow,
+  TextStyle,
+  ModifyTableParams,
+  TableRowStyle,
+  ChartData,
+  ChartValueStyle,
+  Color,
+  ShapeCoordinates,
+  ReplaceText
+};
 
 export {
   Automizer,
