@@ -91,7 +91,9 @@ export default class XmlElements {
     dPt.appendChild(this.spPr());
 
     const nextSibling = this.element.getElementsByTagName('c:cat')[0];
-    nextSibling.parentNode.insertBefore(dPt, nextSibling)
+    if(nextSibling) {
+      nextSibling.parentNode.insertBefore(dPt, nextSibling)
+    }
 
     return this;
   }

@@ -49,5 +49,5 @@ test('create presentation, add and modify a scatter chart.', async () => {
     })
     .write(`modify-chart-scatter.test.pptx`)
 
-  expect(result.charts).toBe(2);
+  expect(result.charts).toBe(4);
 });
