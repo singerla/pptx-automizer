@@ -1,7 +1,5 @@
 import Automizer from './automizer';
 
-export default Automizer;
-
 import ModifyHelper from './helper/modify-helper';
 const dump = ModifyHelper.dump;
 const setAttribute = ModifyHelper.setAttribute;
@@ -26,16 +24,32 @@ const setChartBubbles = ModifyChartHelper.setChartBubbles;
 const setChartCombo = ModifyChartHelper.setChartCombo;
 
 import { AutomizerSummary } from './types/types';
-export type { AutomizerSummary };
 
-import { ModifyTableParams, TableData, TableRow, TableRowStyle } from './types/table-types';
-import {ChartBubble, ChartCategory, ChartData, ChartSeries, ChartValueStyle } from './types/chart-types';
-import {Color, ReplaceText, TextStyle } from './types/modify-types';
+import {
+  ModifyTableParams,
+  TableData,
+  TableRow,
+  TableRowStyle,
+} from './types/table-types';
+import {
+  ChartBubble,
+  ChartCategory,
+  ChartData,
+  ChartSeries,
+  ChartValueStyle,
+} from './types/chart-types';
+import { Color, ReplaceText, TextStyle } from './types/modify-types';
 import { ShapeCoordinates } from './types/shape-types';
+import { XmlHelper } from './helper/xml-helper';
+import ModifyTextHelper from './helper/modify-text-helper';
+import ModifyColorHelper from './helper/modify-color-helper';
 
 export type {
-  ChartBubble, ChartCategory, ChartSeries,
-  TableData, TableRow,
+  ChartBubble,
+  ChartCategory,
+  ChartSeries,
+  TableData,
+  TableRow,
   TextStyle,
   ModifyTableParams,
   TableRowStyle,
@@ -43,15 +57,18 @@ export type {
   ChartValueStyle,
   Color,
   ShapeCoordinates,
-  ReplaceText
+  ReplaceText,
 };
 
 export {
   Automizer,
+  XmlHelper,
   ModifyHelper,
   ModifyShapeHelper,
   ModifyTableHelper,
   ModifyChartHelper,
+  ModifyTextHelper,
+  ModifyColorHelper,
 };
 
 export const modify = {
@@ -71,3 +88,5 @@ export const modify = {
   setChartCombo,
   setChartBubbles,
 };
+export type { AutomizerSummary };
+export default Automizer;
