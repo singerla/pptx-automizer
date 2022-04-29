@@ -7,7 +7,9 @@ import {
   ImportedElement,
   ImportElement,
   SlideModificationCallback,
-  ShapeModificationCallback, SourceSlideIdentifier,
+  ShapeModificationCallback,
+  SourceSlideIdentifier,
+  StatusTracker,
 } from '../types/types';
 import { ISlide } from '../interfaces/islide';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
@@ -22,7 +24,7 @@ import {
 import { Image } from '../shapes/image';
 import { Chart } from '../shapes/chart';
 import { GenericShape } from '../shapes/generic';
-import {GeneralHelper, vd} from '../helper/general-helper';
+import { GeneralHelper, vd } from '../helper/general-helper';
 
 export class Slide implements ISlide {
   /**
@@ -95,6 +97,7 @@ export class Slide implements ISlide {
    * @internal
    */
   targetRelsPath: string;
+  status: StatusTracker;
 
   constructor(params: {
     presentation: IPresentationProps;
@@ -112,6 +115,8 @@ export class Slide implements ISlide {
 
     this.modifications = [];
     this.importElements = [];
+
+    this.status = params.presentation.status;
   }
 
   /**
@@ -122,17 +127,25 @@ export class Slide implements ISlide {
    * @slideNumber SourceSlideIdentifier
    * @returns number
    */
-  getSlideNumber(template: PresTemplate, slideIdentifier: SourceSlideIdentifier): number {
+  getSlideNumber(
+    template: PresTemplate,
+    slideIdentifier: SourceSlideIdentifier,
+  ): number {
     if (template.creationIds !== undefined) {
-      const matchCreationId =  template.creationIds.find(
+      const matchCreationId = template.creationIds.find(
         (slideInfo) => slideInfo.id === Number(slideIdentifier),
-      )
+      );
 
-      if(matchCreationId) {
-        return matchCreationId.number
+      if (matchCreationId) {
+        return matchCreationId.number;
       }
 
-      throw('Could not find slide number for creationId: ' + slideIdentifier + '@' + template.name)
+      throw (
+        'Could not find slide number for creationId: ' +
+        slideIdentifier +
+        '@' +
+        template.name
+      );
     }
     return slideIdentifier as number;
   }
@@ -152,7 +165,7 @@ export class Slide implements ISlide {
     this.targetRelsPath = `ppt/slides/_rels/slide${this.targetNumber}.xml.rels`;
     this.sourceArchive = await this.sourceTemplate.archive;
 
-    console.log('Appending slide ' + this.targetNumber)
+    this.status.info = 'Appending slide ' + this.targetNumber;
 
     await this.copySlideFiles();
     await this.copyRelatedContent();
@@ -173,10 +186,12 @@ export class Slide implements ISlide {
     }
 
     await this.applyModifications();
+
+    this.status.increment();
   }
 
   /**
-   * Modifys slide
+   * Modifies slide
    * @internal
    * @param callback
    */

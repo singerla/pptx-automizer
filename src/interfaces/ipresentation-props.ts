@@ -1,4 +1,4 @@
-import { AutomizerParams } from '../types/types';
+import { AutomizerParams, StatusTracker } from '../types/types';
 import { PresTemplate } from './pres-template';
 import { RootPresTemplate } from './root-pres-template';
 
@@ -7,6 +7,7 @@ export interface IPresentationProps {
   templates: PresTemplate[];
   params: AutomizerParams;
   timer: number;
+  status?: StatusTracker;
 
   getTemplate(name: string): PresTemplate;
 }

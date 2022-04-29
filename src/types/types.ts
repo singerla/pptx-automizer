@@ -1,7 +1,7 @@
 import JSZip from 'jszip';
 import { ElementType } from '../enums/element-type';
 
-export type SourceSlideIdentifier = number | string
+export type SourceSlideIdentifier = number | string;
 export type SlideModificationCallback = (document: Document) => void;
 export type ShapeModificationCallback = (
   XMLDocument: XMLDocument | Element,
@@ -27,6 +27,20 @@ export type AutomizerParams = {
   rootTemplate?: string;
   presTemplates?: string[];
   useCreationIds?: boolean;
+
+  /**
+   * statusTracker will be triggered on each appended slide.
+   * You can e.g. attach a custom callback to a progress bar.
+   */
+  statusTracker?: StatusTracker['next'];
+};
+export type StatusTracker = {
+  current: number;
+  max: number;
+  share: number;
+  info: string | undefined;
+  next: (tracker: StatusTracker) => void;
+  increment: () => void;
 };
 export type AutomizerSummary = {
   status: string;

@@ -1,13 +1,18 @@
 import { Slide } from './classes/slide';
 import { FileHelper } from './helper/file-helper';
-import {AutomizerParams, AutomizerSummary, SourceSlideIdentifier} from './types/types';
+import {
+  AutomizerParams,
+  AutomizerSummary,
+  SourceSlideIdentifier,
+  StatusTracker,
+} from './types/types';
 import { IPresentationProps } from './interfaces/ipresentation-props';
 import { PresTemplate } from './interfaces/pres-template';
 import { RootPresTemplate } from './interfaces/root-pres-template';
 import { Template } from './classes/template';
 import { TemplateInfo } from './types/xml-types';
 import { vd } from './helper/general-helper';
-import {Master} from './classes/master';
+import { Master } from './classes/master';
 
 /**
  * Automizer
@@ -30,6 +35,7 @@ export default class Automizer implements IPresentationProps {
    */
   timer: number;
   params: AutomizerParams;
+  status: StatusTracker;
 
   /**
    * Creates an instance of `pptx-automizer`.
@@ -43,6 +49,7 @@ export default class Automizer implements IPresentationProps {
     this.outputDir = params?.outputDir ? params.outputDir + '/' : '';
 
     this.timer = Date.now();
+    this.setStatusTracker(params?.statusTracker);
 
     if (params.rootTemplate) {
       const location = this.getLocation(params.rootTemplate, 'template');
@@ -56,6 +63,32 @@ export default class Automizer implements IPresentationProps {
         this.templates.push(newTemplate);
       });
     }
+  }
+
+  setStatusTracker(statusTracker: StatusTracker['next']): void {
+    const defaultStatusTracker = (status: StatusTracker) => {
+      console.log(status.info + '(' + status.share + '%)');
+    };
+
+    this.status = {
+      current: 0,
+      max: 0,
+      share: 0,
+      info: undefined,
+      increment: () => {
+        this.status.current++;
+        const nextShare =
+          this.status.max > 0
+            ? Math.round((this.status.current / this.status.max) * 100)
+            : 0;
+
+        if (this.status.share !== nextShare) {
+          this.status.share = nextShare;
+          this.status.next(this.status);
+        }
+      },
+      next: statusTracker || defaultStatusTracker,
+    };
   }
 
   /**
@@ -98,9 +131,11 @@ export default class Automizer implements IPresentationProps {
   private loadTemplate(location: string, name?: string): this {
     location = this.getLocation(location, 'template');
 
-    const alreadyLoaded = this.templates.find(template => template.name === name)
-    if(alreadyLoaded) {
-      return this
+    const alreadyLoaded = this.templates.find(
+      (template) => template.name === name,
+    );
+    if (alreadyLoaded) {
+      return this;
     }
 
     const newTemplate = Template.import(location, name);
@@ -123,7 +158,8 @@ export default class Automizer implements IPresentationProps {
   public async setCreationIds(): Promise<TemplateInfo[]> {
     const templateCreationId = [];
     for (const template of this.templates) {
-      const creationIds = template.creationIds || await template.setCreationIds()
+      const creationIds =
+        template.creationIds || (await template.setCreationIds());
       templateCreationId.push({
         name: template.name,
         slides: creationIds,
@@ -177,12 +213,17 @@ export default class Automizer implements IPresentationProps {
     return this;
   }
 
+  /**
+   * WIP: copy and modify a master from template to output
+   * @param name
+   * @param masterNumber
+   * @param callback
+   */
   public addMaster(
     name: string,
     masterNumber: number,
     callback?: (slide: Slide) => void,
   ): this {
-
     const template = this.getTemplate(name);
 
     const newMaster = new Master({
@@ -218,6 +259,7 @@ export default class Automizer implements IPresentationProps {
   public async write(location: string): Promise<AutomizerSummary> {
     const rootArchive = await this.rootTemplate.archive;
 
+    this.status.max = this.rootTemplate.slides.length;
     for (const slide of this.rootTemplate.slides) {
       await this.rootTemplate.appendSlide(slide);
     }
