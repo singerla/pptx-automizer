@@ -1,6 +1,6 @@
-import {Color, ModificationTags} from './modify-types';
+import { Color, ModificationTags } from './modify-types';
 
-export type ChartPointValue = null|number
+export type ChartPointValue = null | number;
 export type ChartValueStyle = {
   color?: Color;
   marker?: {
@@ -12,8 +12,9 @@ export type ChartValueStyle = {
   };
   label?: {
     color?: Color;
-    isBold?: Boolean
-  }
+    isBold?: boolean;
+    size?: number;
+  };
 };
 export type ChartPoint = {
   x: ChartPointValue;
@@ -32,7 +33,7 @@ export type ChartCategory = {
   label: string;
   y?: ChartPointValue;
   values: (ChartPointValue | ChartPoint | ChartBubble)[];
-  styles?: (ChartValueStyle|null)[]
+  styles?: (ChartValueStyle | null)[];
 };
 export type ChartColumn = {
   series?: number;
@@ -55,10 +56,7 @@ export type ChartData = {
   categories: ChartCategory[];
 };
 export type ChartDataMapper = {
-  (
-    point: number | ChartPoint | ChartBubble,
-    category?: ChartCategory,
-  ): number;
+  (point: number | ChartPoint | ChartBubble, category?: ChartCategory): number;
 };
 export type ChartSlot = {
   label?: string;
@@ -73,6 +71,6 @@ export type ChartSlot = {
 };
 export type ChartAxisRange = {
   axisIndex?: number;
-  min:number;
-  max:number;
-}
+  min: number;
+  max: number;
+};

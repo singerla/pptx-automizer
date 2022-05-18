@@ -2,6 +2,7 @@ import Automizer from './automizer';
 
 import ModifyHelper from './helper/modify-helper';
 const dump = ModifyHelper.dump;
+const dumpChart = ModifyHelper.dumpChart;
 const setAttribute = ModifyHelper.setAttribute;
 
 import ModifyShapeHelper from './helper/modify-shape-helper';
@@ -43,6 +44,7 @@ import { ShapeCoordinates } from './types/shape-types';
 import { XmlHelper } from './helper/xml-helper';
 import ModifyTextHelper from './helper/modify-text-helper';
 import ModifyColorHelper from './helper/modify-color-helper';
+import { TemplateInfo } from './types/xml-types';
 
 export type {
   ChartBubble,
@@ -73,6 +75,7 @@ export {
 
 export const modify = {
   dump,
+  dumpChart,
   setAttribute,
   setSolidFill,
   setText,
@@ -88,5 +91,5 @@ export const modify = {
   setChartCombo,
   setChartBubbles,
 };
-export type { AutomizerSummary };
+export type { AutomizerSummary, TemplateInfo };
 export default Automizer;

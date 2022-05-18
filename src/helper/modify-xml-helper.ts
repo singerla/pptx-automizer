@@ -26,20 +26,39 @@ export default class ModifyXmlHelper {
       }
 
       const index = modifier.index || 0;
-      const isRequired = (modifier.isRequired !== undefined)
-        ? modifier.isRequired : true;
+      const isRequired =
+        modifier.isRequired !== undefined ? modifier.isRequired : true;
+      const forceCreate =
+        modifier.forceCreate !== undefined ? modifier.forceCreate : false;
 
-      const asserted = this.assertNode(root.getElementsByTagName(tag), index, tag, root, isRequired);
-      if(asserted === false) {
-        if(isRequired === true) {
+      if (tag === 'c:dLbl') {
+        // XmlHelper.dump(root.parentNode as any);
+      }
+
+      const asserted = this.assertNode(
+        root.getElementsByTagName(tag),
+        index,
+        tag,
+        root,
+        isRequired,
+        forceCreate,
+      );
+
+      if (asserted === false) {
+        if (isRequired === true) {
           // XmlHelper.dump(root)
           // vd(tags)
-          vd('Could not assert required tag: ' + tag + '@index:' + index)
+          vd('Could not assert required tag: ' + tag + '@index:' + index);
         }
-        return
+        return;
       }
 
       const element = root.getElementsByTagName(tag)[index];
+
+      if (tag === 'c:dLbl') {
+        // console.log(root.getElementsByTagName(tag).length);
+        // XmlHelper.dump(element.parentNode.parentNode as any);
+      }
 
       if (GeneralHelper.propertyExists(modifier, 'modify')) {
         const modifies = GeneralHelper.arrayify(modifier.modify);
@@ -56,45 +75,51 @@ export default class ModifyXmlHelper {
     return element.firstChild.textContent;
   };
 
-  static value = (value: number | string, index?: number) => (
-    element: Element,
-  ): void => {
-    element.getElementsByTagName('c:v')[0].firstChild.textContent = String(
-      value,
-    );
-    if (index !== undefined) {
-      element.setAttribute('idx', String(index));
-    }
-  };
+  static value =
+    (value: number | string, index?: number) =>
+    (element: Element): void => {
+      element.getElementsByTagName('c:v')[0].firstChild.textContent =
+        String(value);
+      if (index !== undefined) {
+        element.setAttribute('idx', String(index));
+      }
+    };
 
-  static attribute = (attribute: string, value: string | number) => (
-    element: Element,
-  ): void => {
-    element.setAttribute(attribute, String(value));
-  };
+  static attribute =
+    (attribute: string, value: string | number) =>
+    (element: Element): void => {
+      element.setAttribute(attribute, String(value));
+    };
 
-  static booleanAttribute = (attribute: string, state: boolean) => (element: Element): void => {
-    element.setAttribute(attribute, (state === true) ? '1' : '0');
-  }
+  static booleanAttribute =
+    (attribute: string, state: boolean) =>
+    (element: Element): void => {
+      element.setAttribute(attribute, state === true ? '1' : '0');
+    };
 
-  static range = (series: number, length?: number) => (
-    element: Element,
-  ): void => {
-    const range = element.firstChild.textContent;
-    element.firstChild.textContent = StringIdGenerator.setRange(
-      range,
-      series,
-      length,
-    );
-  };
+  static range =
+    (series: number, length?: number) =>
+    (element: Element): void => {
+      const range = element.firstChild.textContent;
+      element.firstChild.textContent = StringIdGenerator.setRange(
+        range,
+        series,
+        length,
+      );
+    };
 
   assertNode(
     collection: HTMLCollectionOf<Element>,
     index: number,
     tag: string,
     parent: XMLDocument | Element,
-    required: boolean
+    required: boolean,
+    forceCreate: boolean,
   ): boolean {
+    if (forceCreate) {
+      return this.createNode(parent, tag, index, required);
+    }
+
     if (!collection[index]) {
       if (collection[collection.length - 1] === undefined) {
         return this.createNode(parent, tag, index, required);
@@ -104,10 +129,15 @@ export default class ModifyXmlHelper {
         XmlHelper.insertAfter(newChild, tplNode);
       }
     }
-    return true
+    return true;
   }
 
-  createNode(parent: XMLDocument | Element, tag: string, index: number, required:boolean): boolean {
+  createNode(
+    parent: XMLDocument | Element,
+    tag: string,
+    index: number,
+    required: boolean,
+  ): boolean {
     switch (tag) {
       case 'a:t':
         new XmlElements(parent).text();
@@ -118,6 +148,9 @@ export default class ModifyXmlHelper {
       case 'c:spPr':
         new XmlElements(parent).shapeProperties();
         return true;
+      case 'c:dLbl':
+        new XmlElements(parent).dataPointLabel();
+        return true;
     }
     //
     // if(required === true) {
@@ -126,6 +159,6 @@ export default class ModifyXmlHelper {
     //   );
     // }
 
-    return false
+    return false;
   }
 }

@@ -6,9 +6,15 @@ import {
   ChartPoint,
   ChartBubble,
   ChartDataMapper,
-  ChartSeries, ChartValueStyle,
+  ChartSeries,
+  ChartValueStyle,
 } from '../types/chart-types';
-import {ModificationTags, Modification, Color, ModifyCallback} from '../types/modify-types';
+import {
+  ModificationTags,
+  Modification,
+  Color,
+  ModifyCallback,
+} from '../types/modify-types';
 import { XmlHelper } from '../helper/xml-helper';
 import CellIdHelper from '../helper/cell-id-helper';
 import { Workbook } from '../types/types';
@@ -48,7 +54,6 @@ export class ModifyChart {
     this.columns = this.setColumns(slot);
     this.height = this.data.categories.length;
     this.width = this.columns.length;
-
   }
 
   modify(): void {
@@ -109,7 +114,7 @@ export class ModifyChart {
                 category,
                 slot.tag,
                 mapData,
-                targetYCol
+                targetYCol,
               );
             }
           : null;
@@ -147,19 +152,24 @@ export class ModifyChart {
   }
 
   setPointStyles(): void {
-    const count = {}
+    const count = {};
     this.data.categories.forEach((category, c) => {
-      if(category.styles) {
+      if (category.styles) {
         category.styles.forEach((style, s) => {
-          if(style === null) return
-          count[s] = (!count[s]) ? 0 : count[s]
+          if (style === null) return;
+          count[s] = !count[s] ? 0 : count[s];
           this.chart.modify(
-            this.series(s, this.chartPoint(count[s], c, style))
-          )
-          count[s]++
-        })
+            this.series(s, this.chartPoint(count[s], c, style)),
+          );
+          if (style.label) {
+            this.chart.modify(
+              this.series(s, this.chartPointLabel(count[s], s, style.label)),
+            );
+          }
+          count[s]++;
+        });
       }
-    })
+    });
   }
 
   setSeries(): void {
@@ -178,22 +188,17 @@ export class ModifyChart {
 
   setSeriesDataLabels = (): void => {
     this.data.series.forEach((series, s) => {
+      this.chart.modify(
+        this.series(s, this.seriesDataLabel(s, series.style?.label)),
+      );
+
       this.data.categories.forEach((category, c) => {
         this.chart.modify(
-          this.series(s, this.seriesDataLabelsRange(c, s, category.label))
-        )
-        // if(category.styles && category.styles[s]) {
-        //   const pointStyle = category.styles[s]
-        //   if(pointStyle.label) {
-        //     vd(this.series(s, this.seriesDataLabel(c, pointStyle.label)))
-        //     // this.chart.modify(
-        //     //   this.series(s, this.seriesDataLabel(c, pointStyle.label))
-        //     // )
-        //   }
-        // }
-      })
-    })
-  }
+          this.series(s, this.seriesDataLabelsRange(c, category.label)),
+        );
+      });
+    });
+  };
 
   sliceChartSpace(): void {
     this.chart.modify({
@@ -280,26 +285,32 @@ export class ModifyChart {
     };
   };
 
-  chartPoint = (index: number, idx: number, style: ChartValueStyle): ModificationTags => {
+  chartPoint = (
+    index: number,
+    idx: number,
+    style: ChartValueStyle,
+  ): ModificationTags => {
     return {
       'c:dPt': {
         index: index,
         children: {
           'c:idx': {
-            modify: ModifyXmlHelper.attribute('val', idx)
+            modify: ModifyXmlHelper.attribute('val', idx),
           },
           'c:spPr': {
             modify: ModifyColorHelper.solidFill(style?.color),
           },
           ...this.chartPointBorder(style?.border),
-          ...this.chartPointMarker(style?.marker)
-        }
-      }
-    }
-  }
+          ...this.chartPointMarker(style?.marker),
+        },
+      },
+    };
+  };
 
-  chartPointMarker = (markerStyle: ChartValueStyle['marker']): ModificationTags => {
-    if(!markerStyle) return
+  chartPointMarker = (
+    markerStyle: ChartValueStyle['marker'],
+  ): ModificationTags => {
+    if (!markerStyle) return;
 
     return {
       'c:marker': {
@@ -307,30 +318,61 @@ export class ModifyChart {
         children: {
           'c:spPr': {
             modify: ModifyColorHelper.solidFill(markerStyle.color),
-          }
-        }
-      }
-    }
-  }
+          },
+        },
+      },
+    };
+  };
   chartPointBorder = (style: ChartValueStyle['border']): ModificationTags => {
-    if(!style) return
-    const modify = <ModifyCallback[]>[]
+    if (!style) return;
+    const modify = <ModifyCallback[]>[];
 
-    if(style.color) {
-      modify.push(ModifyColorHelper.solidFill(style.color))
-      modify.push(ModifyColorHelper.removeNoFill())
+    if (style.color) {
+      modify.push(ModifyColorHelper.solidFill(style.color));
+      modify.push(ModifyColorHelper.removeNoFill());
     }
-    if(style.weight) {
-      modify.push(ModifyXmlHelper.attribute('w', style.weight))
+    if (style.weight) {
+      modify.push(ModifyXmlHelper.attribute('w', style.weight));
     }
 
     return {
       'a:ln': {
-        modify: modify
-      }
-    }
-  }
+        modify: modify,
+      },
+    };
+  };
 
+  chartPointLabel = (
+    idx: number,
+    index: number,
+    labelStyle: ChartValueStyle['label'],
+  ): ModificationTags => {
+    if (!labelStyle) return;
+
+    return {
+      'c:dLbls': {
+        children: {
+          'c:dLbl': {
+            // forceCreate: true,
+            index: index,
+            children: {
+              'c:idx': {
+                modify: ModifyXmlHelper.attribute('val', String(idx)),
+              },
+              'a:pPr': {
+                modify: ModifyColorHelper.solidFill(labelStyle?.color),
+                children: {
+                  'a:defRPr': {
+                    modify: ModifyTextHelper.style(labelStyle),
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+  };
   seriesId = (series: number): ModificationTags => {
     return {
       'c:idx': {
@@ -354,7 +396,7 @@ export class ModifyChart {
   };
 
   seriesStyle = (series: ChartSeries): ModificationTags => {
-    if(!series?.style) return
+    if (!series?.style) return;
 
     return {
       'c:spPr': {
@@ -366,13 +408,16 @@ export class ModifyChart {
           'c:spPr': {
             isRequired: false,
             modify: ModifyColorHelper.solidFill(series.style.marker?.color),
-          }
-        }
+          },
+        },
       },
     };
   };
 
-  seriesDataLabelsRange = (r: number, c: number, value: string|number): ModificationTags => {
+  seriesDataLabelsRange = (
+    r: number,
+    value: string | number,
+  ): ModificationTags => {
     return {
       'c15:datalabelsRange': {
         isRequired: false,
@@ -387,31 +432,28 @@ export class ModifyChart {
           'c:ptCount': {
             modify: ModifyXmlHelper.attribute('val', this.height),
           },
-        }
-      }
+        },
+      },
     };
   };
-  //
-  // seriesDataLabel = (c: number, style: ChartValueStyle['label']): ModificationTags => {
-  //   vd(c)
-  //   return {
-  //     'c:dLbls': {
-  //       children: {
-  //         'c:dLbl': {
-  //           index: c,
-  //           children: {
-  //             'c:idx': {
-  //               modify: ModifyXmlHelper.attribute('val', '123')
-  //             },
-  //             'c:dLblPos': {
-  //               modify: ModifyXmlHelper.attribute('val', 'test')
-  //             },
-  //           }
-  //         }
-  //       }
-  //     }
-  //   };
-  // };
+
+  seriesDataLabel = (s, style: ChartValueStyle['label']): ModificationTags => {
+    return {
+      'c:dLbls': {
+        isRequired: false,
+        children: {
+          'a:pPr': {
+            modify: ModifyColorHelper.solidFill(style?.color),
+            children: {
+              'a:defRPr': {
+                modify: ModifyTextHelper.style(style),
+              },
+            },
+          },
+        },
+      },
+    };
+  };
 
   defaultSeries(
     r: number,
@@ -453,7 +495,7 @@ export class ModifyChart {
     };
   }
 
-  point = (r: number, c: number, value: string|number): Modification => {
+  point = (r: number, c: number, value: string | number): Modification => {
     return {
       children: {
         'c:pt': {
@@ -585,7 +627,7 @@ export class ModifyChart {
       },
     });
 
-    this.setWorkbookTableFirstColumn()
+    this.setWorkbookTableFirstColumn();
     this.columns.forEach((addCol, s) => {
       this.setWorkbookTableColumn(s + 1, addCol.label);
     });
@@ -595,7 +637,7 @@ export class ModifyChart {
     this.workbookTable.modify({
       tableColumn: {
         index: 0,
-        modify: ModifyXmlHelper.attribute('id', 1)
+        modify: ModifyXmlHelper.attribute('id', 1),
       },
     });
   }

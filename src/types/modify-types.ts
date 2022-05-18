@@ -6,10 +6,13 @@ export type ModifyCollectionCallback = {
 };
 export type Modification = {
   index?: number;
+  last?: boolean;
   collection?: ModifyCollectionCallback;
   children?: ModificationTags;
   modify?: ModifyCallback | ModifyCallback[];
+  create?: any;
   isRequired?: boolean;
+  forceCreate?: boolean;
 };
 export type ModificationTags = {
   [tag: string]: Modification;
