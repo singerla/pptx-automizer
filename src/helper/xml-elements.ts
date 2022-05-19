@@ -155,12 +155,6 @@ export default class XmlElements {
     const xml = fs.readFileSync(__dirname + '/xml/dLbl.xml');
     const doc = new DOMParser().parseFromString(xml.toString());
     const ele = doc.getElementsByTagName('c:dLbl')[0];
-    // const insertBefore = this.element.getElementsByTagName('c:dLbl');
-    // if (existing) {
-    //   const last = existing[existing.length - 1];
-    //   // this.element.insertBefore(ele.cloneNode(true), last.nextSibling);
-    // } else {
-    // }
     const firstChild = this.element.firstChild;
     this.element.insertBefore(ele.cloneNode(true), firstChild);
   }

@@ -156,14 +156,14 @@ export class ModifyChart {
     this.data.categories.forEach((category, c) => {
       if (category.styles) {
         category.styles.forEach((style, s) => {
-          if (style === null) return;
+          if (style === null || !Object.values(style).length) return;
           count[s] = !count[s] ? 0 : count[s];
           this.chart.modify(
             this.series(s, this.chartPoint(count[s], c, style)),
           );
           if (style.label) {
             this.chart.modify(
-              this.series(s, this.chartPointLabel(count[s], s, style.label)),
+              this.series(s, this.chartPointLabel(count[s], c, style.label)),
             );
           }
           count[s]++;
@@ -290,6 +290,7 @@ export class ModifyChart {
     idx: number,
     style: ChartValueStyle,
   ): ModificationTags => {
+    if (!style?.color && !style?.border && !style?.marker) return;
     return {
       'c:dPt': {
         index: index,
@@ -297,12 +298,20 @@ export class ModifyChart {
           'c:idx': {
             modify: ModifyXmlHelper.attribute('val', idx),
           },
-          'c:spPr': {
-            modify: ModifyColorHelper.solidFill(style?.color),
-          },
+          ...this.chartPointFill(style?.color),
           ...this.chartPointBorder(style?.border),
           ...this.chartPointMarker(style?.marker),
         },
+      },
+    };
+  };
+
+  chartPointFill = (color: ChartValueStyle['color']): ModificationTags => {
+    if (!color?.type) return;
+
+    return {
+      'c:spPr': {
+        modify: ModifyColorHelper.solidFill(color),
       },
     };
   };
@@ -343,8 +352,8 @@ export class ModifyChart {
   };
 
   chartPointLabel = (
-    idx: number,
     index: number,
+    idx: number,
     labelStyle: ChartValueStyle['label'],
   ): ModificationTags => {
     if (!labelStyle) return;
@@ -353,7 +362,6 @@ export class ModifyChart {
       'c:dLbls': {
         children: {
           'c:dLbl': {
-            // forceCreate: true,
             index: index,
             children: {
               'c:idx': {

@@ -21,12 +21,22 @@ test('create presentation, add slide with charts from template and modify existi
               // Style prop can be applied to series
               style: {
                 color: {
-                  type: 'schemeClr', value: 'accent1'
-                }
-              }
+                  type: 'schemeClr',
+                  value: 'accent1',
+                },
+                // All labels of a series can be styled
+                label: {
+                  color: {
+                    type: 'schemeClr',
+                    value: 'accent2',
+                  },
+                  isBold: false,
+                  size: 2200,
+                },
+              },
             },
-            {label: 'series 2'},
-            {label: 'series 3'},
+            { label: 'series 2' },
+            { label: 'series 3' },
           ],
           categories: [
             {
@@ -37,10 +47,11 @@ test('create presentation, add slide with charts from template and modify existi
               styles: [
                 {
                   color: {
-                    type: 'srgbClr', value: '333333'
-                  }
-                }
-              ]
+                    type: 'srgbClr',
+                    value: '333333',
+                  },
+                },
+              ],
             },
             {
               label: 'cat 2-2',
@@ -50,30 +61,45 @@ test('create presentation, add slide with charts from template and modify existi
                 null,
                 {
                   color: {
-                    type: 'srgbClr', value: 'efefef'
-                  }
+                    type: 'srgbClr',
+                    value: 'efefef',
+                  },
                 },
                 {
                   color: {
-                    type: 'srgbClr', value: 'eecc00'
-                  }
-                }
-              ]
+                    type: 'srgbClr',
+                    value: 'eecc00',
+                  },
+                },
+              ],
             },
-            {label: 'cat 2-3', values: [15, 50, 20]},
-            {label: 'cat 2-4', values: [26, 50, 20],
+            { label: 'cat 2-3', values: [15, 50, 20] },
+            {
+              label: 'cat 2-4',
+              values: [26, 50, 20],
               // Style prop will be applied to third point in category ("20").
               styles: [
-              null,
-              null,
-              {
-                color: {
-                  type: 'srgbClr', value: 'eeccff'
-                }
-              }
-            ]}
+                null,
+                null,
+                {
+                  color: {
+                    type: 'srgbClr',
+                    value: 'eeccff',
+                  },
+                  // All single datapoint label can have a different style
+                  label: {
+                    color: {
+                      type: 'schemeClr',
+                      value: 'accent2',
+                    },
+                    isBold: false,
+                    size: 2200,
+                  },
+                },
+              ],
+            },
           ],
-        })
+        }),
       ]);
     })
     .write(`modify-existing-chart-styled.test.pptx`);

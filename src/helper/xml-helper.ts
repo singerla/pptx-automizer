@@ -10,7 +10,11 @@ import {
 } from '../types/xml-types';
 import { TargetByRelIdMap } from '../constants/constants';
 import { XmlPrettyPrint } from './xml-pretty-print';
-import {GetRelationshipsCallback, SourceSlideIdentifier, Target} from '../types/types';
+import {
+  GetRelationshipsCallback,
+  SourceSlideIdentifier,
+  Target,
+} from '../types/types';
 import { XmlTemplateHelper } from './xml-template-helper';
 
 export class XmlHelper {
@@ -74,7 +78,7 @@ export class XmlHelper {
 
     await XmlHelper.writeXmlToArchive(element.archive, element.file, xml);
 
-    return (newElement as unknown) as HelperElement;
+    return newElement as unknown as HelperElement;
   }
 
   static async getNextRelId(rootArchive: JSZip, file: string): Promise<string> {
@@ -350,8 +354,11 @@ export class XmlHelper {
     return strings.getElementsByTagName('si').length - 1;
   }
 
-  static insertAfter(newNode: Node, referenceNode: Element): void {
-    referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+  static insertAfter(newNode: Node, referenceNode: Element): Node {
+    return referenceNode.parentNode.insertBefore(
+      newNode,
+      referenceNode.nextSibling,
+    );
   }
 
   static sliceCollection(

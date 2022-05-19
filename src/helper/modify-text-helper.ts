@@ -47,16 +47,16 @@ export default class ModifyTextHelper {
     (style: TextStyle) =>
     (element: Element): void => {
       if (!style) return;
-      if (style.color) {
+      if (style.color !== undefined) {
         ModifyTextHelper.setColor(style.color)(element);
       }
-      if (style.size) {
+      if (style.size !== undefined) {
         ModifyTextHelper.setSize(style.size)(element);
       }
-      if (style.isBold) {
+      if (style.isBold !== undefined) {
         ModifyTextHelper.setBold(style.isBold)(element);
       }
-      if (style.isItalics) {
+      if (style.isItalics !== undefined) {
         ModifyTextHelper.setItalics(style.isItalics)(element);
       }
     };

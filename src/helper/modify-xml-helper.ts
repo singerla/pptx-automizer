@@ -7,9 +7,11 @@ import XmlElements, { XmlElementParams } from './xml-elements';
 
 export default class ModifyXmlHelper {
   root: XMLDocument | Element;
+  templates: { [key: string]: Node };
 
   constructor(root: XMLDocument | Element) {
     this.root = root;
+    this.templates = {};
   }
 
   modify(tags: ModificationTags, root?: XMLDocument | Element): void {
@@ -28,47 +30,78 @@ export default class ModifyXmlHelper {
       const index = modifier.index || 0;
       const isRequired =
         modifier.isRequired !== undefined ? modifier.isRequired : true;
-      const forceCreate =
-        modifier.forceCreate !== undefined ? modifier.forceCreate : false;
 
-      if (tag === 'c:dLbl') {
-        // XmlHelper.dump(root.parentNode as any);
-      }
-
-      const asserted = this.assertNode(
+      const element = this.assertElement(
         root.getElementsByTagName(tag),
         index,
         tag,
         root,
-        isRequired,
-        forceCreate,
       );
 
-      if (asserted === false) {
+      if (element === false) {
         if (isRequired === true) {
-          // XmlHelper.dump(root)
-          // vd(tags)
           vd('Could not assert required tag: ' + tag + '@index:' + index);
         }
         return;
       }
 
-      const element = root.getElementsByTagName(tag)[index];
-
-      if (tag === 'c:dLbl') {
-        // console.log(root.getElementsByTagName(tag).length);
-        // XmlHelper.dump(element.parentNode.parentNode as any);
-      }
-
       if (GeneralHelper.propertyExists(modifier, 'modify')) {
         const modifies = GeneralHelper.arrayify(modifier.modify);
-        Object.values(modifies).forEach((modifyXml) => modifyXml(element));
+        Object.values(modifies).forEach((modifyXml) =>
+          modifyXml(element as Element),
+        );
       }
 
       if (GeneralHelper.propertyExists(modifier, 'children')) {
-        this.modify(modifier.children, element);
+        this.modify(modifier.children, element as Element);
       }
     }
+  }
+
+  assertElement(
+    collection: HTMLCollectionOf<Element>,
+    index: number,
+    tag: string,
+    parent: XMLDocument | Element,
+  ): XMLDocument | Element | boolean {
+    if (!collection[index]) {
+      if (collection[collection.length - 1] === undefined) {
+        this.createElement(parent, tag);
+      } else {
+        const previousSibling = collection[collection.length - 1];
+        const newChild = this.templates[tag]
+          ? this.templates[tag].cloneNode(true)
+          : previousSibling.cloneNode(true);
+        XmlHelper.insertAfter(newChild, previousSibling);
+      }
+    }
+
+    const element = parent.getElementsByTagName(tag)[index];
+
+    if (element) {
+      this.templates[tag] = element.cloneNode(true);
+      return element;
+    }
+
+    return false;
+  }
+
+  createElement(parent: XMLDocument | Element, tag: string): boolean {
+    switch (tag) {
+      case 'a:t':
+        new XmlElements(parent).text();
+        return true;
+      case 'c:dPt':
+        new XmlElements(parent).dataPoint();
+        return true;
+      case 'c:spPr':
+        new XmlElements(parent).shapeProperties();
+        return true;
+      case 'c:dLbl':
+        new XmlElements(parent).dataPointLabel();
+        return true;
+    }
+    return false;
   }
 
   static getText = (element: Element): string => {
@@ -107,58 +140,4 @@ export default class ModifyXmlHelper {
         length,
       );
     };
-
-  assertNode(
-    collection: HTMLCollectionOf<Element>,
-    index: number,
-    tag: string,
-    parent: XMLDocument | Element,
-    required: boolean,
-    forceCreate: boolean,
-  ): boolean {
-    if (forceCreate) {
-      return this.createNode(parent, tag, index, required);
-    }
-
-    if (!collection[index]) {
-      if (collection[collection.length - 1] === undefined) {
-        return this.createNode(parent, tag, index, required);
-      } else {
-        const tplNode = collection[collection.length - 1];
-        const newChild = tplNode.cloneNode(true);
-        XmlHelper.insertAfter(newChild, tplNode);
-      }
-    }
-    return true;
-  }
-
-  createNode(
-    parent: XMLDocument | Element,
-    tag: string,
-    index: number,
-    required: boolean,
-  ): boolean {
-    switch (tag) {
-      case 'a:t':
-        new XmlElements(parent).text();
-        return true;
-      case 'c:dPt':
-        new XmlElements(parent).dataPoint();
-        return true;
-      case 'c:spPr':
-        new XmlElements(parent).shapeProperties();
-        return true;
-      case 'c:dLbl':
-        new XmlElements(parent).dataPointLabel();
-        return true;
-    }
-    //
-    // if(required === true) {
-    //   throw new Error(
-    //     `Could not create new node at index ${index}; Tag "${tag}"`,
-    //   );
-    // }
-
-    return false;
-  }
 }

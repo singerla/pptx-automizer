@@ -57,16 +57,15 @@ const run = async () => {
               label: 'cat 2-1',
               values: [50, 40],
               styles: [
-                null,
                 {
-                  // color: {
-                  //   type: 'srgbClr',
-                  //   value: '333333',
-                  // },
+                  color: {
+                    type: 'srgbClr',
+                    value: 'eeeeee',
+                  },
                   label: {
                     color: {
                       type: 'schemeClr',
-                      value: 'accent3',
+                      value: 'accent1',
                     },
                     isBold: true,
                     size: 5200,
@@ -78,26 +77,43 @@ const run = async () => {
               label: 'cat 2-2',
               values: [25, 10],
               styles: [
-                // null,
+                {
+                  color: {
+                    type: 'srgbClr',
+                    value: 'ff0000',
+                  },
+                },
                 // {
-                //   color: {
-                //     type: 'srgbClr',
-                //     value: 'efefef',
-                //   },
                 //   label: {
                 //     color: {
                 //       type: 'schemeClr',
-                //       value: 'accent1',
+                //       value: 'accent3',
                 //     },
                 //     size: 3200,
+                //     isBold: false,
                 //   },
                 // },
-                // {
-                //   color: {
-                //     type: 'srgbClr',
-                //     value: 'eecc00',
-                //   },
-                // },
+              ],
+            },
+            {
+              label: 'cat 2-3',
+              values: [25, 10],
+              styles: [
+                {
+                  color: {
+                    type: 'srgbClr',
+                    value: 'eeeeee',
+                  },
+                },
+                {
+                  label: {
+                    color: {
+                      type: 'schemeClr',
+                      value: 'accent4',
+                    },
+                    size: 4200,
+                  },
+                },
               ],
             },
           ],
