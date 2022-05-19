@@ -79,7 +79,7 @@ export default class ModifyXmlHelper {
     const element = parent.getElementsByTagName(tag)[index];
 
     if (element) {
-      this.templates[tag] = element.cloneNode(true);
+      this.templates[tag] = this.templates[tag] || element.cloneNode(true);
       return element;
     }
 
