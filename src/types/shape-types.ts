@@ -1,3 +1,5 @@
+import { Color } from './modify-types';
+
 export type ShapeCoordinates = {
   /**
    * Horizontal position measured from left corner
@@ -21,4 +23,20 @@ export type ShapeCoordinates = {
    * Shape height in `DXA`
    */
   h?: number;
+};
+export type ShapeValueStyle = {
+  background?: Color;
+  gradient?: {
+    color: Color;
+    index: number;
+  }[];
+  border?: {
+    color?: Color;
+    weight?: number;
+  };
+  label?: {
+    color?: Color;
+    isBold?: boolean;
+    size?: number;
+  };
 };

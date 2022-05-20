@@ -15,6 +15,10 @@ export type ChartValueStyle = {
     isBold?: boolean;
     size?: number;
   };
+  gradient?: {
+    color: Color;
+    index: number;
+  }[];
 };
 export type ChartPoint = {
   x: ChartPointValue;

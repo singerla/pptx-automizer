@@ -1,12 +1,12 @@
-import {Color, TextStyle} from './modify-types';
+import { Color, TextStyle } from './modify-types';
 
 export type TableRow = {
   label?: string;
   values: (string | number)[];
-  styles?: (null|TableRowStyle)[];
+  styles?: (null | TableRowStyle)[];
 };
 
-export type TableRowStyle = TextStyle
+export type TableRowStyle = TextStyle;
 
 export type TableData = {
   header?: TableRow | TableRow[];
@@ -17,4 +17,6 @@ export type TableData = {
 export type ModifyTableParams = {
   adjustWidth: boolean;
   adjustHeight: boolean;
+  setHeight?: number;
+  setWidth?: number;
 };

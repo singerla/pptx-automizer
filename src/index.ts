@@ -40,7 +40,7 @@ import {
   ChartValueStyle,
 } from './types/chart-types';
 import { Color, ReplaceText, TextStyle } from './types/modify-types';
-import { ShapeCoordinates } from './types/shape-types';
+import { ShapeCoordinates, ShapeValueStyle } from './types/shape-types';
 import { XmlHelper } from './helper/xml-helper';
 import ModifyTextHelper from './helper/modify-text-helper';
 import ModifyColorHelper from './helper/modify-color-helper';
@@ -58,6 +58,7 @@ export type {
   ChartData,
   ChartValueStyle,
   Color,
+  ShapeValueStyle,
   ShapeCoordinates,
   ReplaceText,
 };
