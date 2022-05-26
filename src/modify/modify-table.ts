@@ -1,6 +1,6 @@
 import { XmlHelper } from '../helper/xml-helper';
 import ModifyXmlHelper from '../helper/modify-xml-helper';
-import { TableData, TableRow } from '../types/table-types';
+import { TableData, TableRow, TableRowStyle } from '../types/table-types';
 import {
   Color,
   Modification,
@@ -9,6 +9,7 @@ import {
 } from '../types/modify-types';
 import { vd } from '../helper/general-helper';
 import ModifyTextHelper from '../helper/modify-text-helper';
+import { ModifyColorHelper } from '../index';
 
 export class ModifyTable {
   data: TableData;
@@ -50,7 +51,7 @@ export class ModifyTable {
   }
 
   setGridCols() {
-    this.data.body[0].values.forEach((cell, c: number) => {
+    this.data.body[0]?.values.forEach((cell, c: number) => {
       this.table.modify({
         'a:gridCol': {
           index: c,
@@ -71,7 +72,7 @@ export class ModifyTable {
 
   sliceCols() {
     this.table.modify({
-      'a:tblGrid': this.slice('a:gridCol', this.data.body[0].values.length),
+      'a:tblGrid': this.slice('a:gridCol', this.data.body[0]?.values.length),
     });
   }
 
@@ -93,7 +94,7 @@ export class ModifyTable {
     };
   };
 
-  cell = (value: number | string, style?: TextStyle): ModificationTags => {
+  cell = (value: number | string, style?: TableRowStyle): ModificationTags => {
     return {
       'a:t': {
         modify: ModifyTextHelper.content(value),
@@ -101,8 +102,21 @@ export class ModifyTable {
       'a:rPr': {
         modify: ModifyTextHelper.style(style),
       },
+      ...this.setCellBackground(style),
     };
   };
+
+  setCellBackground(style) {
+    if (!style.background) {
+      return {};
+    }
+
+    return {
+      'a:tcPr': {
+        modify: ModifyColorHelper.solidFill(style.background, 'last'),
+      },
+    };
+  }
 
   slice(tag: string, length: number): Modification {
     return {
@@ -134,9 +148,9 @@ export class ModifyTable {
 
   adjustWidth() {
     const tableWidth = this.getTableSize('cx');
-    const rowWidth = tableWidth / this.data.body[0].values.length;
+    const rowWidth = tableWidth / this.data.body[0]?.values?.length || 1;
 
-    this.data.body[0].values.forEach((cell, c: number) => {
+    this.data.body[0]?.values.forEach((cell, c: number) => {
       this.table.modify({
         'a:gridCol': {
           index: c,

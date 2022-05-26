@@ -6,7 +6,9 @@ export type TableRow = {
   styles?: (null | TableRowStyle)[];
 };
 
-export type TableRowStyle = TextStyle;
+export type TableRowStyle = TextStyle & {
+  background?: Color;
+};
 
 export type TableData = {
   header?: TableRow | TableRow[];

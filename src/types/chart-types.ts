@@ -3,6 +3,7 @@ import { Color, ModificationTags } from './modify-types';
 export type ChartPointValue = null | number;
 export type ChartValueStyle = {
   color?: Color;
+  background?: Color;
   marker?: {
     color?: Color;
   };
