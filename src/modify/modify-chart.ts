@@ -542,6 +542,7 @@ export class ModifyChart {
     return {
       row: {
         index: r,
+        fromPrevious: true,
         modify: [
           ModifyXmlHelper.attribute('spans', `1:${this.width}`),
           ModifyXmlHelper.attribute('r', String(rowId)),
@@ -554,6 +555,7 @@ export class ModifyChart {
     return {
       row: {
         index: r,
+        fromPrevious: true,
         children: {
           c: {
             modify: ModifyXmlHelper.attribute(
@@ -571,9 +573,11 @@ export class ModifyChart {
     return {
       row: {
         index: r,
+        fromPrevious: true,
         children: {
           c: {
             index: c,
+            fromPrevious: true,
             modify: ModifyXmlHelper.attribute(
               'r',
               CellIdHelper.getCellAddressString(c, r),
@@ -654,6 +658,7 @@ export class ModifyChart {
     this.workbookTable.modify({
       tableColumn: {
         index: c,
+        fromPrevious: true,
         modify: [
           ModifyXmlHelper.attribute('id', c + 1),
           ModifyXmlHelper.attribute('name', label),

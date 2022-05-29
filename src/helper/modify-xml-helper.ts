@@ -36,6 +36,7 @@ export default class ModifyXmlHelper {
         index,
         tag,
         root,
+        modifier,
       );
 
       if (element === false) {
@@ -63,15 +64,19 @@ export default class ModifyXmlHelper {
     index: number,
     tag: string,
     parent: XMLDocument | Element,
+    modifier: Modification,
   ): XMLDocument | Element | boolean {
     if (!collection[index]) {
       if (collection[collection.length - 1] === undefined) {
         this.createElement(parent, tag);
       } else {
         const previousSibling = collection[collection.length - 1];
-        const newChild = this.templates[tag]
-          ? this.templates[tag].cloneNode(true)
-          : previousSibling.cloneNode(true);
+
+        const newChild =
+          this.templates[tag] && !modifier.fromPrevious
+            ? this.templates[tag].cloneNode(true)
+            : previousSibling.cloneNode(true);
+
         XmlHelper.insertAfter(newChild, previousSibling);
       }
     }

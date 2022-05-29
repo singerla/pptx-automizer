@@ -12,6 +12,7 @@ export type Modification = {
   modify?: ModifyCallback | ModifyCallback[];
   create?: any;
   isRequired?: boolean;
+  fromPrevious?: boolean;
   forceCreate?: boolean;
 };
 export type ModificationTags = {
