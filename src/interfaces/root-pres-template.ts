@@ -11,4 +11,6 @@ export interface RootPresTemplate extends ITemplate {
   incrementCounter(name: string): number;
 
   appendSlide(slide: ISlide): Promise<void>;
+  countExistingSlides(): Promise<void>;
+  truncate(): Promise<void>;
 }

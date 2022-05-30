@@ -264,9 +264,15 @@ export default class Automizer implements IPresentationProps {
   public async write(location: string): Promise<AutomizerSummary> {
     const rootArchive = await this.rootTemplate.archive;
 
+    await this.rootTemplate.countExistingSlides();
     this.status.max = this.rootTemplate.slides.length;
+
     for (const slide of this.rootTemplate.slides) {
       await this.rootTemplate.appendSlide(slide);
+    }
+
+    if (this.params.removeExistingSlides) {
+      await this.rootTemplate.truncate();
     }
 
     const content = await rootArchive.generateAsync({ type: 'nodebuffer' });

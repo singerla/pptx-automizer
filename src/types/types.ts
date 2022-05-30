@@ -32,7 +32,11 @@ export type AutomizerParams = {
   rootTemplate?: string;
   presTemplates?: string[];
   useCreationIds?: boolean;
-
+  /**
+   * Delete all existing slides from rootTemplate
+   * before automation starts.
+   */
+  removeExistingSlides?: boolean;
   /**
    * statusTracker will be triggered on each appended slide.
    * You can e.g. attach a custom callback to a progress bar.

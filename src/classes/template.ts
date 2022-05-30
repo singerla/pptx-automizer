@@ -9,6 +9,8 @@ import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { ITemplate } from '../interfaces/itemplate';
 import { XmlTemplateHelper } from '../helper/xml-template-helper';
 import { SlideInfo } from '../types/xml-types';
+import { XmlHelper } from '../helper/xml-helper';
+import { vd } from '../helper/general-helper';
 
 export class Template implements ITemplate {
   /**
@@ -48,11 +50,12 @@ export class Template implements ITemplate {
   counter: ICounter[];
 
   creationIds: SlideInfo[];
+  existingSlides: number;
 
   constructor(location: string) {
     this.location = location;
     const file = FileHelper.readFile(location);
-    this.archive = FileHelper.extractFileContent((file as unknown) as Buffer);
+    this.archive = FileHelper.extractFileContent(file as unknown as Buffer);
   }
 
   static import(
@@ -92,6 +95,37 @@ export class Template implements ITemplate {
     }
 
     await slide.append(this);
+  }
+
+  async countExistingSlides(): Promise<void> {
+    const xml = await this.getSlideIdList();
+    const sldIdLst = xml.getElementsByTagName('p:sldIdLst');
+    if (sldIdLst) {
+      const existingSlides = sldIdLst[0].getElementsByTagName('p:sldId');
+      this.existingSlides = existingSlides.length;
+    }
+  }
+
+  async truncate(): Promise<void> {
+    if (this.existingSlides > 0) {
+      const xml = await this.getSlideIdList();
+      const existingSlides = xml.getElementsByTagName('p:sldId');
+      XmlHelper.sliceCollection(existingSlides, this.existingSlides, 0);
+      await XmlHelper.writeXmlToArchive(
+        await this.archive,
+        `ppt/presentation.xml`,
+        xml,
+      );
+    }
+  }
+
+  async getSlideIdList(): Promise<Document> {
+    const archive = await this.archive;
+    const xml = await XmlHelper.getXmlFromArchive(
+      archive,
+      `ppt/presentation.xml`,
+    );
+    return xml;
   }
 
   async initializeCounter(): Promise<void> {

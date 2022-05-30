@@ -8,6 +8,5 @@ export interface IPresentationProps {
   params: AutomizerParams;
   timer: number;
   status?: StatusTracker;
-
   getTemplate(name: string): PresTemplate;
 }

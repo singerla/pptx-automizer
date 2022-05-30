@@ -16,6 +16,7 @@ import {
   Target,
 } from '../types/types';
 import { XmlTemplateHelper } from './xml-template-helper';
+import { vd } from './general-helper';
 
 export class XmlHelper {
   static async getXmlFromArchive(
@@ -364,10 +365,18 @@ export class XmlHelper {
   static sliceCollection(
     collection: HTMLCollectionOf<Element>,
     length: number,
+    from?: number,
   ): void {
-    for (let i = collection.length; i > length; i--) {
-      const toRemove = collection[i - 1];
-      toRemove.parentNode.removeChild(toRemove);
+    if (from !== undefined) {
+      for (let i = from; i < length; i++) {
+        const toRemove = collection[i];
+        toRemove.parentNode.removeChild(toRemove);
+      }
+    } else {
+      for (let i = collection.length; i > length; i--) {
+        const toRemove = collection[i - 1];
+        toRemove.parentNode.removeChild(toRemove);
+      }
     }
   }
 

@@ -4,6 +4,7 @@ import { vd } from './helper/general-helper';
 const automizer = new Automizer({
   templateDir: `${__dirname}/../__tests__/pptx-templates`,
   outputDir: `${__dirname}/../__tests__/pptx-output`,
+  removeExistingSlides: true,
 });
 
 const run = async () => {
@@ -111,7 +112,7 @@ const run = async () => {
   };
 
   const pres = automizer
-    .loadRoot(`RootTemplate.pptx`)
+    .loadRoot(`SlideWithTables.pptx`)
     .load(`SlideWithTables.pptx`, 'tables');
 
   const result = await pres
