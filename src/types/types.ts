@@ -18,6 +18,11 @@ export type AutomizerParams = {
    * Prefix for all template files. You can set a path here.
    */
   templateDir?: string;
+  /**
+   * Specify a fallback directory if template file was not found
+   * in templateDir.
+   */
+  templateFallbackDir?: string;
 
   /**
    * Prefix for the output files for `Automizer` instance.

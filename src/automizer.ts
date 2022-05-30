@@ -13,6 +13,8 @@ import { Template } from './classes/template';
 import { TemplateInfo } from './types/xml-types';
 import { vd } from './helper/general-helper';
 import { Master } from './classes/master';
+import path from 'path';
+import * as fs from 'fs';
 
 /**
  * Automizer
@@ -28,6 +30,7 @@ export default class Automizer implements IPresentationProps {
    */
   templates: PresTemplate[];
   templateDir: string;
+  templateFallbackDir: string;
   outputDir: string;
   /**
    * Timer  of automizer
@@ -46,6 +49,9 @@ export default class Automizer implements IPresentationProps {
     this.params = params;
 
     this.templateDir = params?.templateDir ? params.templateDir + '/' : '';
+    this.templateFallbackDir = params?.templateFallbackDir
+      ? params.templateFallbackDir + '/'
+      : '';
     this.outputDir = params?.outputDir ? params.outputDir + '/' : '';
 
     this.timer = Date.now();
@@ -130,7 +136,6 @@ export default class Automizer implements IPresentationProps {
    */
   private loadTemplate(location: string, name?: string): this {
     location = this.getLocation(location, 'template');
-
     const alreadyLoaded = this.templates.find(
       (template) => template.name === name,
     );
@@ -282,7 +287,12 @@ export default class Automizer implements IPresentationProps {
   private getLocation(location: string, type?: string): string {
     switch (type) {
       case 'template':
-        return this.templateDir + location;
+        if (fs.existsSync(this.templateDir + location)) {
+          return this.templateDir + location;
+        } else if (fs.existsSync(this.templateFallbackDir + location)) {
+          return this.templateFallbackDir + location;
+        }
+        break;
       case 'output':
         return this.outputDir + location;
       default:

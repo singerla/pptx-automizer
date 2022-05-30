@@ -297,7 +297,7 @@ export class Slide implements ISlide {
     for (const element of this.importElements) {
       const info = await this.getElementInfo(element);
 
-      switch (info.type) {
+      switch (info?.type) {
         case ElementType.Chart:
           await new Chart(info)[info.mode](
             this.targetTemplate,
@@ -315,6 +315,8 @@ export class Slide implements ISlide {
             this.targetTemplate,
             this.targetNumber,
           );
+          break;
+        default:
           break;
       }
     }
@@ -349,9 +351,14 @@ export class Slide implements ISlide {
     );
 
     if (!sourceElement) {
-      throw new Error(
+      vd(importElement);
+      vd(
         `Can't find ${importElement.selector} on slide ${slideNumber} in ${importElement.presName}`,
       );
+      // throw new Error(
+      //   `Can't find ${importElement.selector} on slide ${slideNumber} in ${importElement.presName}`,
+      // );
+      return;
     }
 
     const appendElementParams = await this.analyzeElement(
