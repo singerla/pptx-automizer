@@ -100,7 +100,7 @@ export class Template implements ITemplate {
   async countExistingSlides(): Promise<void> {
     const xml = await this.getSlideIdList();
     const sldIdLst = xml.getElementsByTagName('p:sldIdLst');
-    if (sldIdLst) {
+    if (sldIdLst.length > 0) {
       const existingSlides = sldIdLst[0].getElementsByTagName('p:sldId');
       this.existingSlides = existingSlides.length;
     }
