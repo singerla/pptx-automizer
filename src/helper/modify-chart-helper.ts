@@ -5,103 +5,111 @@ import {
   ChartBubble,
   ChartSlot,
   ChartCategory,
-  ChartSeries, ChartPoint, ChartAxisRange,
+  ChartSeries,
+  ChartPoint,
+  ChartAxisRange,
 } from '../types/chart-types';
 import { vd } from './general-helper';
-import {XmlHelper} from './xml-helper';
+import { XmlHelper } from './xml-helper';
 
 export default class ModifyChartHelper {
   /**
    * Set chart data to modify default chart types.
    * See `__tests__/modify-existing-chart.test.js`
    */
-  static setChartData = (data: ChartData) => (
-    element: XMLDocument | Element,
-    chart?: Document,
-    workbook?: Workbook,
-  ): void => {
-    const slots = [] as ChartSlot[];
-    data.series.forEach((series: ChartSeries, s: number) => {
-      slots.push({
-        index: s,
-        series: series,
-        targetCol: s + 1,
-        type: 'defaultSeries',
+  static setChartData =
+    (data: ChartData) =>
+    (
+      element: XMLDocument | Element,
+      chart?: Document,
+      workbook?: Workbook,
+    ): void => {
+      const slots = [] as ChartSlot[];
+      data.series.forEach((series: ChartSeries, s: number) => {
+        slots.push({
+          index: s,
+          series: series,
+          targetCol: s + 1,
+          type: 'defaultSeries',
+        });
       });
-    });
 
-    new ModifyChart(chart, workbook, data, slots).modify();
+      new ModifyChart(chart, workbook, data, slots).modify();
 
-    // XmlHelper.dump(chart)
-    // XmlHelper.dump(workbook.table)
-  };
+      // XmlHelper.dump(chart)
+      // XmlHelper.dump(workbook.table)
+    };
 
   /**
    * Set chart data to modify vertical line charts.
    * See `__tests__/modify-chart-vertical-lines.test.js`
    */
-  static setChartVerticalLines = (data: ChartData) => (
-    element: XMLDocument | Element,
-    chart?: Document,
-    workbook?: Workbook,
-  ): void => {
-    const slots = [] as ChartSlot[];
+  static setChartVerticalLines =
+    (data: ChartData) =>
+    (
+      element: XMLDocument | Element,
+      chart?: Document,
+      workbook?: Workbook,
+    ): void => {
+      const slots = [] as ChartSlot[];
 
-    slots.push({
-      label: `Y-Values`,
-      mapData: (point: number, category: ChartCategory) => category.y,
-      targetCol: 1,
-    });
-
-    data.series.forEach((series: ChartSeries, s: number) => {
       slots.push({
-        index: s,
-        series: series,
-        targetCol: s + 2,
-        type: 'xySeries',
+        label: `Y-Values`,
+        mapData: (point: number, category: ChartCategory) => category.y,
+        targetCol: 1,
       });
-    });
 
-    new ModifyChart(chart, workbook, data, slots).modify();
-  };
+      data.series.forEach((series: ChartSeries, s: number) => {
+        slots.push({
+          index: s,
+          series: series,
+          targetCol: s + 2,
+          type: 'xySeries',
+        });
+      });
+
+      new ModifyChart(chart, workbook, data, slots).modify();
+    };
 
   /**
    * Set chart data to modify scatter charts.
    * See `__tests__/modify-chart-scatter.test.js`
    */
-  static setChartScatter = (data: ChartData) => (
-    element: XMLDocument | Element,
-    chart?: Document,
-    workbook?: Workbook,
-  ): void => {
-    const slots = [] as ChartSlot[];
+  static setChartScatter =
+    (data: ChartData) =>
+    (
+      element: XMLDocument | Element,
+      chart?: Document,
+      workbook?: Workbook,
+    ): void => {
+      const slots = [] as ChartSlot[];
 
-    data.series.forEach((series: ChartSeries, s: number) => {
-      const colId = s * 2;
-      slots.push({
-        index: s,
-        series: series,
-        targetCol: colId + 1,
-        type: 'customSeries',
-        tag: 'c:xVal',
-        mapData: (point: ChartPoint): number => point.x,
+      data.series.forEach((series: ChartSeries, s: number) => {
+        const colId = s * 2;
+        slots.push({
+          index: s,
+          series: series,
+          targetCol: colId + 1,
+          type: 'customSeries',
+          tag: 'c:xVal',
+          mapData: (point: ChartPoint): number => point.x,
+        });
+        slots.push({
+          label: `${series.label}-Y-Value`,
+          index: s,
+          series: series,
+          targetCol: colId + 2,
+          type: 'customSeries',
+          tag: 'c:yVal',
+          mapData: (point: ChartPoint): number => point.y,
+          isStrRef: false,
+        });
       });
-      slots.push({
-        label: `${series.label}-Y-Value`,
-        index: s,
-        series: series,
-        targetCol: colId + 2,
-        type: 'customSeries',
-        tag: 'c:yVal',
-        mapData: (point: ChartPoint): number => point.y,
-        isStrRef: false,
-      });
-    });
 
-    new ModifyChart(chart, workbook, data, slots).modify();
+      new ModifyChart(chart, workbook, data, slots).modify();
 
-    // XmlHelper.dump(chart)
-  };
+      // XmlHelper.dump(chart)
+    };
 
   /**
    * Set chart data to modify combo charts.
@@ -110,102 +118,124 @@ export default class ModifyChartHelper {
    * other series: vertical lines
    * See `__tests__/modify-chart-scatter.test.js`
    */
-  static setChartCombo = (data: ChartData) => (
-    element: XMLDocument | Element,
-    chart?: Document,
-    workbook?: Workbook,
-  ): void => {
-    const slots = [] as ChartSlot[];
+  static setChartCombo =
+    (data: ChartData) =>
+    (
+      element: XMLDocument | Element,
+      chart?: Document,
+      workbook?: Workbook,
+    ): void => {
+      const slots = [] as ChartSlot[];
 
-    slots.push({
-      index: 0,
-      series: data.series[0],
-      targetCol: 1,
-      type: 'defaultSeries',
-    });
+      slots.push({
+        index: 0,
+        series: data.series[0],
+        targetCol: 1,
+        type: 'defaultSeries',
+      });
 
-    slots.push({
-      index: 1,
-      label: `Y-Values`,
-      mapData: (point: number, category: ChartCategory) => category.y,
-      targetCol: 2,
-    });
+      slots.push({
+        index: 1,
+        label: `Y-Values`,
+        mapData: (point: number, category: ChartCategory) => category.y,
+        targetCol: 2,
+      });
 
-    data.series.forEach((series: ChartSeries, s: number) => {
-      if(s > 0)
-        slots.push({
-          index: s,
-          series: series,
-          targetCol: s + 2,
-          targetYCol: 2,
-          type: 'xySeries',
-        });
-      }
-    );
+      data.series.forEach((series: ChartSeries, s: number) => {
+        if (s > 0)
+          slots.push({
+            index: s,
+            series: series,
+            targetCol: s + 2,
+            targetYCol: 2,
+            type: 'xySeries',
+          });
+      });
 
-    new ModifyChart(chart, workbook, data, slots).modify();
-  };
+      new ModifyChart(chart, workbook, data, slots).modify();
+    };
 
   /**
    * Set chart data to modify bubble charts.
    * See `__tests__/modify-chart-bubbles.test.js`
    */
-  static setChartBubbles = (data: ChartData) => (
-    element: XMLDocument | Element,
-    chart?: Document,
-    workbook?: Workbook,
-  ): void => {
-    const slots = [] as ChartSlot[];
+  static setChartBubbles =
+    (data: ChartData) =>
+    (
+      element: XMLDocument | Element,
+      chart?: Document,
+      workbook?: Workbook,
+    ): void => {
+      const slots = [] as ChartSlot[];
 
-    data.series.forEach((series: ChartSeries, s: number) => {
-      const colId = s * 3;
-      slots.push({
-        index: s,
-        series: series,
-        targetCol: colId + 1,
-        type: 'customSeries',
-        tag: 'c:xVal',
-        mapData: (point: ChartBubble): number => point.x,
+      data.series.forEach((series: ChartSeries, s: number) => {
+        const colId = s * 3;
+        slots.push({
+          index: s,
+          series: series,
+          targetCol: colId + 1,
+          type: 'customSeries',
+          tag: 'c:xVal',
+          mapData: (point: ChartBubble): number => point.x,
+        });
+        slots.push({
+          label: `${series.label}-Y-Value`,
+          index: s,
+          series: series,
+          targetCol: colId + 2,
+          type: 'customSeries',
+          tag: 'c:yVal',
+          mapData: (point: ChartBubble): number => point.y,
+          isStrRef: false,
+        });
+        slots.push({
+          label: `${series.label}-Size`,
+          index: s,
+          series: series,
+          targetCol: colId + 3,
+          type: 'customSeries',
+          tag: 'c:bubbleSize',
+          mapData: (point: ChartBubble): number => point.size,
+          isStrRef: false,
+        });
       });
-      slots.push({
-        label: `${series.label}-Y-Value`,
-        index: s,
-        series: series,
-        targetCol: colId + 2,
-        type: 'customSeries',
-        tag: 'c:yVal',
-        mapData: (point: ChartBubble): number => point.y,
-        isStrRef: false,
-      });
-      slots.push({
-        label: `${series.label}-Size`,
-        index: s,
-        series: series,
-        targetCol: colId + 3,
-        type: 'customSeries',
-        tag: 'c:bubbleSize',
-        mapData: (point: ChartBubble): number => point.size,
-        isStrRef: false,
-      });
-    });
 
-    new ModifyChart(chart, workbook, data, slots).modify();
+      new ModifyChart(chart, workbook, data, slots).modify();
 
-    // XmlHelper.dump(chart)
+      // XmlHelper.dump(chart)
+    };
+
+  static setAxisRange =
+    (range: ChartAxisRange) =>
+    (chart: XMLDocument): void => {
+      const axis = chart.getElementsByTagName('c:valAx')[range.axisIndex || 0];
+      if (!axis) return;
+      ModifyChartHelper.setAxisRangeAttribute(
+        axis,
+        'c:majorUnit',
+        range.majorUnit,
+      );
+      ModifyChartHelper.setAxisRangeAttribute(
+        axis,
+        'c:minorUnit',
+        range.minorUnit,
+      );
+
+      const scaling = axis.getElementsByTagName('c:scaling')[0];
+
+      ModifyChartHelper.setAxisRangeAttribute(scaling, 'c:min', range.min);
+      ModifyChartHelper.setAxisRangeAttribute(scaling, 'c:max', range.max);
+    };
+
+  static setAxisRangeAttribute = (
+    axis: Element,
+    tag: string,
+    value: number,
+  ) => {
+    if (value === undefined || !axis) return;
+    const target = axis.getElementsByTagName(tag);
+    if (target.length > 0) {
+      target[0].setAttribute('val', String(value));
+    }
   };
-
-  static setAxisRange = (range: ChartAxisRange) => (
-    chart: XMLDocument,
-  ): void =>  {
-    const axis = chart.getElementsByTagName('c:valAx')[range.axisIndex || 0]
-    if(!axis) return
-
-    const scaling = axis.getElementsByTagName('c:scaling')[0]
-
-    scaling.getElementsByTagName('c:min')[0]
-      .setAttribute('val', String(range.min))
-    scaling.getElementsByTagName('c:max')[0]
-      .setAttribute('val', String(range.max))
-  }
-
 }

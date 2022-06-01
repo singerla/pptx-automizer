@@ -76,6 +76,8 @@ export type ChartSlot = {
 };
 export type ChartAxisRange = {
   axisIndex?: number;
-  min: number;
-  max: number;
+  min?: number;
+  max?: number;
+  majorUnit?: number;
+  minorUnit?: number;
 };

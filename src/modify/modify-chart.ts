@@ -371,6 +371,7 @@ export class ModifyChart {
                 modify: ModifyColorHelper.solidFill(labelStyle?.color),
                 children: {
                   'a:defRPr': {
+                    isRequired: false,
                     modify: ModifyTextHelper.style(labelStyle),
                   },
                 },
