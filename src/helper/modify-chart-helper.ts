@@ -11,6 +11,7 @@ import {
 } from '../types/chart-types';
 import { vd } from './general-helper';
 import { XmlHelper } from './xml-helper';
+import ModifyXmlHelper from './modify-xml-helper';
 
 export default class ModifyChartHelper {
   /**
@@ -210,32 +211,43 @@ export default class ModifyChartHelper {
     (chart: XMLDocument): void => {
       const axis = chart.getElementsByTagName('c:valAx')[range.axisIndex || 0];
       if (!axis) return;
-      ModifyChartHelper.setAxisRangeAttribute(
+
+      ModifyChartHelper.setAxisAttribute(axis, 'c:majorUnit', range.majorUnit);
+      ModifyChartHelper.setAxisAttribute(axis, 'c:minorUnit', range.minorUnit);
+      ModifyChartHelper.setAxisAttribute(
         axis,
-        'c:majorUnit',
-        range.majorUnit,
+        'c:numFmt',
+        range.formatCode,
+        'formatCode',
       );
-      ModifyChartHelper.setAxisRangeAttribute(
+      ModifyChartHelper.setAxisAttribute(
         axis,
-        'c:minorUnit',
-        range.minorUnit,
+        'c:numFmt',
+        range.sourceLinked,
+        'sourceLinked',
       );
 
       const scaling = axis.getElementsByTagName('c:scaling')[0];
 
-      ModifyChartHelper.setAxisRangeAttribute(scaling, 'c:min', range.min);
-      ModifyChartHelper.setAxisRangeAttribute(scaling, 'c:max', range.max);
+      ModifyChartHelper.setAxisAttribute(scaling, 'c:min', range.min);
+      ModifyChartHelper.setAxisAttribute(scaling, 'c:max', range.max);
     };
 
-  static setAxisRangeAttribute = (
-    axis: Element,
+  static setAxisAttribute = (
+    element: Element,
     tag: string,
-    value: number,
+    value: string | number | boolean,
+    attribute?: string,
   ) => {
-    if (value === undefined || !axis) return;
-    const target = axis.getElementsByTagName(tag);
+    if (value === undefined || !element) return;
+    const target = element.getElementsByTagName(tag);
     if (target.length > 0) {
-      target[0].setAttribute('val', String(value));
+      attribute = attribute || 'val';
+      if (typeof value === 'boolean') {
+        ModifyXmlHelper.booleanAttribute(attribute, value)(target[0]);
+      } else {
+        ModifyXmlHelper.attribute(attribute, value)(target[0]);
+      }
     }
   };
 }

@@ -80,4 +80,6 @@ export type ChartAxisRange = {
   max?: number;
   majorUnit?: number;
   minorUnit?: number;
+  formatCode?: string;
+  sourceLinked?: boolean;
 };
