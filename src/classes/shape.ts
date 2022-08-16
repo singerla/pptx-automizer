@@ -8,6 +8,8 @@ import {
   Workbook,
 } from '../types/types';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
+import { HelperElement } from '../types/xml-types';
+import { ImageTypeMap } from '../enums/image-type-map';
 
 export class Shape {
   mode: string;
@@ -39,6 +41,7 @@ export class Shape {
 
   callbacks: ShapeModificationCallback[];
   hasCreationId: boolean;
+  contentTypeMap: typeof ImageTypeMap;
 
   constructor(shape: ImportedElement) {
     this.mode = shape.mode;
@@ -51,7 +54,7 @@ export class Shape {
     this.hasCreationId = shape.hasCreationId;
 
     this.callbacks = GeneralHelper.arrayify(shape.callback);
-
+    this.contentTypeMap = ImageTypeMap;
     if (shape.target) {
       this.sourceNumber = shape.target.number;
       this.sourceRid = shape.target.rId;
@@ -168,6 +171,24 @@ export class Shape {
       if (typeof callback === 'function') {
         callback(element, arg1, arg2);
       }
+    });
+  }
+
+  appendImageExtensionToContentType(
+    extension,
+  ): Promise<HelperElement | boolean> {
+    const contentType = this.contentTypeMap[extension]
+      ? this.contentTypeMap[extension]
+      : 'image/' + extension;
+
+    return XmlHelper.appendIf({
+      ...XmlHelper.createContentTypeChild(this.targetArchive, {
+        Extension: extension,
+        ContentType: contentType,
+      }),
+      tag: 'Default',
+      clause: (xml: XMLDocument) =>
+        !XmlHelper.findByAttribute(xml, 'Default', 'Extension', extension),
     });
   }
 }

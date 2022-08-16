@@ -2,6 +2,7 @@ import JSZip from 'jszip';
 import { FileHelper } from '../helper/file-helper';
 import { XmlHelper } from '../helper/xml-helper';
 import { Shape } from '../classes/shape';
+import path from 'path';
 
 import { RelationshipAttribute, HelperElement } from '../types/xml-types';
 import { ImportedElement, Target, Workbook } from '../types/types';
@@ -17,6 +18,7 @@ export class Chart extends Shape implements IChart {
   wbExtension: string;
   relTypeChartColorStyle: string;
   relTypeChartStyle: string;
+  relTypeChartImage: string;
   wbRelsPath: string;
   styleRelationFiles: {
     [key: string]: string;
@@ -36,6 +38,8 @@ export class Chart extends Shape implements IChart {
       'http://schemas.microsoft.com/office/2011/relationships/chartColorStyle';
     this.relTypeChartStyle =
       'http://schemas.microsoft.com/office/2011/relationships/chartStyle';
+    this.relTypeChartImage =
+      'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image';
     this.styleRelationFiles = {};
   }
 
@@ -116,7 +120,7 @@ export class Chart extends Shape implements IChart {
       'nodebuffer',
     );
     const archive = await FileHelper.extractFileContent(
-      (worksheet as unknown) as Buffer,
+      worksheet as unknown as Buffer,
     );
     const sheet = await XmlHelper.getXmlFromArchive(
       archive,
@@ -247,10 +251,43 @@ export class Chart extends Shape implements IChart {
         `ppt/charts/colors${this.targetNumber}.xml`,
       );
     }
+
+    if (this.styleRelationFiles.relTypeChartImage) {
+      const imageInfo = await this.getTargetChartImageUri(
+        this.styleRelationFiles.relTypeChartImage,
+      );
+      await this.appendImageExtensionToContentType(imageInfo.extension);
+      await FileHelper.zipCopy(
+        this.sourceArchive,
+        imageInfo.source,
+        this.targetArchive,
+        imageInfo.target,
+      );
+    }
+  }
+
+  getTargetChartImageUri(origin: string): {
+    source: string;
+    target: string;
+    rel: string;
+    extension: string;
+  } {
+    const file = origin.replace('../media/', '');
+    const extension = path.extname(file).replace('.', '');
+    return {
+      source: `ppt/media/${file}`,
+      target: `ppt/media/${file}-chart-${this.targetNumber}.${extension}`,
+      rel: `../media/${file}-chart-${this.targetNumber}.${extension}`,
+      extension: extension,
+    };
   }
 
   async getChartStyles(): Promise<void> {
-    const styleTypes = ['relTypeChartStyle', 'relTypeChartColorStyle'];
+    const styleTypes = [
+      'relTypeChartStyle',
+      'relTypeChartColorStyle',
+      'relTypeChartImage',
+    ];
 
     for (const i in styleTypes) {
       const styleType = styleTypes[i];
@@ -273,8 +310,7 @@ export class Chart extends Shape implements IChart {
     );
     const attributes = {
       Id: this.createdRid,
-      Type:
-        'http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart',
+      Type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart',
       Target: `../charts/chart${this.targetNumber}.xml`,
     } as RelationshipAttribute;
 
@@ -312,6 +348,12 @@ export class Chart extends Shape implements IChart {
             break;
           case this.relTypeChartStyle:
             element.setAttribute('Target', `style${this.targetNumber}.xml`);
+            break;
+          case this.relTypeChartImage:
+            const target = element.getAttribute('Target');
+            const imageInfo = this.getTargetChartImageUri(target);
+            vd(imageInfo);
+            element.setAttribute('Target', imageInfo.rel);
             break;
         }
       });

@@ -12,7 +12,6 @@ import { ElementType } from '../enums/element-type';
 
 export class Image extends Shape implements IImage {
   extension: string;
-  contentTypeMap: typeof ImageTypeMap;
 
   constructor(shape: ImportedElement) {
     super(shape);
@@ -32,8 +31,6 @@ export class Image extends Shape implements IImage {
           element.parentNode.parentNode as Element;
         break;
     }
-
-    this.contentTypeMap = ImageTypeMap;
   }
 
   async modify(
@@ -111,7 +108,7 @@ export class Image extends Shape implements IImage {
   }
 
   async appendTypes(): Promise<void> {
-    await this.appendImageExtensionToContentType();
+    await this.appendImageExtensionToContentType(this.extension);
   }
 
   async appendToSlideRels(): Promise<HelperElement> {
@@ -123,8 +120,7 @@ export class Image extends Shape implements IImage {
 
     const attributes = {
       Id: this.createdRid,
-      Type:
-        'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image',
+      Type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image',
       Target: `../media/image${this.targetNumber}.${this.extension}`,
     } as RelationshipAttribute;
 
@@ -135,23 +131,6 @@ export class Image extends Shape implements IImage {
         attributes,
       ),
     );
-  }
-
-  appendImageExtensionToContentType(): Promise<HelperElement | boolean> {
-    const extension = this.extension;
-    const contentType = this.contentTypeMap[extension]
-      ? this.contentTypeMap[extension]
-      : 'image/' + extension;
-
-    return XmlHelper.appendIf({
-      ...XmlHelper.createContentTypeChild(this.targetArchive, {
-        Extension: extension,
-        ContentType: contentType,
-      }),
-      tag: 'Default',
-      clause: (xml: XMLDocument) =>
-        !XmlHelper.findByAttribute(xml, 'Default', 'Extension', extension),
-    });
   }
 
   hasSvgRelation(): boolean {
