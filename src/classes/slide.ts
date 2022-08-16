@@ -98,6 +98,11 @@ export class Slide implements ISlide {
    */
   targetRelsPath: string;
   status: StatusTracker;
+  /**
+   * List of unsupported tags in slide xml
+   * @internal
+   */
+  unsupportedTags = ['p:custDataLst', 'mc:AlternateContent'];
 
   constructor(params: {
     presentation: IPresentationProps;
@@ -186,6 +191,7 @@ export class Slide implements ISlide {
     }
 
     await this.applyModifications();
+    await this.cleanSlide();
 
     this.status.increment();
   }
@@ -442,6 +448,30 @@ export class Slide implements ISlide {
         xml,
       );
     }
+  }
+
+  /**
+   * Removes all unsupported tags from slide xml.
+   * E.g. added relations & tags by Thinkcell cannot
+   * be processed by pptx-automizer at the moment.
+   * @internal
+   */
+  async cleanSlide(): Promise<void> {
+    const xml = await XmlHelper.getXmlFromArchive(
+      this.targetArchive,
+      this.targetPath,
+    );
+
+    this.unsupportedTags.forEach((tag) => {
+      const drop = xml.getElementsByTagName(tag);
+      if (drop.length) {
+        XmlHelper.sliceCollection(drop, 0);
+        console.log(
+          'Removed ' + drop.length + ' unsupported ' + tag + ' elements.',
+        );
+      }
+    });
+    await XmlHelper.writeXmlToArchive(this.targetArchive, this.targetPath, xml);
   }
 
   /**
