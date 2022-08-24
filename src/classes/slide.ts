@@ -464,11 +464,10 @@ export class Slide implements ISlide {
 
     this.unsupportedTags.forEach((tag) => {
       const drop = xml.getElementsByTagName(tag);
-      if (drop.length) {
+      const length = drop.length;
+      if (length && length > 0) {
         XmlHelper.sliceCollection(drop, 0);
-        console.log(
-          'Removed ' + drop.length + ' unsupported ' + tag + ' elements.',
-        );
+        console.log('Removed ' + length + ' unsupported ' + tag + ' elements.');
       }
     });
     await XmlHelper.writeXmlToArchive(this.targetArchive, this.targetPath, xml);

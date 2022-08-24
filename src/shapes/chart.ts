@@ -21,7 +21,7 @@ export class Chart extends Shape implements IChart {
   relTypeChartImage: string;
   wbRelsPath: string;
   styleRelationFiles: {
-    [key: string]: string;
+    [key: string]: string[];
   };
 
   constructor(shape: ImportedElement) {
@@ -234,52 +234,37 @@ export class Chart extends Shape implements IChart {
   async copyChartStyleFiles(): Promise<void> {
     await this.getChartStyles();
 
-    if (this.styleRelationFiles.relTypeChartStyle) {
+    if (this.styleRelationFiles.relTypeChartStyle?.length) {
       await FileHelper.zipCopy(
         this.sourceArchive,
-        `ppt/charts/${this.styleRelationFiles.relTypeChartStyle}`,
+        `ppt/charts/${this.styleRelationFiles.relTypeChartStyle[0]}`,
         this.targetArchive,
         `ppt/charts/style${this.targetNumber}.xml`,
       );
     }
 
-    if (this.styleRelationFiles.relTypeChartColorStyle) {
+    if (this.styleRelationFiles.relTypeChartColorStyle?.length) {
       await FileHelper.zipCopy(
         this.sourceArchive,
-        `ppt/charts/${this.styleRelationFiles.relTypeChartColorStyle}`,
+        `ppt/charts/${this.styleRelationFiles.relTypeChartColorStyle[0]}`,
         this.targetArchive,
         `ppt/charts/colors${this.targetNumber}.xml`,
       );
     }
 
     if (this.styleRelationFiles.relTypeChartImage) {
-      const imageInfo = await this.getTargetChartImageUri(
-        this.styleRelationFiles.relTypeChartImage,
-      );
-      await this.appendImageExtensionToContentType(imageInfo.extension);
-      await FileHelper.zipCopy(
-        this.sourceArchive,
-        imageInfo.source,
-        this.targetArchive,
-        imageInfo.target,
-      );
+      for (const relTypeChartImage of this.styleRelationFiles
+        .relTypeChartImage) {
+        const imageInfo = await this.getTargetChartImageUri(relTypeChartImage);
+        await this.appendImageExtensionToContentType(imageInfo.extension);
+        await FileHelper.zipCopy(
+          this.sourceArchive,
+          imageInfo.source,
+          this.targetArchive,
+          imageInfo.target,
+        );
+      }
     }
-  }
-
-  getTargetChartImageUri(origin: string): {
-    source: string;
-    target: string;
-    rel: string;
-    extension: string;
-  } {
-    const file = origin.replace('../media/', '');
-    const extension = path.extname(file).replace('.', '');
-    return {
-      source: `ppt/media/${file}`,
-      target: `ppt/media/${file}-chart-${this.targetNumber}.${extension}`,
-      rel: `../media/${file}-chart-${this.targetNumber}.${extension}`,
-      extension: extension,
-    };
   }
 
   async getChartStyles(): Promise<void> {
@@ -297,8 +282,12 @@ export class Chart extends Shape implements IChart {
         this[styleType],
       );
 
+      this.styleRelationFiles[styleType] =
+        this.styleRelationFiles[styleType] || [];
       if (styleRelation.length) {
-        this.styleRelationFiles[styleType] = styleRelation[0].file;
+        styleRelation.forEach((styleRelation) => {
+          this.styleRelationFiles[styleType].push(styleRelation.file);
+        });
       }
     }
   }
@@ -352,7 +341,6 @@ export class Chart extends Shape implements IChart {
           case this.relTypeChartImage:
             const target = element.getAttribute('Target');
             const imageInfo = this.getTargetChartImageUri(target);
-            vd(imageInfo);
             element.setAttribute('Target', imageInfo.rel);
             break;
         }
@@ -363,6 +351,22 @@ export class Chart extends Shape implements IChart {
       targetRelFile,
       relXml,
     );
+  }
+
+  getTargetChartImageUri(origin: string): {
+    source: string;
+    target: string;
+    rel: string;
+    extension: string;
+  } {
+    const file = origin.replace('../media/', '');
+    const extension = path.extname(file).replace('.', '');
+    return {
+      source: `ppt/media/${file}`,
+      target: `ppt/media/${file}-chart-${this.targetNumber}.${extension}`,
+      rel: `../media/${file}-chart-${this.targetNumber}.${extension}`,
+      extension: extension,
+    };
   }
 
   async copyWorksheetFile(): Promise<void> {
