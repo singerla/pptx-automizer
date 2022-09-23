@@ -2,7 +2,8 @@ import { Color } from '../types/modify-types';
 import { XmlHelper } from './xml-helper';
 import { vd } from './general-helper';
 import * as fs from 'fs';
-import { DOMParser } from 'xmldom';
+import { DOMParser } from '@xmldom/xmldom';
+import { dLblXml } from './xml/dLbl';
 
 export type XmlElementParams = {
   color?: Color;
@@ -152,8 +153,7 @@ export default class XmlElements {
   }
 
   dataPointLabel() {
-    const xml = fs.readFileSync(__dirname + '/xml/dLbl.xml');
-    const doc = new DOMParser().parseFromString(xml.toString());
+    const doc = new DOMParser().parseFromString(dLblXml);
     const ele = doc.getElementsByTagName('c:dLbl')[0];
     const firstChild = this.element.firstChild;
     this.element.insertBefore(ele.cloneNode(true), firstChild);

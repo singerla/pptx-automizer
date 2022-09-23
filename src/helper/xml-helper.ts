@@ -1,6 +1,6 @@
 import JSZip from 'jszip';
 
-import { DOMParser, XMLSerializer } from 'xmldom';
+import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
 import { FileHelper } from './file-helper';
 import {
   DefaultAttribute,
