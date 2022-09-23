@@ -121,19 +121,21 @@ export class Shape {
     );
   }
 
-  async updateElementRelId(): Promise<void> {
+  async updateElementsRelId(): Promise<void> {
     const targetSlideXml = await XmlHelper.getXmlFromArchive(
       this.targetArchive,
       this.targetSlideFile,
     );
-    const targetElement = await this.getElementByRid(
+    const targetElements = await this.getElementsByRid(
       targetSlideXml,
       this.sourceRid,
     );
 
-    targetElement
-      .getElementsByTagName(this.relRootTag)[0]
-      .setAttribute(this.relAttribute, this.createdRid);
+    targetElements.forEach((targetElement) => {
+      this.relParent(targetElement)
+        .getElementsByTagName(this.relRootTag)[0]
+        .setAttribute(this.relAttribute, this.createdRid);
+    });
 
     await XmlHelper.writeXmlToArchive(
       this.targetArchive,
@@ -142,23 +144,24 @@ export class Shape {
     );
   }
 
-  async updateTargetElementRelId(): Promise<void> {
-    this.targetElement
-      .getElementsByTagName(this.relRootTag)[0]
-      .setAttribute(this.relAttribute, this.createdRid);
-  }
-
-  async getElementByRid(slideXml: Document, rId: string): Promise<Element> {
+  async getElementsByRid(slideXml: Document, rId: string): Promise<Element[]> {
     const sourceList = slideXml
       .getElementsByTagName('p:spTree')[0]
       .getElementsByTagName(this.relRootTag);
-    const sourceElement = XmlHelper.findByAttributeValue(
+
+    const sourceElements = XmlHelper.findByAttributeValue(
       sourceList,
       this.relAttribute,
       rId,
     );
 
-    return this.relParent(sourceElement);
+    return sourceElements;
+  }
+
+  async updateTargetElementRelId(): Promise<void> {
+    this.targetElement
+      .getElementsByTagName(this.relRootTag)[0]
+      .setAttribute(this.relAttribute, this.createdRid);
   }
 
   applyCallbacks(

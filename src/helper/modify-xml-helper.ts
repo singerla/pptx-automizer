@@ -41,7 +41,7 @@ export default class ModifyXmlHelper {
 
       if (element === false) {
         if (isRequired === true) {
-          vd('Could not assert required tag: ' + tag + '@index:' + index);
+          // vd('Could not assert required tag: ' + tag + '@index:' + index);
         }
         return;
       }

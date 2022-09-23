@@ -73,7 +73,7 @@ export default class Automizer implements IPresentationProps {
 
   setStatusTracker(statusTracker: StatusTracker['next']): void {
     const defaultStatusTracker = (status: StatusTracker) => {
-      console.log(status.info + '(' + status.share + '%)');
+      console.log(status.info + ' (' + status.share + '%)');
     };
 
     this.status = {

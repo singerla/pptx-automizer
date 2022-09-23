@@ -91,7 +91,7 @@ export class XmlHelper {
     const relationNodes = presentationRelsXml.documentElement.childNodes;
     const rid = XmlHelper.getMaxId(relationNodes, 'Id', true);
 
-    return increment(rid);
+    return increment(rid) + '-created';
   }
 
   static getMaxId(
@@ -104,7 +104,12 @@ export class XmlHelper {
     for (const i in rels) {
       const rel = rels[i] as Element;
       if (rel.getAttribute !== undefined) {
-        const id = Number(rel.getAttribute(attribute).replace('rId', ''));
+        const id = Number(
+          rel
+            .getAttribute(attribute)
+            .replace('rId', '')
+            .replace('-created', ''),
+        );
         max = id > max ? id : max;
       }
     }
@@ -293,7 +298,7 @@ export class XmlHelper {
     return null;
   }
 
-  static findByAttributeValue(
+  static findFirstByAttributeValue(
     nodes: NodeListOf<ChildNode> | HTMLCollectionOf<Element>,
     attributeName: string,
     attributeValue: string,
@@ -308,6 +313,24 @@ export class XmlHelper {
       }
     }
     return null;
+  }
+
+  static findByAttributeValue(
+    nodes: NodeListOf<ChildNode> | HTMLCollectionOf<Element>,
+    attributeName: string,
+    attributeValue: string,
+  ): Element[] {
+    const matchingNodes = <Element[]>[];
+    for (const i in nodes) {
+      const node = <Element>nodes[i];
+      if (
+        node.getAttribute &&
+        node.getAttribute(attributeName) === attributeValue
+      ) {
+        matchingNodes.push(node);
+      }
+    }
+    return matchingNodes;
   }
 
   static createContentTypeChild(

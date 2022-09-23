@@ -38,7 +38,7 @@ export class Image extends Shape implements IImage {
     targetSlideNumber: number,
   ): Promise<Image> {
     await this.prepare(targetTemplate, targetSlideNumber);
-    await this.updateElementRelId();
+    await this.updateElementsRelId();
 
     return this;
   }
@@ -48,7 +48,7 @@ export class Image extends Shape implements IImage {
     targetSlideNumber: number,
   ): Promise<Image> {
     await this.prepare(targetTemplate, targetSlideNumber);
-    await this.updateElementRelId();
+    await this.updateElementsRelId();
 
     return this;
   }

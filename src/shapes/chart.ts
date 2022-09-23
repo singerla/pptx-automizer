@@ -70,7 +70,7 @@ export class Chart extends Shape implements IChart {
     targetSlideNumber: number,
   ): Promise<Chart> {
     await this.prepare(targetTemplate, targetSlideNumber);
-    await this.updateElementRelId();
+    await this.updateElementsRelId();
 
     return this;
   }
