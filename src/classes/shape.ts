@@ -172,7 +172,11 @@ export class Shape {
   ): void {
     callbacks.forEach((callback) => {
       if (typeof callback === 'function') {
-        callback(element, arg1, arg2);
+        try {
+          callback(element, arg1, arg2);
+        } catch (e) {
+          console.log(e);
+        }
       }
     });
   }
