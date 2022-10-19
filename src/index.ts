@@ -25,7 +25,7 @@ const setChartScatter = ModifyChartHelper.setChartScatter;
 const setChartBubbles = ModifyChartHelper.setChartBubbles;
 const setChartCombo = ModifyChartHelper.setChartCombo;
 
-import { AutomizerSummary } from './types/types';
+import { AutomizerSummary, StatusTracker } from './types/types';
 
 import {
   ModifyTableParams,
@@ -94,5 +94,5 @@ export const modify = {
   setChartCombo,
   setChartBubbles,
 };
-export type { AutomizerSummary, TemplateInfo };
+export type { AutomizerSummary, TemplateInfo, StatusTracker };
 export default Automizer;
