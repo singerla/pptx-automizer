@@ -267,6 +267,26 @@ export class Slide implements ISlide {
   }
 
   /**
+   * Remove a single element from slide.
+   * @param {string} presName - Filename or alias name of the template presentation.
+   * Must have been importet with Automizer.load().
+   * @param {number} slideNumber - Slide number within the specified template to search for the required element.
+   * @param {ShapeModificationCallback | ShapeModificationCallback[]} callback - One or more callback functions to apply.
+   * Depending on the shape type (e.g. chart or table), different arguments will be passed to the callback.
+   */
+  removeElement(selector: string): this {
+    const presName = this.sourceTemplate.name;
+    const slideNumber = this.sourceNumber;
+
+    return this.addElementToModificationsList(
+      presName,
+      slideNumber,
+      selector,
+      'remove',
+    );
+  }
+
+  /**
    * Adds element to modifications list
    * @internal
    * @param presName

@@ -94,9 +94,20 @@ export class Shape {
   }
 
   async replaceIntoSlideTree(): Promise<void> {
+    await this.modifySlideTree(true);
+  }
+
+  async removeFromSlideTree(): Promise<void> {
+    await this.modifySlideTree(false);
+  }
+
+  async modifySlideTree(insertBefore?: boolean): Promise<void> {
+    const archive = this.targetArchive;
+    const slideFile = this.targetSlideFile;
+
     const targetSlideXml = await XmlHelper.getXmlFromArchive(
-      this.targetArchive,
-      this.targetSlideFile,
+      archive,
+      slideFile,
     );
 
     const findMethod = this.hasCreationId ? 'findByCreationId' : 'findByName';
@@ -106,19 +117,18 @@ export class Shape {
       this.name,
     );
 
-    sourceElementOnTargetSlide.parentNode.insertBefore(
-      this.targetElement,
-      sourceElementOnTargetSlide,
-    );
+    if (insertBefore === true) {
+      sourceElementOnTargetSlide.parentNode.insertBefore(
+        this.targetElement,
+        sourceElementOnTargetSlide,
+      );
+    }
+
     sourceElementOnTargetSlide.parentNode.removeChild(
       sourceElementOnTargetSlide,
     );
 
-    await XmlHelper.writeXmlToArchive(
-      this.targetArchive,
-      this.targetSlideFile,
-      targetSlideXml,
-    );
+    await XmlHelper.writeXmlToArchive(archive, slideFile, targetSlideXml);
   }
 
   async updateElementsRelId(): Promise<void> {

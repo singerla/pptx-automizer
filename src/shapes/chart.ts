@@ -65,6 +65,16 @@ export class Chart extends Shape implements IChart {
     return this;
   }
 
+  async remove(
+    targetTemplate: RootPresTemplate,
+    targetSlideNumber: number,
+  ): Promise<Chart> {
+    await this.prepare(targetTemplate, targetSlideNumber);
+    await this.removeFromSlideTree();
+
+    return this;
+  }
+
   async modifyOnAddedSlide(
     targetTemplate: RootPresTemplate,
     targetSlideNumber: number,

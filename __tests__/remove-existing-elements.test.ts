@@ -1,13 +1,11 @@
-import Automizer, { ChartData, modify, TableRow, TableRowStyle } from './index';
-import { vd } from './helper/general-helper';
+import Automizer from '../src/automizer';
 
-const automizer = new Automizer({
-  templateDir: `${__dirname}/../__tests__/pptx-templates`,
-  outputDir: `${__dirname}/../__tests__/pptx-output`,
-  removeExistingSlides: true,
-});
+test('create presentation, add slides, remove elements and add one.', async () => {
+  const automizer = new Automizer({
+    templateDir: `${__dirname}/pptx-templates`,
+    outputDir: `${__dirname}/pptx-output`,
+  });
 
-const run = async () => {
   const pres = automizer
     .loadRoot(`RootTemplate.pptx`)
     .load(`SlideWithCharts.pptx`, 'charts')
@@ -22,9 +20,7 @@ const run = async () => {
       slide.removeElement('Textfeld 5');
       slide.addElement('images', 2, 'imageJPG');
     })
-    .write(`remove-element.test.pptx`);
-};
+    .write(`remove-existing-elements.test.pptx`);
 
-run().catch((error) => {
-  console.error(error);
+  expect(result.slides).toBe(3);
 });

@@ -27,6 +27,16 @@ export class GenericShape extends Shape {
     return this;
   }
 
+  async remove(
+    targetTemplate: RootPresTemplate,
+    targetSlideNumber: number,
+  ): Promise<GenericShape> {
+    await this.prepare(targetTemplate, targetSlideNumber);
+    await this.removeFromSlideTree();
+
+    return this;
+  }
+
   async prepare(
     targetTemplate: RootPresTemplate,
     targetSlideNumber: number,

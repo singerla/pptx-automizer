@@ -114,6 +114,17 @@ pres.addSlide('charts', 2, (slide) => {
   ])
 })
 
+// Remove existing charts, images or shapes from added slide.
+pres
+  .addSlide('charts', 2, (slide) => {
+    slide.removeElement('ColumnChart');
+})
+  .addSlide('images', 2, (slide) => {
+    slide.removeElement('imageJPG');
+    slide.removeElement('Textfeld 5');
+    slide.addElement('images', 2, 'imageJPG');
+})
+
 // Finally, we want to write the output file.
 pres.write(`myPresentation.pptx`).then(summary => {
   console.log(summary)
