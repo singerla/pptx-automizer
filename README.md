@@ -44,10 +44,33 @@ in the root folder of your project. This will download and install the most rece
 ```js
 import Automizer, { modify } from "pptx-automizer"
 
-// First, let's set some preferences
+// If you want to track the steps of creation process,
+// you can use a custom callback:
+const myStatusTracker = (status: StatusTracker) => {
+  console.log(status.info + ' (' + status.share + '%)');
+};
+  
+// First, let's set some preferences!
 const automizer = new Automizer({
+  // this is where your template pptx files are coming from:
   templateDir: `my/pptx/templates`,
-  outputDir: `my/pptx/output`
+  
+  // use a fallback directory for e.g. generic templates:
+  templateFallbackDir: `my/pptx/fallback-templates`,
+  
+  // specify the directory to write your final pptx output files:
+  outputDir: `my/pptx/output`,
+  
+  // turn this to true if you want to generally use
+  // Powerpoint's creationIds instead of slide-numbers
+  // or shape names:
+  useCreationIds: false,
+  
+  // truncate root presentation and start with zero slides
+  removeExistingSlides: true,
+  
+  // use a callback function to track pptx generation process
+  statusTracker: myStatusTracker,
 })
 
 // Now we can start and load a pptx template.
