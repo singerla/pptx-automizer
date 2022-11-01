@@ -92,7 +92,7 @@ export class Chart extends Shape implements IChart {
     await this.setTarget(targetTemplate, targetSlideNumber);
 
     this.targetNumber = this.targetTemplate.incrementCounter('charts');
-    this.wbRelsPath = `ppt/charts/_rels/chart${this.sourceNumber}.xml.rels`;
+    this.wbRelsPath = `ppt/charts/_rels/${this.subtype}${this.sourceNumber}.xml.rels`;
 
     await this.copyFiles();
     await this.copyChartStyleFiles();
@@ -109,15 +109,16 @@ export class Chart extends Shape implements IChart {
   async modifyChartData(): Promise<void> {
     const chartXml = await XmlHelper.getXmlFromArchive(
       this.targetArchive,
-      `ppt/charts/chart${this.targetNumber}.xml`,
+      `ppt/charts/${this.subtype}${this.targetNumber}.xml`,
     );
+
     const workbook = await this.readWorkbook();
 
     this.applyCallbacks(this.callbacks, this.targetElement, chartXml, workbook);
 
     await XmlHelper.writeXmlToArchive(
       this.targetArchive,
-      `ppt/charts/chart${this.targetNumber}.xml`,
+      `ppt/charts/${this.subtype}${this.targetNumber}.xml`,
       chartXml,
     );
     await this.writeWorkbook(workbook);
@@ -193,7 +194,7 @@ export class Chart extends Shape implements IChart {
       this.wbExtension,
     );
     const worksheet = worksheets[0];
-
+    vd(worksheet);
     this.sourceWorksheet = worksheet.number === 0 ? '' : worksheet.number;
     this.targetWorksheet = '-created-' + this.targetNumber;
 
@@ -228,16 +229,16 @@ export class Chart extends Shape implements IChart {
   async copyChartFiles(): Promise<void> {
     await FileHelper.zipCopy(
       this.sourceArchive,
-      `ppt/charts/chart${this.sourceNumber}.xml`,
+      `ppt/charts/${this.subtype}${this.sourceNumber}.xml`,
       this.targetArchive,
-      `ppt/charts/chart${this.targetNumber}.xml`,
+      `ppt/charts/${this.subtype}${this.targetNumber}.xml`,
     );
 
     await FileHelper.zipCopy(
       this.sourceArchive,
-      `ppt/charts/_rels/chart${this.sourceNumber}.xml.rels`,
+      `ppt/charts/_rels/${this.subtype}${this.sourceNumber}.xml.rels`,
       this.targetArchive,
-      `ppt/charts/_rels/chart${this.targetNumber}.xml.rels`,
+      `ppt/charts/_rels/${this.subtype}${this.targetNumber}.xml.rels`,
     );
   }
 
@@ -265,7 +266,7 @@ export class Chart extends Shape implements IChart {
     if (this.styleRelationFiles.relTypeChartImage) {
       for (const relTypeChartImage of this.styleRelationFiles
         .relTypeChartImage) {
-        const imageInfo = await this.getTargetChartImageUri(relTypeChartImage);
+        const imageInfo = this.getTargetChartImageUri(relTypeChartImage);
         await this.appendImageExtensionToContentType(imageInfo.extension);
         await FileHelper.zipCopy(
           this.sourceArchive,
@@ -307,10 +308,11 @@ export class Chart extends Shape implements IChart {
       this.targetArchive,
       this.targetSlideRelFile,
     );
+
     const attributes = {
       Id: this.createdRid,
       Type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart',
-      Target: `../charts/chart${this.targetNumber}.xml`,
+      Target: `../charts/${this.subtype}${this.targetNumber}.xml`,
     } as RelationshipAttribute;
 
     return XmlHelper.append(
@@ -323,7 +325,7 @@ export class Chart extends Shape implements IChart {
   }
 
   async editTargetWorksheetRel(): Promise<void> {
-    const targetRelFile = `ppt/charts/_rels/chart${this.targetNumber}.xml.rels`;
+    const targetRelFile = `ppt/charts/_rels/${this.subtype}${this.targetNumber}.xml.rels`;
     const relXml = await XmlHelper.getXmlFromArchive(
       this.targetArchive,
       targetRelFile,
@@ -403,7 +405,7 @@ export class Chart extends Shape implements IChart {
   appendChartToContentType(): Promise<HelperElement> {
     return XmlHelper.append(
       XmlHelper.createContentTypeChild(this.targetArchive, {
-        PartName: `/ppt/charts/chart${this.targetNumber}.xml`,
+        PartName: `/ppt/charts/${this.subtype}${this.targetNumber}.xml`,
         ContentType: `application/vnd.openxmlformats-officedocument.drawingml.chart+xml`,
       }),
     );
@@ -431,10 +433,9 @@ export class Chart extends Shape implements IChart {
     archive: JSZip,
     relsPath: string,
   ): Promise<Target[]> {
-    return await XmlHelper.getTargetsFromRelationships(
-      archive,
-      relsPath,
-      '../charts/chart',
-    );
+    return await XmlHelper.getTargetsFromRelationships(archive, relsPath, [
+      '../charts/chartEx',
+      // '../charts/chart',
+    ]);
   }
 }

@@ -10,19 +10,23 @@ const automizer = new Automizer({
 const run = async () => {
   const pres = automizer
     .loadRoot(`RootTemplate.pptx`)
-    .load(`SlideWithCharts.pptx`, 'charts')
-    .load(`SlideWithImages.pptx`, 'images');
+    .load(`ChartWaterfall.pptx`, 'charts');
 
   const result = await pres
-    .addSlide('charts', 2, (slide) => {
-      slide.removeElement('ColumnChart');
+    .addSlide('charts', 1, (slide) => {
+      slide.addElement('charts', 1, 'Waterfall 1', [
+        modify.setChartData(<ChartData>{
+          series: [{ label: 'series 1' }],
+          categories: [
+            { label: 'cat 2-1', values: [50] },
+            { label: 'cat 2-2', values: [14] },
+            { label: 'cat 2-3', values: [15] },
+            { label: 'cat 2-4', values: [26] },
+          ],
+        }),
+      ]);
     })
-    .addSlide('images', 2, (slide) => {
-      slide.removeElement('imageJPG');
-      slide.removeElement('Textfeld 5');
-      slide.addElement('images', 2, 'imageJPG');
-    })
-    .write(`remove-element.test.pptx`);
+    .write(`modify-existing-waterfall-chart.test.pptx`);
 };
 
 run().catch((error) => {

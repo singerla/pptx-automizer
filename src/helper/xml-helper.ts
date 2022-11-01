@@ -4,18 +4,14 @@ import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
 import { FileHelper } from './file-helper';
 import {
   DefaultAttribute,
+  HelperElement,
   OverrideAttribute,
   RelationshipAttribute,
-  HelperElement,
 } from '../types/xml-types';
 import { TargetByRelIdMap } from '../constants/constants';
 import { XmlPrettyPrint } from './xml-pretty-print';
-import {
-  GetRelationshipsCallback,
-  SourceSlideIdentifier,
-  Target,
-} from '../types/types';
-import { XmlTemplateHelper } from './xml-template-helper';
+import { GetRelationshipsCallback, Target } from '../types/types';
+import _ from 'lodash';
 import { vd } from './general-helper';
 
 export class XmlHelper {
@@ -130,23 +126,30 @@ export class XmlHelper {
   static async getTargetsFromRelationships(
     archive: JSZip,
     path: string,
-    prefix: string,
+    prefix: string | string[],
     suffix?: string | RegExp,
   ): Promise<Target[]> {
+    const prefixes = typeof prefix === 'string' ? [prefix] : prefix;
     return XmlHelper.getRelationships(
       archive,
       path,
       (element: Element, rels: Target[]) => {
         const target = element.getAttribute('Target');
-        if (target.indexOf(prefix) === 0) {
-          rels.push({
-            file: target,
-            rId: element.getAttribute('Id'),
-            number: Number(
-              target.replace(prefix, '').replace(suffix || '.xml', ''),
-            ),
-          } as Target);
-        }
+        prefixes.forEach((prefix) => {
+          const stripNumber = target
+            .replace(prefix, '')
+            .replace(suffix || '.xml', '');
+
+          // vd(stripNumber);
+          if (target.indexOf(prefix) === 0) {
+            rels.push({
+              file: target,
+              rId: element.getAttribute('Id'),
+              number: Number(stripNumber),
+              subtype: _.last(prefix.split('/')),
+            } as Target);
+          }
+        });
       },
     );
   }

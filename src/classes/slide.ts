@@ -419,8 +419,19 @@ export class Slide implements ISlide {
     sourceArchive: JSZip,
     slideNumber: number,
   ): Promise<AnalyzedElementType> {
+    vd('analyzeElement');
     const isChart = sourceElement.getElementsByTagName('c:chart');
     if (isChart.length) {
+      vd({
+        type: ElementType.Chart,
+        target: await XmlHelper.getTargetByRelId(
+          sourceArchive,
+          slideNumber,
+          sourceElement,
+          'chart',
+        ),
+      });
+
       return {
         type: ElementType.Chart,
         target: await XmlHelper.getTargetByRelId(
@@ -688,6 +699,7 @@ export class Slide implements ISlide {
    */
   async copyRelatedContent(): Promise<void> {
     const charts = await Chart.getAllOnSlide(this.sourceArchive, this.relsPath);
+
     for (const chart of charts) {
       await new Chart({
         mode: 'append',
