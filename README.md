@@ -100,11 +100,27 @@ pres.write(`myPresentation.pptx`).then(summary => {
 })
 ```
 
-## Add and modify shapes
+
+## Modify shapes with built-in functions
+It is possible to modify an existing element on a newly added slide.
+
 ```ts
-// You can also select and import a single element from a template slide. 
-// The desired shape will be identified by its name from slide-xml's 
-// 'p:cNvPr'-element.
+import { modify } from "pptx-automizer"
+
+pres.addSlide('shapes', 2, (slide) => {
+  slide.modifyElement('Drum', [
+    // You can use some of the builtin modifiers to edit a shape's xml:
+    modify.setPosition({x: 1000000, h:5000000, w:5000000}),
+    // Log your target xml into the console:
+    modify.dump
+  ])
+})
+```
+
+## Add and modify shapes
+You can also select and import a single element from a template slide. The desired shape will be identified by its name from slide-xml's `p:cNvPr`-element.
+
+```ts
 pres.addSlide('SlideWithImages.pptx', 1, (slide) => {
   // Pass the template name, the slide number, the element's name and 
   // (optionally) a callback function to directly modify the child nodes 
@@ -114,21 +130,6 @@ pres.addSlide('SlideWithImages.pptx', 1, (slide) => {
       .firstChild
       .data = 'Custom content'
   })
-})
-```
-
-## Modify shapes with built-in functions
-```ts
-import { modify } from "pptx-automizer"
-
-// It is possible to modify an existing element on a newly added slide.
-pres.addSlide('shapes', 2, (slide) => {
-  slide.modifyElement('Drum', [
-    // You can use some of the builtin modifiers to edit a shape's xml:
-    modify.setPosition({x: 1000000, h:5000000, w:5000000}),
-    // Log your target xml into the console:
-    modify.dump
-  ])
 })
 ```
 
