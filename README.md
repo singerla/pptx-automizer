@@ -50,7 +50,7 @@ $ npm install pptx-automizer
 in the root folder of your project. This will download and install the most recent version into your existing project.
 
 ## General Example
-```js
+```ts
 import Automizer, { modify, StatusTracker } from "pptx-automizer"
 
 // If you want to track the steps of creation process,
@@ -112,6 +112,14 @@ pres.addSlide('SlideWithImages.pptx', 1, (slide) => {
   })
 })
 
+// Finally, we want to write the output file.
+pres.write(`myPresentation.pptx`).then(summary => {
+  console.log(summary)
+})
+```
+
+## Modify shapes
+```ts
 // It is possible to modify an existing element on a newly added slide.
 pres.addSlide('shapes', 2, (slide) => {
   slide.modifyElement('Drum', [
@@ -121,7 +129,11 @@ pres.addSlide('shapes', 2, (slide) => {
     modify.dump
   ])
 })
+```
 
+
+## Modify charts
+```ts
 // Modify an existing chart on an added slide.
 pres.addSlide('charts', 2, (slide) => {
   slide.modifyElement('ColumnChart', [
@@ -146,6 +158,9 @@ pres.addSlide('charts', 2, (slide) => {
   ])
 })
 
+```
+## Remove elements from a slide
+```ts
 // Remove existing charts, images or shapes from added slide.
 pres
   .addSlide('charts', 2, (slide) => {
@@ -156,19 +171,14 @@ pres
     slide.removeElement('Textfeld 5');
     slide.addElement('images', 2, 'imageJPG');
 })
-
-// Finally, we want to write the output file.
-pres.write(`myPresentation.pptx`).then(summary => {
-  console.log(summary)
-})
 ```
 
 
 ## How to sort output slides
 
-You can also insert added slides between existing slides. 
+You can also insert added slides between existing slides.
 
-```js
+```ts
 import Automizer, { modify } from "pptx-automizer"
 
 const automizer = new Automizer({
