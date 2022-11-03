@@ -51,7 +51,7 @@ in the root folder of your project. This will download and install the most rece
 
 ## General Example
 ```ts
-import Automizer, { modify, StatusTracker } from "pptx-automizer"
+import Automizer from "pptx-automizer"
   
 // First, let's set some preferences!
 const automizer = new Automizer({
@@ -119,6 +119,8 @@ pres.addSlide('SlideWithImages.pptx', 1, (slide) => {
 
 ## Modify shapes with built-in functions
 ```ts
+import { modify } from "pptx-automizer"
+
 // It is possible to modify an existing element on a newly added slide.
 pres.addSlide('shapes', 2, (slide) => {
   slide.modifyElement('Drum', [
@@ -133,7 +135,7 @@ pres.addSlide('shapes', 2, (slide) => {
 
 ## Modify charts
 
-All data and styles can be modified.
+All data and styles can be modified. Please notice: If your template has more data than your data object, automizer will remove these nodes. The other way round, new nodes will be created from the existing ones in case you provide more data. 
 
 ```ts
 // Modify an existing chart on an added slide.
@@ -155,8 +157,6 @@ pres.addSlide('charts', 2, (slide) => {
         { label: 'cat 2-4', values: [ 26, 50, 20 ] }
       ]
     })
-    // Please notice: If your template has more data than your data
-    // object, automizer will remove these nodes.
   ])
 })
 
@@ -184,7 +184,7 @@ pres
 You can also insert added slides between existing slides.
 
 ```ts
-import Automizer, { modify } from "pptx-automizer"
+import Automizer from "pptx-automizer"
 
 const automizer = new Automizer({
   templateDir: `my/pptx/templates`,
@@ -212,6 +212,7 @@ pres.write(`mySortedPresentation.pptx`).then(summary => {
   console.log(summary)
 })
 ```
+
 ## Track status of automation process
 
 When creating large presentations, you might want to have some information about the current status. Use a custom status tracker:
