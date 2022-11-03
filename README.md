@@ -9,9 +9,15 @@ This project comes along with [automizer-data](https://github.com/singerla/autom
 This generator can only be used on the server-side and requires a [Node.js](https://nodejs.org/en/download/package-manager/) environment.
 
 ## Limitations
+### Shape types
 Please note that this project is *work in progress*. At the moment, you might encounter difficulties for special shape types that require further relations (e.g. links will not work properly). Although, most shape types are already supported, such as connection shapes, tables or charts. You are welcome to [report any issue](https://github.com/singerla/pptx-automizer/issues/new).
 
+### PowerPoint Version
 All testing focuses on PowerPoint 2019 pptx file format.
+
+### Slide Masters and -Layouts
+It is currently not supported to import slide masters or slide layouts into the root presentation. You can append any slide in any order, but you need to assure all pptx files to have the same set of master slides. Imported slide masters will be matched by number, e.g. if your imported slide uses master #3, your root presentation also needs to have at least three master slides.
+
 
 ## Install
 There are basically two ways to use *pptx-automizer*.
@@ -40,9 +46,9 @@ $ npm install pptx-automizer
 ```
 in the root folder of your project. This will download and install the most recent version into your existing project.
 
-## Example
+## General Example
 ```js
-import Automizer, { modify } from "pptx-automizer"
+import Automizer, { modify, StatusTracker } from "pptx-automizer"
 
 // If you want to track the steps of creation process,
 // you can use a custom callback:
@@ -153,6 +159,43 @@ pres.write(`myPresentation.pptx`).then(summary => {
   console.log(summary)
 })
 ```
+
+
+## How to sort output slides
+
+You can also insert added slides between existing slides. 
+
+```js
+import Automizer, { modify } from "pptx-automizer"
+
+const automizer = new Automizer({
+  templateDir: `my/pptx/templates`,
+  outputDir: `my/pptx/output`,
+
+  // truncate root presentation and start with zero slides
+  removeExistingSlides: true,
+})
+
+
+let pres = automizer.loadRoot(`RootTemplate.pptx`)
+  // We load this twice to make it slide reordeing available 
+  .load(`RootTemplate.pptx`, 'root')  
+  .load(`SlideWithShapes.pptx`, 'shapes')
+  .load(`SlideWithGraph.pptx`, 'graph')
+
+pres.addSlide('root', 1)  // First slide will be taken from root
+  .addSlide('graph', 1)
+  .addSlide('shapes', 1)
+  .addSlide('root', 3)    // Third slide from root we be appended
+  .addSlide('root', 2)    // Second and third slide will switch position
+})
+
+pres.write(`mySortedPresentation.pptx`).then(summary => {
+  console.log(summary)
+})
+```
+
+
 
 ### Testing
 You can run all unit tests using these commands:
