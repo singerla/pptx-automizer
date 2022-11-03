@@ -52,12 +52,6 @@ in the root folder of your project. This will download and install the most rece
 ## General Example
 ```ts
 import Automizer, { modify, StatusTracker } from "pptx-automizer"
-
-// If you want to track the steps of creation process,
-// you can use a custom callback:
-const myStatusTracker = (status: StatusTracker) => {
-  console.log(status.info + ' (' + status.share + '%)');
-};
   
 // First, let's set some preferences!
 const automizer = new Automizer({
@@ -78,12 +72,14 @@ const automizer = new Automizer({
   // truncate root presentation and start with zero slides
   removeExistingSlides: true,
   
-  // use a callback function to track pptx generation process
-  statusTracker: myStatusTracker,
+  // use a callback function to track pptx generation process.
+  // statusTracker: myStatusTracker,
 })
 
 // Now we can start and load a pptx template.
-// Each addSlide will append to any existing slide in RootTemplate.pptx.
+// With removeExistingSlides set to 'false', each addSlide will append to 
+// any existing slide in RootTemplate.pptx. Otherwise, we are going to start
+// with a truncated root template.
 let pres = automizer.loadRoot(`RootTemplate.pptx`)
   // We want to make some more files available and give them a handy label.
   .load(`SlideWithShapes.pptx`, 'shapes')
@@ -216,8 +212,24 @@ pres.write(`mySortedPresentation.pptx`).then(summary => {
   console.log(summary)
 })
 ```
+## Track status of automation process
 
+When creating large presentations, you might want to have some information about the current status. Use a custom status tracker:
 
+```ts
+import Automizer, { StatusTracker } from "pptx-automizer"
+
+// If you want to track the steps of creation process,
+// you can use a custom callback:
+const myStatusTracker = (status: StatusTracker) => {
+  console.log(status.info + ' (' + status.share + '%)');
+};
+
+const automizer = new Automizer({
+  // ...
+  statusTracker: myStatusTracker,
+})
+```
 
 ### Testing
 You can run all unit tests using these commands:
