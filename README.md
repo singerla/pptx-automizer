@@ -98,6 +98,14 @@ pres.addSlide('graph', 1)
   .addSlide('shapes', 1)
   .addSlide(`SlideWithImages.pptx`, 2)
 
+// Finally, we want to write the output file.
+pres.write(`myPresentation.pptx`).then(summary => {
+  console.log(summary)
+})
+```
+
+## Add and modify shapes
+```ts
 // You can also select and import a single element from a template slide. 
 // The desired shape will be identified by its name from slide-xml's 
 // 'p:cNvPr'-element.
@@ -111,14 +119,9 @@ pres.addSlide('SlideWithImages.pptx', 1, (slide) => {
       .data = 'Custom content'
   })
 })
-
-// Finally, we want to write the output file.
-pres.write(`myPresentation.pptx`).then(summary => {
-  console.log(summary)
-})
 ```
 
-## Modify shapes
+## Modify shapes with built-in functions
 ```ts
 // It is possible to modify an existing element on a newly added slide.
 pres.addSlide('shapes', 2, (slide) => {
@@ -133,6 +136,9 @@ pres.addSlide('shapes', 2, (slide) => {
 
 
 ## Modify charts
+
+All data and styles can be modified.
+
 ```ts
 // Modify an existing chart on an added slide.
 pres.addSlide('charts', 2, (slide) => {
@@ -160,6 +166,9 @@ pres.addSlide('charts', 2, (slide) => {
 
 ```
 ## Remove elements from a slide
+
+You can as well remove elements from slides.
+
 ```ts
 // Remove existing charts, images or shapes from added slide.
 pres
