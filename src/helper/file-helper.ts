@@ -4,6 +4,8 @@ import JSZip, { InputType, OutputType } from 'jszip';
 
 import { AutomizerSummary } from '../types/types';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
+import CacheHelper from './cache-helper';
+import { vd } from './general-helper';
 
 export class FileHelper {
   static readFile(location: string): Promise<Buffer> {
@@ -17,6 +19,7 @@ export class FileHelper {
     archive: JSZip,
     file: string,
     type?: OutputType,
+    cache?: CacheHelper,
   ): Promise<string | number[] | Uint8Array | ArrayBuffer | Blob | Buffer> {
     if (archive === undefined) {
       throw new Error('No files found, expected: ' + file);
@@ -29,9 +32,10 @@ export class FileHelper {
     return archive.files[file].async(type || 'string');
   }
 
-  static extractFileContent(file: Buffer): Promise<JSZip> {
+  static extractFileContent(file: Buffer, cache?: CacheHelper): Promise<JSZip> {
+    cache?.store();
     const zip = new JSZip();
-    return zip.loadAsync((file as unknown) as InputType);
+    return zip.loadAsync(file as unknown as InputType);
   }
 
   static getFileExtension(filename: string): string {
