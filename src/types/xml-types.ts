@@ -63,4 +63,7 @@ export type ElementInfo = {
   };
 };
 
-export type ModifyPresentationCallback = (xml: XMLDocument) => void;
+export type ModifyXmlCallback = (
+  xml: XMLDocument | Element,
+  index?: number,
+) => void;

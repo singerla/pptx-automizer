@@ -10,7 +10,7 @@ import { IPresentationProps } from './interfaces/ipresentation-props';
 import { PresTemplate } from './interfaces/pres-template';
 import { RootPresTemplate } from './interfaces/root-pres-template';
 import { Template } from './classes/template';
-import { ModifyPresentationCallback, TemplateInfo } from './types/xml-types';
+import { ModifyXmlCallback, TemplateInfo } from './types/xml-types';
 import { vd } from './helper/general-helper';
 import { Master } from './classes/master';
 import path from 'path';
@@ -41,7 +41,7 @@ export default class Automizer implements IPresentationProps {
   params: AutomizerParams;
   status: StatusTracker;
 
-  modifyPresentation: ModifyPresentationCallback[];
+  modifyPresentation: ModifyXmlCallback[];
 
   /**
    * Creates an instance of `pptx-automizer`.
@@ -177,7 +177,7 @@ export default class Automizer implements IPresentationProps {
     return templateCreationId;
   }
 
-  public async modify(cb: ModifyPresentationCallback): Promise<this> {
+  public modify(cb: ModifyXmlCallback): this {
     this.modifyPresentation.push(cb);
     return this;
   }
@@ -284,23 +284,6 @@ export default class Automizer implements IPresentationProps {
     );
   }
 
-  async applyModifyPresentationCallbacks() {
-    const presentationXml = await XmlHelper.getXmlFromArchive(
-      await this.rootTemplate.archive,
-      `ppt/presentation.xml`,
-    );
-
-    for (const cb of this.modifyPresentation) {
-      cb(presentationXml);
-    }
-
-    await XmlHelper.writeXmlToArchive(
-      await this.rootTemplate.archive,
-      `ppt/presentation.xml`,
-      presentationXml,
-    );
-  }
-
   /**
    * Write all slides into archive.
    */
@@ -315,6 +298,18 @@ export default class Automizer implements IPresentationProps {
     if (this.params.removeExistingSlides) {
       await this.rootTemplate.truncate();
     }
+  }
+
+  /**
+   * Applies all callbacks in this.modifyPresentation-array.
+   * The callback array can be pushed by this.modify()
+   */
+  async applyModifyPresentationCallbacks(): Promise<void> {
+    await XmlHelper.modifyXmlInArchive(
+      this.rootTemplate.archive,
+      `ppt/presentation.xml`,
+      this.modifyPresentation,
+    );
   }
 
   /**

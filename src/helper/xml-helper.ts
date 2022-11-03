@@ -7,6 +7,7 @@ import {
   OverrideAttribute,
   RelationshipAttribute,
   HelperElement,
+  ModifyXmlCallback,
 } from '../types/xml-types';
 import { TargetByRelIdMap } from '../constants/constants';
 import { XmlPrettyPrint } from './xml-pretty-print';
@@ -19,6 +20,20 @@ import { XmlTemplateHelper } from './xml-template-helper';
 import { vd } from './general-helper';
 
 export class XmlHelper {
+  static async modifyXmlInArchive(
+    archive: Promise<JSZip>,
+    file: string,
+    callbacks: ModifyXmlCallback[],
+  ): Promise<JSZip> {
+    const xml = await XmlHelper.getXmlFromArchive(await archive, file);
+
+    for (const callback of callbacks) {
+      callback(xml);
+    }
+
+    return await XmlHelper.writeXmlToArchive(await archive, file, xml);
+  }
+
   static async getXmlFromArchive(
     archive: JSZip,
     file: string,
@@ -401,6 +416,29 @@ export class XmlHelper {
         toRemove.parentNode.removeChild(toRemove);
       }
     }
+  }
+
+  static sortCollection(
+    collection: HTMLCollectionOf<Element>,
+    order: number[],
+    callback?: ModifyXmlCallback,
+  ): void {
+    if (collection.length === 0) {
+      return;
+    }
+    const parent = collection[0].parentNode;
+    order.forEach((index, i) => {
+      if (!collection[index]) {
+        vd('sortCollection index not found' + index);
+        return;
+      }
+
+      const item = collection[index];
+      if (callback) {
+        callback(item, i);
+      }
+      parent.appendChild(item);
+    });
   }
 
   static dump(element: XMLDocument | Element): void {
