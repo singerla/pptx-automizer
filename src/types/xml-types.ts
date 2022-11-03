@@ -62,3 +62,5 @@ export type ElementInfo = {
     cy: number;
   };
 };
+
+export type ModifyPresentationCallback = (xml: XMLDocument) => void;

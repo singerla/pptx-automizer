@@ -10,11 +10,12 @@ import { IPresentationProps } from './interfaces/ipresentation-props';
 import { PresTemplate } from './interfaces/pres-template';
 import { RootPresTemplate } from './interfaces/root-pres-template';
 import { Template } from './classes/template';
-import { TemplateInfo } from './types/xml-types';
+import { ModifyPresentationCallback, TemplateInfo } from './types/xml-types';
 import { vd } from './helper/general-helper';
 import { Master } from './classes/master';
 import path from 'path';
 import * as fs from 'fs';
+import { XmlHelper } from './helper/xml-helper';
 
 /**
  * Automizer
@@ -40,12 +41,15 @@ export default class Automizer implements IPresentationProps {
   params: AutomizerParams;
   status: StatusTracker;
 
+  modifyPresentation: ModifyPresentationCallback[];
+
   /**
    * Creates an instance of `pptx-automizer`.
    * @param [params]
    */
   constructor(params: AutomizerParams) {
     this.templates = [];
+    this.modifyPresentation = [];
     this.params = params;
 
     this.templateDir = params?.templateDir ? params.templateDir + '/' : '';
@@ -173,6 +177,11 @@ export default class Automizer implements IPresentationProps {
     return templateCreationId;
   }
 
+  public async modify(cb: ModifyPresentationCallback): Promise<this> {
+    this.modifyPresentation.push(cb);
+    return this;
+  }
+
   /**
    * Determines whether template is root or default template.
    * @param template
@@ -262,8 +271,40 @@ export default class Automizer implements IPresentationProps {
    * @returns summary object.
    */
   public async write(location: string): Promise<AutomizerSummary> {
-    const rootArchive = await this.rootTemplate.archive;
+    await this.writeSlides();
+    await this.applyModifyPresentationCallbacks();
 
+    const rootArchive = await this.rootTemplate.archive;
+    const content = await rootArchive.generateAsync({ type: 'nodebuffer' });
+
+    return FileHelper.writeOutputFile(
+      this.getLocation(location, 'output'),
+      content,
+      this,
+    );
+  }
+
+  async applyModifyPresentationCallbacks() {
+    const presentationXml = await XmlHelper.getXmlFromArchive(
+      await this.rootTemplate.archive,
+      `ppt/presentation.xml`,
+    );
+
+    for (const cb of this.modifyPresentation) {
+      cb(presentationXml);
+    }
+
+    await XmlHelper.writeXmlToArchive(
+      await this.rootTemplate.archive,
+      `ppt/presentation.xml`,
+      presentationXml,
+    );
+  }
+
+  /**
+   * Write all slides into archive.
+   */
+  public async writeSlides(): Promise<void> {
     await this.rootTemplate.countExistingSlides();
     this.status.max = this.rootTemplate.slides.length;
 
@@ -274,14 +315,6 @@ export default class Automizer implements IPresentationProps {
     if (this.params.removeExistingSlides) {
       await this.rootTemplate.truncate();
     }
-
-    const content = await rootArchive.generateAsync({ type: 'nodebuffer' });
-
-    return FileHelper.writeOutputFile(
-      this.getLocation(location, 'output'),
-      content,
-      this,
-    );
   }
 
   /**
