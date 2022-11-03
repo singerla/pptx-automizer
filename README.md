@@ -12,6 +12,9 @@ This generator can only be used on the server-side and requires a [Node.js](http
 ### Shape types
 Please note that this project is *work in progress*. At the moment, you might encounter difficulties for special shape types that require further relations (e.g. links will not work properly). Although, most shape types are already supported, such as connection shapes, tables or charts. You are welcome to [report any issue](https://github.com/singerla/pptx-automizer/issues/new).
 
+### Chart types
+Extended chart types, like waterfall or map charts, are not supported right now. 
+
 ### PowerPoint Version
 All testing focuses on PowerPoint 2019 pptx file format.
 
