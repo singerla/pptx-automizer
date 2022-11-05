@@ -631,13 +631,6 @@ export class Slide implements ISlide {
       parent: (xml: XMLDocument) => xml.getElementsByTagName('p:sldIdLst')[0],
       tag: 'p:sldId',
       attributes: {
-        id: (xml: XMLDocument) =>
-          XmlHelper.getMaxId(
-            xml.getElementsByTagName('p:sldId'),
-            'id',
-            true,
-            256,
-          ),
         'r:id': relId,
       } as SlideListAttribute,
     });

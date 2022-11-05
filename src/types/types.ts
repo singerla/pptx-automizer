@@ -29,6 +29,10 @@ export type AutomizerParams = {
    * You can set a path here.
    */
   outputDir?: string;
+  /**
+   * Buffer unzipped pptx on disk
+   */
+  cacheDir?: string;
   rootTemplate?: string;
   presTemplates?: string[];
   useCreationIds?: boolean;
