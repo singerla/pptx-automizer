@@ -180,9 +180,13 @@ pres
 ```
 
 
-## How to sort output slides
+## Sort output slides
 
-You can also insert added slides between existing slides.
+There are three ways to arrange slides in an output presentation. 
+
+1. By default, all slides will be appended to the existing slides in your root template. The order of `addSlide`-calls will define slide sortation in output presentation.
+
+2. You can alternatively remove all existing slides by setting the `removeExistingSlides` flag to true. The first slide added with `addSlide` will be first slide in the output presentation. If you want to insert slides from root template, you need to load it a second time.
 
 ```ts
 import Automizer from "pptx-automizer"
@@ -213,6 +217,31 @@ pres.write(`mySortedPresentation.pptx`).then(summary => {
   console.log(summary)
 })
 ```
+
+
+3. Use `sortSlides`-callback
+You can pass an array of numbers and create a callback and apply it to `presentation.xml`.
+This will also work without adding slides.
+
+Slides will be appended to the existing slides by slide number (starting from 1). You may find irritating results in case you skip a slide number.
+
+```ts
+import ModifyPresentationHelper from './helper/modify-presentation-helper';
+
+// 
+// You may truncate root template or you may not
+// ...
+
+// It is possible to skip adding slides, try sorting an unmodified presentation
+pres.addSlide('charts', 1);
+  .addSlide('charts', 2);
+  .addSlide('images', 1);
+  .addSlide('images', 2);
+  
+const order = [3, 2, 4, 1];
+pres.modify(ModifyPresentationHelper.sortSlides(order));
+```
+
 
 ## Track status of automation process
 
