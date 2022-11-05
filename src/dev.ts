@@ -25,7 +25,7 @@ const run = async () => {
   ppt.addSlide('images', 1);
   ppt.addSlide('images', 2);
 
-  ppt.modify(ModifyPresentationHelper.sortSlides([3, 1, 2, 4]));
+  ppt.modify(ModifyPresentationHelper.sortSlides([3, 2, 1]));
 
   const summary = await ppt.write('reorder.pptx');
 };

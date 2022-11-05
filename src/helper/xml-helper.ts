@@ -441,6 +441,16 @@ export class XmlHelper {
     });
   }
 
+  static modifyCollection(
+    collection: HTMLCollectionOf<Element>,
+    callback: ModifyXmlCallback,
+  ): void {
+    for (let i = 0; i < collection.length; i++) {
+      const item = collection[i];
+      callback(item, i);
+    }
+  }
+
   static dump(element: XMLDocument | Element): void {
     const s = new XMLSerializer();
     const xmlBuffer = s.serializeToString(element);
