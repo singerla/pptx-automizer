@@ -102,7 +102,7 @@ export class Slide implements ISlide {
    * List of unsupported tags in slide xml
    * @internal
    */
-  unsupportedTags = ['p:custDataLst', 'mc:AlternateContent'];
+  unsupportedTags = ['p:custDataLst', 'mc:AlternateContent', 'a14:imgProps'];
 
   constructor(params: {
     presentation: IPresentationProps;
