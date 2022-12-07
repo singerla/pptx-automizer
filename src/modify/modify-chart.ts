@@ -47,7 +47,10 @@ export class ModifyChart {
 
     this.chart = new ModifyXmlHelper(chart);
     this.workbook = new ModifyXmlHelper(workbook.sheet);
-    this.workbookTable = new ModifyXmlHelper(workbook.table);
+
+    if (workbook.table) {
+      this.workbookTable = new ModifyXmlHelper(workbook.table);
+    }
 
     this.sharedStrings = workbook.sharedStrings;
 
@@ -63,13 +66,28 @@ export class ModifyChart {
     this.setPointStyles();
     this.sliceChartSpace();
 
+    this.modifyWorkbook();
+
+    // XmlHelper.dump(this.chart.root as XMLDocument)
+  }
+
+  modifyExtended(): void {
+    this.setExtData();
+    this.setExtSeries();
+    this.sliceExtChartSpace();
+
+    this.modifyWorkbook();
+  }
+
+  modifyWorkbook(): void {
     this.prepareWorkbook();
     this.setWorkbook();
     this.sliceWorkbook();
-    this.setWorkbookTable();
-    this.sliceWorkbookTable();
 
-    // XmlHelper.dump(this.chart.root as XMLDocument)
+    if (this.workbookTable) {
+      this.setWorkbookTable();
+      this.sliceWorkbookTable();
+    }
   }
 
   setColumns(slots: ChartSlot[]): ChartColumn[] {
@@ -134,6 +152,22 @@ export class ModifyChart {
   }
 
   setValues(): void {
+    this.setValuesByCategory((col) => {
+      return this.series(col.series, col.modTags);
+    });
+  }
+
+  setExtData(): void {
+    this.setValuesByCategory((col) => {
+      return {
+        'cx:data': {
+          children: col.modTags,
+        },
+      };
+    });
+  }
+
+  setValuesByCategory(cb): void {
     this.data.categories.forEach((category, c) => {
       this.columns
         .filter((col) => col.chart)
@@ -146,7 +180,7 @@ export class ModifyChart {
 
           col.modTags = col.chart(category.values[col.series], c, category);
 
-          this.chart.modify(this.series(col.series, col.modTags));
+          this.chart.modify(cb(col));
         });
     });
   }
@@ -186,6 +220,18 @@ export class ModifyChart {
     });
   }
 
+  setExtSeries(): void {
+    this.columns.forEach((column, colId) => {
+      if (column.isStrRef === true) {
+        this.chart.modify(
+          this.extSeries(column.series, {
+            ...this.extSeriesLabel(column.label, colId),
+          }),
+        );
+      }
+    });
+  }
+
   setSeriesDataLabels = (): void => {
     this.data.series.forEach((series, s) => {
       this.chart.modify(
@@ -214,6 +260,26 @@ export class ModifyChart {
           sliceMod[tag] = this.slice('c:pt', this.height);
         });
         this.chart.modify(this.series(column.series, sliceMod));
+      });
+  }
+
+  sliceExtChartSpace(): void {
+    this.chart.modify({
+      'cx:plotArea': this.slice('cx:series', this.data.series.length),
+    });
+
+    this.columns
+      .filter((column) => column.modTags)
+      .forEach((column) => {
+        const sliceMod = {};
+
+        Object.keys(column.modTags).forEach((tag) => {
+          sliceMod[tag] = this.slice('cx:pt', this.height);
+        });
+
+        this.chart.modify({
+          'cx:data': { index: column.series, children: sliceMod },
+        });
       });
   }
 
@@ -404,6 +470,17 @@ export class ModifyChart {
     };
   };
 
+  extSeriesLabel = (label: string, series: number): ModificationTags => {
+    return {
+      'cx:f': {
+        modify: ModifyXmlHelper.range(series + 1),
+      },
+      'cx:v': {
+        modify: ModifyTextHelper.content(label),
+      },
+    };
+  };
+
   seriesStyle = (series: ChartSeries): ModificationTags => {
     if (!series?.style) return;
 
@@ -503,6 +580,47 @@ export class ModifyChart {
       [tag]: this.point(r, targetCol, mapData(point, category)),
     };
   }
+
+  extendedSeries(
+    r: number,
+    targetCol: number,
+    point: number,
+    category: ChartCategory,
+  ): ModificationTags {
+    return {
+      'cx:strDim': this.extPoint(r, 0, category.label),
+      'cx:numDim': this.extPoint(r, targetCol, point),
+    };
+  }
+
+  extPoint = (r: number, c: number, value: string | number): Modification => {
+    return {
+      children: {
+        'cx:pt': {
+          index: r,
+          modify: [
+            ModifyXmlHelper.attribute('idx', r),
+            ModifyXmlHelper.textContent(value),
+          ],
+        },
+        'cx:f': {
+          modify: ModifyXmlHelper.range(c, this.height),
+        },
+        'cx:lvl': {
+          modify: ModifyXmlHelper.attribute('ptCount', this.height),
+        },
+      },
+    };
+  };
+
+  extSeries = (index: number, children: ModificationTags): ModificationTags => {
+    return {
+      'cx:series': {
+        index: index,
+        children: children,
+      },
+    };
+  };
 
   point = (r: number, c: number, value: string | number): Modification => {
     return {

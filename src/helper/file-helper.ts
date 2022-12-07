@@ -29,9 +29,15 @@ export class FileHelper {
     return archive.files[file].async(type || 'string');
   }
 
+  static fileExistsInArchive(archive: JSZip, file: string): boolean {
+    if (archive === undefined || archive.files[file] === undefined) {
+      return false;
+    }
+  }
+
   static extractFileContent(file: Buffer): Promise<JSZip> {
     const zip = new JSZip();
-    return zip.loadAsync((file as unknown) as InputType);
+    return zip.loadAsync(file as unknown as InputType);
   }
 
   static getFileExtension(filename: string): string {

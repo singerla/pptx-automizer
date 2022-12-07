@@ -123,6 +123,35 @@ export class XmlHelper {
     return max;
   }
 
+  static pushRelTargets(element: Element, prefix: string, targets: Target[]) {
+    const type = element.getAttribute('Type');
+    const target = element.getAttribute('Target');
+    const rId = element.getAttribute('Id');
+
+    const subtype = _.last(prefix.split('/'));
+    const relType = _.last(type.split('/'));
+
+    const matchNumber = target.match(/(\d+)/);
+    const stripNumber =
+      matchNumber && matchNumber[1] ? Number(matchNumber[1]) : 0;
+
+    if (XmlHelper.targetMatchesRelationship(relType, subtype, target, prefix)) {
+      targets.push({
+        file: target,
+        rId: rId,
+        number: stripNumber,
+        type: type,
+        subtype: subtype,
+      } as Target);
+    }
+  }
+
+  static targetMatchesRelationship(relType, subtype, target, prefix) {
+    if (relType === 'package') return true;
+
+    return relType === subtype && target.indexOf(prefix) === 0;
+  }
+
   static async getTargetsFromRelationships(
     archive: JSZip,
     path: string,
@@ -130,25 +159,13 @@ export class XmlHelper {
     suffix?: string | RegExp,
   ): Promise<Target[]> {
     const prefixes = typeof prefix === 'string' ? [prefix] : prefix;
+
     return XmlHelper.getRelationships(
       archive,
       path,
-      (element: Element, rels: Target[]) => {
-        const target = element.getAttribute('Target');
+      (element: Element, targets: Target[]) => {
         prefixes.forEach((prefix) => {
-          const stripNumber = target
-            .replace(prefix, '')
-            .replace(suffix || '.xml', '');
-
-          // vd(stripNumber);
-          if (target.indexOf(prefix) === 0) {
-            rels.push({
-              file: target,
-              rId: element.getAttribute('Id'),
-              number: Number(stripNumber),
-              subtype: _.last(prefix.split('/')),
-            } as Target);
-          }
+          XmlHelper.pushRelTargets(element, prefix, targets);
         });
       },
     );

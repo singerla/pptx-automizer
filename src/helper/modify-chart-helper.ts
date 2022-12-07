@@ -206,6 +206,33 @@ export default class ModifyChartHelper {
       // XmlHelper.dump(chart)
     };
 
+  /**
+   * Set chart data to modify extended chart types.
+   * See `__tests__/modify-existing-extended-chart.test.js`
+   */
+  static setExtendedChartData =
+    (data: ChartData) =>
+    (
+      element: XMLDocument | Element,
+      chart?: Document,
+      workbook?: Workbook,
+    ): void => {
+      const slots = [] as ChartSlot[];
+      data.series.forEach((series: ChartSeries, s: number) => {
+        slots.push({
+          index: s,
+          series: series,
+          targetCol: s + 1,
+          type: 'extendedSeries',
+        });
+      });
+
+      new ModifyChart(chart, workbook, data, slots).modifyExtended();
+
+      XmlHelper.dump(chart);
+      // XmlHelper.dump(workbook.table)
+    };
+
   static setAxisRange =
     (range: ChartAxisRange) =>
     (chart: XMLDocument): void => {

@@ -20,6 +20,7 @@ const setTable = ModifyTableHelper.setTable;
 
 import ModifyChartHelper from './helper/modify-chart-helper';
 const setChartData = ModifyChartHelper.setChartData;
+const setExtendedChartData = ModifyChartHelper.setExtendedChartData;
 const setChartVerticalLines = ModifyChartHelper.setChartVerticalLines;
 const setChartScatter = ModifyChartHelper.setChartScatter;
 const setChartBubbles = ModifyChartHelper.setChartBubbles;
@@ -89,6 +90,7 @@ export const modify = {
   adjustWidth,
   setTable,
   setChartData,
+  setExtendedChartData,
   setChartVerticalLines,
   setChartScatter,
   setChartCombo,

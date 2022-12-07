@@ -27,7 +27,7 @@ export class Chart extends Shape implements IChart {
   constructor(shape: ImportedElement) {
     super(shape);
 
-    this.relRootTag = 'c:chart';
+    this.relRootTag = this.subtype === 'chart' ? 'c:chart' : 'cx:chart';
     this.relAttribute = 'r:id';
     this.relParent = (element: Element) =>
       element.parentNode.parentNode.parentNode as Element;
@@ -137,10 +137,14 @@ export class Chart extends Shape implements IChart {
       archive,
       'xl/worksheets/sheet1.xml',
     );
-    const table = await XmlHelper.getXmlFromArchive(
+
+    const table = FileHelper.fileExistsInArchive(
       archive,
       'xl/tables/table1.xml',
-    );
+    )
+      ? await XmlHelper.getXmlFromArchive(archive, 'xl/tables/table1.xml')
+      : undefined;
+
     const sharedStrings = await XmlHelper.getXmlFromArchive(
       archive,
       'xl/sharedStrings.xml',
@@ -160,11 +164,15 @@ export class Chart extends Shape implements IChart {
       'xl/worksheets/sheet1.xml',
       workbook.sheet,
     );
-    await XmlHelper.writeXmlToArchive(
-      workbook.archive,
-      'xl/tables/table1.xml',
-      workbook.table,
-    );
+
+    if (workbook.table) {
+      await XmlHelper.writeXmlToArchive(
+        workbook.archive,
+        'xl/tables/table1.xml',
+        workbook.table,
+      );
+    }
+
     await XmlHelper.writeXmlToArchive(
       workbook.archive,
       'xl/sharedStrings.xml',
@@ -193,8 +201,9 @@ export class Chart extends Shape implements IChart {
       `${this.wbEmbeddingsPath}${this.worksheetFilePrefix}`,
       this.wbExtension,
     );
+
     const worksheet = worksheets[0];
-    vd(worksheet);
+
     this.sourceWorksheet = worksheet.number === 0 ? '' : worksheet.number;
     this.targetWorksheet = '-created-' + this.targetNumber;
 
@@ -309,9 +318,14 @@ export class Chart extends Shape implements IChart {
       this.targetSlideRelFile,
     );
 
+    const type =
+      this.subtype === 'chart'
+        ? 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart'
+        : 'http://schemas.microsoft.com/office/2014/relationships/chartEx';
+
     const attributes = {
       Id: this.createdRid,
-      Type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart',
+      Type: type,
       Target: `../charts/${this.subtype}${this.targetNumber}.xml`,
     } as RelationshipAttribute;
 
@@ -434,8 +448,8 @@ export class Chart extends Shape implements IChart {
     relsPath: string,
   ): Promise<Target[]> {
     return await XmlHelper.getTargetsFromRelationships(archive, relsPath, [
+      '../charts/chart',
       '../charts/chartEx',
-      // '../charts/chart',
     ]);
   }
 }

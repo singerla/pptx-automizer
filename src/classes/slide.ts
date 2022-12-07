@@ -419,27 +419,33 @@ export class Slide implements ISlide {
     sourceArchive: JSZip,
     slideNumber: number,
   ): Promise<AnalyzedElementType> {
-    vd('analyzeElement');
     const isChart = sourceElement.getElementsByTagName('c:chart');
     if (isChart.length) {
-      vd({
-        type: ElementType.Chart,
-        target: await XmlHelper.getTargetByRelId(
-          sourceArchive,
-          slideNumber,
-          sourceElement,
-          'chart',
-        ),
-      });
+      const target = await XmlHelper.getTargetByRelId(
+        sourceArchive,
+        slideNumber,
+        sourceElement,
+        'chart',
+      );
 
       return {
         type: ElementType.Chart,
-        target: await XmlHelper.getTargetByRelId(
-          sourceArchive,
-          slideNumber,
-          sourceElement,
-          'chart',
-        ),
+        target: target,
+      } as AnalyzedElementType;
+    }
+
+    const isChartEx = sourceElement.getElementsByTagName('cx:chart');
+    if (isChartEx.length) {
+      const target = await XmlHelper.getTargetByRelId(
+        sourceArchive,
+        slideNumber,
+        sourceElement,
+        'chartEx',
+      );
+
+      return {
+        type: ElementType.Chart,
+        target: target,
       } as AnalyzedElementType;
     }
 
