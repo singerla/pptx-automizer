@@ -102,7 +102,7 @@ export class Slide implements ISlide {
    * List of unsupported tags in slide xml
    * @internal
    */
-  unsupportedTags = ['p:custDataLst', 'mc:AlternateContent'];
+  unsupportedTags = ['p:custDataLst', 'mc:AlternateContent', 'a14:imgProps'];
 
   constructor(params: {
     presentation: IPresentationProps;
@@ -648,13 +648,6 @@ export class Slide implements ISlide {
       parent: (xml: XMLDocument) => xml.getElementsByTagName('p:sldIdLst')[0],
       tag: 'p:sldId',
       attributes: {
-        id: (xml: XMLDocument) =>
-          XmlHelper.getMaxId(
-            xml.getElementsByTagName('p:sldId'),
-            'id',
-            true,
-            256,
-          ),
         'r:id': relId,
       } as SlideListAttribute,
     });

@@ -1,5 +1,12 @@
-import Automizer, { ChartData, modify, TableRow, TableRowStyle } from './index';
+import Automizer, {
+  ChartData,
+  modify,
+  TableRow,
+  TableRowStyle,
+  XmlHelper,
+} from './index';
 import { vd } from './helper/general-helper';
+import ModifyPresentationHelper from './helper/modify-presentation-helper';
 
 const automizer = new Automizer({
   templateDir: `${__dirname}/../__tests__/pptx-templates`,
@@ -8,7 +15,7 @@ const automizer = new Automizer({
 });
 
 const run = async () => {
-  const pres = automizer
+  const ppt = automizer
     .loadRoot(`RootTemplate.pptx`)
     .load(`EmptySlide.pptx`, 'EmptySlide')
     .load(`ChartWaterfall.pptx`, 'ChartWaterfall')

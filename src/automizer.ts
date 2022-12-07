@@ -10,11 +10,13 @@ import { IPresentationProps } from './interfaces/ipresentation-props';
 import { PresTemplate } from './interfaces/pres-template';
 import { RootPresTemplate } from './interfaces/root-pres-template';
 import { Template } from './classes/template';
-import { TemplateInfo } from './types/xml-types';
+import { ModifyXmlCallback, TemplateInfo } from './types/xml-types';
 import { vd } from './helper/general-helper';
 import { Master } from './classes/master';
 import path from 'path';
 import * as fs from 'fs';
+import { XmlHelper } from './helper/xml-helper';
+import ModifyPresentationHelper from './helper/modify-presentation-helper';
 
 /**
  * Automizer
@@ -40,12 +42,15 @@ export default class Automizer implements IPresentationProps {
   params: AutomizerParams;
   status: StatusTracker;
 
+  modifyPresentation: ModifyXmlCallback[];
+
   /**
    * Creates an instance of `pptx-automizer`.
    * @param [params]
    */
   constructor(params: AutomizerParams) {
     this.templates = [];
+    this.modifyPresentation = [];
     this.params = params;
 
     this.templateDir = params?.templateDir ? params.templateDir + '/' : '';
@@ -157,7 +162,7 @@ export default class Automizer implements IPresentationProps {
   /**
    * Parses all loaded templates and collects creationIds for slides and
    * elements. This will make finding templates and elements independent
-   * from slide number and element name.
+   * of slide number and element name.
    * @returns Promise<TemplateInfo[]>
    */
   public async setCreationIds(): Promise<TemplateInfo[]> {
@@ -171,6 +176,11 @@ export default class Automizer implements IPresentationProps {
       });
     }
     return templateCreationId;
+  }
+
+  public modify(cb: ModifyXmlCallback): this {
+    this.modifyPresentation.push(cb);
+    return this;
   }
 
   /**
@@ -262,8 +272,24 @@ export default class Automizer implements IPresentationProps {
    * @returns summary object.
    */
   public async write(location: string): Promise<AutomizerSummary> {
-    const rootArchive = await this.rootTemplate.archive;
+    await this.writeSlides();
+    await this.normalizePresentation();
+    await this.applyModifyPresentationCallbacks();
 
+    const rootArchive = await this.rootTemplate.archive;
+    const content = await rootArchive.generateAsync({ type: 'nodebuffer' });
+
+    return FileHelper.writeOutputFile(
+      this.getLocation(location, 'output'),
+      content,
+      this,
+    );
+  }
+
+  /**
+   * Write all slides into archive.
+   */
+  public async writeSlides(): Promise<void> {
     await this.rootTemplate.countExistingSlides();
     this.status.max = this.rootTemplate.slides.length;
 
@@ -274,14 +300,30 @@ export default class Automizer implements IPresentationProps {
     if (this.params.removeExistingSlides) {
       await this.rootTemplate.truncate();
     }
+  }
 
-    const content = await rootArchive.generateAsync({ type: 'nodebuffer' });
-
-    return FileHelper.writeOutputFile(
-      this.getLocation(location, 'output'),
-      content,
-      this,
+  /**
+   * Applies all callbacks in this.modifyPresentation-array.
+   * The callback array can be pushed by this.modify()
+   */
+  async applyModifyPresentationCallbacks(): Promise<void> {
+    await XmlHelper.modifyXmlInArchive(
+      this.rootTemplate.archive,
+      `ppt/presentation.xml`,
+      this.modifyPresentation,
     );
+  }
+
+  /**
+   * Apply some callbacks to restore archive/xml structure
+   * and prevent corrupted pptx files.
+   *
+   * TODO: Remove unused parts (slides, related items) from archive.
+   * TODO: Use every imported image only once
+   * TODO: Check for lost relations
+   */
+  normalizePresentation(): void {
+    this.modify(ModifyPresentationHelper.normalizeSlideIds);
   }
 
   /**
@@ -297,6 +339,10 @@ export default class Automizer implements IPresentationProps {
           return this.templateDir + location;
         } else if (fs.existsSync(this.templateFallbackDir + location)) {
           return this.templateFallbackDir + location;
+        } else {
+          vd('No file matches "' + location + '"');
+          vd('@templateDir: ' + this.templateDir);
+          vd('@templateFallbackDir: ' + this.templateFallbackDir);
         }
         break;
       case 'output':

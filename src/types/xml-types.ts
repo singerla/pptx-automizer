@@ -62,3 +62,8 @@ export type ElementInfo = {
     cy: number;
   };
 };
+
+export type ModifyXmlCallback = (
+  xml: XMLDocument | Element,
+  index?: number,
+) => void;

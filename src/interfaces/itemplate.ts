@@ -4,4 +4,5 @@ export interface ITemplate {
   location: string;
   file: InputType;
   archive: Promise<JSZip>;
+  getSlideIdList: () => Promise<Document>;
 }
