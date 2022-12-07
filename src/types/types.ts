@@ -1,5 +1,5 @@
 import JSZip from 'jszip';
-import { ElementType } from '../enums/element-type';
+import { ElementSubtype, ElementType } from '../enums/element-type';
 
 export type SourceSlideIdentifier = number | string;
 export type SlideModificationCallback = (document: Document) => void;
@@ -69,6 +69,8 @@ export type Target = {
   file: string;
   number?: number;
   rId?: string;
+  prefix?: string;
+  subtype?: ElementSubtype;
 };
 export type ImportElement = {
   presName: string;

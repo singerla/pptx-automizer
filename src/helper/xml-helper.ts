@@ -4,19 +4,15 @@ import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
 import { FileHelper } from './file-helper';
 import {
   DefaultAttribute,
+  HelperElement,
   OverrideAttribute,
   RelationshipAttribute,
-  HelperElement,
   ModifyXmlCallback,
 } from '../types/xml-types';
 import { TargetByRelIdMap } from '../constants/constants';
 import { XmlPrettyPrint } from './xml-pretty-print';
-import {
-  GetRelationshipsCallback,
-  SourceSlideIdentifier,
-  Target,
-} from '../types/types';
-import { XmlTemplateHelper } from './xml-template-helper';
+import { GetRelationshipsCallback, Target } from '../types/types';
+import _ from 'lodash';
 import { vd } from './general-helper';
 
 export class XmlHelper {
@@ -142,26 +138,50 @@ export class XmlHelper {
     return max;
   }
 
+  static pushRelTargets(element: Element, prefix: string, targets: Target[]) {
+    const type = element.getAttribute('Type');
+    const target = element.getAttribute('Target');
+    const rId = element.getAttribute('Id');
+
+    const subtype = _.last(prefix.split('/'));
+    const relType = _.last(type.split('/'));
+
+    const matchNumber = target.match(/(\d+)/);
+    const stripNumber =
+      matchNumber && matchNumber[1] ? Number(matchNumber[1]) : 0;
+
+    if (XmlHelper.targetMatchesRelationship(relType, subtype, target, prefix)) {
+      targets.push({
+        file: target,
+        rId: rId,
+        number: stripNumber,
+        type: type,
+        subtype: subtype,
+      } as Target);
+    }
+  }
+
+  static targetMatchesRelationship(relType, subtype, target, prefix) {
+    if (relType === 'package') return true;
+
+    return relType === subtype && target.indexOf(prefix) === 0;
+  }
+
   static async getTargetsFromRelationships(
     archive: JSZip,
     path: string,
-    prefix: string,
+    prefix: string | string[],
     suffix?: string | RegExp,
   ): Promise<Target[]> {
+    const prefixes = typeof prefix === 'string' ? [prefix] : prefix;
+
     return XmlHelper.getRelationships(
       archive,
       path,
-      (element: Element, rels: Target[]) => {
-        const target = element.getAttribute('Target');
-        if (target.indexOf(prefix) === 0) {
-          rels.push({
-            file: target,
-            rId: element.getAttribute('Id'),
-            number: Number(
-              target.replace(prefix, '').replace(suffix || '.xml', ''),
-            ),
-          } as Target);
-        }
+      (element: Element, targets: Target[]) => {
+        prefixes.forEach((prefix) => {
+          XmlHelper.pushRelTargets(element, prefix, targets);
+        });
       },
     );
   }
