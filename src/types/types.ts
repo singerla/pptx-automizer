@@ -71,6 +71,10 @@ export type Target = {
   rId?: string;
   prefix?: string;
   subtype?: ElementSubtype;
+  type: string;
+  filename: string;
+  filenameExt: string;
+  filenameBase: string;
 };
 export type ImportElement = {
   presName: string;

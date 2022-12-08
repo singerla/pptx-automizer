@@ -33,6 +33,7 @@ export class FileHelper {
     if (archive === undefined || archive.files[file] === undefined) {
       return false;
     }
+    return true;
   }
 
   static extractFileContent(file: Buffer): Promise<JSZip> {

@@ -47,10 +47,9 @@ export class ModifyChart {
 
     this.chart = new ModifyXmlHelper(chart);
     this.workbook = new ModifyXmlHelper(workbook.sheet);
-
-    if (workbook.table) {
-      this.workbookTable = new ModifyXmlHelper(workbook.table);
-    }
+    this.workbookTable = workbook.table
+      ? new ModifyXmlHelper(workbook.table)
+      : null;
 
     this.sharedStrings = workbook.sharedStrings;
 
@@ -65,7 +64,6 @@ export class ModifyChart {
     this.setSeriesDataLabels();
     this.setPointStyles();
     this.sliceChartSpace();
-
     this.modifyWorkbook();
 
     // XmlHelper.dump(this.chart.root as XMLDocument)
@@ -75,7 +73,6 @@ export class ModifyChart {
     this.setExtData();
     this.setExtSeries();
     this.sliceExtChartSpace();
-
     this.modifyWorkbook();
   }
 

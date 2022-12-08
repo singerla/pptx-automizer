@@ -138,40 +138,10 @@ export class XmlHelper {
     return max;
   }
 
-  static pushRelTargets(element: Element, prefix: string, targets: Target[]) {
-    const type = element.getAttribute('Type');
-    const target = element.getAttribute('Target');
-    const rId = element.getAttribute('Id');
-
-    const subtype = _.last(prefix.split('/'));
-    const relType = _.last(type.split('/'));
-
-    const matchNumber = target.match(/(\d+)/);
-    const stripNumber =
-      matchNumber && matchNumber[1] ? Number(matchNumber[1]) : 0;
-
-    if (XmlHelper.targetMatchesRelationship(relType, subtype, target, prefix)) {
-      targets.push({
-        file: target,
-        rId: rId,
-        number: stripNumber,
-        type: type,
-        subtype: subtype,
-      } as Target);
-    }
-  }
-
-  static targetMatchesRelationship(relType, subtype, target, prefix) {
-    if (relType === 'package') return true;
-
-    return relType === subtype && target.indexOf(prefix) === 0;
-  }
-
   static async getTargetsFromRelationships(
     archive: JSZip,
     path: string,
     prefix: string | string[],
-    suffix?: string | RegExp,
   ): Promise<Target[]> {
     const prefixes = typeof prefix === 'string' ? [prefix] : prefix;
 
@@ -184,6 +154,45 @@ export class XmlHelper {
         });
       },
     );
+  }
+
+  static pushRelTargets(element: Element, prefix: string, targets: Target[]) {
+    const type = element.getAttribute('Type');
+    const file = element.getAttribute('Target');
+    const rId = element.getAttribute('Id');
+
+    const subtype = _.last(prefix.split('/'));
+    const relType = _.last(type.split('/'));
+    const filename = _.last(file.split('/'));
+    const filenameExt = _.last(filename.split('.'));
+    const filenameMatch = filename
+      .replace('.' + filenameExt, '')
+      .match(/^(.+?)(\d+)*$/);
+
+    const number =
+      filenameMatch && filenameMatch[2] ? Number(filenameMatch[2]) : 0;
+    const filenameBase =
+      filenameMatch && filenameMatch[1] ? filenameMatch[1] : filename;
+
+    if (XmlHelper.targetMatchesRelationship(relType, subtype, file, prefix)) {
+      targets.push({
+        file,
+        rId,
+        number,
+        type,
+        subtype,
+        prefix,
+        filename,
+        filenameExt,
+        filenameBase,
+      } as Target);
+    }
+  }
+
+  static targetMatchesRelationship(relType, subtype, target, prefix) {
+    if (relType === 'package') return true;
+
+    return relType === subtype && target.indexOf(prefix) === 0;
   }
 
   static async getTargetsByRelationshipType(
@@ -278,7 +287,6 @@ export class XmlHelper {
       archive,
       relsPath,
       params.prefix,
-      params.expression,
     );
     const target = imageRels.find((rel) => rel.rId === sourceRid);
 

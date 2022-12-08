@@ -15,12 +15,10 @@ export const TargetByRelIdMap = {
     relRootTag: 'a:blip',
     relAttribute: 'r:embed',
     prefix: '../media/image',
-    expression: /\..+?$/,
   } as TargetByRelIdMapParam,
   'image:svg': {
     relRootTag: 'asvg:svgBlip',
     relAttribute: 'r:embed',
     prefix: '../media/image',
-    expression: /\..+?$/,
   } as TargetByRelIdMapParam,
 };
