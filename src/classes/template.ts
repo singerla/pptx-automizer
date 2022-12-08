@@ -11,6 +11,7 @@ import { XmlTemplateHelper } from '../helper/xml-template-helper';
 import { SlideInfo } from '../types/xml-types';
 import { XmlHelper } from '../helper/xml-helper';
 import { vd } from '../helper/general-helper';
+import CacheHelper from '../helper/cache-helper';
 
 export class Template implements ITemplate {
   /**
@@ -52,23 +53,26 @@ export class Template implements ITemplate {
   creationIds: SlideInfo[];
   existingSlides: number;
 
-  constructor(location: string) {
+  constructor(location: string, cache?: CacheHelper) {
     this.location = location;
     const file = FileHelper.readFile(location);
-    this.archive = FileHelper.extractFileContent(file as unknown as Buffer);
+    this.archive = FileHelper.extractFileContent(
+      file as unknown as Buffer,
+      cache?.setLocation(location),
+    );
   }
 
   static import(
     location: string,
     name?: string,
+    cache?: CacheHelper,
   ): PresTemplate | RootPresTemplate {
     let newTemplate: PresTemplate | RootPresTemplate;
-
     if (name) {
-      newTemplate = new Template(location) as PresTemplate;
+      newTemplate = new Template(location, cache) as PresTemplate;
       newTemplate.name = name;
     } else {
-      newTemplate = new Template(location) as RootPresTemplate;
+      newTemplate = new Template(location, cache) as RootPresTemplate;
       newTemplate.slides = [];
       newTemplate.counter = [
         new CountHelper('slides', newTemplate),
