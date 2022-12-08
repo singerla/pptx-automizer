@@ -6,8 +6,8 @@ import {
   AnalyzedElementType,
   ImportedElement,
   ImportElement,
-  SlideModificationCallback,
   ShapeModificationCallback,
+  SlideModificationCallback,
   SourceSlideIdentifier,
   StatusTracker,
 } from '../types/types';
@@ -17,14 +17,14 @@ import { PresTemplate } from '../interfaces/pres-template';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { ElementType } from '../enums/element-type';
 import {
+  HelperElement,
   RelationshipAttribute,
   SlideListAttribute,
-  HelperElement,
 } from '../types/xml-types';
 import { Image } from '../shapes/image';
 import { Chart } from '../shapes/chart';
 import { GenericShape } from '../shapes/generic';
-import { GeneralHelper, vd } from '../helper/general-helper';
+import { vd } from '../helper/general-helper';
 
 export class Slide implements ISlide {
   /**
@@ -102,7 +102,11 @@ export class Slide implements ISlide {
    * List of unsupported tags in slide xml
    * @internal
    */
-  unsupportedTags = ['p:custDataLst', 'mc:AlternateContent', 'a14:imgProps'];
+  unsupportedTags = [
+    'p:custDataLst',
+    //'mc:AlternateContent',
+    //'a14:imgProps',
+  ];
 
   constructor(params: {
     presentation: IPresentationProps;
@@ -268,11 +272,7 @@ export class Slide implements ISlide {
 
   /**
    * Remove a single element from slide.
-   * @param {string} presName - Filename or alias name of the template presentation.
-   * Must have been importet with Automizer.load().
-   * @param {number} slideNumber - Slide number within the specified template to search for the required element.
-   * @param {ShapeModificationCallback | ShapeModificationCallback[]} callback - One or more callback functions to apply.
-   * Depending on the shape type (e.g. chart or table), different arguments will be passed to the callback.
+   * @param {string} selector - Element's name on the slide.
    */
   removeElement(selector: string): this {
     const presName = this.sourceTemplate.name;

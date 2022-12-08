@@ -1,16 +1,14 @@
 import { ModifyChart } from '../modify/modify-chart';
 import { Workbook } from '../types/types';
 import {
-  ChartData,
-  ChartBubble,
-  ChartSlot,
-  ChartCategory,
-  ChartSeries,
-  ChartPoint,
   ChartAxisRange,
+  ChartBubble,
+  ChartCategory,
+  ChartData,
+  ChartPoint,
+  ChartSeries,
+  ChartSlot,
 } from '../types/chart-types';
-import { vd } from './general-helper';
-import { XmlHelper } from './xml-helper';
 import ModifyXmlHelper from './modify-xml-helper';
 
 export default class ModifyChartHelper {
@@ -229,7 +227,7 @@ export default class ModifyChartHelper {
 
       new ModifyChart(chart, workbook, data, slots).modifyExtended();
 
-      XmlHelper.dump(chart);
+      // XmlHelper.dump(chart);
       // XmlHelper.dump(workbook.table)
     };
 

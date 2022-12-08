@@ -4,11 +4,10 @@ import { XmlHelper } from '../helper/xml-helper';
 import { Shape } from '../classes/shape';
 import path from 'path';
 
-import { RelationshipAttribute, HelperElement } from '../types/xml-types';
+import { HelperElement, RelationshipAttribute } from '../types/xml-types';
 import { ImportedElement, Target, Workbook } from '../types/types';
 import { IChart } from '../interfaces/ichart';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
-import { vd } from '../helper/general-helper';
 
 export class Chart extends Shape implements IChart {
   sourceWorksheet: number | string;
@@ -29,8 +28,13 @@ export class Chart extends Shape implements IChart {
 
     this.relRootTag = this.subtype === 'chart' ? 'c:chart' : 'cx:chart';
     this.relAttribute = 'r:id';
-    this.relParent = (element: Element) =>
-      element.parentNode.parentNode.parentNode as Element;
+    this.relParent =
+      this.subtype === 'chart'
+        ? (element: Element) =>
+            element.parentNode.parentNode.parentNode as Element
+        : (element: Element) =>
+            element.parentNode.parentNode.parentNode.parentNode
+              .parentNode as Element;
 
     this.wbEmbeddingsPath = `../embeddings/`;
     this.wbExtension = '.xlsx';
@@ -409,10 +413,15 @@ export class Chart extends Shape implements IChart {
   }
 
   appendChartToContentType(): Promise<HelperElement> {
+    const contentType =
+      this.subtype === 'chart'
+        ? 'application/vnd.openxmlformats-officedocument.drawingml.chart+xml'
+        : 'application/vnd.ms-office.chartex+xml';
+
     return XmlHelper.append(
       XmlHelper.createContentTypeChild(this.targetArchive, {
         PartName: `/ppt/charts/${this.subtype}${this.targetNumber}.xml`,
-        ContentType: `application/vnd.openxmlformats-officedocument.drawingml.chart+xml`,
+        ContentType: contentType,
       }),
     );
   }

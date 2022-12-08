@@ -1,7 +1,7 @@
 import JSZip from 'jszip';
 
 import { XmlHelper } from '../helper/xml-helper';
-import { GeneralHelper, vd } from '../helper/general-helper';
+import { GeneralHelper } from '../helper/general-helper';
 import {
   ImportedElement,
   ShapeModificationCallback,
@@ -131,6 +131,8 @@ export class Shape {
     sourceElementOnTargetSlide.parentNode.removeChild(
       sourceElementOnTargetSlide,
     );
+
+    // vd(insertBefore);
 
     await XmlHelper.writeXmlToArchive(archive, slideFile, targetSlideXml);
   }
