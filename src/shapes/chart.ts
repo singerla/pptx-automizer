@@ -199,7 +199,6 @@ export class Chart extends Shape implements IChart {
       this.sourceArchive,
       this.wbRelsPath,
       `${this.wbEmbeddingsPath}${this.worksheetFilePrefix}`,
-      this.wbExtension,
     );
 
     const worksheet = worksheets[0];
@@ -216,16 +215,9 @@ export class Chart extends Shape implements IChart {
       this.sourceArchive,
       targetRelFile,
       this.wbEmbeddingsPath,
-      this.wbExtension,
     );
 
-    const wbPath = relationTargets[0].file
-      .replace(this.wbEmbeddingsPath, '')
-      .replace(this.wbExtension, '');
-
-    const wbTitle = wbPath.match(/^(.+?)(\d+)*$/);
-
-    return wbTitle[0];
+    return relationTargets[0].filenameBase;
   }
 
   async appendTypes(): Promise<void> {
