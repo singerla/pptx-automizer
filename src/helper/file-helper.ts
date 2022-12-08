@@ -32,6 +32,13 @@ export class FileHelper {
     return archive.files[file].async(type || 'string');
   }
 
+  static fileExistsInArchive(archive: JSZip, file: string): boolean {
+    if (archive === undefined || archive.files[file] === undefined) {
+      return false;
+    }
+    return true;
+  }
+
   static extractFileContent(file: Buffer, cache?: CacheHelper): Promise<JSZip> {
     cache?.store();
     const zip = new JSZip();

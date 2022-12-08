@@ -1,7 +1,7 @@
 import JSZip from 'jszip';
 
 import { XmlHelper } from '../helper/xml-helper';
-import { GeneralHelper } from '../helper/general-helper';
+import { GeneralHelper, vd } from '../helper/general-helper';
 import {
   ImportedElement,
   ShapeModificationCallback,
@@ -10,6 +10,7 @@ import {
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { HelperElement } from '../types/xml-types';
 import { ImageTypeMap } from '../enums/image-type-map';
+import { ElementSubtype } from '../enums/element-type';
 
 export class Shape {
   mode: string;
@@ -42,6 +43,7 @@ export class Shape {
   callbacks: ShapeModificationCallback[];
   hasCreationId: boolean;
   contentTypeMap: typeof ImageTypeMap;
+  subtype: ElementSubtype;
 
   constructor(shape: ImportedElement) {
     this.mode = shape.mode;
@@ -55,9 +57,11 @@ export class Shape {
 
     this.callbacks = GeneralHelper.arrayify(shape.callback);
     this.contentTypeMap = ImageTypeMap;
+
     if (shape.target) {
       this.sourceNumber = shape.target.number;
       this.sourceRid = shape.target.rId;
+      this.subtype = shape.target.subtype;
     }
   }
 

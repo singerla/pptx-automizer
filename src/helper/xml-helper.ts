@@ -4,19 +4,15 @@ import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
 import { FileHelper } from './file-helper';
 import {
   DefaultAttribute,
+  HelperElement,
   OverrideAttribute,
   RelationshipAttribute,
-  HelperElement,
   ModifyXmlCallback,
 } from '../types/xml-types';
 import { TargetByRelIdMap } from '../constants/constants';
 import { XmlPrettyPrint } from './xml-pretty-print';
-import {
-  GetRelationshipsCallback,
-  SourceSlideIdentifier,
-  Target,
-} from '../types/types';
-import { XmlTemplateHelper } from './xml-template-helper';
+import { GetRelationshipsCallback, Target } from '../types/types';
+import _ from 'lodash';
 import { vd } from './general-helper';
 
 export class XmlHelper {
@@ -145,25 +141,58 @@ export class XmlHelper {
   static async getTargetsFromRelationships(
     archive: JSZip,
     path: string,
-    prefix: string,
-    suffix?: string | RegExp,
+    prefix: string | string[],
   ): Promise<Target[]> {
+    const prefixes = typeof prefix === 'string' ? [prefix] : prefix;
+
     return XmlHelper.getRelationships(
       archive,
       path,
-      (element: Element, rels: Target[]) => {
-        const target = element.getAttribute('Target');
-        if (target.indexOf(prefix) === 0) {
-          rels.push({
-            file: target,
-            rId: element.getAttribute('Id'),
-            number: Number(
-              target.replace(prefix, '').replace(suffix || '.xml', ''),
-            ),
-          } as Target);
-        }
+      (element: Element, targets: Target[]) => {
+        prefixes.forEach((prefix) => {
+          XmlHelper.pushRelTargets(element, prefix, targets);
+        });
       },
     );
+  }
+
+  static pushRelTargets(element: Element, prefix: string, targets: Target[]) {
+    const type = element.getAttribute('Type');
+    const file = element.getAttribute('Target');
+    const rId = element.getAttribute('Id');
+
+    const subtype = _.last(prefix.split('/'));
+    const relType = _.last(type.split('/'));
+    const filename = _.last(file.split('/'));
+    const filenameExt = _.last(filename.split('.'));
+    const filenameMatch = filename
+      .replace('.' + filenameExt, '')
+      .match(/^(.+?)(\d+)*$/);
+
+    const number =
+      filenameMatch && filenameMatch[2] ? Number(filenameMatch[2]) : 0;
+    const filenameBase =
+      filenameMatch && filenameMatch[1] ? filenameMatch[1] : filename;
+
+    if (XmlHelper.targetMatchesRelationship(relType, subtype, file, prefix)) {
+      targets.push({
+        file,
+        rId,
+        number,
+        type,
+        subtype,
+        prefix,
+        filename,
+        filenameExt,
+        filenameBase,
+      } as Target);
+    }
+  }
+
+  static targetMatchesRelationship(relType, subtype, target, prefix) {
+    if (relType === 'package') return true;
+
+    return relType === subtype && target.indexOf(prefix) === 0;
   }
 
   static async getTargetsByRelationshipType(
@@ -258,7 +287,6 @@ export class XmlHelper {
       archive,
       relsPath,
       params.prefix,
-      params.expression,
     );
     const target = imageRels.find((rel) => rel.rId === sourceRid);
 
@@ -439,6 +467,16 @@ export class XmlHelper {
       }
       parent.appendChild(item);
     });
+  }
+
+  static modifyCollection(
+    collection: HTMLCollectionOf<Element>,
+    callback: ModifyXmlCallback,
+  ): void {
+    for (let i = 0; i < collection.length; i++) {
+      const item = collection[i];
+      callback(item, i);
+    }
   }
 
   static dump(element: XMLDocument | Element): void {

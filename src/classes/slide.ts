@@ -102,7 +102,7 @@ export class Slide implements ISlide {
    * List of unsupported tags in slide xml
    * @internal
    */
-  unsupportedTags = ['p:custDataLst', 'mc:AlternateContent'];
+  unsupportedTags = ['p:custDataLst', 'mc:AlternateContent', 'a14:imgProps'];
 
   constructor(params: {
     presentation: IPresentationProps;
@@ -421,14 +421,31 @@ export class Slide implements ISlide {
   ): Promise<AnalyzedElementType> {
     const isChart = sourceElement.getElementsByTagName('c:chart');
     if (isChart.length) {
+      const target = await XmlHelper.getTargetByRelId(
+        sourceArchive,
+        slideNumber,
+        sourceElement,
+        'chart',
+      );
+
       return {
         type: ElementType.Chart,
-        target: await XmlHelper.getTargetByRelId(
-          sourceArchive,
-          slideNumber,
-          sourceElement,
-          'chart',
-        ),
+        target: target,
+      } as AnalyzedElementType;
+    }
+
+    const isChartEx = sourceElement.getElementsByTagName('cx:chart');
+    if (isChartEx.length) {
+      const target = await XmlHelper.getTargetByRelId(
+        sourceArchive,
+        slideNumber,
+        sourceElement,
+        'chartEx',
+      );
+
+      return {
+        type: ElementType.Chart,
+        target: target,
       } as AnalyzedElementType;
     }
 
@@ -631,13 +648,6 @@ export class Slide implements ISlide {
       parent: (xml: XMLDocument) => xml.getElementsByTagName('p:sldIdLst')[0],
       tag: 'p:sldId',
       attributes: {
-        id: (xml: XMLDocument) =>
-          XmlHelper.getMaxId(
-            xml.getElementsByTagName('p:sldId'),
-            'id',
-            true,
-            256,
-          ),
         'r:id': relId,
       } as SlideListAttribute,
     });
@@ -688,6 +698,7 @@ export class Slide implements ISlide {
    */
   async copyRelatedContent(): Promise<void> {
     const charts = await Chart.getAllOnSlide(this.sourceArchive, this.relsPath);
+
     for (const chart of charts) {
       await new Chart({
         mode: 'append',

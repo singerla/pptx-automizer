@@ -16,6 +16,7 @@ import { Master } from './classes/master';
 import path from 'path';
 import * as fs from 'fs';
 import { XmlHelper } from './helper/xml-helper';
+import ModifyPresentationHelper from './helper/modify-presentation-helper';
 
 /**
  * Automizer
@@ -161,7 +162,7 @@ export default class Automizer implements IPresentationProps {
   /**
    * Parses all loaded templates and collects creationIds for slides and
    * elements. This will make finding templates and elements independent
-   * from slide number and element name.
+   * of slide number and element name.
    * @returns Promise<TemplateInfo[]>
    */
   public async setCreationIds(): Promise<TemplateInfo[]> {
@@ -272,6 +273,7 @@ export default class Automizer implements IPresentationProps {
    */
   public async write(location: string): Promise<AutomizerSummary> {
     await this.writeSlides();
+    await this.normalizePresentation();
     await this.applyModifyPresentationCallbacks();
 
     const rootArchive = await this.rootTemplate.archive;
@@ -313,6 +315,18 @@ export default class Automizer implements IPresentationProps {
   }
 
   /**
+   * Apply some callbacks to restore archive/xml structure
+   * and prevent corrupted pptx files.
+   *
+   * TODO: Remove unused parts (slides, related items) from archive.
+   * TODO: Use every imported image only once
+   * TODO: Check for lost relations
+   */
+  normalizePresentation(): void {
+    this.modify(ModifyPresentationHelper.normalizeSlideIds);
+  }
+
+  /**
    * Applies path prefix to given location string.
    * @param location path and/or filename
    * @param [type] template or output
@@ -325,6 +339,10 @@ export default class Automizer implements IPresentationProps {
           return this.templateDir + location;
         } else if (fs.existsSync(this.templateFallbackDir + location)) {
           return this.templateFallbackDir + location;
+        } else {
+          vd('No file matches "' + location + '"');
+          vd('@templateDir: ' + this.templateDir);
+          vd('@templateFallbackDir: ' + this.templateFallbackDir);
         }
         break;
       case 'output':

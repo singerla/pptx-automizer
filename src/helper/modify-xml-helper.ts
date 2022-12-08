@@ -116,13 +116,23 @@ export default class ModifyXmlHelper {
   static value =
     (value: number | string, index?: number) =>
     (element: Element): void => {
-      element.getElementsByTagName('c:v')[0].firstChild.textContent =
-        String(value);
+      const valueElement = element.getElementsByTagName('c:v');
+      if (!valueElement.length) {
+        XmlHelper.dump(element);
+        throw 'Unable to set value @index: ' + index;
+      }
+
+      valueElement[0].firstChild.textContent = String(value);
       if (index !== undefined) {
         element.setAttribute('idx', String(index));
       }
     };
 
+  static textContent =
+    (value: number | string) =>
+    (element: Element): void => {
+      element.firstChild.textContent = String(value);
+    };
   static attribute =
     (attribute: string, value: string | number) =>
     (element: Element): void => {

@@ -3,3 +3,8 @@ export enum ElementType {
   Image = 'Image',
   Shape = 'Generic',
 }
+
+export enum ElementSubtype {
+  chart = 'chart',
+  chartEx = 'chartEx',
+}

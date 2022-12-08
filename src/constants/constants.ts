@@ -6,16 +6,19 @@ export const TargetByRelIdMap = {
     relAttribute: 'r:id',
     prefix: '../charts/chart',
   } as TargetByRelIdMapParam,
+  chartEx: {
+    relRootTag: 'cx:chart',
+    relAttribute: 'r:id',
+    prefix: '../charts/chartEx',
+  } as TargetByRelIdMapParam,
   image: {
     relRootTag: 'a:blip',
     relAttribute: 'r:embed',
     prefix: '../media/image',
-    expression: /\..+?$/,
   } as TargetByRelIdMapParam,
   'image:svg': {
     relRootTag: 'asvg:svgBlip',
     relAttribute: 'r:embed',
     prefix: '../media/image',
-    expression: /\..+?$/,
   } as TargetByRelIdMapParam,
 };
