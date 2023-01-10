@@ -114,6 +114,7 @@ export class Image extends Shape implements IImage {
       `ppt/media/${this.sourceFile}`,
       this.targetArchive,
       `ppt/media/${this.targetFile}`,
+      this.targetTemplate.content,
     );
   }
 

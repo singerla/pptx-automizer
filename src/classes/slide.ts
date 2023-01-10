@@ -25,6 +25,7 @@ import { Image } from '../shapes/image';
 import { Chart } from '../shapes/chart';
 import { GenericShape } from '../shapes/generic';
 import { vd } from '../helper/general-helper';
+import { ContentTracker } from '../helper/content-tracker';
 
 export class Slide implements ISlide {
   /**
@@ -98,6 +99,7 @@ export class Slide implements ISlide {
    */
   targetRelsPath: string;
   status: StatusTracker;
+  content: ContentTracker;
   /**
    * List of unsupported tags in slide xml
    * @internal
@@ -126,6 +128,7 @@ export class Slide implements ISlide {
     this.importElements = [];
 
     this.status = params.presentation.status;
+    this.content = params.presentation.content;
   }
 
   /**
@@ -175,6 +178,9 @@ export class Slide implements ISlide {
     this.sourceArchive = await this.sourceTemplate.archive;
 
     this.status.info = 'Appending slide ' + this.targetNumber;
+
+    this.targetTemplate.content.used(this.targetPath);
+    this.targetTemplate.content.used(this.targetRelsPath);
 
     await this.copySlideFiles();
     await this.copyRelatedContent();
@@ -519,6 +525,7 @@ export class Slide implements ISlide {
       `ppt/slides/slide${this.sourceNumber}.xml`,
       this.targetArchive,
       `ppt/slides/slide${this.targetNumber}.xml`,
+      this.targetTemplate.content,
     );
 
     await FileHelper.zipCopy(
@@ -526,6 +533,7 @@ export class Slide implements ISlide {
       `ppt/slides/_rels/slide${this.sourceNumber}.xml.rels`,
       this.targetArchive,
       `ppt/slides/_rels/slide${this.targetNumber}.xml.rels`,
+      this.targetTemplate.content,
     );
   }
 
@@ -562,6 +570,7 @@ export class Slide implements ISlide {
       `ppt/notesSlides/notesSlide${sourceNotesNumber}.xml`,
       this.targetArchive,
       `ppt/notesSlides/notesSlide${this.targetNumber}.xml`,
+      this.targetTemplate.content,
     );
 
     await FileHelper.zipCopy(
@@ -569,6 +578,7 @@ export class Slide implements ISlide {
       `ppt/notesSlides/_rels/notesSlide${sourceNotesNumber}.xml.rels`,
       this.targetArchive,
       `ppt/notesSlides/_rels/notesSlide${this.targetNumber}.xml.rels`,
+      this.targetTemplate.content,
     );
   }
 

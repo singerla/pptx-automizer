@@ -17,6 +17,7 @@ import path from 'path';
 import * as fs from 'fs';
 import { XmlHelper } from './helper/xml-helper';
 import ModifyPresentationHelper from './helper/modify-presentation-helper';
+import { ContentTracker } from './helper/content-tracker';
 
 /**
  * Automizer
@@ -42,6 +43,7 @@ export default class Automizer implements IPresentationProps {
   params: AutomizerParams;
   status: StatusTracker;
 
+  content: ContentTracker;
   modifyPresentation: ModifyXmlCallback[];
 
   /**
@@ -61,6 +63,8 @@ export default class Automizer implements IPresentationProps {
 
     this.timer = Date.now();
     this.setStatusTracker(params?.statusTracker);
+
+    this.content = new ContentTracker();
 
     if (params.rootTemplate) {
       const location = this.getLocation(params.rootTemplate, 'template');

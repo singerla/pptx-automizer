@@ -4,6 +4,7 @@ import JSZip, { InputType, OutputType } from 'jszip';
 
 import { AutomizerSummary } from '../types/types';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
+import { ContentTracker } from './content-tracker';
 
 export class FileHelper {
   static readFile(location: string): Promise<Buffer> {
@@ -58,12 +59,16 @@ export class FileHelper {
     sourceFile: string,
     targetArchive: JSZip,
     targetFile?: string,
+    contentTracker?: ContentTracker,
   ): Promise<JSZip> {
     if (sourceArchive.files[sourceFile] === undefined) {
       throw new Error(`Zipped file not found: ${sourceFile}`);
     }
 
     const content = sourceArchive.files[sourceFile].async('nodebuffer');
+    if (contentTracker) {
+      contentTracker.used(targetFile);
+    }
     return targetArchive.file(targetFile || sourceFile, content);
   }
 
