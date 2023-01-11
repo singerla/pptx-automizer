@@ -6,11 +6,12 @@ const automizer = new Automizer({
   templateDir: `${__dirname}/../__tests__/pptx-templates`,
   outputDir: `${__dirname}/../__tests__/pptx-output`,
   removeExistingSlides: true,
+  compression: 9,
 });
 
 const run = async () => {
   const pres = automizer
-    .loadRoot(`RootTemplate.pptx`)
+    .loadRoot(`ChartBarsStacked.pptx`)
     .load(`RootTemplate.pptx`, 'root')
     .load(`ChartBarsStacked.pptx`, 'charts');
 
@@ -52,7 +53,6 @@ const run = async () => {
     })
     .write(`create-presentation-content-tracker.test.pptx`);
 
-  contentTracker.dump();
   // vd(pres.rootTemplate.content);
 };
 

@@ -47,28 +47,23 @@ export class ContentTracker {
     const info = FileHelper.getFileInfo(file);
     if (this.files[info.dir]) {
       this.files[info.dir].push(info.base);
-    } else {
-      console.log(`Could not track file ${file}`);
     }
   }
 
   trackRelation(file: string, attribute: string, value: string): void {
     const info = FileHelper.getFileInfo(file);
-
     if (this.relations[info.dir]) {
       this.relations[info.dir].push({
         base: info.base,
         attribute,
         value,
       });
-    } else {
-      // console.log(`Could not track relation ${info.dir}`);
     }
   }
 
   dump() {
     console.log(this.files);
-    console.log(this.relations);
+    // console.log(this.relations);
   }
 }
 

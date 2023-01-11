@@ -17,7 +17,7 @@ import path from 'path';
 import * as fs from 'fs';
 import { XmlHelper } from './helper/xml-helper';
 import ModifyPresentationHelper from './helper/modify-presentation-helper';
-import { ContentTracker } from './helper/content-tracker';
+import { contentTracker, ContentTracker } from './helper/content-tracker';
 import JSZip from 'jszip';
 
 /**
@@ -45,7 +45,7 @@ export default class Automizer implements IPresentationProps {
   status: StatusTracker;
 
   content: ContentTracker;
-  modifyPresentation: ModifyXmlCallback[];
+  modifyPresentation: ModifyXmlCallback[] = [];
 
   /**
    * Creates an instance of `pptx-automizer`.
@@ -53,7 +53,6 @@ export default class Automizer implements IPresentationProps {
    */
   constructor(params: AutomizerParams) {
     this.templates = [];
-    this.modifyPresentation = [];
     this.params = params;
 
     this.templateDir = params?.templateDir ? params.templateDir + '/' : '';
@@ -334,12 +333,17 @@ export default class Automizer implements IPresentationProps {
    * Apply some callbacks to restore archive/xml structure
    * and prevent corrupted pptx files.
    *
-   * TODO: Remove unused parts (slides, related items) from archive.
    * TODO: Use every imported image only once
    * TODO: Check for lost relations
    */
-  normalizePresentation(): void {
+  async normalizePresentation(): Promise<void> {
     this.modify(ModifyPresentationHelper.normalizeSlideIds);
+
+    if (this.params.removeExistingSlides) {
+      this.modify(ModifyPresentationHelper.removeUnusedFiles);
+    }
+
+    this.modify(ModifyPresentationHelper.removeUnusedContentTypes);
   }
 
   /**

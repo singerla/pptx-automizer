@@ -8,6 +8,7 @@ import { HelperElement, RelationshipAttribute } from '../types/xml-types';
 import { ImportedElement, Target, Workbook } from '../types/types';
 import { IChart } from '../interfaces/ichart';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
+import { contentTracker } from '../helper/content-tracker';
 
 export class Chart extends Shape implements IChart {
   sourceWorksheet: number | string;
@@ -349,21 +350,38 @@ export class Chart extends Shape implements IChart {
         const type = element.getAttribute('Type');
         switch (type) {
           case 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/package':
-            element.setAttribute(
+            this.updateTargetWorksheetRelation(
+              targetRelFile,
+              element,
               'Target',
               `${this.wbEmbeddingsPath}${this.worksheetFilePrefix}${this.targetWorksheet}${this.wbExtension}`,
             );
             break;
           case this.relTypeChartColorStyle:
-            element.setAttribute('Target', `colors${this.targetNumber}.xml`);
+            this.updateTargetWorksheetRelation(
+              targetRelFile,
+              element,
+              'Target',
+              `colors${this.targetNumber}.xml`,
+            );
             break;
           case this.relTypeChartStyle:
-            element.setAttribute('Target', `style${this.targetNumber}.xml`);
+            this.updateTargetWorksheetRelation(
+              targetRelFile,
+              element,
+              'Target',
+              `style${this.targetNumber}.xml`,
+            );
             break;
           case this.relTypeChartImage:
             const target = element.getAttribute('Target');
             const imageInfo = this.getTargetChartImageUri(target);
-            element.setAttribute('Target', imageInfo.rel);
+            this.updateTargetWorksheetRelation(
+              targetRelFile,
+              element,
+              target,
+              imageInfo,
+            );
             break;
         }
       });
@@ -373,6 +391,11 @@ export class Chart extends Shape implements IChart {
       targetRelFile,
       relXml,
     );
+  }
+
+  updateTargetWorksheetRelation(targetRelFile, element, attribute, value) {
+    element.setAttribute(attribute, value);
+    contentTracker.trackRelation(targetRelFile, attribute, value);
   }
 
   getTargetChartImageUri(origin: string): {

@@ -22,10 +22,12 @@ export class XmlHelper {
     file: string,
     callbacks: ModifyXmlCallback[],
   ): Promise<JSZip> {
-    const xml = await XmlHelper.getXmlFromArchive(await archive, file);
+    const jsZip = await archive;
+    const xml = await XmlHelper.getXmlFromArchive(jsZip, file);
 
+    let i = 0;
     for (const callback of callbacks) {
-      callback(xml);
+      callback(xml, i++, jsZip);
     }
 
     return await XmlHelper.writeXmlToArchive(await archive, file, xml);
@@ -93,6 +95,27 @@ export class XmlHelper {
     await XmlHelper.writeXmlToArchive(element.archive, element.file, xml);
 
     return newElement as unknown as HelperElement;
+  }
+
+  static async removeIf(element: HelperElement): Promise<void> {
+    const xml = await XmlHelper.getXmlFromArchive(
+      element.archive,
+      element.file,
+    );
+
+    const collection = xml.getElementsByTagName(element.tag);
+    const toRemove = [];
+    XmlHelper.modifyCollection(collection, (item: Element, index) => {
+      if (element.clause(xml, item)) {
+        toRemove.push(item);
+      }
+    });
+
+    toRemove.forEach((item) => {
+      XmlHelper.remove(item);
+    });
+
+    await XmlHelper.writeXmlToArchive(element.archive, element.file, xml);
   }
 
   static async getNextRelId(rootArchive: JSZip, file: string): Promise<string> {
@@ -438,15 +461,17 @@ export class XmlHelper {
   ): void {
     if (from !== undefined) {
       for (let i = from; i < length; i++) {
-        const toRemove = collection[i];
-        toRemove.parentNode.removeChild(toRemove);
+        XmlHelper.remove(collection[i]);
       }
     } else {
       for (let i = collection.length; i > length; i--) {
-        const toRemove = collection[i - 1];
-        toRemove.parentNode.removeChild(toRemove);
+        XmlHelper.remove(collection[i - 1]);
       }
     }
+  }
+
+  static remove(toRemove: Element): void {
+    toRemove.parentNode.removeChild(toRemove);
   }
 
   static sortCollection(

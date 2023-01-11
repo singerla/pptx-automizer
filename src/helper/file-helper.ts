@@ -5,6 +5,7 @@ import JSZip, { InputType, OutputType } from 'jszip';
 import { AutomizerSummary } from '../types/types';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
 import { contentTracker, FileInfo } from './content-tracker';
+import { vd } from './general-helper';
 
 export class FileHelper {
   static readFile(location: string): Promise<Buffer> {
