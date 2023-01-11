@@ -14,6 +14,7 @@ import { XmlPrettyPrint } from './xml-pretty-print';
 import { GetRelationshipsCallback, Target } from '../types/types';
 import _ from 'lodash';
 import { vd } from './general-helper';
+import { contentTracker, ContentTracker } from './content-tracker';
 
 export class XmlHelper {
   static async modifyXmlInArchive(
@@ -75,10 +76,11 @@ export class XmlHelper {
     const newElement = xml.createElement(element.tag);
     for (const attribute in element.attributes) {
       const value = element.attributes[attribute];
-      newElement.setAttribute(
-        attribute,
-        typeof value === 'function' ? value(xml) : value,
-      );
+      const setValue = typeof value === 'function' ? value(xml) : value;
+
+      newElement.setAttribute(attribute, setValue);
+
+      contentTracker.trackRelation(element.file, attribute, setValue);
     }
 
     if (element.assert) {
@@ -267,6 +269,7 @@ export class XmlHelper {
         element.getAttribute(attributeName) === attributeValue
       ) {
         element.setAttribute(attributeName, replaceValue);
+        contentTracker.trackRelation(path, attributeName, replaceValue);
       }
     }
     return XmlHelper.writeXmlToArchive(archive, path, xml);

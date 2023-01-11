@@ -1,5 +1,6 @@
 import Automizer, { ChartData, modify } from './index';
 import { vd } from './helper/general-helper';
+import { contentTracker } from './helper/content-tracker';
 
 const automizer = new Automizer({
   templateDir: `${__dirname}/../__tests__/pptx-templates`,
@@ -51,7 +52,8 @@ const run = async () => {
     })
     .write(`create-presentation-content-tracker.test.pptx`);
 
-  vd(pres.rootTemplate.content);
+  contentTracker.dump();
+  // vd(pres.rootTemplate.content);
 };
 
 run().catch((error) => {

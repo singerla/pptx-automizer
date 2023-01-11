@@ -33,6 +33,10 @@ export type AutomizerParams = {
    * Buffer unzipped pptx on disk
    */
   cacheDir?: string;
+  /**
+   * Zip compression level 0-9
+   */
+  compression?: number;
   rootTemplate?: string;
   presTemplates?: string[];
   useCreationIds?: boolean;

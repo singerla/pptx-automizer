@@ -179,9 +179,6 @@ export class Slide implements ISlide {
 
     this.status.info = 'Appending slide ' + this.targetNumber;
 
-    this.targetTemplate.content.used(this.targetPath);
-    this.targetTemplate.content.used(this.targetRelsPath);
-
     await this.copySlideFiles();
     await this.copyRelatedContent();
     await this.addSlideToPresentation();
@@ -525,7 +522,6 @@ export class Slide implements ISlide {
       `ppt/slides/slide${this.sourceNumber}.xml`,
       this.targetArchive,
       `ppt/slides/slide${this.targetNumber}.xml`,
-      this.targetTemplate.content,
     );
 
     await FileHelper.zipCopy(
@@ -533,7 +529,6 @@ export class Slide implements ISlide {
       `ppt/slides/_rels/slide${this.sourceNumber}.xml.rels`,
       this.targetArchive,
       `ppt/slides/_rels/slide${this.targetNumber}.xml.rels`,
-      this.targetTemplate.content,
     );
   }
 
@@ -570,7 +565,6 @@ export class Slide implements ISlide {
       `ppt/notesSlides/notesSlide${sourceNotesNumber}.xml`,
       this.targetArchive,
       `ppt/notesSlides/notesSlide${this.targetNumber}.xml`,
-      this.targetTemplate.content,
     );
 
     await FileHelper.zipCopy(
@@ -578,7 +572,6 @@ export class Slide implements ISlide {
       `ppt/notesSlides/_rels/notesSlide${sourceNotesNumber}.xml.rels`,
       this.targetArchive,
       `ppt/notesSlides/_rels/notesSlide${this.targetNumber}.xml.rels`,
-      this.targetTemplate.content,
     );
   }
 

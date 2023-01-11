@@ -18,6 +18,7 @@ import * as fs from 'fs';
 import { XmlHelper } from './helper/xml-helper';
 import ModifyPresentationHelper from './helper/modify-presentation-helper';
 import { ContentTracker } from './helper/content-tracker';
+import JSZip from 'jszip';
 
 /**
  * Automizer
@@ -281,7 +282,18 @@ export default class Automizer implements IPresentationProps {
     await this.applyModifyPresentationCallbacks();
 
     const rootArchive = await this.rootTemplate.archive;
-    const content = await rootArchive.generateAsync({ type: 'nodebuffer' });
+    const options: JSZip.JSZipGeneratorOptions<'nodebuffer'> = {
+      type: 'nodebuffer',
+    };
+
+    if (this.params.compression > 0) {
+      options.compression = 'DEFLATE';
+      options.compressionOptions = {
+        level: this.params.compression,
+      };
+    }
+
+    const content = await rootArchive.generateAsync(options);
 
     return FileHelper.writeOutputFile(
       this.getLocation(location, 'output'),

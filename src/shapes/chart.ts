@@ -237,7 +237,6 @@ export class Chart extends Shape implements IChart {
       `ppt/charts/${this.subtype}${this.sourceNumber}.xml`,
       this.targetArchive,
       `ppt/charts/${this.subtype}${this.targetNumber}.xml`,
-      this.targetTemplate.content,
     );
 
     await FileHelper.zipCopy(
@@ -245,7 +244,6 @@ export class Chart extends Shape implements IChart {
       `ppt/charts/_rels/${this.subtype}${this.sourceNumber}.xml.rels`,
       this.targetArchive,
       `ppt/charts/_rels/${this.subtype}${this.targetNumber}.xml.rels`,
-      this.targetTemplate.content,
     );
   }
 
@@ -258,7 +256,6 @@ export class Chart extends Shape implements IChart {
         `ppt/charts/${this.styleRelationFiles.relTypeChartStyle[0]}`,
         this.targetArchive,
         `ppt/charts/style${this.targetNumber}.xml`,
-        this.targetTemplate.content,
       );
     }
 
@@ -268,7 +265,6 @@ export class Chart extends Shape implements IChart {
         `ppt/charts/${this.styleRelationFiles.relTypeChartColorStyle[0]}`,
         this.targetArchive,
         `ppt/charts/colors${this.targetNumber}.xml`,
-        this.targetTemplate.content,
       );
     }
 
@@ -282,7 +278,6 @@ export class Chart extends Shape implements IChart {
           imageInfo.source,
           this.targetArchive,
           imageInfo.target,
-          this.targetTemplate.content,
         );
       }
     }
@@ -403,7 +398,6 @@ export class Chart extends Shape implements IChart {
       `ppt/embeddings/${this.worksheetFilePrefix}${this.sourceWorksheet}${this.wbExtension}`,
       this.targetArchive,
       targetFile,
-      this.targetTemplate.content,
     );
   }
 
