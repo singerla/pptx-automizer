@@ -384,6 +384,11 @@ export class Chart extends Shape implements IChart {
             );
             break;
         }
+        contentTracker.trackRelation(targetRelFile, {
+          Id: element.getAttribute('Id'),
+          Target: element.getAttribute('Target'),
+          Type: element.getAttribute('Type'),
+        });
       });
 
     await XmlHelper.writeXmlToArchive(
@@ -395,7 +400,6 @@ export class Chart extends Shape implements IChart {
 
   updateTargetWorksheetRelation(targetRelFile, element, attribute, value) {
     element.setAttribute(attribute, value);
-    contentTracker.trackRelation(targetRelFile, attribute, value);
   }
 
   getTargetChartImageUri(origin: string): {

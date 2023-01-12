@@ -281,6 +281,7 @@ export default class Automizer implements IPresentationProps {
     await this.applyModifyPresentationCallbacks();
 
     const rootArchive = await this.rootTemplate.archive;
+
     const options: JSZip.JSZipGeneratorOptions<'nodebuffer'> = {
       type: 'nodebuffer',
     };
@@ -343,6 +344,7 @@ export default class Automizer implements IPresentationProps {
       this.modify(ModifyPresentationHelper.removeUnusedFiles);
     }
 
+    this.modify(ModifyPresentationHelper.removedUnusedImages);
     this.modify(ModifyPresentationHelper.removeUnusedContentTypes);
   }
 

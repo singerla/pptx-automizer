@@ -27,7 +27,7 @@ export class XmlHelper {
 
     let i = 0;
     for (const callback of callbacks) {
-      callback(xml, i++, jsZip);
+      await callback(xml, i++, jsZip);
     }
 
     return await XmlHelper.writeXmlToArchive(await archive, file, xml);
@@ -81,9 +81,12 @@ export class XmlHelper {
       const setValue = typeof value === 'function' ? value(xml) : value;
 
       newElement.setAttribute(attribute, setValue);
-
-      contentTracker.trackRelation(element.file, attribute, setValue);
     }
+
+    contentTracker.trackRelation(
+      element.file,
+      element.attributes as RelationshipAttribute,
+    );
 
     if (element.assert) {
       element.assert(xml);
@@ -97,14 +100,14 @@ export class XmlHelper {
     return newElement as unknown as HelperElement;
   }
 
-  static async removeIf(element: HelperElement): Promise<void> {
+  static async removeIf(element: HelperElement): Promise<Element[]> {
     const xml = await XmlHelper.getXmlFromArchive(
       element.archive,
       element.file,
     );
 
     const collection = xml.getElementsByTagName(element.tag);
-    const toRemove = [];
+    const toRemove: Element[] = [];
     XmlHelper.modifyCollection(collection, (item: Element, index) => {
       if (element.clause(xml, item)) {
         toRemove.push(item);
@@ -116,6 +119,8 @@ export class XmlHelper {
     });
 
     await XmlHelper.writeXmlToArchive(element.archive, element.file, xml);
+
+    return toRemove;
   }
 
   static async getNextRelId(rootArchive: JSZip, file: string): Promise<string> {
@@ -245,12 +250,21 @@ export class XmlHelper {
     path: string,
     cb: GetRelationshipsCallback,
   ): Promise<Target[]> {
+    return this.getRelationshipItems(archive, path, 'Relationship', cb);
+  }
+
+  static async getRelationshipItems(
+    archive: JSZip,
+    path: string,
+    tag: string,
+    cb: GetRelationshipsCallback,
+  ): Promise<Target[]> {
     const xml = await XmlHelper.getXmlFromArchive(archive, path);
-    const relationships = xml.getElementsByTagName('Relationship');
+    const relationshipItems = xml.getElementsByTagName(tag);
     const rels = [];
 
-    Object.keys(relationships)
-      .map((key) => relationships[key] as Element)
+    Object.keys(relationshipItems)
+      .map((key) => relationshipItems[key] as Element)
       .filter((element) => element.getAttribute !== undefined)
       .forEach((element) => cb(element, rels));
 
@@ -292,7 +306,14 @@ export class XmlHelper {
         element.getAttribute(attributeName) === attributeValue
       ) {
         element.setAttribute(attributeName, replaceValue);
-        contentTracker.trackRelation(path, attributeName, replaceValue);
+      }
+
+      if (element.getAttribute !== undefined) {
+        contentTracker.trackRelation(path, {
+          Id: element.getAttribute('Id'),
+          Target: element.getAttribute('Target'),
+          Type: element.getAttribute('Type'),
+        });
       }
     }
     return XmlHelper.writeXmlToArchive(archive, path, xml);
@@ -420,6 +441,8 @@ export class XmlHelper {
     targetRelFile: string,
     attributes: RelationshipAttribute,
   ): HelperElement {
+    contentTracker.trackRelation(targetRelFile, attributes);
+
     return {
       archive,
       file: targetRelFile,

@@ -2,9 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import JSZip, { InputType, OutputType } from 'jszip';
 
-import { AutomizerSummary } from '../types/types';
+import { AutomizerSummary, FileInfo } from '../types/types';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
-import { contentTracker, FileInfo } from './content-tracker';
+import { contentTracker } from './content-tracker';
 import { vd } from './general-helper';
 
 export class FileHelper {
@@ -20,7 +20,11 @@ export class FileHelper {
     file: string,
     type?: OutputType,
   ): Promise<string | number[] | Uint8Array | ArrayBuffer | Blob | Buffer> {
-    FileHelper.check(archive, file);
+    const exists = FileHelper.check(archive, file);
+
+    if (!exists) {
+      throw new Error('File is not in archive: ' + file);
+    }
 
     return archive.files[file].async(type || 'string');
   }
@@ -44,13 +48,14 @@ export class FileHelper {
     return {
       base: path.basename(filename),
       dir: path.dirname(filename),
+      isDir: filename[filename.length - 1] === '/',
       extension: path.extname(filename).replace('.', ''),
     };
   }
 
-  static check(archive: JSZip, file: string) {
+  static check(archive: JSZip, file: string): boolean {
     FileHelper.isArchive(archive);
-    FileHelper.fileExistsInArchive(archive, file);
+    return FileHelper.fileExistsInArchive(archive, file);
   }
 
   static isArchive(archive) {
