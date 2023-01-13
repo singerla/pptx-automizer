@@ -1,9 +1,9 @@
 # pptx-automizer
-This is a pptx generator for Node.js based on templates. It can read pptx files and insert selected slides or single slide elements into another presentation. *pptx-automizer* will not write files from scratch, but edit and merge existing pptx files. Template slides are styled within PowerPoint and will be merged into the output presentation. Most of the content can be modified by using callbacks with [xmldom](https://github.com/xmldom/xmldom).
+This is a pptx generator for Node.js based on templates. It can read pptx files and insert selected slides or single slide elements into another presentation. `pptx-automizer` will not write files from scratch, but edit and merge existing pptx files. Template slides are styled within PowerPoint and will be merged into the output presentation. Most of the content can be modified by using callbacks with [xmldom](https://github.com/xmldom/xmldom).
 
-*pptx-automizer* will fit best to users who try to maintain their own library of pptx template files. This is perfect to anyone who uses complex and well-styled customized layouts. Any existing slide and even a single element can be a data driven template for output pptx files.
+`pptx-automizer` will fit best to users who try to maintain their own library of pptx template files. This is perfect to anyone who uses complex and well-styled customized layouts. Any existing slide and even a single element can be a data driven template for output pptx files.
 
-This project comes along with [automizer-data](https://github.com/singerla/automizer-data). You can use *automizer-data* to import, browse and transform XSLX-data into perfectly fitting graph or table data.
+This project comes along with [automizer-data](https://github.com/singerla/automizer-data). You can use `automizer-data` to import, browse and transform XSLX-data into perfectly fitting graph or table data.
 
 ## Requirements
 This generator can only be used on the server-side and requires a [Node.js](https://nodejs.org/en/download/package-manager/) environment.
@@ -13,7 +13,7 @@ This generator can only be used on the server-side and requires a [Node.js](http
 Please note that this project is *work in progress*. At the moment, you might encounter difficulties for special shape types that require further relations (e.g. links will not work properly). Although, most shape types are already supported, such as connection shapes, tables or charts. You are welcome to [report any issue](https://github.com/singerla/pptx-automizer/issues/new).
 
 ### Chart types
-Extended chart types, like waterfall or map charts, are not supported right now. 
+Extended chart types, like waterfall or map charts, are basically supported. You might need additional modifiers to handle extended properties, which are not implemented yet. Please help to improve `pptx-automizer` and [report](https://github.com/singerla/pptx-automizer/issues/new) issues regarding extended charts.
 
 ### PowerPoint Version
 All testing focuses on PowerPoint 2019 pptx file format.
@@ -23,7 +23,7 @@ It is currently not supported to import slide masters or slide layouts into the 
 
 
 ## Install
-There are basically two ways to use *pptx-automizer*.
+There are basically two ways to use `pptx-automizer`.
 
 ### As a cloned repository
 If you want to see how it works and you like to run own tests, you should clone this repository and install the dependencies:
@@ -39,7 +39,7 @@ $ yarn dev
 and see the most recent feature from `src/dev.ts`. Every time you change & save this file, you will see new console output and a pptx file in the destination folder. Take a look into `__tests__`-directory to see a lot of examples for several use cases!
 
 ### As a package
-If you are working on an existing project, you can add *pptx-automizer* to it using npm or yarn. Run
+If you are working on an existing project, you can add `pptx-automizer` to it using npm or yarn. Run
 ```
 $ yarn add pptx-automizer
 ```
@@ -160,8 +160,33 @@ pres.addSlide('charts', 2, (slide) => {
     })
   ])
 })
-
 ```
+
+## Modify extended charts
+If you need to modify extended chart types, such like waterfall or map charts, you need to use `modify.setExtendedChartData`. 
+
+```ts
+// Add and modify a waterfall chart on slide.
+pres.addSlide('charts', 2, (slide) => {
+  slide.addElement('ChartWaterfall.pptx', 1, 'Waterfall 1', [
+    modify.setExtendedChartData(<ChartData>{
+      series: [{ label: 'series 1' }],
+      categories: [
+        { label: 'cat 2-1', values: [100] },
+        { label: 'cat 2-2', values: [20] },
+        { label: 'cat 2-3', values: [50] },
+        { label: 'cat 2-4', values: [-40] },
+        { label: 'cat 2-5', values: [130] },
+        { label: 'cat 2-6', values: [-60] },
+        { label: 'cat 2-7', values: [70] },
+        { label: 'cat 2-8', values: [140] },
+      ],
+    }),
+  ]);
+})
+```
+
+
 ## Remove elements from a slide
 
 You can as well remove elements from slides.
@@ -201,7 +226,7 @@ const automizer = new Automizer({
 
 
 let pres = automizer.loadRoot(`RootTemplate.pptx`)
-  // We load this twice to make it slide reordeing available 
+  // We load this twice to make it available for sorting slide
   .load(`RootTemplate.pptx`, 'root')  
   .load(`SlideWithShapes.pptx`, 'shapes')
   .load(`SlideWithGraph.pptx`, 'graph')
@@ -209,7 +234,7 @@ let pres = automizer.loadRoot(`RootTemplate.pptx`)
 pres.addSlide('root', 1)  // First slide will be taken from root
   .addSlide('graph', 1)
   .addSlide('shapes', 1)
-  .addSlide('root', 3)    // Third slide from root we be appended
+  .addSlide('root', 3)    // Third slide from root will be appended
   .addSlide('root', 2)    // Second and third slide will switch position
 })
 

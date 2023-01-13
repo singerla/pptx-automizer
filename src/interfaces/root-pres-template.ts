@@ -1,6 +1,7 @@
 import { ISlide } from './islide';
 import { ICounter } from './icounter';
 import { ITemplate } from './itemplate';
+import { ContentTracker } from '../helper/content-tracker';
 
 export interface RootPresTemplate extends ITemplate {
   slides: ISlide[];
@@ -13,4 +14,5 @@ export interface RootPresTemplate extends ITemplate {
   appendSlide(slide: ISlide): Promise<void>;
   countExistingSlides(): Promise<void>;
   truncate(): Promise<void>;
+  content?: ContentTracker;
 }

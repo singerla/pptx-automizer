@@ -4,11 +4,11 @@ import { XmlHelper } from '../helper/xml-helper';
 import { Shape } from '../classes/shape';
 import path from 'path';
 
-import { RelationshipAttribute, HelperElement } from '../types/xml-types';
+import { HelperElement, RelationshipAttribute } from '../types/xml-types';
 import { ImportedElement, Target, Workbook } from '../types/types';
 import { IChart } from '../interfaces/ichart';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
-import { vd } from '../helper/general-helper';
+import { contentTracker } from '../helper/content-tracker';
 
 export class Chart extends Shape implements IChart {
   sourceWorksheet: number | string;
@@ -29,8 +29,13 @@ export class Chart extends Shape implements IChart {
 
     this.relRootTag = this.subtype === 'chart' ? 'c:chart' : 'cx:chart';
     this.relAttribute = 'r:id';
-    this.relParent = (element: Element) =>
-      element.parentNode.parentNode.parentNode as Element;
+    this.relParent =
+      this.subtype === 'chart'
+        ? (element: Element) =>
+            element.parentNode.parentNode.parentNode as Element
+        : (element: Element) =>
+            element.parentNode.parentNode.parentNode.parentNode
+              .parentNode as Element;
 
     this.wbEmbeddingsPath = `../embeddings/`;
     this.wbExtension = '.xlsx';
@@ -345,23 +350,45 @@ export class Chart extends Shape implements IChart {
         const type = element.getAttribute('Type');
         switch (type) {
           case 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/package':
-            element.setAttribute(
+            this.updateTargetWorksheetRelation(
+              targetRelFile,
+              element,
               'Target',
               `${this.wbEmbeddingsPath}${this.worksheetFilePrefix}${this.targetWorksheet}${this.wbExtension}`,
             );
             break;
           case this.relTypeChartColorStyle:
-            element.setAttribute('Target', `colors${this.targetNumber}.xml`);
+            this.updateTargetWorksheetRelation(
+              targetRelFile,
+              element,
+              'Target',
+              `colors${this.targetNumber}.xml`,
+            );
             break;
           case this.relTypeChartStyle:
-            element.setAttribute('Target', `style${this.targetNumber}.xml`);
+            this.updateTargetWorksheetRelation(
+              targetRelFile,
+              element,
+              'Target',
+              `style${this.targetNumber}.xml`,
+            );
             break;
           case this.relTypeChartImage:
             const target = element.getAttribute('Target');
             const imageInfo = this.getTargetChartImageUri(target);
-            element.setAttribute('Target', imageInfo.rel);
+            this.updateTargetWorksheetRelation(
+              targetRelFile,
+              element,
+              target,
+              imageInfo,
+            );
             break;
         }
+        contentTracker.trackRelation(targetRelFile, {
+          Id: element.getAttribute('Id'),
+          Target: element.getAttribute('Target'),
+          Type: element.getAttribute('Type'),
+        });
       });
 
     await XmlHelper.writeXmlToArchive(
@@ -369,6 +396,10 @@ export class Chart extends Shape implements IChart {
       targetRelFile,
       relXml,
     );
+  }
+
+  updateTargetWorksheetRelation(targetRelFile, element, attribute, value) {
+    element.setAttribute(attribute, value);
   }
 
   getTargetChartImageUri(origin: string): {
@@ -388,11 +419,12 @@ export class Chart extends Shape implements IChart {
   }
 
   async copyWorksheetFile(): Promise<void> {
+    const targetFile = `ppt/embeddings/${this.worksheetFilePrefix}${this.targetWorksheet}${this.wbExtension}`;
     await FileHelper.zipCopy(
       this.sourceArchive,
       `ppt/embeddings/${this.worksheetFilePrefix}${this.sourceWorksheet}${this.wbExtension}`,
       this.targetArchive,
-      `ppt/embeddings/${this.worksheetFilePrefix}${this.targetWorksheet}${this.wbExtension}`,
+      targetFile,
     );
   }
 
@@ -409,10 +441,15 @@ export class Chart extends Shape implements IChart {
   }
 
   appendChartToContentType(): Promise<HelperElement> {
+    const contentType =
+      this.subtype === 'chart'
+        ? 'application/vnd.openxmlformats-officedocument.drawingml.chart+xml'
+        : 'application/vnd.ms-office.chartex+xml';
+
     return XmlHelper.append(
       XmlHelper.createContentTypeChild(this.targetArchive, {
         PartName: `/ppt/charts/${this.subtype}${this.targetNumber}.xml`,
-        ContentType: `application/vnd.openxmlformats-officedocument.drawingml.chart+xml`,
+        ContentType: contentType,
       }),
     );
   }

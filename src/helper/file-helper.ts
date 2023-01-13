@@ -1,9 +1,10 @@
 import fs from 'fs';
 import path from 'path';
-import JSZip, { InputType, OutputType } from 'jszip';
+import JSZip, { InputType, JSZipObject, OutputType } from 'jszip';
 
-import { AutomizerSummary } from '../types/types';
+import { AutomizerSummary, FileInfo } from '../types/types';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
+import { contentTracker } from './content-tracker';
 import CacheHelper from './cache-helper';
 import { vd } from './general-helper';
 
@@ -21,22 +22,34 @@ export class FileHelper {
     type?: OutputType,
     cache?: CacheHelper,
   ): Promise<string | number[] | Uint8Array | ArrayBuffer | Blob | Buffer> {
-    if (archive === undefined) {
-      throw new Error('No files found, expected: ' + file);
+    const exists = FileHelper.check(archive, file);
+
+    if (!exists) {
+      throw new Error('File is not in archive: ' + file);
     }
 
-    if (archive.files[file] === undefined) {
-      console.trace();
-      throw new Error('Archived file not found: ' + file);
-    }
     return archive.files[file].async(type || 'string');
   }
 
-  static fileExistsInArchive(archive: JSZip, file: string): boolean {
-    if (archive === undefined || archive.files[file] === undefined) {
-      return false;
-    }
-    return true;
+  static removeFromDirectory(
+    archive: JSZip,
+    dir: string,
+    cb: (file: JSZipObject, relativePath: string) => boolean,
+  ): string[] {
+    const removed = [];
+    archive.folder(dir).forEach((relativePath, file) => {
+      if (!relativePath.includes('/') && cb(file, relativePath)) {
+        FileHelper.removeFromArchive(archive, file.name);
+        removed.push(file.name);
+      }
+    });
+    return removed;
+  }
+
+  static removeFromArchive(archive: JSZip, file: string): JSZip {
+    FileHelper.check(archive, file);
+
+    return archive.remove(file);
   }
 
   static extractFileContent(file: Buffer, cache?: CacheHelper): Promise<JSZip> {
@@ -47,6 +60,33 @@ export class FileHelper {
 
   static getFileExtension(filename: string): string {
     return path.extname(filename).replace('.', '');
+  }
+
+  static getFileInfo(filename: string): FileInfo {
+    return {
+      base: path.basename(filename),
+      dir: path.dirname(filename),
+      isDir: filename[filename.length - 1] === '/',
+      extension: path.extname(filename).replace('.', ''),
+    };
+  }
+
+  static check(archive: JSZip, file: string): boolean {
+    FileHelper.isArchive(archive);
+    return FileHelper.fileExistsInArchive(archive, file);
+  }
+
+  static isArchive(archive) {
+    if (archive === undefined || !archive.files) {
+      throw new Error('Archive is invalid or empty.');
+    }
+  }
+
+  static fileExistsInArchive(archive: JSZip, file: string): boolean {
+    if (archive === undefined || archive.files[file] === undefined) {
+      return false;
+    }
+    return true;
   }
 
   /**
@@ -62,12 +102,13 @@ export class FileHelper {
     sourceFile: string,
     targetArchive: JSZip,
     targetFile?: string,
+    tmp?: any,
   ): Promise<JSZip> {
-    if (sourceArchive.files[sourceFile] === undefined) {
-      throw new Error(`Zipped file not found: ${sourceFile}`);
-    }
+    FileHelper.check(sourceArchive, sourceFile);
 
     const content = sourceArchive.files[sourceFile].async('nodebuffer');
+    contentTracker.trackFile(targetFile);
+
     return targetArchive.file(targetFile || sourceFile, content);
   }
 

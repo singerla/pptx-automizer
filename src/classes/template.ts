@@ -11,6 +11,7 @@ import { XmlTemplateHelper } from '../helper/xml-template-helper';
 import { SlideInfo } from '../types/xml-types';
 import { XmlHelper } from '../helper/xml-helper';
 import { vd } from '../helper/general-helper';
+import { ContentTracker } from '../helper/content-tracker';
 import CacheHelper from '../helper/cache-helper';
 
 export class Template implements ITemplate {
@@ -79,6 +80,7 @@ export class Template implements ITemplate {
         new CountHelper('charts', newTemplate),
         new CountHelper('images', newTemplate),
       ];
+      newTemplate.content = new ContentTracker();
     }
 
     return newTemplate;
