@@ -5,6 +5,7 @@ import JSZip, { InputType, JSZipObject, OutputType } from 'jszip';
 import { AutomizerSummary, FileInfo } from '../types/types';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
 import { contentTracker } from './content-tracker';
+import CacheHelper from './cache-helper';
 import { vd } from './general-helper';
 
 export class FileHelper {
@@ -19,6 +20,7 @@ export class FileHelper {
     archive: JSZip,
     file: string,
     type?: OutputType,
+    cache?: CacheHelper,
   ): Promise<string | number[] | Uint8Array | ArrayBuffer | Blob | Buffer> {
     const exists = FileHelper.check(archive, file);
 
@@ -50,7 +52,8 @@ export class FileHelper {
     return archive.remove(file);
   }
 
-  static extractFileContent(file: Buffer): Promise<JSZip> {
+  static extractFileContent(file: Buffer, cache?: CacheHelper): Promise<JSZip> {
+    cache?.store();
     const zip = new JSZip();
     return zip.loadAsync(file as unknown as InputType);
   }
