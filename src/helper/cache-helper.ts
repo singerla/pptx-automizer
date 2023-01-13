@@ -2,28 +2,41 @@ import path from 'path';
 import fs from 'fs';
 import JSZip from 'jszip';
 import { vd } from './general-helper';
+import { exists, FileHelper, makeDirIfNotExists } from './file-helper';
 const extract = require('extract-zip');
 
-export default class CacheHelper {
-  dir: string;
-  currentLocation: string;
-  currentSubDir: string;
+class CacheHelperClass {
+  dir: string = undefined;
+  templatesDir: string;
+  outputDir: string;
+  isActive: boolean;
 
-  constructor(dir: string) {
-    this.dir = dir;
+  constructor() {}
+
+  setDir(location: string): void {
+    this.dir = location + '/';
+    this.templatesDir = this.dir + 'templates' + '/';
+    this.outputDir = this.dir + 'output' + '/';
+
+    makeDirIfNotExists(this.dir);
+    makeDirIfNotExists(this.templatesDir);
+    makeDirIfNotExists(this.outputDir);
+
+    this.isActive = true;
   }
 
-  setLocation(location: string) {
-    this.currentLocation = location;
-    const baseName = path.basename(this.currentLocation);
-    this.currentSubDir = this.dir + '/' + baseName;
-    return this;
-  }
+  async readFile(file: string) {
+    const info = FileHelper.getFileInfo(file);
+    const targetDir = this.templatesDir + info.base;
 
-  store() {
-    extract(this.currentLocation, { dir: this.currentSubDir }).catch((err) => {
+    if (exists(targetDir)) {
+      return;
+    }
+
+    extract(file, { dir: targetDir }).catch((err) => {
       throw err;
     });
-    return this;
   }
 }
+
+export const CacheHelper = new CacheHelperClass();

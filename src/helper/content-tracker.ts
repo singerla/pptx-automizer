@@ -6,16 +6,14 @@ import {
   TrackedRelations,
   TrackedRelationTag,
 } from '../types/types';
-import { Slide } from '../classes/slide';
 import { FileHelper } from './file-helper';
 import { XmlHelper } from './xml-helper';
-import { vd } from './general-helper';
-import JSZip from 'jszip';
 import { RelationshipAttribute } from '../types/xml-types';
 import { contentTrack } from '../constants/constants';
+import { FileProxy } from './file-proxy';
 
 export class ContentTracker {
-  archive: JSZip;
+  archive: FileProxy;
   files: TrackedFiles = {
     'ppt/slideMasters': [],
     'ppt/slideLayouts': [],
@@ -55,7 +53,7 @@ export class ContentTracker {
     }
   }
 
-  async analyzeContents(archive: JSZip) {
+  async analyzeContents(archive: FileProxy) {
     this.setArchive(archive);
 
     await this.analyzeRelationships();
@@ -63,7 +61,7 @@ export class ContentTracker {
     await this.trackSlideLayouts();
   }
 
-  setArchive(archive: JSZip) {
+  setArchive(archive: FileProxy) {
     this.archive = archive;
   }
 

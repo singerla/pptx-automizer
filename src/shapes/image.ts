@@ -9,6 +9,7 @@ import { IImage } from '../interfaces/iimage';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { ImageTypeMap } from '../enums/image-type-map';
 import { ElementType } from '../enums/element-type';
+import { FileProxy } from '../helper/file-proxy';
 
 export class Image extends Shape implements IImage {
   extension: string;
@@ -148,7 +149,7 @@ export class Image extends Shape implements IImage {
   }
 
   static async getAllOnSlide(
-    archive: JSZip,
+    archive: FileProxy,
     relsPath: string,
   ): Promise<Target[]> {
     return await XmlHelper.getTargetsByRelationshipType(

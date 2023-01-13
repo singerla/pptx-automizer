@@ -3,6 +3,7 @@ import { contentTracker as Tracker } from './content-tracker';
 import { FileHelper } from './file-helper';
 import JSZip from 'jszip';
 import { vd } from './general-helper';
+import { FileProxy } from './file-proxy';
 
 export default class ModifyPresentationHelper {
   /**
@@ -42,7 +43,7 @@ export default class ModifyPresentationHelper {
   static async removeUnusedFiles(
     xml: XMLDocument,
     i: number,
-    archive: JSZip,
+    archive: FileProxy,
   ): Promise<void> {
     // Need to skip some dirs until masters and layouts are handled properly
     const skipDirs = [
@@ -70,7 +71,7 @@ export default class ModifyPresentationHelper {
   static async removeUnusedContentTypes(
     xml: XMLDocument,
     i: number,
-    archive: JSZip,
+    archive: FileProxy,
   ): Promise<void> {
     await XmlHelper.removeIf({
       archive,
@@ -86,7 +87,7 @@ export default class ModifyPresentationHelper {
   static async removedUnusedImages(
     xml: XMLDocument,
     i: number,
-    archive: JSZip,
+    archive: FileProxy,
   ): Promise<void> {
     await Tracker.analyzeContents(archive);
 
@@ -97,17 +98,12 @@ export default class ModifyPresentationHelper {
     await Tracker.collect('ppt/slideMasters', 'image', keepFiles);
     await Tracker.collect('ppt/slideLayouts', 'image', keepFiles);
 
-    const removed = FileHelper.removeFromDirectory(
-      archive,
-      'ppt/media',
-      (file) => {
-        const info = FileHelper.getFileInfo(file.name);
-        return (
-          extensions.includes(info.extension.toLowerCase()) &&
-          !keepFiles.includes(info.base)
-        );
-      },
-    );
-    vd(removed);
+    FileHelper.removeFromDirectory(archive, 'ppt/media', (file) => {
+      const info = FileHelper.getFileInfo(file.name);
+      return (
+        extensions.includes(info.extension.toLowerCase()) &&
+        !keepFiles.includes(info.base)
+      );
+    });
   }
 }

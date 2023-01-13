@@ -9,6 +9,8 @@ import { ImportedElement, Target, Workbook } from '../types/types';
 import { IChart } from '../interfaces/ichart';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { contentTracker } from '../helper/content-tracker';
+import { FileProxy } from '../helper/file-proxy';
+import { vd } from '../helper/general-helper';
 
 export class Chart extends Shape implements IChart {
   sourceWorksheet: number | string;
@@ -130,14 +132,9 @@ export class Chart extends Shape implements IChart {
   }
 
   async readWorkbook(): Promise<Workbook> {
-    const worksheet = await FileHelper.extractFromArchive(
-      this.targetArchive,
-      `ppt/embeddings/${this.worksheetFilePrefix}${this.targetWorksheet}${this.wbExtension}`,
-      'nodebuffer',
-    );
-    const archive = await FileHelper.extractFileContent(
-      worksheet as unknown as Buffer,
-    );
+    const workbookFilename = `ppt/embeddings/${this.worksheetFilePrefix}${this.targetWorksheet}${this.wbExtension}`;
+    const archive = await this.targetArchive.extract(workbookFilename);
+
     const sheet = await XmlHelper.getXmlFromArchive(
       archive,
       'xl/worksheets/sheet1.xml',
@@ -184,10 +181,10 @@ export class Chart extends Shape implements IChart {
       workbook.sharedStrings,
     );
 
-    const worksheet = await workbook.archive.generateAsync({
+    const worksheet = await workbook.archive.send({
       type: 'nodebuffer',
     });
-    this.targetArchive.file(
+    await this.targetArchive.write(
       `ppt/embeddings/${this.worksheetFilePrefix}${this.targetWorksheet}${this.wbExtension}`,
       worksheet,
     );
@@ -473,7 +470,7 @@ export class Chart extends Shape implements IChart {
   }
 
   static async getAllOnSlide(
-    archive: JSZip,
+    archive: FileProxy,
     relsPath: string,
   ): Promise<Target[]> {
     return await XmlHelper.getTargetsFromRelationships(archive, relsPath, [

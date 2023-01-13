@@ -15,45 +15,43 @@ import { GetRelationshipsCallback, Target } from '../types/types';
 import _ from 'lodash';
 import { vd } from './general-helper';
 import { contentTracker, ContentTracker } from './content-tracker';
+import { FileProxy } from './file-proxy';
 
 export class XmlHelper {
   static async modifyXmlInArchive(
-    archive: Promise<JSZip>,
+    archive: FileProxy,
     file: string,
     callbacks: ModifyXmlCallback[],
-  ): Promise<JSZip> {
-    const jsZip = await archive;
-    const xml = await XmlHelper.getXmlFromArchive(jsZip, file);
+  ): Promise<FileProxy> {
+    const fileProxy = await archive;
+    const xml = await XmlHelper.getXmlFromArchive(fileProxy, file);
 
     let i = 0;
     for (const callback of callbacks) {
-      await callback(xml, i++, jsZip);
+      await callback(xml, i++, fileProxy);
     }
 
     return await XmlHelper.writeXmlToArchive(await archive, file, xml);
   }
 
   static async getXmlFromArchive(
-    archive: JSZip,
+    archive: FileProxy,
     file: string,
   ): Promise<XMLDocument> {
-    const xmlDocument = (await FileHelper.extractFromArchive(
-      archive,
-      file,
-    )) as string;
+    const xmlDocument = (await archive.read(file, 'string')) as string;
     const dom = new DOMParser();
     return dom.parseFromString(xmlDocument);
   }
 
   static async writeXmlToArchive(
-    archive: JSZip,
+    archive: FileProxy,
     file: string,
     xml: XMLDocument,
-  ): Promise<JSZip> {
+  ): Promise<FileProxy> {
     const s = new XMLSerializer();
     const xmlBuffer = s.serializeToString(xml);
 
-    return archive.file(file, xmlBuffer);
+    return archive.write(file, xmlBuffer);
   }
 
   static async appendIf(
@@ -123,7 +121,10 @@ export class XmlHelper {
     return toRemove;
   }
 
-  static async getNextRelId(rootArchive: JSZip, file: string): Promise<string> {
+  static async getNextRelId(
+    rootArchive: FileProxy,
+    file: string,
+  ): Promise<string> {
     const presentationRelsXml = await XmlHelper.getXmlFromArchive(
       rootArchive,
       file,
@@ -169,7 +170,7 @@ export class XmlHelper {
   }
 
   static async getTargetsFromRelationships(
-    archive: JSZip,
+    archive: FileProxy,
     path: string,
     prefix: string | string[],
   ): Promise<Target[]> {
@@ -226,7 +227,7 @@ export class XmlHelper {
   }
 
   static async getTargetsByRelationshipType(
-    archive: JSZip,
+    archive: FileProxy,
     path: string,
     type: string,
   ): Promise<Target[]> {
@@ -246,7 +247,7 @@ export class XmlHelper {
   }
 
   static async getRelationships(
-    archive: JSZip,
+    archive: FileProxy,
     path: string,
     cb: GetRelationshipsCallback,
   ): Promise<Target[]> {
@@ -254,7 +255,7 @@ export class XmlHelper {
   }
 
   static async getRelationshipItems(
-    archive: JSZip,
+    archive: FileProxy,
     path: string,
     tag: string,
     cb: GetRelationshipsCallback,
@@ -290,13 +291,13 @@ export class XmlHelper {
   }
 
   static async replaceAttribute(
-    archive: JSZip,
+    archive: FileProxy,
     path: string,
     tagName: string,
     attributeName: string,
     attributeValue: string,
     replaceValue: string,
-  ): Promise<JSZip> {
+  ): Promise<FileProxy> {
     const xml = await XmlHelper.getXmlFromArchive(archive, path);
     const elements = xml.getElementsByTagName(tagName);
     for (const i in elements) {
@@ -320,7 +321,7 @@ export class XmlHelper {
   }
 
   static async getTargetByRelId(
-    archive: JSZip,
+    archive: FileProxy,
     slideNumber: number,
     element: XMLDocument,
     type: string,
@@ -341,7 +342,7 @@ export class XmlHelper {
   }
 
   static async findByElementCreationId(
-    archive: JSZip,
+    archive: FileProxy,
     path: string,
     creationId: string,
   ): Promise<XMLDocument> {
@@ -351,7 +352,7 @@ export class XmlHelper {
   }
 
   static async findByElementName(
-    archive: JSZip,
+    archive: FileProxy,
     path: string,
     name: string,
   ): Promise<XMLDocument> {
@@ -424,7 +425,7 @@ export class XmlHelper {
   }
 
   static createContentTypeChild(
-    archive: JSZip,
+    archive: FileProxy,
     attributes: OverrideAttribute | DefaultAttribute,
   ): HelperElement {
     return {
@@ -437,7 +438,7 @@ export class XmlHelper {
   }
 
   static createRelationshipChild(
-    archive: JSZip,
+    archive: FileProxy,
     targetRelFile: string,
     attributes: RelationshipAttribute,
   ): HelperElement {

@@ -1,4 +1,5 @@
 import JSZip from 'jszip';
+import { FileProxy } from '../helper/file-proxy';
 
 export type DefaultAttribute = {
   Extension: string;
@@ -22,7 +23,7 @@ export type OverrideAttribute = {
 };
 
 export type HelperElement = {
-  archive: JSZip;
+  archive: FileProxy;
   assert?: (xml: XMLDocument) => void;
   clause?: (xml: XMLDocument, element?: Element) => boolean;
   parent?: (xml: XMLDocument) => Element;
@@ -66,5 +67,5 @@ export type ElementInfo = {
 export type ModifyXmlCallback = (
   xml: XMLDocument | Element,
   index?: number,
-  archive?: JSZip,
+  archive?: FileProxy,
 ) => void;

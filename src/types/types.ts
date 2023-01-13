@@ -1,6 +1,7 @@
 import JSZip from 'jszip';
 import { ElementSubtype, ElementType } from '../enums/element-type';
 import { RelationshipAttribute } from './xml-types';
+import { FileProxy } from '../helper/file-proxy';
 
 export type SourceSlideIdentifier = number | string;
 export type SlideModificationCallback = (document: Document) => void;
@@ -31,7 +32,7 @@ export type AutomizerParams = {
    */
   outputDir?: string;
   /**
-   * Buffer unzipped pptx on disk
+   * Absolute path to cache directory.
    */
   cacheDir?: string;
   /**
@@ -131,7 +132,7 @@ export type ImportedElement = {
   mode: string;
   name?: string;
   hasCreationId?: boolean;
-  sourceArchive: JSZip;
+  sourceArchive: FileProxy;
   sourceSlideNumber: number;
   callback?: ImportElement['callback'];
   target?: AnalyzedElementType['target'];
@@ -150,7 +151,7 @@ export type TargetByRelIdMapParam = {
   expression?: RegExp;
 };
 export type Workbook = {
-  archive: JSZip;
+  archive: FileProxy;
   sheet: XMLDocument;
   sharedStrings: XMLDocument;
   table: XMLDocument;

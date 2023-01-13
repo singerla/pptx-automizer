@@ -5,34 +5,28 @@ import JSZip, { InputType, JSZipObject, OutputType } from 'jszip';
 import { AutomizerSummary, FileInfo } from '../types/types';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
 import { contentTracker } from './content-tracker';
-import CacheHelper from './cache-helper';
+import { CacheHelper } from './cache-helper';
 import { vd } from './general-helper';
+import { FileProxy } from './file-proxy';
 
 export class FileHelper {
-  static readFile(location: string): Promise<Buffer> {
+  static importArchive(location: string): FileProxy {
     if (!fs.existsSync(location)) {
       throw new Error('File not found: ' + location);
     }
-    return fs.promises.readFile(location);
+    return FileProxy.importArchive(location);
   }
 
   static extractFromArchive(
-    archive: JSZip,
+    archive: FileProxy,
     file: string,
     type?: OutputType,
-    cache?: CacheHelper,
-  ): Promise<string | number[] | Uint8Array | ArrayBuffer | Blob | Buffer> {
-    const exists = FileHelper.check(archive, file);
-
-    if (!exists) {
-      throw new Error('File is not in archive: ' + file);
-    }
-
-    return archive.files[file].async(type || 'string');
+  ): Promise<FileProxy> {
+    return archive.read(file, type);
   }
 
   static removeFromDirectory(
-    archive: JSZip,
+    archive: FileProxy,
     dir: string,
     cb: (file: JSZipObject, relativePath: string) => boolean,
   ): string[] {
@@ -46,16 +40,10 @@ export class FileHelper {
     return removed;
   }
 
-  static removeFromArchive(archive: JSZip, file: string): JSZip {
+  static removeFromArchive(archive: FileProxy, file: string): FileProxy {
     FileHelper.check(archive, file);
 
     return archive.remove(file);
-  }
-
-  static extractFileContent(file: Buffer, cache?: CacheHelper): Promise<JSZip> {
-    cache?.store();
-    const zip = new JSZip();
-    return zip.loadAsync(file as unknown as InputType);
   }
 
   static getFileExtension(filename: string): string {
@@ -71,22 +59,19 @@ export class FileHelper {
     };
   }
 
-  static check(archive: JSZip, file: string): boolean {
+  static check(archive: FileProxy, file: string): boolean {
     FileHelper.isArchive(archive);
     return FileHelper.fileExistsInArchive(archive, file);
   }
 
   static isArchive(archive) {
-    if (archive === undefined || !archive.files) {
+    if (archive === undefined) {
       throw new Error('Archive is invalid or empty.');
     }
   }
 
-  static fileExistsInArchive(archive: JSZip, file: string): boolean {
-    if (archive === undefined || archive.files[file] === undefined) {
-      return false;
-    }
-    return true;
+  static fileExistsInArchive(archive: FileProxy, file: string): boolean {
+    return archive.fileExists(file);
   }
 
   /**
@@ -98,18 +83,17 @@ export class FileHelper {
    * @return {JSZip} targetArchive as an instance of JSZip
    */
   static async zipCopy(
-    sourceArchive: JSZip,
+    sourceArchive: FileProxy,
     sourceFile: string,
-    targetArchive: JSZip,
+    targetArchive: FileProxy,
     targetFile?: string,
-    tmp?: any,
-  ): Promise<JSZip> {
+  ): Promise<FileProxy> {
     FileHelper.check(sourceArchive, sourceFile);
 
-    const content = sourceArchive.files[sourceFile].async('nodebuffer');
+    const content = await sourceArchive.read(sourceFile, 'nodebuffer');
     contentTracker.trackFile(targetFile);
 
-    return targetArchive.file(targetFile || sourceFile, content);
+    return targetArchive.write(targetFile || sourceFile, content);
   }
 
   static async writeOutputFile(
@@ -136,3 +120,23 @@ export class FileHelper {
     };
   }
 }
+
+export const exists = (dir: string) => {
+  return fs.existsSync(dir);
+};
+
+export const makeDirIfNotExists = (dir: string) => {
+  if (!exists(dir)) {
+    makeDir(dir);
+  }
+};
+
+export const makeDir = (dir: string) => {
+  try {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir);
+    }
+  } catch (err) {
+    throw err;
+  }
+};

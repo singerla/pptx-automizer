@@ -12,7 +12,8 @@ import { SlideInfo } from '../types/xml-types';
 import { XmlHelper } from '../helper/xml-helper';
 import { vd } from '../helper/general-helper';
 import { ContentTracker } from '../helper/content-tracker';
-import CacheHelper from '../helper/cache-helper';
+import { CacheHelper } from '../helper/cache-helper';
+import { FileProxy } from '../helper/file-proxy';
 
 export class Template implements ITemplate {
   /**
@@ -34,10 +35,10 @@ export class Template implements ITemplate {
   file: InputType;
 
   /**
-   * this.file will be passed to JSZip
-   * @type Promise<JSZip>
+   * this.file will be passed to FileProxy
+   * @type FileProxy
    */
-  archive: Promise<JSZip>;
+  archive: FileProxy;
 
   /**
    * Array containing all slides coming from Automizer.addSlide()
@@ -54,26 +55,22 @@ export class Template implements ITemplate {
   creationIds: SlideInfo[];
   existingSlides: number;
 
-  constructor(location: string, cache?: CacheHelper) {
+  constructor(location: string) {
     this.location = location;
-    const file = FileHelper.readFile(location);
-    this.archive = FileHelper.extractFileContent(
-      file as unknown as Buffer,
-      cache?.setLocation(location),
-    );
+    const archive = FileHelper.importArchive(location);
+    this.archive = archive;
   }
 
   static import(
     location: string,
     name?: string,
-    cache?: CacheHelper,
   ): PresTemplate | RootPresTemplate {
     let newTemplate: PresTemplate | RootPresTemplate;
     if (name) {
-      newTemplate = new Template(location, cache) as PresTemplate;
+      newTemplate = new Template(location) as PresTemplate;
       newTemplate.name = name;
     } else {
-      newTemplate = new Template(location, cache) as RootPresTemplate;
+      newTemplate = new Template(location) as RootPresTemplate;
       newTemplate.slides = [];
       newTemplate.counter = [
         new CountHelper('slides', newTemplate),

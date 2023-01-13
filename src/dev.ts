@@ -1,11 +1,10 @@
-import Automizer, { ChartData, modify } from './index';
 import { vd } from './helper/general-helper';
-import { contentTracker } from './helper/content-tracker';
-import ModifyPresentationHelper from './helper/modify-presentation-helper';
+import Automizer, { modify } from './index';
 
 const automizer = new Automizer({
   templateDir: `${__dirname}/../__tests__/pptx-templates`,
   outputDir: `${__dirname}/../__tests__/pptx-output`,
+  // cacheDir: `${__dirname}/../__tests__/pptx-cache`,
   removeExistingSlides: true,
   cleanup: true,
   compression: 5,
@@ -41,10 +40,11 @@ const run = async () => {
     })
     .addSlide('charts', 1, (slide) => {
       slide.addElement('images', 2, 'imageJPG');
-      slide.modifyElement('BarsStacked', [modify.setChartData(dataSmaller)]);
+      // slide.modifyElement('BarsStacked', [modify.setChartData(dataSmaller)]);
     })
-    .write(`create-presentation-content-tracker.test.pptx`);
+    .write(`create-presentation-file-proxy.test.pptx`);
 
+  vd(result.duration);
   // vd(pres.rootTemplate.content);
 };
 

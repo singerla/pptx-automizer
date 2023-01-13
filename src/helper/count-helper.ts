@@ -3,6 +3,7 @@ import JSZip from 'jszip';
 import { ICounter } from '../interfaces/icounter';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { XmlHelper } from './xml-helper';
+import { FileProxy } from './file-proxy';
 
 export class CountHelper implements ICounter {
   template: RootPresTemplate;
@@ -43,7 +44,7 @@ export class CountHelper implements ICounter {
     return this.count;
   }
 
-  private calculateCount(presentation: JSZip): Promise<number> {
+  private calculateCount(presentation: FileProxy): Promise<number> {
     switch (this.name) {
       case 'slides':
         return CountHelper.countSlides(presentation);
@@ -56,7 +57,7 @@ export class CountHelper implements ICounter {
     throw new Error(`No way to count ${this.name}.`);
   }
 
-  private static async countSlides(presentation: JSZip): Promise<number> {
+  private static async countSlides(presentation: FileProxy): Promise<number> {
     const presentationXml = await XmlHelper.getXmlFromArchive(
       presentation,
       'ppt/presentation.xml',
@@ -64,7 +65,7 @@ export class CountHelper implements ICounter {
     return presentationXml.getElementsByTagName('p:sldId').length;
   }
 
-  private static async countCharts(presentation: JSZip): Promise<number> {
+  private static async countCharts(presentation: FileProxy): Promise<number> {
     const contentTypesXml = await XmlHelper.getXmlFromArchive(
       presentation,
       '[Content_Types].xml',
@@ -81,7 +82,7 @@ export class CountHelper implements ICounter {
       ).length;
   }
 
-  private static async countImages(presentation: JSZip): Promise<number> {
-    return presentation.file(/ppt\/media\/image/).length;
+  private static async countImages(presentation: FileProxy): Promise<number> {
+    return await presentation.count(/ppt\/media\/image/);
   }
 }

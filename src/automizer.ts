@@ -19,6 +19,7 @@ import { XmlHelper } from './helper/xml-helper';
 import ModifyPresentationHelper from './helper/modify-presentation-helper';
 import { contentTracker, ContentTracker } from './helper/content-tracker';
 import JSZip from 'jszip';
+import { CacheHelper } from './helper/cache-helper';
 
 /**
  * Automizer
@@ -36,8 +37,9 @@ export default class Automizer implements IPresentationProps {
   templateDir: string;
   templateFallbackDir: string;
   outputDir: string;
+  cacheDir: string;
   /**
-   * Timer  of automizer
+   * Timer of automizer
    * @internal
    */
   timer: number;
@@ -60,6 +62,10 @@ export default class Automizer implements IPresentationProps {
       ? params.templateFallbackDir + '/'
       : '';
     this.outputDir = params?.outputDir ? params.outputDir + '/' : '';
+    this.cacheDir = params?.cacheDir
+      ? params.cacheDir
+      : __dirname + '/../cache';
+    CacheHelper.setDir(this.cacheDir);
 
     this.timer = Date.now();
     this.setStatusTracker(params?.statusTracker);
@@ -293,7 +299,7 @@ export default class Automizer implements IPresentationProps {
       };
     }
 
-    const content = await rootArchive.generateAsync(options);
+    const content = await rootArchive.send(options);
 
     return FileHelper.writeOutputFile(
       this.getLocation(location, 'output'),

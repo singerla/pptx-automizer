@@ -11,12 +11,13 @@ import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { HelperElement } from '../types/xml-types';
 import { ImageTypeMap } from '../enums/image-type-map';
 import { ElementSubtype } from '../enums/element-type';
+import { FileProxy } from '../helper/file-proxy';
 
 export class Shape {
   mode: string;
   name: string;
 
-  sourceArchive: JSZip;
+  sourceArchive: FileProxy;
   sourceSlideNumber: number;
   sourceSlideFile: string;
   sourceNumber: number;
@@ -25,7 +26,7 @@ export class Shape {
   sourceElement: XMLDocument;
 
   targetFile: string;
-  targetArchive: JSZip;
+  targetArchive: FileProxy;
   targetTemplate: RootPresTemplate;
   targetSlideNumber: number;
   targetNumber: number;

@@ -1,6 +1,6 @@
-import JSZip from 'jszip';
+import { FileProxy } from '../helper/file-proxy';
 
 export interface IShape {
-  sourceArchive: JSZip;
-  targetArchive: JSZip;
+  sourceArchive: FileProxy;
+  targetArchive: FileProxy;
 }

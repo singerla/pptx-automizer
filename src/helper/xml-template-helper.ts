@@ -2,15 +2,16 @@ import JSZip from 'jszip';
 import { Target } from '../types/types';
 import { ElementInfo, SlideInfo, TemplateSlideInfo } from '../types/xml-types';
 import { XmlHelper } from './xml-helper';
+import { FileProxy } from './file-proxy';
 
 export class XmlTemplateHelper {
-  archive: JSZip;
+  archive: FileProxy;
   relType: string;
   relTypeNotes: string;
   path: string;
   defaultSlideName: string;
 
-  constructor(archive: JSZip) {
+  constructor(archive: FileProxy) {
     this.relType =
       'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide';
     this.relTypeNotes =
@@ -21,7 +22,7 @@ export class XmlTemplateHelper {
   }
 
   async getCreationIds(): Promise<SlideInfo[]> {
-    const archive = await this.archive;
+    const archive = await this.archive.inititalize();
     const relationships = await XmlHelper.getTargetsByRelationshipType(
       archive,
       this.path,
@@ -99,7 +100,7 @@ export class XmlTemplateHelper {
   }
 
   async getSlideNoteRels(
-    archive: JSZip,
+    archive: FileProxy,
     slideRelFile: string,
   ): Promise<Target[]> {
     const relFileName = slideRelFile.replace('slides', '');
@@ -149,9 +150,8 @@ export class XmlTemplateHelper {
     for (const item in slideElements) {
       const slideElement = slideElements[item];
       if (slideElement.getAttribute !== undefined) {
-        const creationIdElement = slideElement.getElementsByTagName(
-          'a16:creationId',
-        );
+        const creationIdElement =
+          slideElement.getElementsByTagName('a16:creationId');
         if (creationIdElement.item(0)) {
           elementIds.push(this.getElementInfo(slideElement, archive));
         }
@@ -185,9 +185,8 @@ export class XmlTemplateHelper {
 
     switch (type) {
       case 'graphicFrame':
-        const graphicData = slideElementParent.getElementsByTagName(
-          'a:graphicData',
-        )[0];
+        const graphicData =
+          slideElementParent.getElementsByTagName('a:graphicData')[0];
         const uri = graphicData.getAttribute('uri');
         type = mapUriType[uri] ? mapUriType[uri] : type;
         xFrmTag = 'p:xfrm';

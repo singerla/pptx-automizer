@@ -22,7 +22,8 @@ import {
 import { Image } from '../shapes/image';
 import { Chart } from '../shapes/chart';
 import { GenericShape } from '../shapes/generic';
-import {GeneralHelper, vd} from '../helper/general-helper';
+import { GeneralHelper, vd } from '../helper/general-helper';
+import { FileProxy } from '../helper/file-proxy';
 
 export class Master {
   /**
@@ -49,12 +50,12 @@ export class Master {
    * Target archive of slide
    * @internal
    */
-  targetArchive: JSZip;
+  targetArchive: FileProxy;
   /**
    * Source archive of slide
    * @internal
    */
-  sourceArchive: JSZip;
+  sourceArchive: FileProxy;
   /**
    * Source path of slide
    * @internal
@@ -108,7 +109,6 @@ export class Master {
     this.relsPath = `ppt/slides/_rels/slide${this.sourceNumber}.xml.rels`;
   }
 
-
   /**
    * Appends slide
    * @internal
@@ -124,10 +124,6 @@ export class Master {
     this.targetRelsPath = `ppt/slides/_rels/slide${this.targetNumber}.xml.rels`;
     this.sourceArchive = await this.sourceTemplate.archive;
 
-    console.log('Appending slide ' + this.targetNumber)
-
-
-
+    console.log('Appending slide ' + this.targetNumber);
   }
-
 }

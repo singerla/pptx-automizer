@@ -63,6 +63,7 @@
   },
   "dependencies": {
     "@xmldom/xmldom": "^0.8.2",
+    "extract-zip": "^2.0.1",
     "jszip": "^3.10.1",
     "regexp.escape": "^1.1.0"
   }

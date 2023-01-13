@@ -26,6 +26,7 @@ import { Chart } from '../shapes/chart';
 import { GenericShape } from '../shapes/generic';
 import { vd } from '../helper/general-helper';
 import { ContentTracker } from '../helper/content-tracker';
+import { FileProxy } from '../helper/file-proxy';
 
 export class Slide implements ISlide {
   /**
@@ -52,12 +53,12 @@ export class Slide implements ISlide {
    * Target archive of slide
    * @internal
    */
-  targetArchive: JSZip;
+  targetArchive: FileProxy;
   /**
    * Source archive of slide
    * @internal
    */
-  sourceArchive: JSZip;
+  sourceArchive: FileProxy;
   /**
    * Source path of slide
    * @internal
@@ -419,7 +420,7 @@ export class Slide implements ISlide {
    */
   async analyzeElement(
     sourceElement: XMLDocument,
-    sourceArchive: JSZip,
+    sourceArchive: FileProxy,
     slideNumber: number,
   ): Promise<AnalyzedElementType> {
     const isChart = sourceElement.getElementsByTagName('c:chart');
@@ -609,7 +610,7 @@ export class Slide implements ISlide {
    * @returns to slide rel
    */
   appendToSlideRel(
-    rootArchive: JSZip,
+    rootArchive: FileProxy,
     relId: string,
     slideCount: number,
   ): Promise<HelperElement> {
@@ -636,7 +637,10 @@ export class Slide implements ISlide {
    * @param relId
    * @returns to slide list
    */
-  appendToSlideList(rootArchive: JSZip, relId: string): Promise<HelperElement> {
+  appendToSlideList(
+    rootArchive: FileProxy,
+    relId: string,
+  ): Promise<HelperElement> {
     return XmlHelper.append({
       archive: rootArchive,
       file: `ppt/presentation.xml`,
@@ -664,7 +668,7 @@ export class Slide implements ISlide {
    * @returns slide to content type
    */
   appendSlideToContentType(
-    rootArchive: JSZip,
+    rootArchive: FileProxy,
     slideCount: number,
   ): Promise<HelperElement> {
     return XmlHelper.append(
@@ -683,7 +687,7 @@ export class Slide implements ISlide {
    * @returns notes to content type
    */
   appendNotesToContentType(
-    rootArchive: JSZip,
+    rootArchive: FileProxy,
     slideCount: number,
   ): Promise<HelperElement> {
     return XmlHelper.append(

@@ -1,8 +1,9 @@
-import JSZip, { InputType } from 'jszip';
+import { InputType } from 'jszip';
+import { FileProxy } from '../helper/file-proxy';
 
 export interface ITemplate {
   location: string;
   file: InputType;
-  archive: Promise<JSZip>;
+  archive: FileProxy;
   getSlideIdList: () => Promise<Document>;
 }
