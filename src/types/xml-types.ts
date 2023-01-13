@@ -24,8 +24,8 @@ export type OverrideAttribute = {
 export type HelperElement = {
   archive: JSZip;
   assert?: (xml: XMLDocument) => void;
-  clause?: (xml: XMLDocument) => boolean;
-  parent: (xml: XMLDocument) => Element;
+  clause?: (xml: XMLDocument, element?: Element) => boolean;
+  parent?: (xml: XMLDocument) => Element;
   file: string;
   tag: string;
   attributes?:
@@ -66,4 +66,5 @@ export type ElementInfo = {
 export type ModifyXmlCallback = (
   xml: XMLDocument | Element,
   index?: number,
+  archive?: JSZip,
 ) => void;

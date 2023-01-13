@@ -14,6 +14,7 @@ import { XmlPrettyPrint } from './xml-pretty-print';
 import { GetRelationshipsCallback, Target } from '../types/types';
 import _ from 'lodash';
 import { vd } from './general-helper';
+import { contentTracker, ContentTracker } from './content-tracker';
 
 export class XmlHelper {
   static async modifyXmlInArchive(
@@ -21,10 +22,12 @@ export class XmlHelper {
     file: string,
     callbacks: ModifyXmlCallback[],
   ): Promise<JSZip> {
-    const xml = await XmlHelper.getXmlFromArchive(await archive, file);
+    const jsZip = await archive;
+    const xml = await XmlHelper.getXmlFromArchive(jsZip, file);
 
+    let i = 0;
     for (const callback of callbacks) {
-      callback(xml);
+      await callback(xml, i++, jsZip);
     }
 
     return await XmlHelper.writeXmlToArchive(await archive, file, xml);
@@ -75,11 +78,15 @@ export class XmlHelper {
     const newElement = xml.createElement(element.tag);
     for (const attribute in element.attributes) {
       const value = element.attributes[attribute];
-      newElement.setAttribute(
-        attribute,
-        typeof value === 'function' ? value(xml) : value,
-      );
+      const setValue = typeof value === 'function' ? value(xml) : value;
+
+      newElement.setAttribute(attribute, setValue);
     }
+
+    contentTracker.trackRelation(
+      element.file,
+      element.attributes as RelationshipAttribute,
+    );
 
     if (element.assert) {
       element.assert(xml);
@@ -91,6 +98,29 @@ export class XmlHelper {
     await XmlHelper.writeXmlToArchive(element.archive, element.file, xml);
 
     return newElement as unknown as HelperElement;
+  }
+
+  static async removeIf(element: HelperElement): Promise<Element[]> {
+    const xml = await XmlHelper.getXmlFromArchive(
+      element.archive,
+      element.file,
+    );
+
+    const collection = xml.getElementsByTagName(element.tag);
+    const toRemove: Element[] = [];
+    XmlHelper.modifyCollection(collection, (item: Element, index) => {
+      if (element.clause(xml, item)) {
+        toRemove.push(item);
+      }
+    });
+
+    toRemove.forEach((item) => {
+      XmlHelper.remove(item);
+    });
+
+    await XmlHelper.writeXmlToArchive(element.archive, element.file, xml);
+
+    return toRemove;
   }
 
   static async getNextRelId(rootArchive: JSZip, file: string): Promise<string> {
@@ -220,12 +250,21 @@ export class XmlHelper {
     path: string,
     cb: GetRelationshipsCallback,
   ): Promise<Target[]> {
+    return this.getRelationshipItems(archive, path, 'Relationship', cb);
+  }
+
+  static async getRelationshipItems(
+    archive: JSZip,
+    path: string,
+    tag: string,
+    cb: GetRelationshipsCallback,
+  ): Promise<Target[]> {
     const xml = await XmlHelper.getXmlFromArchive(archive, path);
-    const relationships = xml.getElementsByTagName('Relationship');
+    const relationshipItems = xml.getElementsByTagName(tag);
     const rels = [];
 
-    Object.keys(relationships)
-      .map((key) => relationships[key] as Element)
+    Object.keys(relationshipItems)
+      .map((key) => relationshipItems[key] as Element)
       .filter((element) => element.getAttribute !== undefined)
       .forEach((element) => cb(element, rels));
 
@@ -267,6 +306,14 @@ export class XmlHelper {
         element.getAttribute(attributeName) === attributeValue
       ) {
         element.setAttribute(attributeName, replaceValue);
+      }
+
+      if (element.getAttribute !== undefined) {
+        contentTracker.trackRelation(path, {
+          Id: element.getAttribute('Id'),
+          Target: element.getAttribute('Target'),
+          Type: element.getAttribute('Type'),
+        });
       }
     }
     return XmlHelper.writeXmlToArchive(archive, path, xml);
@@ -394,6 +441,8 @@ export class XmlHelper {
     targetRelFile: string,
     attributes: RelationshipAttribute,
   ): HelperElement {
+    contentTracker.trackRelation(targetRelFile, attributes);
+
     return {
       archive,
       file: targetRelFile,
@@ -435,15 +484,17 @@ export class XmlHelper {
   ): void {
     if (from !== undefined) {
       for (let i = from; i < length; i++) {
-        const toRemove = collection[i];
-        toRemove.parentNode.removeChild(toRemove);
+        XmlHelper.remove(collection[i]);
       }
     } else {
       for (let i = collection.length; i > length; i--) {
-        const toRemove = collection[i - 1];
-        toRemove.parentNode.removeChild(toRemove);
+        XmlHelper.remove(collection[i - 1]);
       }
     }
+  }
+
+  static remove(toRemove: Element): void {
+    toRemove.parentNode.removeChild(toRemove);
   }
 
   static sortCollection(

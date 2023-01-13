@@ -1,5 +1,6 @@
 import JSZip from 'jszip';
 import { ElementSubtype, ElementType } from '../enums/element-type';
+import { RelationshipAttribute } from './xml-types';
 
 export type SourceSlideIdentifier = number | string;
 export type SlideModificationCallback = (document: Document) => void;
@@ -33,6 +34,10 @@ export type AutomizerParams = {
    * Buffer unzipped pptx on disk
    */
   cacheDir?: string;
+  /**
+   * Zip compression level 0-9
+   */
+  compression?: number;
   rootTemplate?: string;
   presTemplates?: string[];
   useCreationIds?: boolean;
@@ -41,6 +46,10 @@ export type AutomizerParams = {
    * before automation starts.
    */
   removeExistingSlides?: boolean;
+  /**
+   * Eventually remove all unnecessary files from archive.
+   */
+  cleanup?: boolean;
   /**
    * statusTracker will be triggered on each appended slide.
    * You can e.g. attach a custom callback to a progress bar.
@@ -67,14 +76,49 @@ export type AutomizerSummary = {
 };
 export type Target = {
   file: string;
+  type: string;
+  filename: string;
   number?: number;
   rId?: string;
   prefix?: string;
   subtype?: ElementSubtype;
-  type: string;
-  filename: string;
-  filenameExt: string;
-  filenameBase: string;
+  filenameExt?: string;
+  filenameBase?: string;
+  getCreatedContent?: () => TrackedRelationInfo;
+  getRelatedContent?: () => Promise<Target>;
+  relatedContent?: Target;
+};
+export type FileInfo = {
+  base: string;
+  extension: string;
+  dir: string;
+  isDir: boolean;
+};
+export type TrackedFiles = Record<string, string[]>;
+export type TrackedRelationInfo = {
+  base: string;
+  attributes?: RelationshipAttribute;
+};
+export type TrackedRelations = Record<string, TrackedRelationInfo[]>;
+export type TrackedRelation = {
+  tag: string;
+  type?: string;
+  attribute?: string;
+  role?:
+    | 'image'
+    | 'slideMaster'
+    | 'slide'
+    | 'chart'
+    | 'externalData'
+    | 'slideLayout';
+  targets?: Target[];
+};
+export type TrackedRelationTag = {
+  source: string;
+  relationsKey: string;
+  isDir?: boolean;
+  tags: TrackedRelation[];
+  getTrackedRelations?: (role: string) => TrackedRelation[];
 };
 export type ImportElement = {
   presName: string;

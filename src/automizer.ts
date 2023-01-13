@@ -17,6 +17,8 @@ import path from 'path';
 import * as fs from 'fs';
 import { XmlHelper } from './helper/xml-helper';
 import ModifyPresentationHelper from './helper/modify-presentation-helper';
+import { contentTracker, ContentTracker } from './helper/content-tracker';
+import JSZip from 'jszip';
 
 /**
  * Automizer
@@ -42,7 +44,8 @@ export default class Automizer implements IPresentationProps {
   params: AutomizerParams;
   status: StatusTracker;
 
-  modifyPresentation: ModifyXmlCallback[];
+  content: ContentTracker;
+  modifyPresentation: ModifyXmlCallback[] = [];
 
   /**
    * Creates an instance of `pptx-automizer`.
@@ -50,7 +53,6 @@ export default class Automizer implements IPresentationProps {
    */
   constructor(params: AutomizerParams) {
     this.templates = [];
-    this.modifyPresentation = [];
     this.params = params;
 
     this.templateDir = params?.templateDir ? params.templateDir + '/' : '';
@@ -61,6 +63,8 @@ export default class Automizer implements IPresentationProps {
 
     this.timer = Date.now();
     this.setStatusTracker(params?.statusTracker);
+
+    this.content = new ContentTracker();
 
     if (params.rootTemplate) {
       const location = this.getLocation(params.rootTemplate, 'template');
@@ -277,7 +281,19 @@ export default class Automizer implements IPresentationProps {
     await this.applyModifyPresentationCallbacks();
 
     const rootArchive = await this.rootTemplate.archive;
-    const content = await rootArchive.generateAsync({ type: 'nodebuffer' });
+
+    const options: JSZip.JSZipGeneratorOptions<'nodebuffer'> = {
+      type: 'nodebuffer',
+    };
+
+    if (this.params.compression > 0) {
+      options.compression = 'DEFLATE';
+      options.compressionOptions = {
+        level: this.params.compression,
+      };
+    }
+
+    const content = await rootArchive.generateAsync(options);
 
     return FileHelper.writeOutputFile(
       this.getLocation(location, 'output'),
@@ -318,12 +334,19 @@ export default class Automizer implements IPresentationProps {
    * Apply some callbacks to restore archive/xml structure
    * and prevent corrupted pptx files.
    *
-   * TODO: Remove unused parts (slides, related items) from archive.
    * TODO: Use every imported image only once
    * TODO: Check for lost relations
    */
-  normalizePresentation(): void {
+  async normalizePresentation(): Promise<void> {
     this.modify(ModifyPresentationHelper.normalizeSlideIds);
+
+    if (this.params.cleanup) {
+      if (this.params.removeExistingSlides) {
+        this.modify(ModifyPresentationHelper.removeUnusedFiles);
+      }
+      this.modify(ModifyPresentationHelper.removedUnusedImages);
+      this.modify(ModifyPresentationHelper.removeUnusedContentTypes);
+    }
   }
 
   /**
