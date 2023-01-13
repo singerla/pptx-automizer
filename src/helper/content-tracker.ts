@@ -12,16 +12,15 @@ import { XmlHelper } from './xml-helper';
 import { vd } from './general-helper';
 import JSZip from 'jszip';
 import { RelationshipAttribute } from '../types/xml-types';
+import { contentTrack } from '../constants/constants';
 
 export class ContentTracker {
   archive: JSZip;
   files: TrackedFiles = {
     'ppt/slideMasters': [],
-    'ppt/slideMasters/_rels': [],
+    'ppt/slideLayouts': [],
     'ppt/slides': [],
-    'ppt/slides/_rels': [],
     'ppt/charts': [],
-    'ppt/charts/_rels': [],
     'ppt/embeddings': [],
   };
 
@@ -29,94 +28,13 @@ export class ContentTracker {
     // '.': [],
     'ppt/slides/_rels': [],
     'ppt/slideMasters/_rels': [],
+    'ppt/slideLayouts/_rels': [],
     'ppt/charts/_rels': [],
     'ppt/_rels': [],
     ppt: [],
   };
 
-  relationTags: TrackedRelationTag[] = [
-    {
-      source: 'ppt/presentation.xml',
-      relationsKey: 'ppt/_rels/presentation.xml.rels',
-      tags: [
-        {
-          type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster',
-          tag: 'p:sldMasterId',
-          role: 'slideMaster',
-        },
-        {
-          type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide',
-          tag: 'p:sldId',
-          role: 'slide',
-        },
-      ],
-    },
-    {
-      source: 'ppt/slides',
-      relationsKey: 'ppt/slides/_rels',
-      isDir: true,
-      tags: [
-        {
-          type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart',
-          tag: 'c:chart',
-          role: 'chart',
-        },
-        {
-          type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image',
-          tag: 'a:blip',
-          role: 'image',
-          attribute: 'r:embed',
-        },
-        {
-          type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image',
-          tag: 'asvg:svgBlip',
-          role: 'image',
-          attribute: 'r:embed',
-        },
-        {
-          type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout',
-          role: 'slideLayout',
-          tag: null,
-        },
-      ],
-    },
-    {
-      source: 'ppt/charts',
-      relationsKey: 'ppt/charts/_rels',
-      isDir: true,
-      tags: [
-        {
-          type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/package',
-          tag: 'c:externalData',
-          role: 'externalData',
-        },
-      ],
-    },
-    {
-      source: 'ppt/slideMasters',
-      relationsKey: 'ppt/slideMasters/_rels',
-      isDir: true,
-      tags: [
-        {
-          type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout',
-          tag: 'p:sldLayoutId',
-          role: 'slideLayout',
-        },
-        {
-          type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image',
-          tag: 'a:blip',
-          role: 'image',
-          attribute: 'r:embed',
-        },
-        {
-          type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image',
-          tag: 'asvg:svgBlip',
-          role: 'image',
-          attribute: 'r:embed',
-        },
-      ],
-    },
-  ];
+  relationTags = contentTrack;
 
   constructor() {}
 
@@ -142,6 +60,7 @@ export class ContentTracker {
 
     await this.analyzeRelationships();
     await this.trackSlideMasters();
+    await this.trackSlideLayouts();
   }
 
   setArchive(archive: JSZip) {
@@ -154,16 +73,28 @@ export class ContentTracker {
   async trackSlideMasters() {
     const slideMasters = this.getRelationTag(
       'ppt/presentation.xml',
-    ).getRelationTargets('slideMaster');
+    ).getTrackedRelations('slideMaster');
 
-    const slideMasterInfo = await this.getRelatedContents(slideMasters);
+    await this.addAndAnalyze(slideMasters, 'ppt/slideMasters');
+  }
 
-    slideMasterInfo.forEach((slideMasterInfo) => {
-      this.trackFile('ppt/' + slideMasterInfo.file);
-      this.trackFile('ppt/_rels/' + slideMasterInfo.file + '.rels');
+  async trackSlideLayouts() {
+    const usedSlideLayouts =
+      this.getRelationTag('ppt/slideMasters').getTrackedRelations(
+        'slideLayout',
+      );
+
+    await this.addAndAnalyze(usedSlideLayouts, 'ppt/slideLayouts');
+  }
+
+  async addAndAnalyze(trackedRelations: TrackedRelation[], section: string) {
+    const targets = await this.getRelatedContents(trackedRelations);
+
+    targets.forEach((target) => {
+      this.trackFile(section + '/' + target.filename);
     });
 
-    const relationTagInfo = this.getRelationTag('ppt/slideMasters');
+    const relationTagInfo = this.getRelationTag(section);
     await this.analyzeRelationship(relationTagInfo);
   }
 
@@ -195,13 +126,19 @@ export class ContentTracker {
   async analyzeRelationship(
     relationTagInfo: TrackedRelationTag,
   ): Promise<void> {
-    relationTagInfo.getRelationTargets = (role: string) => {
+    relationTagInfo.getTrackedRelations = (role: string) => {
       return relationTagInfo.tags.filter((tag) => tag.role === role);
     };
 
     for (const relationTag of relationTagInfo.tags) {
+      relationTag.targets = relationTag.targets || [];
+
       if (relationTagInfo.isDir === true) {
-        const files = this.files[relationTagInfo.source];
+        const files = this.files[relationTagInfo.source] || [];
+        if (!files.length) {
+          // vd('no files');
+          // vd(relationTagInfo.source);
+        }
         for (const file of files) {
           await this.pushRelationTagTargets(
             relationTagInfo.source + '/' + file,
@@ -250,8 +187,7 @@ export class ContentTracker {
       relationTagInfo,
     );
 
-    const existingTargets = relationTag.targets || [];
-    relationTag.targets = [...existingTargets, ...addTargets];
+    relationTag.targets = [...relationTag.targets, ...addTargets];
   }
 
   addCreatedRelationsFunctions(
@@ -323,9 +259,15 @@ export class ContentTracker {
     };
   }
 
-  dump() {
-    console.log(this.files);
-    // console.log(this.relations);
+  async collect(
+    section: string,
+    role: string,
+    collection: string[],
+  ): Promise<void> {
+    const trackedRelations =
+      this.getRelationTag(section).getTrackedRelations(role);
+    const images = await this.getRelatedContents(trackedRelations);
+    images.forEach((image) => collection.push(image.filename));
   }
 }
 

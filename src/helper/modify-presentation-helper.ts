@@ -44,19 +44,20 @@ export default class ModifyPresentationHelper {
     i: number,
     archive: JSZip,
   ): Promise<void> {
-    const skipDirs = ['ppt/slideMasters', 'ppt/slideMasters/_rels'];
+    // Need to skip some dirs until masters and layouts are handled properly
+    const skipDirs = [
+      'ppt/slideMasters',
+      'ppt/slideMasters/_rels',
+      'ppt/slideLayouts',
+      'ppt/slideLayouts/_rels',
+    ];
     for (const dir in Tracker.files) {
       if (skipDirs.includes(dir)) {
         continue;
       }
       const requiredFiles = Tracker.files[dir];
-      archive.folder(dir).forEach((relativePath, file) => {
-        if (
-          !relativePath.includes('/') &&
-          !requiredFiles.includes(relativePath)
-        ) {
-          FileHelper.removeFromArchive(archive, file.name);
-        }
+      FileHelper.removeFromDirectory(archive, dir, (file, relativePath) => {
+        return !requiredFiles.includes(relativePath);
       });
     }
   }
@@ -88,29 +89,25 @@ export default class ModifyPresentationHelper {
     archive: JSZip,
   ): Promise<void> {
     await Tracker.analyzeContents(archive);
+
     const extensions = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'emf'];
     const keepFiles = [];
-    const addFiles = async (section: string) => {
-      const imagesInfo =
-        Tracker.getRelationTag(section).getRelationTargets('image');
-      const images = await Tracker.getRelatedContents(imagesInfo);
-      images.forEach((image) => keepFiles.push(image.filename));
-    };
 
-    await addFiles('ppt/slides');
-    await addFiles('ppt/slideMasters');
+    await Tracker.collect('ppt/slides', 'image', keepFiles);
+    await Tracker.collect('ppt/slideMasters', 'image', keepFiles);
+    await Tracker.collect('ppt/slideLayouts', 'image', keepFiles);
 
-    archive.folder('ppt/media').forEach((relativePath, file) => {
-      if (!relativePath.includes('/')) {
+    const removed = FileHelper.removeFromDirectory(
+      archive,
+      'ppt/media',
+      (file) => {
         const info = FileHelper.getFileInfo(file.name);
-        if (
+        return (
           extensions.includes(info.extension.toLowerCase()) &&
           !keepFiles.includes(info.base)
-        ) {
-          archive.remove(file.name);
-          FileHelper.removeFromArchive(archive, file.name);
-        }
-      }
-    });
+        );
+      },
+    );
+    vd(removed);
   }
 }

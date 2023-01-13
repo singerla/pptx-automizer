@@ -47,6 +47,10 @@ export type AutomizerParams = {
    */
   removeExistingSlides?: boolean;
   /**
+   * Eventually remove all unnecessary files from archive.
+   */
+  cleanup?: boolean;
+  /**
    * statusTracker will be triggered on each appended slide.
    * You can e.g. attach a custom callback to a progress bar.
    */
@@ -114,7 +118,7 @@ export type TrackedRelationTag = {
   relationsKey: string;
   isDir?: boolean;
   tags: TrackedRelation[];
-  getRelationTargets?: (role: string) => TrackedRelation[];
+  getTrackedRelations?: (role: string) => TrackedRelation[];
 };
 export type ImportElement = {
   presName: string;

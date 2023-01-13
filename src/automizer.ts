@@ -340,12 +340,13 @@ export default class Automizer implements IPresentationProps {
   async normalizePresentation(): Promise<void> {
     this.modify(ModifyPresentationHelper.normalizeSlideIds);
 
-    if (this.params.removeExistingSlides) {
-      this.modify(ModifyPresentationHelper.removeUnusedFiles);
+    if (this.params.cleanup) {
+      if (this.params.removeExistingSlides) {
+        this.modify(ModifyPresentationHelper.removeUnusedFiles);
+      }
+      this.modify(ModifyPresentationHelper.removedUnusedImages);
+      this.modify(ModifyPresentationHelper.removeUnusedContentTypes);
     }
-
-    this.modify(ModifyPresentationHelper.removedUnusedImages);
-    this.modify(ModifyPresentationHelper.removeUnusedContentTypes);
   }
 
   /**

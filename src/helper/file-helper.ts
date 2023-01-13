@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import JSZip, { InputType, OutputType } from 'jszip';
+import JSZip, { InputType, JSZipObject, OutputType } from 'jszip';
 
 import { AutomizerSummary, FileInfo } from '../types/types';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
@@ -27,6 +27,21 @@ export class FileHelper {
     }
 
     return archive.files[file].async(type || 'string');
+  }
+
+  static removeFromDirectory(
+    archive: JSZip,
+    dir: string,
+    cb: (file: JSZipObject, relativePath: string) => boolean,
+  ): string[] {
+    const removed = [];
+    archive.folder(dir).forEach((relativePath, file) => {
+      if (!relativePath.includes('/') && cb(file, relativePath)) {
+        FileHelper.removeFromArchive(archive, file.name);
+        removed.push(file.name);
+      }
+    });
+    return removed;
   }
 
   static removeFromArchive(archive: JSZip, file: string): JSZip {
