@@ -57,10 +57,7 @@ export class Template implements ITemplate {
   constructor(location: string, cache?: CacheHelper) {
     this.location = location;
     const file = FileHelper.readFile(location);
-    this.archive = FileHelper.extractFileContent(
-      file as unknown as Buffer,
-      cache?.setLocation(location),
-    );
+    this.archive = FileHelper.extractFileContent(file as unknown as Buffer);
   }
 
   static import(

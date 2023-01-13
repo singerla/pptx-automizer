@@ -2,7 +2,6 @@ import { XmlHelper } from './xml-helper';
 import { contentTracker as Tracker } from './content-tracker';
 import { FileHelper } from './file-helper';
 import JSZip from 'jszip';
-import { vd } from './general-helper';
 
 export default class ModifyPresentationHelper {
   /**
@@ -97,17 +96,12 @@ export default class ModifyPresentationHelper {
     await Tracker.collect('ppt/slideMasters', 'image', keepFiles);
     await Tracker.collect('ppt/slideLayouts', 'image', keepFiles);
 
-    const removed = FileHelper.removeFromDirectory(
-      archive,
-      'ppt/media',
-      (file) => {
-        const info = FileHelper.getFileInfo(file.name);
-        return (
-          extensions.includes(info.extension.toLowerCase()) &&
-          !keepFiles.includes(info.base)
-        );
-      },
-    );
-    vd(removed);
+    FileHelper.removeFromDirectory(archive, 'ppt/media', (file) => {
+      const info = FileHelper.getFileInfo(file.name);
+      return (
+        extensions.includes(info.extension.toLowerCase()) &&
+        !keepFiles.includes(info.base)
+      );
+    });
   }
 }
