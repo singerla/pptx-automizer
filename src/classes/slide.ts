@@ -482,11 +482,7 @@ export class Slide implements ISlide {
         this.targetPath,
       );
       modification(xml);
-      await XmlHelper.writeXmlToArchive(
-        this.targetArchive,
-        this.targetPath,
-        xml,
-      );
+      XmlHelper.writeXmlToArchive(this.targetArchive, this.targetPath, xml);
     }
   }
 
@@ -509,7 +505,7 @@ export class Slide implements ISlide {
         XmlHelper.sliceCollection(drop, 0);
       }
     });
-    await XmlHelper.writeXmlToArchive(this.targetArchive, this.targetPath, xml);
+    XmlHelper.writeXmlToArchive(this.targetArchive, this.targetPath, xml);
   }
 
   /**

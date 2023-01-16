@@ -87,7 +87,7 @@ export class XmlHelper {
     const parent = element.parent(xml);
     parent.appendChild(newElement);
 
-    await XmlHelper.writeXmlToArchive(element.archive, element.file, xml);
+    XmlHelper.writeXmlToArchive(element.archive, element.file, xml);
 
     return newElement as unknown as HelperElement;
   }
@@ -110,7 +110,7 @@ export class XmlHelper {
       XmlHelper.remove(item);
     });
 
-    await XmlHelper.writeXmlToArchive(element.archive, element.file, xml);
+    XmlHelper.writeXmlToArchive(element.archive, element.file, xml);
 
     return toRemove;
   }

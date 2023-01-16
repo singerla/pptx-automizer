@@ -126,7 +126,7 @@ export class Chart extends Shape implements IChart {
 
     this.applyCallbacks(this.callbacks, this.targetElement, chartXml, workbook);
 
-    await XmlHelper.writeXmlToArchive(
+    XmlHelper.writeXmlToArchive(
       this.targetArchive,
       `ppt/charts/${this.subtype}${this.targetNumber}.xml`,
       chartXml,
@@ -164,21 +164,21 @@ export class Chart extends Shape implements IChart {
   }
 
   async writeWorkbook(workbook: Workbook): Promise<void> {
-    await XmlHelper.writeXmlToArchive(
+    XmlHelper.writeXmlToArchive(
       workbook.archive,
       'xl/worksheets/sheet1.xml',
       workbook.sheet,
     );
 
     if (workbook.table) {
-      await XmlHelper.writeXmlToArchive(
+      XmlHelper.writeXmlToArchive(
         workbook.archive,
         'xl/tables/table1.xml',
         workbook.table,
       );
     }
 
-    await XmlHelper.writeXmlToArchive(
+    XmlHelper.writeXmlToArchive(
       workbook.archive,
       'xl/sharedStrings.xml',
       workbook.sharedStrings,
@@ -389,11 +389,7 @@ export class Chart extends Shape implements IChart {
         });
       });
 
-    await XmlHelper.writeXmlToArchive(
-      this.targetArchive,
-      targetRelFile,
-      relXml,
-    );
+    XmlHelper.writeXmlToArchive(this.targetArchive, targetRelFile, relXml);
   }
 
   updateTargetWorksheetRelation(targetRelFile, element, attribute, value) {

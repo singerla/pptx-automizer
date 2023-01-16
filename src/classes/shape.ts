@@ -89,7 +89,7 @@ export class Shape {
       .getElementsByTagName('p:spTree')[0]
       .appendChild(this.targetElement);
 
-    await XmlHelper.writeXmlToArchive(
+    XmlHelper.writeXmlToArchive(
       this.targetArchive,
       this.targetSlideFile,
       targetSlideXml,
@@ -133,7 +133,7 @@ export class Shape {
 
     // vd(insertBefore);
 
-    await XmlHelper.writeXmlToArchive(archive, slideFile, targetSlideXml);
+    XmlHelper.writeXmlToArchive(archive, slideFile, targetSlideXml);
   }
 
   async updateElementsRelId(): Promise<void> {
@@ -152,7 +152,7 @@ export class Shape {
         .setAttribute(this.relAttribute, this.createdRid);
     });
 
-    await XmlHelper.writeXmlToArchive(
+    XmlHelper.writeXmlToArchive(
       this.targetArchive,
       this.targetSlideFile,
       targetSlideXml,

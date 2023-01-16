@@ -110,7 +110,7 @@ export class Template implements ITemplate {
       const xml = await this.getSlideIdList();
       const existingSlides = xml.getElementsByTagName('p:sldId');
       XmlHelper.sliceCollection(existingSlides, this.existingSlides, 0);
-      await XmlHelper.writeXmlToArchive(
+      XmlHelper.writeXmlToArchive(
         await this.archive,
         `ppt/presentation.xml`,
         xml,
