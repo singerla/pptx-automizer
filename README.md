@@ -72,6 +72,14 @@ const automizer = new Automizer({
   // truncate root presentation and start with zero slides
   removeExistingSlides: true,
   
+  // activate `cleanup` to eventually remove unused files:
+  cleanup: false,
+  
+  // Set a value from 0-9 to specify the zip-compression level.
+  // The lower the number, the faster your output file will be ready.
+  // Higher compression levels produce smaller files.
+  compression: 0,
+
   // use a callback function to track pptx generation process.
   // statusTracker: myStatusTracker,
 })
