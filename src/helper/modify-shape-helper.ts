@@ -3,6 +3,7 @@ import { ShapeCoordinates } from '../types/shape-types';
 import { GeneralHelper } from './general-helper';
 import TextReplaceHelper from './text-replace-helper';
 import ModifyTextHelper from './modify-text-helper';
+import { XmlDocument, XmlElement } from '../types/xml-types';
 
 const map = {
   x: { tag: 'a:off', attribute: 'x' },
@@ -23,7 +24,7 @@ export default class ModifyShapeHelper {
   /**
    * Set solid fill of modified shape
    */
-  static setSolidFill = (element: XMLDocument | Element): void => {
+  static setSolidFill = (element: XmlDocument | XmlElement): void => {
     element
       .getElementsByTagName('a:solidFill')[0]
       .getElementsByTagName('a:schemeClr')[0]
@@ -35,8 +36,8 @@ export default class ModifyShapeHelper {
    */
   static setText =
     (text: string) =>
-    (element: XMLDocument | Element): void => {
-      ModifyTextHelper.setText(text)(element as Element);
+    (element: XmlDocument | XmlElement): void => {
+      ModifyTextHelper.setText(text)(element as XmlElement);
     };
 
   /**
@@ -44,10 +45,10 @@ export default class ModifyShapeHelper {
    */
   static replaceText =
     (replaceText: ReplaceText | ReplaceText[], options?: ReplaceTextOptions) =>
-    (element: XMLDocument | Element): void => {
+    (element: XmlDocument | XmlElement): void => {
       const replaceTexts = GeneralHelper.arrayify(replaceText);
 
-      new TextReplaceHelper(options, element as XMLDocument)
+      new TextReplaceHelper(options, element as XmlElement)
         .isolateTaggedNodes()
         .applyReplacements(replaceTexts);
     };
@@ -57,9 +58,9 @@ export default class ModifyShapeHelper {
    */
   static setPosition =
     (pos: ShapeCoordinates) =>
-    (element: XMLDocument | Element): void => {
+    (element: XmlDocument | XmlElement): void => {
       const xfrm = element.getElementsByTagName('a:off')[0]
-        .parentNode as Element;
+        .parentNode as XmlElement;
 
       Object.keys(pos).forEach((key) => {
         let value = Math.round(pos[key]);
@@ -77,9 +78,9 @@ export default class ModifyShapeHelper {
    */
   static updatePosition =
     (pos: ShapeCoordinates) =>
-    (element: XMLDocument | Element): void => {
+    (element: XmlDocument | XmlElement): void => {
       const xfrm = element.getElementsByTagName('a:off')[0]
-        .parentNode as Element;
+        .parentNode as XmlElement;
 
       Object.keys(pos).forEach((key) => {
         let value = Math.round(pos[key]);

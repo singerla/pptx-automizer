@@ -1,5 +1,4 @@
-import JSZip from 'jszip';
-import { FileProxy } from '../helper/file-proxy';
+import IArchive from '../interfaces/iarchive';
 
 export type DefaultAttribute = {
   Extension: string;
@@ -13,7 +12,7 @@ export type RelationshipAttribute = {
 };
 
 export type SlideListAttribute = {
-  id: (xml: XMLDocument) => number;
+  id: (xml: XmlDocument) => number;
   'r:id': string;
 };
 
@@ -22,11 +21,14 @@ export type OverrideAttribute = {
   ContentType: string;
 };
 
+export type XmlDocument = XMLDocument;
+export type XmlElement = Element;
+
 export type HelperElement = {
-  archive: FileProxy;
-  assert?: (xml: XMLDocument) => void;
-  clause?: (xml: XMLDocument, element?: Element) => boolean;
-  parent?: (xml: XMLDocument) => Element;
+  archive: IArchive;
+  assert?: (xml: XmlDocument) => void;
+  clause?: (xml: XmlDocument, element?: XmlElement) => boolean;
+  parent?: (xml: XmlDocument) => XmlElement;
   file: string;
   tag: string;
   attributes?:
@@ -65,7 +67,7 @@ export type ElementInfo = {
 };
 
 export type ModifyXmlCallback = (
-  xml: XMLDocument | Element,
+  xml: XmlDocument | XmlElement,
   index?: number,
-  archive?: FileProxy,
+  archive?: IArchive,
 ) => void;

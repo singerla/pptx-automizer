@@ -7,6 +7,8 @@ import {
   TextStyle,
 } from '../types/modify-types';
 import ModifyTextHelper from './modify-text-helper';
+import { XmlDocument, XmlElement } from '../types/xml-types';
+import XmlElements from './xml-elements';
 
 type Expressions = {
   openingTag: string;
@@ -20,11 +22,11 @@ type CharacterSplit = {
 
 export default class TextReplaceHelper {
   expressions: Expressions;
-  element: XMLDocument;
-  newNodes: Element[];
+  element: XmlElement;
+  newNodes: XmlElement[];
   options: ReplaceTextOptions;
 
-  constructor(options: ReplaceTextOptions, element: XMLDocument) {
+  constructor(options: ReplaceTextOptions, element: XmlElement) {
     const defaultOptions = {
       openingTag: '{{',
       closingTag: '}}',
@@ -67,7 +69,7 @@ export default class TextReplaceHelper {
   }
 
   splitTextBlock(
-    block: Element,
+    block: XmlElement,
     matches: RegExpMatchArray[],
     textContent: string,
   ): void {
@@ -122,10 +124,10 @@ export default class TextReplaceHelper {
     });
   }
 
-  insertBlock(block: Element, text: string): Element {
-    const newBlock = block.cloneNode(true) as Element;
+  insertBlock(block: XmlElement, text: string): XmlElement {
+    const newBlock = block.cloneNode(true) as XmlElement;
     const newTextElement = this.getTextElement(newBlock);
-    ModifyTextHelper.content(text)(newTextElement)
+    ModifyTextHelper.content(text)(newTextElement);
 
     XmlHelper.insertAfter(newBlock, block);
 
@@ -145,50 +147,54 @@ export default class TextReplaceHelper {
     }
   }
 
-  applyReplacement(replaceText: ReplaceText, textBlock: Element, currentIndex:number): void {
-    const replace = this.options.openingTag
-      + replaceText.replace
-      + this.options.closingTag;
+  applyReplacement(
+    replaceText: ReplaceText,
+    textBlock: XmlElement,
+    currentIndex: number,
+  ): void {
+    const replace =
+      this.options.openingTag + replaceText.replace + this.options.closingTag;
     let textNode = this.getTextElement(textBlock);
     const sourceText = textNode.firstChild.textContent;
 
     if (sourceText.includes(replace)) {
       const bys = GeneralHelper.arrayify(replaceText.by);
-      const modifyBlocks = this.assertTextBlocks(bys.length, textBlock)
+      const modifyBlocks = this.assertTextBlocks(bys.length, textBlock);
 
       bys.forEach((by, blockIndex) => {
-        const textNode = modifyBlocks[blockIndex].getElementsByTagName('a:t')[0]
-        this.updateTextNode(textNode, sourceText, replace, by)
+        const textNode =
+          modifyBlocks[blockIndex].getElementsByTagName('a:t')[0];
+        this.updateTextNode(textNode, sourceText, replace, by);
       });
     }
   }
 
-  assertTextBlocks(length: number, textBlock:any): Element[] {
-    const modifyBlocks = []
-    if(length > 1) {
-      for(let i=1; i<length; i++) {
-        const addedTextBlock = textBlock.cloneNode(true) as Element;
+  assertTextBlocks(length: number, textBlock: any): XmlElement[] {
+    const modifyBlocks = [];
+    if (length > 1) {
+      for (let i = 1; i < length; i++) {
+        const addedTextBlock = textBlock.cloneNode(true) as XmlElement;
         XmlHelper.insertAfter(addedTextBlock, textBlock);
-        modifyBlocks.push(addedTextBlock)
+        modifyBlocks.push(addedTextBlock);
       }
     }
-    modifyBlocks.push(textBlock)
-    modifyBlocks.reverse()
-    return modifyBlocks
+    modifyBlocks.push(textBlock);
+    modifyBlocks.reverse();
+    return modifyBlocks;
   }
 
-  updateTextNode(textNode: Element, sourceText, replace, by): void {
+  updateTextNode(textNode: XmlElement, sourceText, replace, by): void {
     const replacedText = sourceText.replace(replace, by.text);
-    ModifyTextHelper.content(replacedText)(textNode)
+    ModifyTextHelper.content(replacedText)(textNode);
 
     if (by.style) {
-      const styleParent = textNode.parentNode as Element;
+      const styleParent = textNode.parentNode as XmlElement;
       const styleElement = styleParent.getElementsByTagName('a:rPr')[0];
-      ModifyTextHelper.style(by.style)(styleElement)
+      ModifyTextHelper.style(by.style)(styleElement);
     }
   }
 
-  getTextElement(block: Element): Element {
+  getTextElement(block: XmlElement): XmlElement {
     return block.getElementsByTagName('a:t')[0];
   }
 

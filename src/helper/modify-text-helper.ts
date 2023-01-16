@@ -1,9 +1,7 @@
 import { Color, TextStyle } from '../types/modify-types';
-import XmlElements from './xml-elements';
-import { vd } from './general-helper';
-import { XmlHelper } from './xml-helper';
 import ModifyColorHelper from './modify-color-helper';
 import ModifyXmlHelper from './modify-xml-helper';
+import { XmlElement } from '../types/xml-types';
 
 export default class ModifyTextHelper {
   /**
@@ -11,7 +9,7 @@ export default class ModifyTextHelper {
    */
   static setText =
     (text: number | string) =>
-    (element: Element): void => {
+    (element: XmlElement): void => {
       const paragraphs = element.getElementsByTagName('a:p');
       const length = paragraphs.length;
       for (let i = 0; i < length; i++) {
@@ -36,7 +34,7 @@ export default class ModifyTextHelper {
 
   static content =
     (label: number | string) =>
-    (element: Element): void => {
+    (element: XmlElement): void => {
       element.firstChild.textContent = String(label);
     };
 
@@ -45,7 +43,7 @@ export default class ModifyTextHelper {
    */
   static style =
     (style: TextStyle) =>
-    (element: Element): void => {
+    (element: XmlElement): void => {
       if (!style) return;
       if (style.color !== undefined) {
         ModifyTextHelper.setColor(style.color)(element);
@@ -66,7 +64,7 @@ export default class ModifyTextHelper {
    */
   static setColor =
     (color: Color) =>
-    (element: Element): void => {
+    (element: XmlElement): void => {
       ModifyColorHelper.solidFill(color)(element);
     };
 
@@ -75,7 +73,7 @@ export default class ModifyTextHelper {
    */
   static setSize =
     (size: number) =>
-    (element: Element): void => {
+    (element: XmlElement): void => {
       if (!size) return;
       element.setAttribute('sz', String(Math.round(size)));
     };
@@ -85,7 +83,7 @@ export default class ModifyTextHelper {
    */
   static setBold =
     (isBold: boolean) =>
-    (element: Element): void => {
+    (element: XmlElement): void => {
       ModifyXmlHelper.booleanAttribute('b', isBold)(element);
     };
 
@@ -94,7 +92,7 @@ export default class ModifyTextHelper {
    */
   static setItalics =
     (isItalics: boolean) =>
-    (element: Element): void => {
+    (element: XmlElement): void => {
       ModifyXmlHelper.booleanAttribute('i', isItalics)(element);
     };
 }

@@ -1,20 +1,20 @@
 import { Color } from '../types/modify-types';
 import { XmlHelper } from './xml-helper';
-import { vd } from './general-helper';
-import * as fs from 'fs';
 import { DOMParser } from '@xmldom/xmldom';
 import { dLblXml } from './xml/dLbl';
+import { XmlDocument, XmlElement } from '../types/xml-types';
 
 export type XmlElementParams = {
   color?: Color;
 };
 
 export default class XmlElements {
-  element: XMLDocument | Element;
-  document: XMLDocument;
+  element: XmlDocument | XmlElement;
+
+  document: XmlDocument;
   params: XmlElementParams;
 
-  constructor(element: XMLDocument | Element, params?: XmlElementParams) {
+  constructor(element: XmlDocument | XmlElement, params?: XmlElementParams) {
     this.element = element;
     this.document = element.ownerDocument;
     this.params = params;
@@ -45,46 +45,46 @@ export default class XmlElements {
     return rPr;
   }
 
-  textContent(): Element {
+  textContent(): XmlElement {
     const t = this.document.createElement('a:t');
     t.textContent = ' ';
     return t;
   }
 
-  effectLst(): Element {
+  effectLst(): XmlElement {
     return this.document.createElement('a:effectLst');
   }
 
-  lineTexture(): Element {
+  lineTexture(): XmlElement {
     return this.document.createElement('a:uLnTx');
   }
 
-  fillTexture(): Element {
+  fillTexture(): XmlElement {
     return this.document.createElement('a:uFillTx');
   }
 
-  line(): Element {
+  line(): XmlElement {
     const ln = this.document.createElement('a:ln');
     const noFill = this.document.createElement('a:noFill');
     ln.appendChild(noFill);
     return ln;
   }
 
-  solidFill(): Element {
+  solidFill(): XmlElement {
     const solidFill = this.document.createElement('a:solidFill');
     const colorType = this.colorType();
     solidFill.appendChild(colorType);
     return solidFill;
   }
 
-  colorType(): Element {
+  colorType(): XmlElement {
     const tag = 'a:' + (this.params?.color?.type || 'srgbClr');
     const colorType = this.document.createElement(tag);
     this.colorValue(colorType);
     return colorType;
   }
 
-  colorValue(colorType: Element) {
+  colorValue(colorType: XmlElement) {
     colorType.setAttribute('val', this.params?.color?.value || 'cccccc');
   }
 
@@ -101,7 +101,7 @@ export default class XmlElements {
     return this;
   }
 
-  spPr(): Element {
+  spPr(): XmlElement {
     const spPr = this.document.createElement('c:spPr');
     spPr.appendChild(this.solidFill());
     spPr.appendChild(this.line());
@@ -110,7 +110,7 @@ export default class XmlElements {
     return spPr;
   }
 
-  idx(): Element {
+  idx(): XmlElement {
     const idx = this.document.createElement('c:idx');
     idx.setAttribute('val', String(0));
     return idx;

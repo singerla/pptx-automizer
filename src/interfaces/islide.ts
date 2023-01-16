@@ -1,13 +1,12 @@
-import JSZip from 'jszip';
 import { RootPresTemplate } from './root-pres-template';
 import {
   SlideModificationCallback,
   SourceSlideIdentifier,
 } from '../types/types';
-import { FileProxy } from '../helper/file-proxy';
+import IArchive from './iarchive';
 
 export interface ISlide {
-  sourceArchive: FileProxy;
+  sourceArchive: IArchive;
   sourceNumber: SourceSlideIdentifier;
   modifications: SlideModificationCallback[];
 

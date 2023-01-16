@@ -1,9 +1,9 @@
-import { InputType } from 'jszip';
-import { FileProxy } from '../helper/file-proxy';
+import IArchive, { ArchiveInput } from './iarchive';
+import { XmlDocument } from '../types/xml-types';
 
 export interface ITemplate {
   location: string;
-  file: InputType;
-  archive: FileProxy;
-  getSlideIdList: () => Promise<Document>;
+  file: ArchiveInput;
+  archive: IArchive;
+  getSlideIdList: () => Promise<XmlDocument>;
 }

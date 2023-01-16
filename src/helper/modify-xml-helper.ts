@@ -1,20 +1,20 @@
 import { Modification, ModificationTags } from '../types/modify-types';
-
 import StringIdGenerator from './cell-id-helper';
-import { GeneralHelper, vd } from './general-helper';
+import { GeneralHelper } from './general-helper';
 import { XmlHelper } from './xml-helper';
-import XmlElements, { XmlElementParams } from './xml-elements';
+import XmlElements from './xml-elements';
+import { XmlDocument, XmlElement } from '../types/xml-types';
 
 export default class ModifyXmlHelper {
-  root: XMLDocument | Element;
+  root: XmlDocument | XmlElement;
   templates: { [key: string]: Node };
 
-  constructor(root: XMLDocument | Element) {
+  constructor(root: XmlDocument | XmlElement) {
     this.root = root;
     this.templates = {};
   }
 
-  modify(tags: ModificationTags, root?: XMLDocument | Element): void {
+  modify(tags: ModificationTags, root?: XmlDocument | XmlElement): void {
     root = root || this.root;
 
     for (const tag in tags) {
@@ -49,12 +49,12 @@ export default class ModifyXmlHelper {
       if (GeneralHelper.propertyExists(modifier, 'modify')) {
         const modifies = GeneralHelper.arrayify(modifier.modify);
         Object.values(modifies).forEach((modifyXml) =>
-          modifyXml(element as Element),
+          modifyXml(element as XmlElement),
         );
       }
 
       if (GeneralHelper.propertyExists(modifier, 'children')) {
-        this.modify(modifier.children, element as Element);
+        this.modify(modifier.children, element as XmlElement);
       }
     }
   }
@@ -63,9 +63,9 @@ export default class ModifyXmlHelper {
     collection: HTMLCollectionOf<Element>,
     index: number,
     tag: string,
-    parent: XMLDocument | Element,
+    parent: XmlDocument | XmlElement,
     modifier: Modification,
-  ): XMLDocument | Element | boolean {
+  ): XmlDocument | XmlElement | boolean {
     if (!collection[index]) {
       if (collection[collection.length - 1] === undefined) {
         this.createElement(parent, tag);
@@ -91,7 +91,7 @@ export default class ModifyXmlHelper {
     return false;
   }
 
-  createElement(parent: XMLDocument | Element, tag: string): boolean {
+  createElement(parent: XmlDocument | XmlElement, tag: string): boolean {
     switch (tag) {
       case 'a:t':
         new XmlElements(parent).text();
@@ -109,13 +109,13 @@ export default class ModifyXmlHelper {
     return false;
   }
 
-  static getText = (element: Element): string => {
+  static getText = (element: XmlElement): string => {
     return element.firstChild.textContent;
   };
 
   static value =
     (value: number | string, index?: number) =>
-    (element: Element): void => {
+    (element: XmlElement): void => {
       const valueElement = element.getElementsByTagName('c:v');
       if (!valueElement.length) {
         XmlHelper.dump(element);
@@ -130,24 +130,24 @@ export default class ModifyXmlHelper {
 
   static textContent =
     (value: number | string) =>
-    (element: Element): void => {
+    (element: XmlElement): void => {
       element.firstChild.textContent = String(value);
     };
   static attribute =
     (attribute: string, value: string | number) =>
-    (element: Element): void => {
+    (element: XmlElement): void => {
       element.setAttribute(attribute, String(value));
     };
 
   static booleanAttribute =
     (attribute: string, state: boolean) =>
-    (element: Element): void => {
+    (element: XmlElement): void => {
       element.setAttribute(attribute, state === true ? '1' : '0');
     };
 
   static range =
     (series: number, length?: number) =>
-    (element: Element): void => {
+    (element: XmlElement): void => {
       const range = element.firstChild.textContent;
       element.firstChild.textContent = StringIdGenerator.setRange(
         range,

@@ -1,7 +1,7 @@
 import { Color } from '../types/modify-types';
-import { vd } from './general-helper';
 import XmlElements from './xml-elements';
 import { XmlHelper } from './xml-helper';
+import { XmlElement } from '../types/xml-types';
 
 export default class ModifyColorHelper {
   /**
@@ -9,7 +9,7 @@ export default class ModifyColorHelper {
    */
   static solidFill =
     (color: Color, index?: number | 'last') =>
-    (element: Element): void => {
+    (element: XmlElement): void => {
       if (!color || !color.type) return;
 
       const solidFills = element.getElementsByTagName('a:solidFill');
@@ -28,13 +28,13 @@ export default class ModifyColorHelper {
         ? solidFills.length - 1
         : index;
 
-      const solidFill = solidFills[targetIndex] as Element;
+      const solidFill = solidFills[targetIndex] as XmlElement;
       const colorType = new XmlElements(element, {
         color: color,
       }).colorType();
 
       XmlHelper.sliceCollection(
-        solidFill.childNodes as unknown as HTMLCollectionOf<Element>,
+        solidFill.childNodes as unknown as HTMLCollectionOf<XmlElement>,
         0,
       );
       solidFill.appendChild(colorType);
@@ -42,7 +42,7 @@ export default class ModifyColorHelper {
 
   static removeNoFill =
     () =>
-    (element: Element): void => {
+    (element: XmlElement): void => {
       const hasNoFill = element.getElementsByTagName('a:noFill')[0];
       if (hasNoFill) {
         element.removeChild(hasNoFill);

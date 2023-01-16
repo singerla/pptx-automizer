@@ -1,16 +1,10 @@
 import fs from 'fs';
 import path from 'path';
-import JSZip, { InputType, JSZipObject, OutputType } from 'jszip';
+import { OutputType } from 'jszip';
 
-import { AutomizerSummary, FileInfo } from '../types/types';
-import { IPresentationProps } from '../interfaces/ipresentation-props';
+import { FileInfo } from '../types/types';
 import { contentTracker } from './content-tracker';
-import { CacheHelper } from './cache-helper';
-import { vd } from './general-helper';
-import IArchive, {
-  ArchivedFile,
-  ArchivedFolderCallback,
-} from '../interfaces/iarchive';
+import IArchive, { ArchivedFolderCallback } from '../interfaces/iarchive';
 import ArchiveJszip from './archive/archive-jszip';
 
 export class FileHelper {
@@ -93,10 +87,9 @@ export class FileHelper {
     targetFile?: string,
   ): Promise<IArchive> {
     FileHelper.check(sourceArchive, sourceFile);
-
-    const content = await sourceArchive.read(sourceFile, 'nodebuffer');
     contentTracker.trackFile(targetFile);
 
+    const content = await sourceArchive.read(sourceFile, 'nodebuffer');
     return targetArchive.write(targetFile || sourceFile, content);
   }
 }

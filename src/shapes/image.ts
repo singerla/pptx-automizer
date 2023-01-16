@@ -1,7 +1,11 @@
 import { FileHelper } from '../helper/file-helper';
 import { XmlHelper } from '../helper/xml-helper';
 import { Shape } from '../classes/shape';
-import { HelperElement, RelationshipAttribute } from '../types/xml-types';
+import {
+  HelperElement,
+  RelationshipAttribute,
+  XmlElement,
+} from '../types/xml-types';
 import { ImportedElement, Target } from '../types/types';
 import { IImage } from '../interfaces/iimage';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
@@ -21,12 +25,13 @@ export class Image extends Shape implements IImage {
     switch (this.extension) {
       case 'svg':
         this.relRootTag = 'asvg:svgBlip';
-        this.relParent = (element: Element) => element.parentNode as Element;
+        this.relParent = (element: XmlElement) =>
+          element.parentNode as XmlElement;
         break;
       default:
         this.relRootTag = 'a:blip';
-        this.relParent = (element: Element) =>
-          element.parentNode.parentNode as Element;
+        this.relParent = (element: XmlElement) =>
+          element.parentNode.parentNode as XmlElement;
         break;
     }
   }

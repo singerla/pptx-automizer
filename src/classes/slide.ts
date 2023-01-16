@@ -1,5 +1,3 @@
-import JSZip from 'jszip';
-
 import { FileHelper } from '../helper/file-helper';
 import { XmlHelper } from '../helper/xml-helper';
 import {
@@ -20,6 +18,7 @@ import {
   HelperElement,
   RelationshipAttribute,
   SlideListAttribute,
+  XmlDocument,
 } from '../types/xml-types';
 import { Image } from '../shapes/image';
 import { Chart } from '../shapes/chart';
@@ -419,7 +418,7 @@ export class Slide implements ISlide {
    * @returns element
    */
   async analyzeElement(
-    sourceElement: XMLDocument,
+    sourceElement: XmlDocument,
     sourceArchive: IArchive,
     slideNumber: number,
   ): Promise<AnalyzedElementType> {
@@ -617,7 +616,7 @@ export class Slide implements ISlide {
     return XmlHelper.append({
       archive: rootArchive,
       file: `ppt/_rels/presentation.xml.rels`,
-      parent: (xml: XMLDocument) =>
+      parent: (xml: XmlDocument) =>
         xml.getElementsByTagName('Relationships')[0],
       tag: 'Relationship',
       attributes: {
@@ -644,7 +643,7 @@ export class Slide implements ISlide {
     return XmlHelper.append({
       archive: rootArchive,
       file: `ppt/presentation.xml`,
-      assert: async (xml: XMLDocument) => {
+      assert: async (xml: XmlDocument) => {
         if (xml.getElementsByTagName('p:sldIdLst').length === 0) {
           XmlHelper.insertAfter(
             xml.createElement('p:sldIdLst'),
@@ -652,7 +651,7 @@ export class Slide implements ISlide {
           );
         }
       },
-      parent: (xml: XMLDocument) => xml.getElementsByTagName('p:sldIdLst')[0],
+      parent: (xml: XmlDocument) => xml.getElementsByTagName('p:sldIdLst')[0],
       tag: 'p:sldId',
       attributes: {
         'r:id': relId,

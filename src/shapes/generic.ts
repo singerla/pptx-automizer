@@ -1,9 +1,10 @@
 import { ImportedElement } from '../types/types';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { Shape } from '../classes/shape';
+import { XmlDocument } from '../types/xml-types';
 
 export class GenericShape extends Shape {
-  sourceElement: XMLDocument;
+  sourceElement: XmlDocument;
 
   constructor(shape: ImportedElement) {
     super(shape);

@@ -3,7 +3,12 @@ import { XmlHelper } from '../helper/xml-helper';
 import { Shape } from '../classes/shape';
 import path from 'path';
 
-import { HelperElement, RelationshipAttribute } from '../types/xml-types';
+import {
+  HelperElement,
+  RelationshipAttribute,
+  XmlDocument,
+  XmlElement,
+} from '../types/xml-types';
 import { ImportedElement, Target, Workbook } from '../types/types';
 import { IChart } from '../interfaces/ichart';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
@@ -31,11 +36,11 @@ export class Chart extends Shape implements IChart {
     this.relAttribute = 'r:id';
     this.relParent =
       this.subtype === 'chart'
-        ? (element: Element) =>
-            element.parentNode.parentNode.parentNode as Element
-        : (element: Element) =>
+        ? (element: XmlElement) =>
+            element.parentNode.parentNode.parentNode as XmlElement
+        : (element: XmlElement) =>
             element.parentNode.parentNode.parentNode.parentNode
-              .parentNode as Element;
+              .parentNode as XmlElement;
 
     this.wbEmbeddingsPath = `../embeddings/`;
     this.wbExtension = '.xlsx';
@@ -428,7 +433,7 @@ export class Chart extends Shape implements IChart {
         ContentType: `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`,
       }),
       tag: 'Default',
-      clause: (xml: XMLDocument) =>
+      clause: (xml: XmlDocument) =>
         !XmlHelper.findByAttribute(xml, 'Default', 'Extension', 'xlsx'),
     });
   }

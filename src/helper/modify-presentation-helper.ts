@@ -2,12 +2,13 @@ import { XmlHelper } from './xml-helper';
 import { contentTracker as Tracker } from './content-tracker';
 import { FileHelper } from './file-helper';
 import IArchive from '../interfaces/iarchive';
+import { XmlDocument, XmlElement } from '../types/xml-types';
 
 export default class ModifyPresentationHelper {
   /**
    * Get Collection of slides
    */
-  static getSlidesCollection = (xml: XMLDocument) => {
+  static getSlidesCollection = (xml: XmlDocument) => {
     return xml.getElementsByTagName('p:sldId');
   };
 
@@ -16,7 +17,7 @@ export default class ModifyPresentationHelper {
    * First slide starts by 1.
    * @order Array of slide numbers, starting by 1
    */
-  static sortSlides = (order: number[]) => (xml: XMLDocument) => {
+  static sortSlides = (order: number[]) => (xml: XmlDocument) => {
     const slides = ModifyPresentationHelper.getSlidesCollection(xml);
     order.map((index, i) => order[i]--);
     XmlHelper.sortCollection(slides, order);
@@ -26,20 +27,20 @@ export default class ModifyPresentationHelper {
    * Set ids to prevent corrupted pptx.
    * Must start with 256 and increment by one.
    */
-  static normalizeSlideIds = (xml: XMLDocument) => {
+  static normalizeSlideIds = (xml: XmlDocument) => {
     const slides = ModifyPresentationHelper.getSlidesCollection(xml);
     const firstId = 256;
-    XmlHelper.modifyCollection(slides, (slide: Element, i) => {
+    XmlHelper.modifyCollection(slides, (slide: XmlElement, i) => {
       slide.setAttribute('id', String(firstId + i));
     });
   };
 
   /**
-   * contentTracker.files includes all files that have been
-   * copied into the root template by automizer. We remove all other files.
+   * Tracker.files includes all files that have been
+   * copied to the root template by automizer. We remove all other files.
    */
   static async removeUnusedFiles(
-    xml: XMLDocument,
+    xml: XmlDocument,
     i: number,
     archive: IArchive,
   ): Promise<void> {
@@ -67,7 +68,7 @@ export default class ModifyPresentationHelper {
    * attribute does not exist.
    */
   static async removeUnusedContentTypes(
-    xml: XMLDocument,
+    xml: XmlDocument,
     i: number,
     archive: IArchive,
   ): Promise<void> {
@@ -75,7 +76,7 @@ export default class ModifyPresentationHelper {
       archive,
       file: `[Content_Types].xml`,
       tag: 'Override',
-      clause: (xml: XMLDocument, element: Element) => {
+      clause: (xml: XmlDocument, element: XmlElement) => {
         const filename = element.getAttribute('PartName').substring(1);
         return FileHelper.fileExistsInArchive(archive, filename) ? false : true;
       },
@@ -83,7 +84,7 @@ export default class ModifyPresentationHelper {
   }
 
   static async removedUnusedImages(
-    xml: XMLDocument,
+    xml: XmlDocument,
     i: number,
     archive: IArchive,
   ): Promise<void> {

@@ -4,6 +4,7 @@ import IArchive from '../interfaces/iarchive';
 import { ICounter } from '../interfaces/icounter';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { XmlHelper } from './xml-helper';
+import { XmlElement } from '../types/xml-types';
 
 export class CountHelper implements ICounter {
   template: RootPresTemplate;
@@ -73,7 +74,7 @@ export class CountHelper implements ICounter {
     const overrides = contentTypesXml.getElementsByTagName('Override');
 
     return Object.keys(overrides)
-      .map((key) => overrides[key] as Element)
+      .map((key) => overrides[key] as XmlElement)
       .filter(
         (o) =>
           o.getAttribute &&

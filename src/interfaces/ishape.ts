@@ -1,6 +1,6 @@
-import { FileProxy } from '../helper/file-proxy';
+import IArchive from './iarchive';
 
 export interface IShape {
-  sourceArchive: FileProxy;
-  targetArchive: FileProxy;
+  sourceArchive: IArchive;
+  targetArchive: IArchive;
 }

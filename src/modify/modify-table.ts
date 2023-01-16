@@ -1,22 +1,17 @@
 import { XmlHelper } from '../helper/xml-helper';
 import ModifyXmlHelper from '../helper/modify-xml-helper';
 import { TableData, TableRow, TableRowStyle } from '../types/table-types';
-import {
-  Color,
-  Modification,
-  ModificationTags,
-  TextStyle,
-} from '../types/modify-types';
-import { vd } from '../helper/general-helper';
+import { Modification, ModificationTags } from '../types/modify-types';
 import ModifyTextHelper from '../helper/modify-text-helper';
 import { ModifyColorHelper } from '../index';
+import { XmlDocument, XmlElement } from '../types/xml-types';
 
 export class ModifyTable {
   data: TableData;
   table: ModifyXmlHelper;
-  xml: XMLDocument | Element;
+  xml: XmlDocument | XmlElement;
 
-  constructor(table: XMLDocument | Element, data?: TableData) {
+  constructor(table: XmlDocument | XmlElement, data?: TableData) {
     this.data = data;
 
     this.table = new ModifyXmlHelper(table);
@@ -122,7 +117,7 @@ export class ModifyTable {
     return {
       children: {
         [tag]: {
-          collection: (collection: HTMLCollectionOf<Element>) => {
+          collection: (collection: HTMLCollectionOf<XmlElement>) => {
             XmlHelper.sliceCollection(collection, length);
           },
         },

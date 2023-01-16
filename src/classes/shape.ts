@@ -1,5 +1,3 @@
-import JSZip from 'jszip';
-
 import { XmlHelper } from '../helper/xml-helper';
 import { GeneralHelper } from '../helper/general-helper';
 import {
@@ -8,7 +6,7 @@ import {
   Workbook,
 } from '../types/types';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
-import { HelperElement } from '../types/xml-types';
+import { HelperElement, XmlDocument, XmlElement } from '../types/xml-types';
 import { ImageTypeMap } from '../enums/image-type-map';
 import { ElementSubtype } from '../enums/element-type';
 import IArchive from '../interfaces/iarchive';
@@ -23,7 +21,7 @@ export class Shape {
   sourceNumber: number;
   sourceFile: string;
   sourceRid: string;
-  sourceElement: XMLDocument;
+  sourceElement: XmlDocument;
 
   targetFile: string;
   targetArchive: IArchive;
@@ -37,9 +35,9 @@ export class Shape {
 
   relRootTag: string;
   relAttribute: string;
-  relParent: (element: Element) => Element;
+  relParent: (element: XmlElement) => XmlElement;
 
-  targetElement: XMLDocument;
+  targetElement: XmlDocument;
 
   callbacks: ShapeModificationCallback[];
   hasCreationId: boolean;
@@ -78,7 +76,7 @@ export class Shape {
   }
 
   async setTargetElement(): Promise<void> {
-    this.targetElement = this.sourceElement.cloneNode(true) as XMLDocument;
+    this.targetElement = this.sourceElement.cloneNode(true) as XmlDocument;
   }
 
   async appendToSlideTree(): Promise<void> {
@@ -148,7 +146,7 @@ export class Shape {
       this.sourceRid,
     );
 
-    targetElements.forEach((targetElement) => {
+    targetElements.forEach((targetElement: XmlElement) => {
       this.relParent(targetElement)
         .getElementsByTagName(this.relRootTag)[0]
         .setAttribute(this.relAttribute, this.createdRid);
@@ -161,7 +159,10 @@ export class Shape {
     );
   }
 
-  async getElementsByRid(slideXml: Document, rId: string): Promise<Element[]> {
+  async getElementsByRid(
+    slideXml: XmlDocument,
+    rId: string,
+  ): Promise<XmlElement[]> {
     const sourceList = slideXml
       .getElementsByTagName('p:spTree')[0]
       .getElementsByTagName(this.relRootTag);
@@ -183,8 +184,8 @@ export class Shape {
 
   applyCallbacks(
     callbacks: ShapeModificationCallback[],
-    element: XMLDocument,
-    arg1?: Document,
+    element: XmlDocument,
+    arg1?: XmlDocument,
     arg2?: Workbook,
   ): void {
     callbacks.forEach((callback) => {
@@ -211,7 +212,7 @@ export class Shape {
         ContentType: contentType,
       }),
       tag: 'Default',
-      clause: (xml: XMLDocument) =>
+      clause: (xml: XmlDocument) =>
         !XmlHelper.findByAttribute(xml, 'Default', 'Extension', extension),
     });
   }

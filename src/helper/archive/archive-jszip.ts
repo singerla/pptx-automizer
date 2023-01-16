@@ -2,10 +2,8 @@ import Archive from './archive';
 import fs from 'fs';
 import JSZip, { InputType } from 'jszip';
 import { AutomizerParams } from '../../types/types';
-import IArchive, {
-  ArchivedFile,
-  ArchivedFolderCallback,
-} from '../../interfaces/iarchive';
+import IArchive, { ArchivedFile } from '../../interfaces/iarchive';
+import { XmlDocument } from '../../types/xml-types';
 
 export default class ArchiveJszip extends Archive implements IArchive {
   archive: JSZip;
@@ -63,6 +61,16 @@ export default class ArchiveJszip extends Archive implements IArchive {
     return this.archive.files[file].async(type || 'string');
   }
 
+  write(file: string, data: string | Buffer): this {
+    this.archive.file(file, data);
+    return this;
+  }
+
+  remove(file: string): this {
+    this.archive.remove(file);
+    return this;
+  }
+
   async filter(pattern: RegExp): Promise<JSZip.JSZipObject[]> {
     return this.archive.file(pattern);
   }
@@ -72,20 +80,10 @@ export default class ArchiveJszip extends Archive implements IArchive {
 
     const zip = new JSZip();
 
-    const newProxy = new ArchiveJszip(file);
-    newProxy.archive = await zip.loadAsync(contents as unknown as InputType);
+    const newArchive = new ArchiveJszip(file);
+    newArchive.archive = await zip.loadAsync(contents as unknown as InputType);
 
-    return newProxy;
-  }
-
-  write(file: string, data: string | Buffer): this {
-    this.archive.file(file, data);
-    return this;
-  }
-
-  remove(file: string): this {
-    this.archive.remove(file);
-    return this;
+    return newArchive;
   }
 
   async output(location: string, params: AutomizerParams): Promise<void> {
@@ -97,10 +95,12 @@ export default class ArchiveJszip extends Archive implements IArchive {
     });
   }
 
-  private async getContent(params: AutomizerParams): Promise<Buffer> {
+  async getContent(params: AutomizerParams): Promise<Buffer> {
     this.setOptions(params);
-    const content = (await this.archive.generateAsync(this.options)) as Buffer;
-    return content;
+
+    await this.writeBuffer(this);
+
+    return (await this.archive.generateAsync(this.options)) as Buffer;
   }
 
   private setOptions(params: AutomizerParams): void {
@@ -110,5 +110,23 @@ export default class ArchiveJszip extends Archive implements IArchive {
         level: params.compression,
       };
     }
+  }
+
+  async readXml(file: string): Promise<XmlDocument> {
+    const isBuffered = this.fromBuffer(file);
+
+    if (!isBuffered) {
+      const xmlString = (await this.read(file, 'string')) as string;
+      const XmlDocument = this.parseXml(xmlString);
+      this.toBuffer(file, XmlDocument);
+
+      return XmlDocument;
+    } else {
+      return isBuffered.content;
+    }
+  }
+
+  writeXml(file: string, XmlDocument: XmlDocument): void {
+    this.toBuffer(file, XmlDocument);
   }
 }

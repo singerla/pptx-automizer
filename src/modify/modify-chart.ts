@@ -1,18 +1,17 @@
 import {
-  ChartData,
-  ChartColumn,
-  ChartSlot,
-  ChartCategory,
-  ChartPoint,
   ChartBubble,
+  ChartCategory,
+  ChartColumn,
+  ChartData,
   ChartDataMapper,
+  ChartPoint,
   ChartSeries,
+  ChartSlot,
   ChartValueStyle,
 } from '../types/chart-types';
 import {
-  ModificationTags,
   Modification,
-  Color,
+  ModificationTags,
   ModifyCallback,
 } from '../types/modify-types';
 import { XmlHelper } from '../helper/xml-helper';
@@ -20,8 +19,8 @@ import CellIdHelper from '../helper/cell-id-helper';
 import { Workbook } from '../types/types';
 import ModifyXmlHelper from '../helper/modify-xml-helper';
 import ModifyTextHelper from '../helper/modify-text-helper';
-import { vd } from '../helper/general-helper';
 import ModifyColorHelper from '../helper/modify-color-helper';
+import { XmlDocument } from '../types/xml-types';
 
 export class ModifyChart {
   data: ChartData;
@@ -29,14 +28,14 @@ export class ModifyChart {
   width: number;
   columns: ChartColumn[];
 
-  sharedStrings: Document;
+  sharedStrings: XmlDocument;
 
   workbook: ModifyXmlHelper;
   workbookTable: ModifyXmlHelper;
   chart: ModifyXmlHelper;
 
   constructor(
-    chart: XMLDocument,
+    chart: XmlDocument,
     workbook: Workbook,
     data: ChartData,
     slot: ChartSlot[],
@@ -66,7 +65,7 @@ export class ModifyChart {
     this.sliceChartSpace();
     this.modifyWorkbook();
 
-    // XmlHelper.dump(this.chart.root as XMLDocument)
+    // XmlHelper.dump(this.chart.root as XmlDocument)
   }
 
   modifyExtended(): void {

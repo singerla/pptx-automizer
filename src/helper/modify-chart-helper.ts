@@ -10,6 +10,7 @@ import {
   ChartSlot,
 } from '../types/chart-types';
 import ModifyXmlHelper from './modify-xml-helper';
+import { XmlDocument, XmlElement } from '../types/xml-types';
 
 export default class ModifyChartHelper {
   /**
@@ -19,8 +20,8 @@ export default class ModifyChartHelper {
   static setChartData =
     (data: ChartData) =>
     (
-      element: XMLDocument | Element,
-      chart?: Document,
+      element: XmlDocument | XmlElement,
+      chart?: XmlDocument,
       workbook?: Workbook,
     ): void => {
       const slots = [] as ChartSlot[];
@@ -46,7 +47,7 @@ export default class ModifyChartHelper {
   static setChartVerticalLines =
     (data: ChartData) =>
     (
-      element: XMLDocument | Element,
+      element: XmlDocument | XmlElement,
       chart?: Document,
       workbook?: Workbook,
     ): void => {
@@ -77,7 +78,7 @@ export default class ModifyChartHelper {
   static setChartScatter =
     (data: ChartData) =>
     (
-      element: XMLDocument | Element,
+      element: XmlDocument | XmlElement,
       chart?: Document,
       workbook?: Workbook,
     ): void => {
@@ -120,7 +121,7 @@ export default class ModifyChartHelper {
   static setChartCombo =
     (data: ChartData) =>
     (
-      element: XMLDocument | Element,
+      element: XmlDocument | XmlElement,
       chart?: Document,
       workbook?: Workbook,
     ): void => {
@@ -161,7 +162,7 @@ export default class ModifyChartHelper {
   static setChartBubbles =
     (data: ChartData) =>
     (
-      element: XMLDocument | Element,
+      element: XmlDocument | XmlElement,
       chart?: Document,
       workbook?: Workbook,
     ): void => {
@@ -211,7 +212,7 @@ export default class ModifyChartHelper {
   static setExtendedChartData =
     (data: ChartData) =>
     (
-      element: XMLDocument | Element,
+      element: XmlDocument | XmlElement,
       chart?: Document,
       workbook?: Workbook,
     ): void => {
@@ -233,7 +234,7 @@ export default class ModifyChartHelper {
 
   static setAxisRange =
     (range: ChartAxisRange) =>
-    (chart: XMLDocument): void => {
+    (chart: XmlDocument): void => {
       const axis = chart.getElementsByTagName('c:valAx')[range.axisIndex || 0];
       if (!axis) return;
 
@@ -259,7 +260,7 @@ export default class ModifyChartHelper {
     };
 
   static setAxisAttribute = (
-    element: Element,
+    element: XmlElement,
     tag: string,
     value: string | number | boolean,
     attribute?: string,

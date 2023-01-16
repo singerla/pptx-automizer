@@ -1,8 +1,10 @@
+import { XmlElement } from './xml-types';
+
 export type ModifyCallback = {
-  (element: Element);
+  (element: XmlElement);
 };
 export type ModifyCollectionCallback = {
-  (collection: HTMLCollectionOf<Element>);
+  (collection: HTMLCollectionOf<XmlElement>);
 };
 export type Modification = {
   index?: number;

@@ -188,11 +188,6 @@ export default class Automizer implements IPresentationProps {
     return templateCreationId;
   }
 
-  public modify(cb: ModifyXmlCallback): this {
-    this.modifyPresentation.push(cb);
-    return this;
-  }
-
   /**
    * Determines whether template is root or default template.
    * @param template
@@ -350,6 +345,11 @@ export default class Automizer implements IPresentationProps {
       this.modify(ModifyPresentationHelper.removedUnusedImages);
       this.modify(ModifyPresentationHelper.removeUnusedContentTypes);
     }
+  }
+
+  public modify(cb: ModifyXmlCallback): this {
+    this.modifyPresentation.push(cb);
+    return this;
   }
 
   /**

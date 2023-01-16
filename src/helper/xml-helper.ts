@@ -1,10 +1,12 @@
-import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
+import { XMLSerializer } from '@xmldom/xmldom';
 import {
   DefaultAttribute,
   HelperElement,
   ModifyXmlCallback,
   OverrideAttribute,
   RelationshipAttribute,
+  XmlDocument,
+  XmlElement,
 } from '../types/xml-types';
 import { TargetByRelIdMap } from '../constants/constants';
 import { XmlPrettyPrint } from './xml-pretty-print';
@@ -19,7 +21,7 @@ export class XmlHelper {
     archive: IArchive,
     file: string,
     callbacks: ModifyXmlCallback[],
-  ): Promise<IArchive> {
+  ): Promise<void> {
     const fileProxy = await archive;
     const xml = await XmlHelper.getXmlFromArchive(fileProxy, file);
 
@@ -28,27 +30,22 @@ export class XmlHelper {
       await callback(xml, i++, fileProxy);
     }
 
-    return await XmlHelper.writeXmlToArchive(await archive, file, xml);
+    XmlHelper.writeXmlToArchive(await archive, file, xml);
   }
 
   static async getXmlFromArchive(
     archive: IArchive,
     file: string,
-  ): Promise<XMLDocument> {
-    const xmlDocument = (await archive.read(file, 'string')) as string;
-    const dom = new DOMParser();
-    return dom.parseFromString(xmlDocument);
+  ): Promise<XmlDocument> {
+    return archive.readXml(file);
   }
 
-  static async writeXmlToArchive(
+  static writeXmlToArchive(
     archive: IArchive,
     file: string,
-    xml: XMLDocument,
-  ): Promise<IArchive> {
-    const s = new XMLSerializer();
-    const xmlBuffer = s.serializeToString(xml);
-
-    return archive.write(file, xmlBuffer);
+    xml: XmlDocument,
+  ): void {
+    archive.writeXml(file, xml);
   }
 
   static async appendIf(
@@ -95,15 +92,15 @@ export class XmlHelper {
     return newElement as unknown as HelperElement;
   }
 
-  static async removeIf(element: HelperElement): Promise<Element[]> {
+  static async removeIf(element: HelperElement): Promise<XmlElement[]> {
     const xml = await XmlHelper.getXmlFromArchive(
       element.archive,
       element.file,
     );
 
     const collection = xml.getElementsByTagName(element.tag);
-    const toRemove: Element[] = [];
-    XmlHelper.modifyCollection(collection, (item: Element, index) => {
+    const toRemove: XmlElement[] = [];
+    XmlHelper.modifyCollection(collection, (item: XmlElement, index) => {
       if (element.clause(xml, item)) {
         toRemove.push(item);
       }
@@ -134,14 +131,14 @@ export class XmlHelper {
   }
 
   static getMaxId(
-    rels: NodeListOf<ChildNode> | HTMLCollectionOf<Element>,
+    rels: NodeListOf<ChildNode> | HTMLCollectionOf<XmlElement>,
     attribute: string,
     increment?: boolean,
     minId?: number,
   ): number {
     let max = 0;
     for (const i in rels) {
-      const rel = rels[i] as Element;
+      const rel = rels[i] as XmlElement;
       if (rel.getAttribute !== undefined) {
         const id = Number(
           rel
@@ -176,7 +173,7 @@ export class XmlHelper {
     return XmlHelper.getRelationships(
       archive,
       path,
-      (element: Element, targets: Target[]) => {
+      (element: XmlElement, targets: Target[]) => {
         prefixes.forEach((prefix) => {
           XmlHelper.pushRelTargets(element, prefix, targets);
         });
@@ -184,7 +181,11 @@ export class XmlHelper {
     );
   }
 
-  static pushRelTargets(element: Element, prefix: string, targets: Target[]) {
+  static pushRelTargets(
+    element: XmlElement,
+    prefix: string,
+    targets: Target[],
+  ) {
     const type = element.getAttribute('Type');
     const file = element.getAttribute('Target');
     const rId = element.getAttribute('Id');
@@ -231,7 +232,7 @@ export class XmlHelper {
     return XmlHelper.getRelationships(
       archive,
       path,
-      (element: Element, rels: Target[]) => {
+      (element: XmlElement, rels: Target[]) => {
         const target = element.getAttribute('Type');
         if (target === type) {
           rels.push({
@@ -262,7 +263,7 @@ export class XmlHelper {
     const rels = [];
 
     Object.keys(relationshipItems)
-      .map((key) => relationshipItems[key] as Element)
+      .map((key) => relationshipItems[key] as XmlElement)
       .filter((element) => element.getAttribute !== undefined)
       .forEach((element) => cb(element, rels));
 
@@ -270,7 +271,7 @@ export class XmlHelper {
   }
 
   static findByAttribute(
-    xml: XMLDocument | Document,
+    xml: XmlDocument | Document,
     tagName: string,
     attributeName: string,
     attributeValue: string,
@@ -294,7 +295,7 @@ export class XmlHelper {
     attributeName: string,
     attributeValue: string,
     replaceValue: string,
-  ): Promise<IArchive> {
+  ): Promise<void> {
     const xml = await XmlHelper.getXmlFromArchive(archive, path);
     const elements = xml.getElementsByTagName(tagName);
     for (const i in elements) {
@@ -314,13 +315,13 @@ export class XmlHelper {
         });
       }
     }
-    return XmlHelper.writeXmlToArchive(archive, path, xml);
+    XmlHelper.writeXmlToArchive(archive, path, xml);
   }
 
   static async getTargetByRelId(
     archive: IArchive,
     slideNumber: number,
-    element: XMLDocument,
+    element: XmlDocument,
     type: string,
   ): Promise<Target> {
     const params = TargetByRelIdMap[type];
@@ -342,7 +343,7 @@ export class XmlHelper {
     archive: IArchive,
     path: string,
     creationId: string,
-  ): Promise<XMLDocument> {
+  ): Promise<XmlDocument> {
     const slideXml = await XmlHelper.getXmlFromArchive(archive, path);
 
     return XmlHelper.findByCreationId(slideXml, creationId);
@@ -352,25 +353,25 @@ export class XmlHelper {
     archive: IArchive,
     path: string,
     name: string,
-  ): Promise<XMLDocument> {
+  ): Promise<XmlDocument> {
     const slideXml = await XmlHelper.getXmlFromArchive(archive, path);
 
     return XmlHelper.findByName(slideXml, name);
   }
 
-  static findByName(doc: Document, name: string): XMLDocument {
+  static findByName(doc: Document, name: string): XmlDocument {
     const names = doc.getElementsByTagName('p:cNvPr');
 
     for (const i in names) {
       if (names[i].getAttribute && names[i].getAttribute('name') === name) {
-        return names[i].parentNode.parentNode as XMLDocument;
+        return names[i].parentNode.parentNode as XmlDocument;
       }
     }
 
     return null;
   }
 
-  static findByCreationId(doc: Document, creationId: string): XMLDocument {
+  static findByCreationId(doc: Document, creationId: string): XmlDocument {
     const creationIds = doc.getElementsByTagName('a16:creationId');
 
     for (const i in creationIds) {
@@ -379,7 +380,7 @@ export class XmlHelper {
         creationIds[i].getAttribute('id') === creationId
       ) {
         return creationIds[i].parentNode.parentNode.parentNode.parentNode
-          .parentNode as XMLDocument;
+          .parentNode as XmlDocument;
       }
     }
 
@@ -387,12 +388,12 @@ export class XmlHelper {
   }
 
   static findFirstByAttributeValue(
-    nodes: NodeListOf<ChildNode> | HTMLCollectionOf<Element>,
+    nodes: NodeListOf<ChildNode> | HTMLCollectionOf<XmlElement>,
     attributeName: string,
     attributeValue: string,
-  ): Element {
+  ): XmlElement {
     for (const i in nodes) {
-      const node = <Element>nodes[i];
+      const node = <XmlElement>nodes[i];
       if (
         node.getAttribute &&
         node.getAttribute(attributeName) === attributeValue
@@ -404,13 +405,13 @@ export class XmlHelper {
   }
 
   static findByAttributeValue(
-    nodes: NodeListOf<ChildNode> | HTMLCollectionOf<Element>,
+    nodes: NodeListOf<ChildNode> | HTMLCollectionOf<XmlElement>,
     attributeName: string,
     attributeValue: string,
-  ): Element[] {
-    const matchingNodes = <Element[]>[];
+  ): XmlElement[] {
+    const matchingNodes = <XmlElement[]>[];
     for (const i in nodes) {
-      const node = <Element>nodes[i];
+      const node = <XmlElement>nodes[i];
       if (
         node.getAttribute &&
         node.getAttribute(attributeName) === attributeValue
@@ -428,7 +429,7 @@ export class XmlHelper {
     return {
       archive,
       file: `[Content_Types].xml`,
-      parent: (xml: XMLDocument) => xml.getElementsByTagName('Types')[0],
+      parent: (xml: XmlDocument) => xml.getElementsByTagName('Types')[0],
       tag: 'Override',
       attributes,
     };
@@ -444,7 +445,7 @@ export class XmlHelper {
     return {
       archive,
       file: targetRelFile,
-      parent: (xml: XMLDocument) =>
+      parent: (xml: XmlDocument) =>
         xml.getElementsByTagName('Relationships')[0],
       tag: 'Relationship',
       attributes,
@@ -468,7 +469,7 @@ export class XmlHelper {
     return strings.getElementsByTagName('si').length - 1;
   }
 
-  static insertAfter(newNode: Node, referenceNode: Element): Node {
+  static insertAfter(newNode: Node, referenceNode: XmlElement): Node {
     return referenceNode.parentNode.insertBefore(
       newNode,
       referenceNode.nextSibling,
@@ -476,7 +477,7 @@ export class XmlHelper {
   }
 
   static sliceCollection(
-    collection: HTMLCollectionOf<Element>,
+    collection: HTMLCollectionOf<XmlElement>,
     length: number,
     from?: number,
   ): void {
@@ -491,12 +492,12 @@ export class XmlHelper {
     }
   }
 
-  static remove(toRemove: Element): void {
+  static remove(toRemove: XmlElement): void {
     toRemove.parentNode.removeChild(toRemove);
   }
 
   static sortCollection(
-    collection: HTMLCollectionOf<Element>,
+    collection: HTMLCollectionOf<XmlElement>,
     order: number[],
     callback?: ModifyXmlCallback,
   ): void {
@@ -519,7 +520,7 @@ export class XmlHelper {
   }
 
   static modifyCollection(
-    collection: HTMLCollectionOf<Element>,
+    collection: HTMLCollectionOf<XmlElement>,
     callback: ModifyXmlCallback,
   ): void {
     for (let i = 0; i < collection.length; i++) {
@@ -528,7 +529,7 @@ export class XmlHelper {
     }
   }
 
-  static dump(element: XMLDocument | Element): void {
+  static dump(element: XmlDocument | XmlElement): void {
     const s = new XMLSerializer();
     const xmlBuffer = s.serializeToString(element);
     const p = new XmlPrettyPrint(xmlBuffer);

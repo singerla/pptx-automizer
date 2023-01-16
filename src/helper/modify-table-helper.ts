@@ -1,11 +1,11 @@
-import { XmlHelper } from './xml-helper';
-import { TableData, ModifyTableParams } from '../types/table-types';
+import { ModifyTableParams, TableData } from '../types/table-types';
 import { ModifyTable } from '../modify/modify-table';
+import { XmlDocument, XmlElement } from '../types/xml-types';
 
 export default class ModifyTableHelper {
   static setTable =
     (data: TableData, params?: ModifyTableParams) =>
-    (element: XMLDocument | Element): void => {
+    (element: XmlDocument | XmlElement): void => {
       const modTable = new ModifyTable(element, data);
 
       modTable.modify();
@@ -26,21 +26,21 @@ export default class ModifyTableHelper {
 
   static setTableData =
     (data: TableData) =>
-    (element: XMLDocument | Element): void => {
+    (element: XmlDocument | XmlElement): void => {
       const modTable = new ModifyTable(element, data);
       modTable.modify();
     };
 
   static adjustHeight =
     (data: TableData) =>
-    (element: XMLDocument | Element): void => {
+    (element: XmlDocument | XmlElement): void => {
       const modTable = new ModifyTable(element, data);
       modTable.adjustHeight();
     };
 
   static adjustWidth =
     (data: TableData) =>
-    (element: XMLDocument | Element): void => {
+    (element: XmlDocument | XmlElement): void => {
       const modTable = new ModifyTable(element, data);
       modTable.adjustWidth();
     };

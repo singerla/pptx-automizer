@@ -1,17 +1,16 @@
-import JSZip from 'jszip';
 import { ElementSubtype, ElementType } from '../enums/element-type';
-import { RelationshipAttribute } from './xml-types';
-import { FileProxy } from '../helper/file-proxy';
+import { RelationshipAttribute, XmlDocument, XmlElement } from './xml-types';
+import IArchive from '../interfaces/iarchive';
 
 export type SourceSlideIdentifier = number | string;
-export type SlideModificationCallback = (document: Document) => void;
+export type SlideModificationCallback = (document: XmlDocument) => void;
 export type ShapeModificationCallback = (
-  XMLDocument: XMLDocument | Element,
-  arg1?: Document,
+  XmlDocument: XmlDocument | XmlElement,
+  arg1?: XmlDocument,
   arg2?: Workbook,
 ) => void;
 export type GetRelationshipsCallback = (
-  element: Element,
+  element: XmlElement,
   rels: Target[],
 ) => void;
 
@@ -132,7 +131,7 @@ export type ImportedElement = {
   mode: string;
   name?: string;
   hasCreationId?: boolean;
-  sourceArchive: FileProxy;
+  sourceArchive: IArchive;
   sourceSlideNumber: number;
   callback?: ImportElement['callback'];
   target?: AnalyzedElementType['target'];
@@ -142,7 +141,7 @@ export type ImportedElement = {
 export type AnalyzedElementType = {
   type: ElementType;
   target?: Target;
-  element?: XMLDocument;
+  element?: XmlDocument;
 };
 export type TargetByRelIdMapParam = {
   relRootTag: string;
@@ -151,8 +150,8 @@ export type TargetByRelIdMapParam = {
   expression?: RegExp;
 };
 export type Workbook = {
-  archive: FileProxy;
-  sheet: XMLDocument;
-  sharedStrings: XMLDocument;
-  table: XMLDocument;
+  archive: IArchive;
+  sheet: XmlDocument;
+  sharedStrings: XmlDocument;
+  table: XmlDocument;
 };
