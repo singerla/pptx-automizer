@@ -2,16 +2,16 @@ import JSZip from 'jszip';
 import { Target } from '../types/types';
 import { ElementInfo, SlideInfo, TemplateSlideInfo } from '../types/xml-types';
 import { XmlHelper } from './xml-helper';
-import { FileProxy } from './file-proxy';
+import IArchive from '../interfaces/iarchive';
 
 export class XmlTemplateHelper {
-  archive: FileProxy;
+  archive: IArchive;
   relType: string;
   relTypeNotes: string;
   path: string;
   defaultSlideName: string;
 
-  constructor(archive: FileProxy) {
+  constructor(archive: IArchive) {
     this.relType =
       'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide';
     this.relTypeNotes =
@@ -22,7 +22,7 @@ export class XmlTemplateHelper {
   }
 
   async getCreationIds(): Promise<SlideInfo[]> {
-    const archive = await this.archive.inititalize();
+    const archive = this.archive;
     const relationships = await XmlHelper.getTargetsByRelationshipType(
       archive,
       this.path,
@@ -100,7 +100,7 @@ export class XmlTemplateHelper {
   }
 
   async getSlideNoteRels(
-    archive: FileProxy,
+    archive: IArchive,
     slideRelFile: string,
   ): Promise<Target[]> {
     const relFileName = slideRelFile.replace('slides', '');

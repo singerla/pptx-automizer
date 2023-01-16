@@ -1,4 +1,3 @@
-import JSZip from 'jszip';
 import { FileHelper } from '../helper/file-helper';
 import { XmlHelper } from '../helper/xml-helper';
 import { Shape } from '../classes/shape';
@@ -9,8 +8,7 @@ import { ImportedElement, Target, Workbook } from '../types/types';
 import { IChart } from '../interfaces/ichart';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { contentTracker } from '../helper/content-tracker';
-import { FileProxy } from '../helper/file-proxy';
-import { vd } from '../helper/general-helper';
+import IArchive from '../interfaces/iarchive';
 
 export class Chart extends Shape implements IChart {
   sourceWorksheet: number | string;
@@ -181,9 +179,7 @@ export class Chart extends Shape implements IChart {
       workbook.sharedStrings,
     );
 
-    const worksheet = await workbook.archive.send({
-      type: 'nodebuffer',
-    });
+    const worksheet = await workbook.archive.getContent({});
     await this.targetArchive.write(
       `ppt/embeddings/${this.worksheetFilePrefix}${this.targetWorksheet}${this.wbExtension}`,
       worksheet,
@@ -470,7 +466,7 @@ export class Chart extends Shape implements IChart {
   }
 
   static async getAllOnSlide(
-    archive: FileProxy,
+    archive: IArchive,
     relsPath: string,
   ): Promise<Target[]> {
     return await XmlHelper.getTargetsFromRelationships(archive, relsPath, [

@@ -1,15 +1,12 @@
-import JSZip from 'jszip';
-
 import { FileHelper } from '../helper/file-helper';
 import { XmlHelper } from '../helper/xml-helper';
 import { Shape } from '../classes/shape';
-import { RelationshipAttribute, HelperElement } from '../types/xml-types';
+import { HelperElement, RelationshipAttribute } from '../types/xml-types';
 import { ImportedElement, Target } from '../types/types';
 import { IImage } from '../interfaces/iimage';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
-import { ImageTypeMap } from '../enums/image-type-map';
 import { ElementType } from '../enums/element-type';
-import { FileProxy } from '../helper/file-proxy';
+import IArchive from '../interfaces/iarchive';
 
 export class Image extends Shape implements IImage {
   extension: string;
@@ -149,7 +146,7 @@ export class Image extends Shape implements IImage {
   }
 
   static async getAllOnSlide(
-    archive: FileProxy,
+    archive: IArchive,
     relsPath: string,
   ): Promise<Target[]> {
     return await XmlHelper.getTargetsByRelationshipType(

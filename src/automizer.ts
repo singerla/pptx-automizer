@@ -286,30 +286,27 @@ export default class Automizer implements IPresentationProps {
     await this.normalizePresentation();
     await this.applyModifyPresentationCallbacks();
 
-    const rootArchive = await this.rootTemplate.archive;
-
-    const options: JSZip.JSZipGeneratorOptions<'nodebuffer'> = {
-      type: 'nodebuffer',
-    };
-
-    if (this.params.compression > 0) {
-      options.compression = 'DEFLATE';
-      options.compressionOptions = {
-        level: this.params.compression,
-      };
-    }
-
-    const content = await rootArchive.send(options);
-
-    return FileHelper.writeOutputFile(
+    await this.rootTemplate.archive.output(
       this.getLocation(location, 'output'),
-      content,
-      this,
+      this.params,
     );
+
+    const duration: number = (Date.now() - this.timer) / 600;
+
+    return {
+      status: 'finished',
+      duration,
+      file: location,
+      filename: path.basename(location),
+      templates: this.templates.length,
+      slides: this.rootTemplate.count('slides'),
+      charts: this.rootTemplate.count('charts'),
+      images: this.rootTemplate.count('images'),
+    };
   }
 
   /**
-   * Write all slides into archive.
+   * Write all slides to archive.
    */
   public async writeSlides(): Promise<void> {
     await this.rootTemplate.countExistingSlides();

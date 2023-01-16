@@ -1,5 +1,3 @@
-import JSZip, { InputType } from 'jszip';
-
 import { FileHelper } from '../helper/file-helper';
 import { CountHelper } from '../helper/count-helper';
 import { ICounter } from '../interfaces/icounter';
@@ -10,10 +8,8 @@ import { ITemplate } from '../interfaces/itemplate';
 import { XmlTemplateHelper } from '../helper/xml-template-helper';
 import { SlideInfo } from '../types/xml-types';
 import { XmlHelper } from '../helper/xml-helper';
-import { vd } from '../helper/general-helper';
 import { ContentTracker } from '../helper/content-tracker';
-import { CacheHelper } from '../helper/cache-helper';
-import { FileProxy } from '../helper/file-proxy';
+import IArchive from '../interfaces/iarchive';
 
 export class Template implements ITemplate {
   /**
@@ -32,13 +28,13 @@ export class Template implements ITemplate {
    * Node file buffer
    * @type InputType
    */
-  file: InputType;
+  file: any;
 
   /**
    * this.file will be passed to FileProxy
-   * @type FileProxy
+   * @type Archive
    */
-  archive: FileProxy;
+  archive: IArchive;
 
   /**
    * Array containing all slides coming from Automizer.addSlide()

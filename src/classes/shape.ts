@@ -11,13 +11,13 @@ import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { HelperElement } from '../types/xml-types';
 import { ImageTypeMap } from '../enums/image-type-map';
 import { ElementSubtype } from '../enums/element-type';
-import { FileProxy } from '../helper/file-proxy';
+import IArchive from '../interfaces/iarchive';
 
 export class Shape {
   mode: string;
   name: string;
 
-  sourceArchive: FileProxy;
+  sourceArchive: IArchive;
   sourceSlideNumber: number;
   sourceSlideFile: string;
   sourceNumber: number;
@@ -26,7 +26,7 @@ export class Shape {
   sourceElement: XMLDocument;
 
   targetFile: string;
-  targetArchive: FileProxy;
+  targetArchive: IArchive;
   targetTemplate: RootPresTemplate;
   targetSlideNumber: number;
   targetNumber: number;

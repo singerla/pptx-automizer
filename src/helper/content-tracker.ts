@@ -10,10 +10,10 @@ import { FileHelper } from './file-helper';
 import { XmlHelper } from './xml-helper';
 import { RelationshipAttribute } from '../types/xml-types';
 import { contentTrack } from '../constants/constants';
-import { FileProxy } from './file-proxy';
+import IArchive from '../interfaces/iarchive';
 
 export class ContentTracker {
-  archive: FileProxy;
+  archive: IArchive;
   files: TrackedFiles = {
     'ppt/slideMasters': [],
     'ppt/slideLayouts': [],
@@ -53,7 +53,7 @@ export class ContentTracker {
     }
   }
 
-  async analyzeContents(archive: FileProxy) {
+  async analyzeContents(archive: IArchive) {
     this.setArchive(archive);
 
     await this.analyzeRelationships();
@@ -61,7 +61,7 @@ export class ContentTracker {
     await this.trackSlideLayouts();
   }
 
-  setArchive(archive: FileProxy) {
+  setArchive(archive: IArchive) {
     this.archive = archive;
   }
 

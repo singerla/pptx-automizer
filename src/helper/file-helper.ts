@@ -7,40 +7,44 @@ import { IPresentationProps } from '../interfaces/ipresentation-props';
 import { contentTracker } from './content-tracker';
 import { CacheHelper } from './cache-helper';
 import { vd } from './general-helper';
-import { FileProxy } from './file-proxy';
+import IArchive, {
+  ArchivedFile,
+  ArchivedFolderCallback,
+} from '../interfaces/iarchive';
+import ArchiveJszip from './archive/archive-jszip';
 
 export class FileHelper {
-  static importArchive(location: string): FileProxy {
+  static importArchive(location: string): IArchive {
     if (!fs.existsSync(location)) {
       throw new Error('File not found: ' + location);
     }
-    return FileProxy.importArchive(location);
+    return new ArchiveJszip(location);
   }
 
   static extractFromArchive(
-    archive: FileProxy,
+    archive: IArchive,
     file: string,
     type?: OutputType,
-  ): Promise<FileProxy> {
+  ): Promise<any> {
     return archive.read(file, type);
   }
 
   static removeFromDirectory(
-    archive: FileProxy,
+    archive: IArchive,
     dir: string,
-    cb: (file: JSZipObject, relativePath: string) => boolean,
+    cb: ArchivedFolderCallback,
   ): string[] {
     const removed = [];
-    archive.folder(dir).forEach((relativePath, file) => {
-      if (!relativePath.includes('/') && cb(file, relativePath)) {
-        FileHelper.removeFromArchive(archive, file.name);
+    archive.folder(dir).forEach((file) => {
+      if (cb(file)) {
+        archive.remove(file.name);
         removed.push(file.name);
       }
     });
     return removed;
   }
 
-  static removeFromArchive(archive: FileProxy, file: string): FileProxy {
+  static removeFromArchive(archive: IArchive, file: string): IArchive {
     FileHelper.check(archive, file);
 
     return archive.remove(file);
@@ -59,7 +63,7 @@ export class FileHelper {
     };
   }
 
-  static check(archive: FileProxy, file: string): boolean {
+  static check(archive: IArchive, file: string): boolean {
     FileHelper.isArchive(archive);
     return FileHelper.fileExistsInArchive(archive, file);
   }
@@ -70,54 +74,30 @@ export class FileHelper {
     }
   }
 
-  static fileExistsInArchive(archive: FileProxy, file: string): boolean {
+  static fileExistsInArchive(archive: IArchive, file: string): boolean {
     return archive.fileExists(file);
   }
 
   /**
    * Copies a file from one archive to another. The new file can have a different name to the origin.
-   * @param {JSZip} sourceArchive - Source archive
+   * @param {IArchive} sourceArchive - Source archive
    * @param {string} sourceFile - file path and name inside source archive
-   * @param {JSZip} targetArchive - Target archive
+   * @param {IArchive} targetArchive - Target archive
    * @param {string} targetFile - file path and name inside target archive
-   * @return {JSZip} targetArchive as an instance of JSZip
+   * @return {IArchive} targetArchive as an instance of IArchive
    */
   static async zipCopy(
-    sourceArchive: FileProxy,
+    sourceArchive: IArchive,
     sourceFile: string,
-    targetArchive: FileProxy,
+    targetArchive: IArchive,
     targetFile?: string,
-  ): Promise<FileProxy> {
+  ): Promise<IArchive> {
     FileHelper.check(sourceArchive, sourceFile);
 
     const content = await sourceArchive.read(sourceFile, 'nodebuffer');
     contentTracker.trackFile(targetFile);
 
     return targetArchive.write(targetFile || sourceFile, content);
-  }
-
-  static async writeOutputFile(
-    location: string,
-    content: Buffer,
-    automizer: IPresentationProps,
-  ): Promise<AutomizerSummary> {
-    await fs.promises.writeFile(location, content).catch((err) => {
-      console.error(err);
-      throw new Error(`Could not write output file: ${location}`);
-    });
-
-    const duration: number = (Date.now() - automizer.timer) / 600;
-
-    return {
-      status: 'finished',
-      duration,
-      file: location,
-      filename: path.basename(location),
-      templates: automizer.templates.length,
-      slides: automizer.rootTemplate.count('slides'),
-      charts: automizer.rootTemplate.count('charts'),
-      images: automizer.rootTemplate.count('images'),
-    };
   }
 }
 

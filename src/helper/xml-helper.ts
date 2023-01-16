@@ -1,28 +1,25 @@
-import JSZip from 'jszip';
-
 import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
-import { FileHelper } from './file-helper';
 import {
   DefaultAttribute,
   HelperElement,
+  ModifyXmlCallback,
   OverrideAttribute,
   RelationshipAttribute,
-  ModifyXmlCallback,
 } from '../types/xml-types';
 import { TargetByRelIdMap } from '../constants/constants';
 import { XmlPrettyPrint } from './xml-pretty-print';
 import { GetRelationshipsCallback, Target } from '../types/types';
 import _ from 'lodash';
 import { vd } from './general-helper';
-import { contentTracker, ContentTracker } from './content-tracker';
-import { FileProxy } from './file-proxy';
+import { contentTracker } from './content-tracker';
+import IArchive from '../interfaces/iarchive';
 
 export class XmlHelper {
   static async modifyXmlInArchive(
-    archive: FileProxy,
+    archive: IArchive,
     file: string,
     callbacks: ModifyXmlCallback[],
-  ): Promise<FileProxy> {
+  ): Promise<IArchive> {
     const fileProxy = await archive;
     const xml = await XmlHelper.getXmlFromArchive(fileProxy, file);
 
@@ -35,7 +32,7 @@ export class XmlHelper {
   }
 
   static async getXmlFromArchive(
-    archive: FileProxy,
+    archive: IArchive,
     file: string,
   ): Promise<XMLDocument> {
     const xmlDocument = (await archive.read(file, 'string')) as string;
@@ -44,10 +41,10 @@ export class XmlHelper {
   }
 
   static async writeXmlToArchive(
-    archive: FileProxy,
+    archive: IArchive,
     file: string,
     xml: XMLDocument,
-  ): Promise<FileProxy> {
+  ): Promise<IArchive> {
     const s = new XMLSerializer();
     const xmlBuffer = s.serializeToString(xml);
 
@@ -122,7 +119,7 @@ export class XmlHelper {
   }
 
   static async getNextRelId(
-    rootArchive: FileProxy,
+    rootArchive: IArchive,
     file: string,
   ): Promise<string> {
     const presentationRelsXml = await XmlHelper.getXmlFromArchive(
@@ -170,7 +167,7 @@ export class XmlHelper {
   }
 
   static async getTargetsFromRelationships(
-    archive: FileProxy,
+    archive: IArchive,
     path: string,
     prefix: string | string[],
   ): Promise<Target[]> {
@@ -227,7 +224,7 @@ export class XmlHelper {
   }
 
   static async getTargetsByRelationshipType(
-    archive: FileProxy,
+    archive: IArchive,
     path: string,
     type: string,
   ): Promise<Target[]> {
@@ -247,7 +244,7 @@ export class XmlHelper {
   }
 
   static async getRelationships(
-    archive: FileProxy,
+    archive: IArchive,
     path: string,
     cb: GetRelationshipsCallback,
   ): Promise<Target[]> {
@@ -255,7 +252,7 @@ export class XmlHelper {
   }
 
   static async getRelationshipItems(
-    archive: FileProxy,
+    archive: IArchive,
     path: string,
     tag: string,
     cb: GetRelationshipsCallback,
@@ -291,13 +288,13 @@ export class XmlHelper {
   }
 
   static async replaceAttribute(
-    archive: FileProxy,
+    archive: IArchive,
     path: string,
     tagName: string,
     attributeName: string,
     attributeValue: string,
     replaceValue: string,
-  ): Promise<FileProxy> {
+  ): Promise<IArchive> {
     const xml = await XmlHelper.getXmlFromArchive(archive, path);
     const elements = xml.getElementsByTagName(tagName);
     for (const i in elements) {
@@ -321,7 +318,7 @@ export class XmlHelper {
   }
 
   static async getTargetByRelId(
-    archive: FileProxy,
+    archive: IArchive,
     slideNumber: number,
     element: XMLDocument,
     type: string,
@@ -342,7 +339,7 @@ export class XmlHelper {
   }
 
   static async findByElementCreationId(
-    archive: FileProxy,
+    archive: IArchive,
     path: string,
     creationId: string,
   ): Promise<XMLDocument> {
@@ -352,7 +349,7 @@ export class XmlHelper {
   }
 
   static async findByElementName(
-    archive: FileProxy,
+    archive: IArchive,
     path: string,
     name: string,
   ): Promise<XMLDocument> {
@@ -425,7 +422,7 @@ export class XmlHelper {
   }
 
   static createContentTypeChild(
-    archive: FileProxy,
+    archive: IArchive,
     attributes: OverrideAttribute | DefaultAttribute,
   ): HelperElement {
     return {
@@ -438,7 +435,7 @@ export class XmlHelper {
   }
 
   static createRelationshipChild(
-    archive: FileProxy,
+    archive: IArchive,
     targetRelFile: string,
     attributes: RelationshipAttribute,
   ): HelperElement {

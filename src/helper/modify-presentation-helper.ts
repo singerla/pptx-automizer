@@ -1,9 +1,7 @@
 import { XmlHelper } from './xml-helper';
 import { contentTracker as Tracker } from './content-tracker';
 import { FileHelper } from './file-helper';
-import JSZip from 'jszip';
-import { vd } from './general-helper';
-import { FileProxy } from './file-proxy';
+import IArchive from '../interfaces/iarchive';
 
 export default class ModifyPresentationHelper {
   /**
@@ -43,7 +41,7 @@ export default class ModifyPresentationHelper {
   static async removeUnusedFiles(
     xml: XMLDocument,
     i: number,
-    archive: FileProxy,
+    archive: IArchive,
   ): Promise<void> {
     // Need to skip some dirs until masters and layouts are handled properly
     const skipDirs = [
@@ -57,8 +55,8 @@ export default class ModifyPresentationHelper {
         continue;
       }
       const requiredFiles = Tracker.files[dir];
-      FileHelper.removeFromDirectory(archive, dir, (file, relativePath) => {
-        return !requiredFiles.includes(relativePath);
+      FileHelper.removeFromDirectory(archive, dir, (file) => {
+        return !requiredFiles.includes(file.relativePath);
       });
     }
   }
@@ -71,7 +69,7 @@ export default class ModifyPresentationHelper {
   static async removeUnusedContentTypes(
     xml: XMLDocument,
     i: number,
-    archive: FileProxy,
+    archive: IArchive,
   ): Promise<void> {
     await XmlHelper.removeIf({
       archive,
@@ -87,7 +85,7 @@ export default class ModifyPresentationHelper {
   static async removedUnusedImages(
     xml: XMLDocument,
     i: number,
-    archive: FileProxy,
+    archive: IArchive,
   ): Promise<void> {
     await Tracker.analyzeContents(archive);
 

@@ -26,7 +26,7 @@ import { Chart } from '../shapes/chart';
 import { GenericShape } from '../shapes/generic';
 import { vd } from '../helper/general-helper';
 import { ContentTracker } from '../helper/content-tracker';
-import { FileProxy } from '../helper/file-proxy';
+import IArchive from '../interfaces/iarchive';
 
 export class Slide implements ISlide {
   /**
@@ -53,12 +53,12 @@ export class Slide implements ISlide {
    * Target archive of slide
    * @internal
    */
-  targetArchive: FileProxy;
+  targetArchive: IArchive;
   /**
    * Source archive of slide
    * @internal
    */
-  sourceArchive: FileProxy;
+  sourceArchive: IArchive;
   /**
    * Source path of slide
    * @internal
@@ -420,7 +420,7 @@ export class Slide implements ISlide {
    */
   async analyzeElement(
     sourceElement: XMLDocument,
-    sourceArchive: FileProxy,
+    sourceArchive: IArchive,
     slideNumber: number,
   ): Promise<AnalyzedElementType> {
     const isChart = sourceElement.getElementsByTagName('c:chart');
@@ -610,7 +610,7 @@ export class Slide implements ISlide {
    * @returns to slide rel
    */
   appendToSlideRel(
-    rootArchive: FileProxy,
+    rootArchive: IArchive,
     relId: string,
     slideCount: number,
   ): Promise<HelperElement> {
@@ -638,7 +638,7 @@ export class Slide implements ISlide {
    * @returns to slide list
    */
   appendToSlideList(
-    rootArchive: FileProxy,
+    rootArchive: IArchive,
     relId: string,
   ): Promise<HelperElement> {
     return XmlHelper.append({
@@ -668,7 +668,7 @@ export class Slide implements ISlide {
    * @returns slide to content type
    */
   appendSlideToContentType(
-    rootArchive: FileProxy,
+    rootArchive: IArchive,
     slideCount: number,
   ): Promise<HelperElement> {
     return XmlHelper.append(
@@ -687,7 +687,7 @@ export class Slide implements ISlide {
    * @returns notes to content type
    */
   appendNotesToContentType(
-    rootArchive: FileProxy,
+    rootArchive: IArchive,
     slideCount: number,
   ): Promise<HelperElement> {
     return XmlHelper.append(

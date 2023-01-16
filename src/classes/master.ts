@@ -1,29 +1,8 @@
-import JSZip from 'jszip';
-
-import { FileHelper } from '../helper/file-helper';
-import { XmlHelper } from '../helper/xml-helper';
-import {
-  AnalyzedElementType,
-  ImportedElement,
-  ImportElement,
-  SlideModificationCallback,
-  ShapeModificationCallback,
-} from '../types/types';
-import { ISlide } from '../interfaces/islide';
+import { ImportElement, SlideModificationCallback } from '../types/types';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
 import { PresTemplate } from '../interfaces/pres-template';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
-import { ElementType } from '../enums/element-type';
-import {
-  RelationshipAttribute,
-  SlideListAttribute,
-  HelperElement,
-} from '../types/xml-types';
-import { Image } from '../shapes/image';
-import { Chart } from '../shapes/chart';
-import { GenericShape } from '../shapes/generic';
-import { GeneralHelper, vd } from '../helper/general-helper';
-import { FileProxy } from '../helper/file-proxy';
+import IArchive from '../interfaces/iarchive';
 
 export class Master {
   /**
@@ -50,12 +29,12 @@ export class Master {
    * Target archive of slide
    * @internal
    */
-  targetArchive: FileProxy;
+  targetArchive: IArchive;
   /**
    * Source archive of slide
    * @internal
    */
-  sourceArchive: FileProxy;
+  sourceArchive: IArchive;
   /**
    * Source path of slide
    * @internal
