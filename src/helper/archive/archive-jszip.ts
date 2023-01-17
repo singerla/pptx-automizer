@@ -1,16 +1,14 @@
 import Archive from './archive';
-import fs from 'fs';
+import fs, { promises as fsp } from 'fs';
 import JSZip, { InputType } from 'jszip';
 import { AutomizerParams } from '../../types/types';
 import IArchive, { ArchivedFile } from '../../interfaces/iarchive';
 import { XmlDocument } from '../../types/xml-types';
+import path from 'path';
 
 export default class ArchiveJszip extends Archive implements IArchive {
   archive: JSZip;
   file: Buffer;
-  options: JSZip.JSZipGeneratorOptions<'nodebuffer'> = {
-    type: 'nodebuffer',
-  };
 
   constructor(filename) {
     super(filename);
@@ -91,15 +89,6 @@ export default class ArchiveJszip extends Archive implements IArchive {
     await this.writeBuffer(this);
 
     return (await this.archive.generateAsync(this.options)) as Buffer;
-  }
-
-  private setOptions(params: AutomizerParams): void {
-    if (params.compression > 0) {
-      this.options.compression = 'DEFLATE';
-      this.options.compressionOptions = {
-        level: params.compression,
-      };
-    }
   }
 
   async readXml(file: string): Promise<XmlDocument> {

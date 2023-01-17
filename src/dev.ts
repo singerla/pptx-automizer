@@ -11,17 +11,23 @@ const automizer = new Automizer({
     workDir: outputName,
     cleanupWorkDir: true,
   },
+  rootTemplate: 'RootTemplateWithImages.pptx',
+  presTemplates: [
+    `RootTemplate.pptx`,
+    `SlideWithImages.pptx`,
+    `ChartBarsStacked.pptx`,
+  ],
   removeExistingSlides: true,
   cleanup: true,
-  compression: 5,
+  compression: 0,
 });
 
 const run = async () => {
-  const pres = automizer
-    .loadRoot(`RootTemplateWithImages.pptx`)
-    .load(`RootTemplate.pptx`, 'root')
-    .load(`SlideWithImages.pptx`, 'images')
-    .load(`ChartBarsStacked.pptx`, 'charts');
+  // const pres = automizer
+  //   .loadRoot(`RootTemplateWithImages.pptx`)
+  //   .load(`RootTemplate.pptx`, 'root')
+  //   .load(`SlideWithImages.pptx`, 'images')
+  //   .load(`ChartBarsStacked.pptx`, 'charts');
 
   const dataSmaller = {
     series: [{ label: 'series s1' }, { label: 'series s2' }],
@@ -31,27 +37,25 @@ const run = async () => {
     ],
   };
 
-  const result = await pres
-    .addSlide('charts', 1, (slide) => {
+  const result = await automizer
+    .addSlide('ChartBarsStacked.pptx', 1, (slide) => {
       slide.modifyElement('BarsStacked', [modify.setChartData(dataSmaller)]);
-      slide.addElement('charts', 1, 'BarsStacked', [
+      slide.addElement('ChartBarsStacked.pptx', 1, 'BarsStacked', [
         modify.setChartData(dataSmaller),
       ]);
     })
-    .addSlide('images', 1)
-    .addSlide('root', 1, (slide) => {
-      slide.addElement('charts', 1, 'BarsStacked', [
+    .addSlide('SlideWithImages.pptx', 1)
+    .addSlide('RootTemplate.pptx', 1, (slide) => {
+      slide.addElement('ChartBarsStacked.pptx', 1, 'BarsStacked', [
         modify.setChartData(dataSmaller),
       ]);
     })
-    .addSlide('charts', 1, (slide) => {
-      slide.addElement('images', 2, 'imageJPG');
+    .addSlide('ChartBarsStacked.pptx', 1, (slide) => {
+      slide.addElement('SlideWithImages.pptx', 2, 'imageJPG');
       slide.modifyElement('BarsStacked', [modify.setChartData(dataSmaller)]);
     })
-    .addSlide('charts', 1, (slide) => {
-      slide.addElement('images', 2, 'imageJPG');
-      slide.addElement('images', 2, 'imageSVG');
-      slide.addElement('images', 2, 'imageSVG');
+    .addSlide('ChartBarsStacked.pptx', 1, (slide) => {
+      slide.addElement('SlideWithImages.pptx', 2, 'imageJPG');
       slide.modifyElement('BarsStacked', [modify.setChartData(dataSmaller)]);
     })
     .write(outputName);

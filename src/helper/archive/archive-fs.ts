@@ -1,7 +1,7 @@
 import Archive from './archive';
 import fs, { promises as fsPromises } from 'fs';
 import JSZip, { InputType } from 'jszip';
-import { ArchiveParams } from '../../types/types';
+import { ArchiveParams, AutomizerParams } from '../../types/types';
 import IArchive, { ArchivedFile } from '../../interfaces/iarchive';
 import { XmlDocument } from '../../types/xml-types';
 import ArchiveJszip from './archive-jszip';
@@ -14,6 +14,7 @@ import {
 } from '../file-helper';
 import { vd } from '../general-helper';
 import extract from 'extract-zip';
+import { compressFolder } from '../jszip-helper';
 
 export default class ArchiveFs extends Archive implements IArchive {
   archive: boolean;
@@ -143,18 +144,19 @@ export default class ArchiveFs extends Archive implements IArchive {
     }
   }
 
-  async output(location: string): Promise<void> {
+  async output(location: string, params: AutomizerParams): Promise<void> {
     await this.writeBuffer(this);
+    this.setOptions(params);
 
-    let exec = require('child_process').exec;
-    const command = `(cd ${this.workDir} && zip -r - .) > ${location}`;
-    const script = await exec(command);
+    if (exists(location)) {
+      await fsPromises.rm(location);
+    }
 
-    script.on('exit', async (code) => {
-      if (this.params.cleanupWorkDir === true) {
-        await this.cleanupWorkDir();
-      }
-    });
+    await compressFolder(this.workDir, location, this.options);
+
+    if (this.params.cleanupWorkDir === true) {
+      await this.cleanupWorkDir();
+    }
   }
 
   async cleanupWorkDir(): Promise<void> {

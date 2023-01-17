@@ -84,10 +84,15 @@ export default class Automizer implements IPresentationProps {
     if (params.presTemplates) {
       this.params.presTemplates.forEach((file) => {
         const location = this.getLocation(file, 'template');
+        const archiveParams = {
+          ...this.archiveParams,
+          name: file,
+        };
         const newTemplate = Template.import(
           location,
-          this.archiveParams,
+          archiveParams,
         ) as PresTemplate;
+
         this.templates.push(newTemplate);
       });
     }
