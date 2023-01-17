@@ -1,6 +1,6 @@
 import { ElementSubtype, ElementType } from '../enums/element-type';
 import { RelationshipAttribute, XmlDocument, XmlElement } from './xml-types';
-import IArchive from '../interfaces/iarchive';
+import IArchive, { ArchiveMode } from '../interfaces/iarchive';
 
 export type SourceSlideIdentifier = number | string;
 export type SlideModificationCallback = (document: XmlDocument) => void;
@@ -33,7 +33,7 @@ export type AutomizerParams = {
   /**
    * Absolute path to cache directory.
    */
-  cacheDir?: string;
+  archiveType?: ArchiveParams;
   /**
    * Zip compression level 0-9
    */
@@ -119,6 +119,13 @@ export type TrackedRelationTag = {
   isDir?: boolean;
   tags: TrackedRelation[];
   getTrackedRelations?: (role: string) => TrackedRelation[];
+};
+export type ArchiveParams = {
+  mode: ArchiveMode;
+  baseDir?: string;
+  workDir?: string;
+  cleanupWorkDir?: boolean;
+  name?: string;
 };
 export type ImportElement = {
   presName: string;

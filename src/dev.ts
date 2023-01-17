@@ -1,10 +1,16 @@
 import { vd } from './helper/general-helper';
 import Automizer, { modify } from './index';
 
+const outputName = 'create-presentation-file-proxy.test.pptx';
 const automizer = new Automizer({
   templateDir: `${__dirname}/../__tests__/pptx-templates`,
   outputDir: `${__dirname}/../__tests__/pptx-output`,
-  // cacheDir: `${__dirname}/../__tests__/pptx-cache`,
+  archiveType: {
+    mode: 'fs',
+    baseDir: `${__dirname}/../__tests__/pptx-cache`,
+    workDir: outputName,
+    cleanupWorkDir: true,
+  },
   removeExistingSlides: true,
   cleanup: true,
   compression: 5,
@@ -40,9 +46,15 @@ const run = async () => {
     })
     .addSlide('charts', 1, (slide) => {
       slide.addElement('images', 2, 'imageJPG');
-      // slide.modifyElement('BarsStacked', [modify.setChartData(dataSmaller)]);
+      slide.modifyElement('BarsStacked', [modify.setChartData(dataSmaller)]);
     })
-    .write(`create-presentation-file-proxy.test.pptx`);
+    .addSlide('charts', 1, (slide) => {
+      slide.addElement('images', 2, 'imageJPG');
+      slide.addElement('images', 2, 'imageSVG');
+      slide.addElement('images', 2, 'imageSVG');
+      slide.modifyElement('BarsStacked', [modify.setChartData(dataSmaller)]);
+    })
+    .write(outputName);
 
   vd(result.duration);
   // vd(pres.rootTemplate.content);

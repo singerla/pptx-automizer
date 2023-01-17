@@ -1,47 +1,45 @@
 import fs from 'fs';
+import { promises as fsPromises } from 'fs';
 import path from 'path';
-import { OutputType } from 'jszip';
-
-import { FileInfo } from '../types/types';
+import { FileInfo, ArchiveParams } from '../types/types';
 import { contentTracker } from './content-tracker';
-import IArchive, { ArchivedFolderCallback } from '../interfaces/iarchive';
+import IArchive, {
+  ArchivedFolderCallback,
+  ArchiveMode,
+} from '../interfaces/iarchive';
 import ArchiveJszip from './archive/archive-jszip';
+import ArchiveFs from './archive/archive-fs';
+import { vd } from './general-helper';
 
 export class FileHelper {
-  static importArchive(location: string): IArchive {
+  static importArchive(location: string, params: ArchiveParams): IArchive {
     if (!fs.existsSync(location)) {
       throw new Error('File not found: ' + location);
     }
-    return new ArchiveJszip(location);
+
+    switch (params.mode) {
+      case 'jszip':
+        return new ArchiveJszip(location);
+      case 'fs':
+        return new ArchiveFs(location, params);
+    }
   }
 
-  static extractFromArchive(
-    archive: IArchive,
-    file: string,
-    type?: OutputType,
-  ): Promise<any> {
-    return archive.read(file, type);
-  }
-
-  static removeFromDirectory(
+  static async removeFromDirectory(
     archive: IArchive,
     dir: string,
     cb: ArchivedFolderCallback,
-  ): string[] {
+  ): Promise<string[]> {
     const removed = [];
-    archive.folder(dir).forEach((file) => {
+    const files = await archive.folder(dir);
+    for (const file of files) {
       if (cb(file)) {
-        archive.remove(file.name);
+        await archive.remove(file.relativePath);
         removed.push(file.name);
       }
-    });
+    }
+
     return removed;
-  }
-
-  static removeFromArchive(archive: IArchive, file: string): IArchive {
-    FileHelper.check(archive, file);
-
-    return archive.remove(file);
   }
 
   static getFileExtension(filename: string): string {
@@ -90,6 +88,7 @@ export class FileHelper {
     contentTracker.trackFile(targetFile);
 
     const content = await sourceArchive.read(sourceFile, 'nodebuffer');
+
     return targetArchive.write(targetFile || sourceFile, content);
   }
 }
@@ -112,4 +111,27 @@ export const makeDir = (dir: string) => {
   } catch (err) {
     throw err;
   }
+};
+
+export const copyDir = async (src, dest) => {
+  await fsPromises.mkdir(dest, { recursive: true });
+  let entries = await fsPromises.readdir(src, { withFileTypes: true });
+
+  for (let entry of entries) {
+    let srcPath = path.join(src, entry.name);
+    let destPath = path.join(dest, entry.name);
+
+    entry.isDirectory()
+      ? await copyDir(srcPath, destPath)
+      : await fsPromises.copyFile(srcPath, destPath);
+  }
+};
+
+export const ensureDirectoryExistence = (filePath) => {
+  const dirname = path.dirname(filePath);
+  if (fs.existsSync(dirname)) {
+    return true;
+  }
+  ensureDirectoryExistence(dirname);
+  fs.mkdirSync(dirname);
 };

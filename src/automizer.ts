@@ -1,8 +1,8 @@
 import { Slide } from './classes/slide';
-import { FileHelper } from './helper/file-helper';
 import {
   AutomizerParams,
   AutomizerSummary,
+  ArchiveParams,
   SourceSlideIdentifier,
   StatusTracker,
 } from './types/types';
@@ -17,9 +17,7 @@ import path from 'path';
 import * as fs from 'fs';
 import { XmlHelper } from './helper/xml-helper';
 import ModifyPresentationHelper from './helper/modify-presentation-helper';
-import { contentTracker, ContentTracker } from './helper/content-tracker';
-import JSZip from 'jszip';
-import { CacheHelper } from './helper/cache-helper';
+import { ContentTracker } from './helper/content-tracker';
 
 /**
  * Automizer
@@ -37,7 +35,7 @@ export default class Automizer implements IPresentationProps {
   templateDir: string;
   templateFallbackDir: string;
   outputDir: string;
-  cacheDir: string;
+  archiveParams: ArchiveParams;
   /**
    * Timer of automizer
    * @internal
@@ -62,10 +60,13 @@ export default class Automizer implements IPresentationProps {
       ? params.templateFallbackDir + '/'
       : '';
     this.outputDir = params?.outputDir ? params.outputDir + '/' : '';
-    this.cacheDir = params?.cacheDir
-      ? params.cacheDir
-      : __dirname + '/../cache';
-    CacheHelper.setDir(this.cacheDir);
+
+    this.archiveParams = <ArchiveParams>{
+      mode: params?.archiveType?.mode || 'jszip',
+      baseDir: params?.archiveType?.baseDir || __dirname + '/../cache',
+      workDir: params?.archiveType?.workDir || 'tmp',
+      cleanupWorkDir: params?.archiveType?.cleanupWorkDir,
+    };
 
     this.timer = Date.now();
     this.setStatusTracker(params?.statusTracker);
@@ -74,13 +75,19 @@ export default class Automizer implements IPresentationProps {
 
     if (params.rootTemplate) {
       const location = this.getLocation(params.rootTemplate, 'template');
-      this.rootTemplate = Template.import(location) as RootPresTemplate;
+      this.rootTemplate = Template.import(
+        location,
+        this.archiveParams,
+      ) as RootPresTemplate;
     }
 
     if (params.presTemplates) {
       this.params.presTemplates.forEach((file) => {
         const location = this.getLocation(file, 'template');
-        const newTemplate = Template.import(location, file) as PresTemplate;
+        const newTemplate = Template.import(
+          location,
+          this.archiveParams,
+        ) as PresTemplate;
         this.templates.push(newTemplate);
       });
     }
@@ -158,7 +165,12 @@ export default class Automizer implements IPresentationProps {
       return this;
     }
 
-    const newTemplate = Template.import(location, name);
+    const importParams = {
+      ...this.archiveParams,
+      name,
+    };
+
+    const newTemplate = Template.import(location, importParams);
 
     if (!this.isPresTemplate(newTemplate)) {
       this.rootTemplate = newTemplate;

@@ -7,7 +7,7 @@ import { XmlDocument } from '../../types/xml-types';
 
 export default class ArchiveJszip extends Archive implements IArchive {
   archive: JSZip;
-  file: any;
+  file: Buffer;
   options: JSZip.JSZipGeneratorOptions<'nodebuffer'> = {
     type: 'nodebuffer',
   };
@@ -16,7 +16,7 @@ export default class ArchiveJszip extends Archive implements IArchive {
     super(filename);
   }
 
-  private async inititalize() {
+  private async initialize() {
     this.file = await fs.promises.readFile(this.filename);
 
     const zip = new JSZip();
@@ -32,8 +32,8 @@ export default class ArchiveJszip extends Archive implements IArchive {
     return true;
   }
 
-  folder(dir: string): ArchivedFile[] {
-    const files = [];
+  async folder(dir: string): Promise<ArchivedFile[]> {
+    const files = <ArchivedFile[]>[];
     this.archive.folder(dir).forEach((relativePath, file) => {
       if (!relativePath.includes('/')) {
         files.push({
@@ -45,34 +45,24 @@ export default class ArchiveJszip extends Archive implements IArchive {
     return files;
   }
 
-  async count(pattern: RegExp): Promise<number> {
-    const files = (await this.filter(pattern)) as any;
-    return files.length;
-  }
-
   async read(
     file: string,
     type: 'string' | 'nodebuffer',
   ): Promise<string | Buffer> {
     if (!this.archive) {
-      await this.inititalize();
+      await this.initialize();
     }
 
     return this.archive.files[file].async(type || 'string');
   }
 
-  write(file: string, data: string | Buffer): this {
+  async write(file: string, data: string | Buffer): Promise<this> {
     this.archive.file(file, data);
     return this;
   }
 
-  remove(file: string): this {
+  async remove(file: string): Promise<void> {
     this.archive.remove(file);
-    return this;
-  }
-
-  async filter(pattern: RegExp): Promise<JSZip.JSZipObject[]> {
-    return this.archive.file(pattern);
   }
 
   async extract(file: string): Promise<ArchiveJszip> {
