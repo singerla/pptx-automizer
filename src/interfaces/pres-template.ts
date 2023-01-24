@@ -5,4 +5,5 @@ export interface PresTemplate extends ITemplate {
   name: string;
   setCreationIds(): Promise<SlideInfo[]>;
   creationIds?: SlideInfo[];
+  useCreationIds?: boolean;
 }
