@@ -11,7 +11,6 @@ import {
 import { TargetByRelIdMap } from '../constants/constants';
 import { XmlPrettyPrint } from './xml-pretty-print';
 import { GetRelationshipsCallback, Target } from '../types/types';
-import _ from 'lodash';
 import { vd } from './general-helper';
 import { contentTracker } from './content-tracker';
 import IArchive from '../interfaces/iarchive';
@@ -190,10 +189,12 @@ export class XmlHelper {
     const file = element.getAttribute('Target');
     const rId = element.getAttribute('Id');
 
-    const subtype = _.last(prefix.split('/'));
-    const relType = _.last(type.split('/'));
-    const filename = _.last(file.split('/'));
-    const filenameExt = _.last(filename.split('.'));
+    const last = (arr: string[]): string => arr[arr.length - 1];
+
+    const subtype = last(prefix.split('/'));
+    const relType = last(type.split('/'));
+    const filename = last(file.split('/'));
+    const filenameExt = last(filename.split('.'));
     const filenameMatch = filename
       .replace('.' + filenameExt, '')
       .match(/^(.+?)(\d+)*$/);

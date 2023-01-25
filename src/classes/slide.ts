@@ -143,7 +143,10 @@ export class Slide implements ISlide {
     template: PresTemplate,
     slideIdentifier: SourceSlideIdentifier,
   ): number {
-    if (template.creationIds !== undefined) {
+    if (
+      template.useCreationIds === true &&
+      template.creationIds !== undefined
+    ) {
       const matchCreationId = template.creationIds.find(
         (slideInfo) => slideInfo.id === Number(slideIdentifier),
       );
@@ -159,6 +162,7 @@ export class Slide implements ISlide {
         template.name
       );
     }
+
     return slideIdentifier as number;
   }
 
@@ -368,8 +372,9 @@ export class Slide implements ISlide {
     const sourcePath = `ppt/slides/slide${slideNumber}.xml`;
 
     const sourceArchive = await template.archive;
-    const hasCreationId = template.creationIds !== undefined;
-    const method = hasCreationId
+    const useCreationIds =
+      template.useCreationIds === true && template.creationIds !== undefined;
+    const method = useCreationIds
       ? 'findByElementCreationId'
       : 'findByElementName';
 
@@ -399,7 +404,7 @@ export class Slide implements ISlide {
     return {
       mode: importElement.mode,
       name: importElement.selector,
-      hasCreationId: hasCreationId,
+      hasCreationId: useCreationIds,
       sourceArchive,
       sourceSlideNumber: slideNumber,
       sourceElement,

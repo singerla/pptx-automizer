@@ -197,6 +197,7 @@ export default class Automizer implements IPresentationProps {
     for (const template of this.templates) {
       const creationIds =
         template.creationIds || (await template.setCreationIds());
+      template.useCreationIds = this.params.useCreationIds;
       templateCreationId.push({
         name: template.name,
         slides: creationIds,

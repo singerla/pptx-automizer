@@ -1,9 +1,11 @@
 import Automizer, { modify } from '../src/index';
+import { vd } from '../src/helper/general-helper';
 
 test('create presentation, add and modify an existing table by creation id.', async () => {
   const automizer = new Automizer({
     templateDir: `${__dirname}/pptx-templates`,
     outputDir: `${__dirname}/pptx-output`,
+    useCreationIds: true,
   });
 
   const data1 = {
@@ -18,19 +20,21 @@ test('create presentation, add and modify an existing table by creation id.', as
     .loadRoot(`RootTemplate.pptx`)
     .load(`SlideWithTables.pptx`, 'tables');
 
-  const creationIds = await pres.setCreationIds()
+  const creationIds = await pres.setCreationIds();
+  // vd(creationIds);
 
   const result = await pres
     .addSlide('tables', 1950777067, (slide) => {
-      slide.modifyElement(
-        '{EFC74B4C-D832-409B-9CF4-73C1EFF132D8}',
-        [modify.setTableData(data1)]);
+      slide.modifyElement('{EFC74B4C-D832-409B-9CF4-73C1EFF132D8}', [
+        modify.setTableData(data1),
+      ]);
 
       slide.addElement(
         'tables',
         1950777067,
         '{EFC74B4C-D832-409B-9CF4-73C1EFF132D8}',
-        [modify.setTableData(data1)]);
+        [modify.setTableData(data1)],
+      );
     })
     .write(`modify-existing-table.test.pptx`);
 
