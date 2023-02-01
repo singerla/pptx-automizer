@@ -3,6 +3,7 @@ import { contentTracker as Tracker } from './content-tracker';
 import { FileHelper } from './file-helper';
 import IArchive from '../interfaces/iarchive';
 import { XmlDocument, XmlElement } from '../types/xml-types';
+import { vd } from './general-helper';
 
 export default class ModifyPresentationHelper {
   /**
@@ -56,7 +57,7 @@ export default class ModifyPresentationHelper {
         continue;
       }
       const requiredFiles = Tracker.files[dir];
-      FileHelper.removeFromDirectory(archive, dir, (file) => {
+      await FileHelper.removeFromDirectory(archive, dir, (file) => {
         return !requiredFiles.includes(file.relativePath);
       });
     }
@@ -78,7 +79,8 @@ export default class ModifyPresentationHelper {
       tag: 'Override',
       clause: (xml: XmlDocument, element: XmlElement) => {
         const filename = element.getAttribute('PartName').substring(1);
-        return FileHelper.fileExistsInArchive(archive, filename) ? false : true;
+        const exists = FileHelper.fileExistsInArchive(archive, filename);
+        return exists ? false : true;
       },
     });
   }
@@ -97,7 +99,7 @@ export default class ModifyPresentationHelper {
     await Tracker.collect('ppt/slideMasters', 'image', keepFiles);
     await Tracker.collect('ppt/slideLayouts', 'image', keepFiles);
 
-    FileHelper.removeFromDirectory(archive, 'ppt/media', (file) => {
+    await FileHelper.removeFromDirectory(archive, 'ppt/media', (file) => {
       const info = FileHelper.getFileInfo(file.name);
       return (
         extensions.includes(info.extension.toLowerCase()) &&

@@ -10,6 +10,7 @@ import { SlideInfo } from '../types/xml-types';
 import { XmlHelper } from '../helper/xml-helper';
 import { ContentTracker } from '../helper/content-tracker';
 import IArchive from '../interfaces/iarchive';
+import { ArchiveParams } from '../types/types';
 
 export class Template implements ITemplate {
   /**
@@ -51,22 +52,22 @@ export class Template implements ITemplate {
   creationIds: SlideInfo[];
   existingSlides: number;
 
-  constructor(location: string) {
+  constructor(location: string, params: ArchiveParams) {
     this.location = location;
-    const archive = FileHelper.importArchive(location);
+    const archive = FileHelper.importArchive(location, params);
     this.archive = archive;
   }
 
   static import(
     location: string,
-    name?: string,
+    params: ArchiveParams,
   ): PresTemplate | RootPresTemplate {
     let newTemplate: PresTemplate | RootPresTemplate;
-    if (name) {
-      newTemplate = new Template(location) as PresTemplate;
-      newTemplate.name = name;
+    if (params.name) {
+      newTemplate = new Template(location, params) as PresTemplate;
+      newTemplate.name = params.name;
     } else {
-      newTemplate = new Template(location) as RootPresTemplate;
+      newTemplate = new Template(location, params) as RootPresTemplate;
       newTemplate.slides = [];
       newTemplate.counter = [
         new CountHelper('slides', newTemplate),

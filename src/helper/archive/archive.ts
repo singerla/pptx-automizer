@@ -1,10 +1,15 @@
 import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
 import { ArchivedFile, ArchiveType } from '../../interfaces/iarchive';
 import { XmlDocument } from '../../types/xml-types';
+import { AutomizerParams } from '../../types/types';
+import JSZip from 'jszip';
 
 export default class Archive {
   filename: string;
   buffer: ArchivedFile[] = [];
+  options: JSZip.JSZipGeneratorOptions<'nodebuffer'> = {
+    type: 'nodebuffer',
+  };
 
   constructor(filename) {
     this.filename = filename;
@@ -41,5 +46,14 @@ export default class Archive {
 
   fromBuffer(relativePath) {
     return this.buffer.find((file) => file.relativePath === relativePath);
+  }
+
+  setOptions(params: AutomizerParams): void {
+    if (params.compression > 0) {
+      this.options.compression = 'DEFLATE';
+      this.options.compressionOptions = {
+        level: params.compression,
+      };
+    }
   }
 }

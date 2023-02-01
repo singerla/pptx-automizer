@@ -5,6 +5,7 @@ import { ICounter } from '../interfaces/icounter';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { XmlHelper } from './xml-helper';
 import { XmlElement } from '../types/xml-types';
+import { vd } from './general-helper';
 
 export class CountHelper implements ICounter {
   template: RootPresTemplate;
@@ -84,6 +85,10 @@ export class CountHelper implements ICounter {
   }
 
   private static async countImages(presentation: IArchive): Promise<number> {
-    return await presentation.count(/ppt\/media\/image/);
+    const mediaFiles = await presentation.folder('ppt/media');
+    const count = mediaFiles.filter(
+      (file) => file.relativePath.indexOf('image') === 0,
+    ).length;
+    return count;
   }
 }
