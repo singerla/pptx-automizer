@@ -1,4 +1,5 @@
 import { Color, ModificationTags } from './modify-types';
+import { ShapeCoordinates } from './shape-types';
 
 export type ChartPointValue = null | number;
 export type ChartValueStyle = {
@@ -82,4 +83,7 @@ export type ChartAxisRange = {
   minorUnit?: number;
   formatCode?: string;
   sourceLinked?: boolean;
+};
+export type ChartPlotArea = ShapeCoordinates & {
+  // Add additional plot area specific attributes
 };
