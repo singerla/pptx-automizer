@@ -31,7 +31,7 @@ const run = async () => {
       { label: 'item test r2', values: [12, 18] },
     ],
   };
-
+  
   const result = await automizer
     .addSlide('ChartBarsStacked.pptx', 1, (slide) => {
       slide.modifyElement('BarsStacked', [
@@ -39,9 +39,20 @@ const run = async () => {
         modify.setPlotArea({
           // Plot area width is a share of chart space.
           // We shrink it to 50% of available chart width.
-          w: 0.5,
+          w: 0.4,
+          h: 0.4,
+          x: 0.0,
+          y: 0.0
         }),
-
+        // Label area position and dimensions. Automatically sets the label visible.
+        modify.setLabelArea({
+          w: 0.2,
+          h: 1.0,
+          x: 1.0,
+          y: 0.0
+        }),
+        // Hides the label by zeroing label area
+        modify.setLabelHidden(),
         // We can as well set chart data to insert our custom values.
         // modify.setChartData(dataSmaller),
 

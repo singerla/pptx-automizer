@@ -13,6 +13,7 @@ import {
 import ModifyXmlHelper from './modify-xml-helper';
 import { XmlDocument, XmlElement } from '../types/xml-types';
 import { XmlHelper } from './xml-helper';
+import { disconnect } from 'process';
 
 export default class ModifyChartHelper {
   /**
@@ -278,7 +279,59 @@ export default class ModifyChartHelper {
       }
     }
   };
-
+  static setLabelHidden = () =>
+  (
+      element: XmlDocument | XmlElement,
+      chart?: XmlDocument,
+      workbook?: Workbook,
+  ): void => {
+      this.setLabelArea(
+        {
+          w:0.0, h:0.0, x:0.0, y:0.0
+        })(element, chart, workbook);
+  }
+  static setLabelArea = (legendArea: ChartPlotArea) =>
+    (
+      element: XmlDocument | XmlElement,
+      chart?: XmlDocument,
+      workbook?: Workbook,
+    ): void => {
+      const modifyXmlHelper = new ModifyXmlHelper(chart);
+      modifyXmlHelper.modify({
+        'c:legend': {
+          children: {
+            'c:manualLayout': {
+              children: {
+                'c:w': {
+                  modify: [
+                    ModifyXmlHelper.attribute('val', legendArea.w),
+                  ],
+                },
+                'c:h': {
+                  modify: [
+                    ModifyXmlHelper.attribute('val', legendArea.h),
+                  ],
+                },
+                'c:x': {
+                  modify: [
+                    ModifyXmlHelper.attribute('val', legendArea.x),
+                  ],
+                },
+                'c:y': {
+                  modify: [
+                    ModifyXmlHelper.attribute('val', legendArea.y),
+                  ],
+                },
+              },
+            },
+          },
+        },
+      });
+      XmlHelper.dump(
+        chart
+          .getElementsByTagName('c:legendPos')[0]
+      );
+    };
   /**
    * Set plot area size.
    */
@@ -313,6 +366,21 @@ export default class ModifyChartHelper {
                   modify: [
                     ModifyXmlHelper.attribute('val', plotArea.w),
                     // ...
+                  ],
+                },
+                'c:h': {
+                  modify: [
+                    ModifyXmlHelper.attribute('val', plotArea.h),
+                  ],
+                },
+                'c:x': {
+                  modify: [
+                    ModifyXmlHelper.attribute('val', plotArea.x),
+                  ],
+                },
+                'c:y': {
+                  modify: [
+                    ModifyXmlHelper.attribute('val', plotArea.y),
                   ],
                 },
               },

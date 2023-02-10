@@ -26,6 +26,8 @@ const setChartScatter = ModifyChartHelper.setChartScatter;
 const setChartBubbles = ModifyChartHelper.setChartBubbles;
 const setChartCombo = ModifyChartHelper.setChartCombo;
 const setPlotArea = ModifyChartHelper.setPlotArea;
+const setLabelArea = ModifyChartHelper.setLabelArea;
+const setLabelHidden = ModifyChartHelper.setLabelHidden;
 
 import { AutomizerSummary, StatusTracker } from './types/types';
 
@@ -97,6 +99,8 @@ export const modify = {
   setChartCombo,
   setChartBubbles,
   setPlotArea,
+  setLabelArea,
+  setLabelHidden,
 };
 export type { AutomizerSummary, TemplateInfo, StatusTracker };
 export default Automizer;
