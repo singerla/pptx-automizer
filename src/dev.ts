@@ -5,12 +5,13 @@ const outputName = 'create-presentation-file-proxy.test.pptx';
 const automizer = new Automizer({
   templateDir: `${__dirname}/../__tests__/pptx-templates`,
   outputDir: `${__dirname}/../__tests__/pptx-output`,
-  archiveType: {
-    mode: 'fs',
-    baseDir: `${__dirname}/../__tests__/pptx-cache`,
-    workDir: outputName,
-    cleanupWorkDir: true,
-  },
+  // Streaming is only implemented for jszip
+  // archiveType: {
+  //   mode: 'fs',
+  //   baseDir: `${__dirname}/../__tests__/pptx-cache`,
+  //   workDir: outputName,
+  //   cleanupWorkDir: true,
+  // },
   rootTemplate: 'RootTemplateWithImages.pptx',
   presTemplates: [
     `RootTemplate.pptx`,
@@ -37,7 +38,7 @@ const run = async () => {
     ],
   };
 
-  const result = await automizer
+  const stream = await automizer
     .addSlide('ChartBarsStacked.pptx', 1, (slide) => {
       slide.modifyElement('BarsStacked', [modify.setChartData(dataSmaller)]);
       slide.addElement('ChartBarsStacked.pptx', 1, 'BarsStacked', [
@@ -58,9 +59,12 @@ const run = async () => {
       slide.addElement('SlideWithImages.pptx', 2, 'imageJPG');
       slide.modifyElement('BarsStacked', [modify.setChartData(dataSmaller)]);
     })
-    .write(outputName);
+    .stream();
 
-  vd(result.duration);
+  // vd(stream);
+
+  // stream.pipe(process.stdout);
+
   // vd(pres.rootTemplate.content);
 };
 
