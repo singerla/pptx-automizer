@@ -18,6 +18,7 @@ import * as fs from 'fs';
 import { XmlHelper } from './helper/xml-helper';
 import ModifyPresentationHelper from './helper/modify-presentation-helper';
 import { ContentTracker } from './helper/content-tracker';
+import JSZip from 'jszip';
 
 /**
  * Automizer
@@ -318,16 +319,19 @@ export default class Automizer implements IPresentationProps {
 
   /**
    * Create a ReadableStream from output pptx file.
+   * @param generatorOptions - JSZipGeneratorOptions for nodebuffer Output type
    * @returns Promise<NodeJS.ReadableStream>
    */
-  public async stream(): Promise<NodeJS.ReadableStream> {
+  public async stream(
+    generatorOptions?: JSZip.JSZipGeneratorOptions<'nodebuffer'>,
+  ): Promise<NodeJS.ReadableStream> {
     await this.finalizePresentation();
 
     if (!this.rootTemplate.archive.stream) {
       throw 'Streaming is not implemented for current archive type';
     }
 
-    return this.rootTemplate.archive.stream(this.params);
+    return this.rootTemplate.archive.stream(this.params, generatorOptions);
   }
 
   async finalizePresentation() {

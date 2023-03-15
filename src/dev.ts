@@ -20,7 +20,7 @@ const automizer = new Automizer({
   ],
   removeExistingSlides: true,
   cleanup: true,
-  compression: 0,
+  compression: 1,
 });
 
 const run = async () => {
@@ -59,7 +59,11 @@ const run = async () => {
       slide.addElement('SlideWithImages.pptx', 2, 'imageJPG');
       slide.modifyElement('BarsStacked', [modify.setChartData(dataSmaller)]);
     })
-    .stream();
+    .stream({
+      compressionOptions: {
+        level: 2,
+      },
+    });
 
   // vd(stream);
 
