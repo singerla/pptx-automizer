@@ -26,8 +26,10 @@ export default interface IArchive {
   remove: (file: string) => Promise<void>;
   output: (location: string, params: AutomizerParams) => Promise<void>;
   getContent?: (params: AutomizerParams) => Promise<Buffer>;
+  getArchive?: (params: AutomizerParams) => Promise<Buffer>;
   stream?: (
     params: AutomizerParams,
-    generatorOptions: JSZip.JSZipGeneratorOptions<'nodebuffer'>,
+    options: JSZip.JSZipGeneratorOptions<'nodebuffer'>,
   ) => Promise<NodeJS.ReadableStream>;
+  getFinalArchive?: () => Promise<JSZip>;
 }

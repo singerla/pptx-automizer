@@ -38,7 +38,7 @@ const run = async () => {
     ],
   };
 
-  const stream = await automizer
+  const pres = await automizer
     .addSlide('ChartBarsStacked.pptx', 1, (slide) => {
       slide.modifyElement('BarsStacked', [modify.setChartData(dataSmaller)]);
       slide.addElement('ChartBarsStacked.pptx', 1, 'BarsStacked', [
@@ -58,14 +58,17 @@ const run = async () => {
     .addSlide('ChartBarsStacked.pptx', 1, (slide) => {
       slide.addElement('SlideWithImages.pptx', 2, 'imageJPG');
       slide.modifyElement('BarsStacked', [modify.setChartData(dataSmaller)]);
-    })
-    .stream({
-      compressionOptions: {
-        level: 2,
-      },
     });
 
-  // vd(stream);
+  const stream = await pres.stream({
+    compressionOptions: {
+      level: 9,
+    },
+  });
+
+  const jszip = await pres.getJSZip();
+  const base64 = await jszip.generateAsync({ type: 'base64' });
+  vd(stream);
 
   // stream.pipe(process.stdout);
 

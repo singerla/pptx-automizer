@@ -104,6 +104,11 @@ export default class ArchiveJszip extends Archive implements IArchive {
     return this.archive.generateNodeStream(mergedOptions);
   }
 
+  async getFinalArchive(): Promise<JSZip> {
+    await this.writeBuffer(this);
+    return this.archive;
+  }
+
   async getContent(params: AutomizerParams): Promise<Buffer> {
     this.setOptions(params);
 

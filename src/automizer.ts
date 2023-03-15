@@ -18,7 +18,7 @@ import * as fs from 'fs';
 import { XmlHelper } from './helper/xml-helper';
 import ModifyPresentationHelper from './helper/modify-presentation-helper';
 import { ContentTracker } from './helper/content-tracker';
-import JSZip from 'jszip';
+import JSZip, { OutputType } from 'jszip';
 
 /**
  * Automizer
@@ -332,6 +332,20 @@ export default class Automizer implements IPresentationProps {
     }
 
     return this.rootTemplate.archive.stream(this.params, generatorOptions);
+  }
+
+  /**
+   * Pass final JSZip instance.
+   * @returns Promise<NodeJS.ReadableStream>
+   */
+  public async getJSZip(): Promise<JSZip> {
+    await this.finalizePresentation();
+
+    if (!this.rootTemplate.archive.getFinalArchive) {
+      throw 'GetFinalArchive is not implemented for current archive type';
+    }
+
+    return this.rootTemplate.archive.getFinalArchive();
   }
 
   async finalizePresentation() {
