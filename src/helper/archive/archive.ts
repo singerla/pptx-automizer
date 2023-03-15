@@ -44,10 +44,6 @@ export default class Archive {
     }
   }
 
-  fromBuffer(relativePath) {
-    return this.buffer.find((file) => file.relativePath === relativePath);
-  }
-
   setOptions(params: AutomizerParams): void {
     if (params.compression > 0) {
       this.options.compression = 'DEFLATE';
@@ -55,5 +51,9 @@ export default class Archive {
         level: params.compression,
       };
     }
+  }
+
+  fromBuffer(relativePath) {
+    return this.buffer.find((file) => file.relativePath === relativePath);
   }
 }

@@ -5,6 +5,7 @@ import { AutomizerParams } from '../../types/types';
 import IArchive, { ArchivedFile } from '../../interfaces/iarchive';
 import { XmlDocument } from '../../types/xml-types';
 import path from 'path';
+import { vd } from '../general-helper';
 
 export default class ArchiveJszip extends Archive implements IArchive {
   archive: JSZip;
@@ -85,6 +86,27 @@ export default class ArchiveJszip extends Archive implements IArchive {
       console.error(err);
       throw new Error(`Could not write output file: ${location}`);
     });
+  }
+
+  async stream(
+    params: AutomizerParams,
+    options?: JSZip.JSZipGeneratorOptions<'nodebuffer'>,
+  ): Promise<NodeJS.ReadableStream> {
+    this.setOptions(params);
+
+    await this.writeBuffer(this);
+
+    const mergedOptions = {
+      ...this.options,
+      ...options,
+    };
+
+    return this.archive.generateNodeStream(mergedOptions);
+  }
+
+  async getFinalArchive(): Promise<JSZip> {
+    await this.writeBuffer(this);
+    return this.archive;
   }
 
   async getContent(params: AutomizerParams): Promise<Buffer> {

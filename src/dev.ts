@@ -5,12 +5,13 @@ const outputName = 'create-presentation-file-proxy.test.pptx';
 const automizer = new Automizer({
   templateDir: `${__dirname}/../__tests__/pptx-templates`,
   outputDir: `${__dirname}/../__tests__/pptx-output`,
-  archiveType: {
-    mode: 'fs',
-    baseDir: `${__dirname}/../__tests__/pptx-cache`,
-    workDir: outputName,
-    cleanupWorkDir: true,
-  },
+  // Streaming is only implemented for jszip
+  // archiveType: {
+  //   mode: 'fs',
+  //   baseDir: `${__dirname}/../__tests__/pptx-cache`,
+  //   workDir: outputName,
+  //   cleanupWorkDir: true,
+  // },
   rootTemplate: 'RootTemplateWithImages.pptx',
   presTemplates: [
     `RootTemplate.pptx`,
@@ -19,7 +20,7 @@ const automizer = new Automizer({
   ],
   removeExistingSlides: true,
   cleanup: true,
-  compression: 0,
+  compression: 1,
 });
 
 const run = async () => {
@@ -37,7 +38,7 @@ const run = async () => {
     ],
   };
 
-  const result = await automizer
+  const pres = await automizer
     .addSlide('ChartBarsStacked.pptx', 1, (slide) => {
       slide.modifyElement('BarsStacked', [modify.setChartData(dataSmaller)]);
       slide.addElement('ChartBarsStacked.pptx', 1, 'BarsStacked', [
@@ -57,10 +58,20 @@ const run = async () => {
     .addSlide('ChartBarsStacked.pptx', 1, (slide) => {
       slide.addElement('SlideWithImages.pptx', 2, 'imageJPG');
       slide.modifyElement('BarsStacked', [modify.setChartData(dataSmaller)]);
-    })
-    .write(outputName);
+    });
 
-  vd(result.duration);
+  const stream = await pres.stream({
+    compressionOptions: {
+      level: 9,
+    },
+  });
+
+  const jszip = await pres.getJSZip();
+  const base64 = await jszip.generateAsync({ type: 'base64' });
+  vd(stream);
+
+  // stream.pipe(process.stdout);
+
   // vd(pres.rootTemplate.content);
 };
 

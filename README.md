@@ -106,6 +106,23 @@ pres.addSlide('graph', 1)
 pres.write(`myPresentation.pptx`).then(summary => {
   console.log(summary)
 })
+
+// It is also possible to get a ReadableStream. 
+// stream() accepts JSZip.JSZipGeneratorOptions for 'nodebuffer' type. 
+const stream = await pres.stream({
+  compressionOptions: {
+    level: 9,
+  },
+})
+// You can e.g. output the pptx archive to stdout instead of writing a file:
+stream.pipe(process.stdout)
+
+// If you need any other output format, you can eventually access 
+// the underlying JSZip instance:
+const finalJSZip = await pres.getJSZip()
+// Convert the output to whatever needed:
+const base64 = await finalJSZip.generateAsync({ type: 'base64' })
+
 ```
 
 
