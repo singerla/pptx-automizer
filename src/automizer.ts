@@ -295,9 +295,7 @@ export default class Automizer implements IPresentationProps {
    * @returns summary object.
    */
   public async write(location: string): Promise<AutomizerSummary> {
-    await this.writeSlides();
-    await this.normalizePresentation();
-    await this.applyModifyPresentationCallbacks();
+    await this.finalizePresentation();
 
     await this.rootTemplate.archive.output(
       this.getLocation(location, 'output'),
@@ -316,6 +314,26 @@ export default class Automizer implements IPresentationProps {
       charts: this.rootTemplate.count('charts'),
       images: this.rootTemplate.count('images'),
     };
+  }
+
+  /**
+   * Create a ReadableStream from output pptx file.
+   * @returns Promise<NodeJS.ReadableStream>
+   */
+  public async stream(): Promise<NodeJS.ReadableStream> {
+    await this.finalizePresentation();
+
+    if (!this.rootTemplate.archive.stream) {
+      throw 'Streaming is not implemented for current archive type';
+    }
+
+    return this.rootTemplate.archive.stream(this.params);
+  }
+
+  async finalizePresentation() {
+    await this.writeSlides();
+    await this.normalizePresentation();
+    await this.applyModifyPresentationCallbacks();
   }
 
   /**
