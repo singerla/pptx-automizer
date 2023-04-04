@@ -1,32 +1,15 @@
 import Automizer from './automizer';
 
 import ModifyHelper from './helper/modify-helper';
-const dump = ModifyHelper.dump;
-const dumpChart = ModifyHelper.dumpChart;
-const setAttribute = ModifyHelper.setAttribute;
-
 import ModifyShapeHelper from './helper/modify-shape-helper';
-const setSolidFill = ModifyShapeHelper.setSolidFill;
-const setText = ModifyShapeHelper.setText;
-const replaceText = ModifyShapeHelper.replaceText;
-const setPosition = ModifyShapeHelper.setPosition;
-const updatePosition = ModifyShapeHelper.updatePosition;
-
 import ModifyTableHelper from './helper/modify-table-helper';
-const setTableData = ModifyTableHelper.setTableData;
-const adjustHeight = ModifyTableHelper.adjustHeight;
-const adjustWidth = ModifyTableHelper.adjustWidth;
-const setTable = ModifyTableHelper.setTable;
-
 import ModifyChartHelper from './helper/modify-chart-helper';
-const setChartData = ModifyChartHelper.setChartData;
-const setExtendedChartData = ModifyChartHelper.setExtendedChartData;
-const setChartVerticalLines = ModifyChartHelper.setChartVerticalLines;
-const setChartScatter = ModifyChartHelper.setChartScatter;
-const setChartBubbles = ModifyChartHelper.setChartBubbles;
-const setChartCombo = ModifyChartHelper.setChartCombo;
-
-import { AutomizerSummary, StatusTracker } from './types/types';
+import { TemplateInfo } from './types/xml-types';
+import {
+  AutomizerSummary,
+  ShapeModificationCallback,
+  StatusTracker,
+} from './types/types';
 
 import {
   ModifyTableParams,
@@ -46,7 +29,28 @@ import { ShapeCoordinates, ShapeValueStyle } from './types/shape-types';
 import { XmlHelper } from './helper/xml-helper';
 import ModifyTextHelper from './helper/modify-text-helper';
 import ModifyColorHelper from './helper/modify-color-helper';
-import { TemplateInfo } from './types/xml-types';
+
+const dump = ModifyHelper.dump;
+const dumpChart = ModifyHelper.dumpChart;
+const setAttribute = ModifyHelper.setAttribute;
+
+const setSolidFill = ModifyShapeHelper.setSolidFill;
+const setText = ModifyShapeHelper.setText;
+const replaceText = ModifyShapeHelper.replaceText;
+const setPosition = ModifyShapeHelper.setPosition;
+const updatePosition = ModifyShapeHelper.updatePosition;
+
+const setTableData = ModifyTableHelper.setTableData;
+const adjustHeight = ModifyTableHelper.adjustHeight;
+const adjustWidth = ModifyTableHelper.adjustWidth;
+const setTable = ModifyTableHelper.setTable;
+
+const setChartData = ModifyChartHelper.setChartData;
+const setExtendedChartData = ModifyChartHelper.setExtendedChartData;
+const setChartVerticalLines = ModifyChartHelper.setChartVerticalLines;
+const setChartScatter = ModifyChartHelper.setChartScatter;
+const setChartBubbles = ModifyChartHelper.setChartBubbles;
+const setChartCombo = ModifyChartHelper.setChartCombo;
 
 export type {
   ChartBubble,
@@ -96,5 +100,10 @@ export const modify = {
   setChartCombo,
   setChartBubbles,
 };
-export type { AutomizerSummary, TemplateInfo, StatusTracker };
+export type {
+  AutomizerSummary,
+  TemplateInfo,
+  StatusTracker,
+  ShapeModificationCallback,
+};
 export default Automizer;
