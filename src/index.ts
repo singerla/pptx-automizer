@@ -52,6 +52,10 @@ const setChartScatter = ModifyChartHelper.setChartScatter;
 const setChartBubbles = ModifyChartHelper.setChartBubbles;
 const setChartCombo = ModifyChartHelper.setChartCombo;
 
+const setPlotArea = ModifyChartHelper.setPlotArea;
+const setLabelArea = ModifyChartHelper.setLabelArea;
+const setLabelHidden = ModifyChartHelper.setLabelHidden;
+
 export type {
   ChartBubble,
   ChartCategory,
@@ -99,6 +103,9 @@ export const modify = {
   setChartScatter,
   setChartCombo,
   setChartBubbles,
+  setPlotArea,
+  setLabelArea,
+  setLabelHidden,
 };
 export type {
   AutomizerSummary,

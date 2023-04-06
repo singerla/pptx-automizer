@@ -5,12 +5,15 @@ import {
   ChartBubble,
   ChartCategory,
   ChartData,
+  ChartPlotArea,
   ChartPoint,
   ChartSeries,
   ChartSlot,
 } from '../types/chart-types';
 import ModifyXmlHelper from './modify-xml-helper';
 import { XmlDocument, XmlElement } from '../types/xml-types';
+import { XmlHelper } from './xml-helper';
+import { disconnect } from 'process';
 
 export default class ModifyChartHelper {
   /**
@@ -48,7 +51,7 @@ export default class ModifyChartHelper {
     (data: ChartData) =>
     (
       element: XmlDocument | XmlElement,
-      chart?: Document,
+      chart?: XmlDocument,
       workbook?: Workbook,
     ): void => {
       const slots = [] as ChartSlot[];
@@ -79,7 +82,7 @@ export default class ModifyChartHelper {
     (data: ChartData) =>
     (
       element: XmlDocument | XmlElement,
-      chart?: Document,
+      chart?: XmlDocument,
       workbook?: Workbook,
     ): void => {
       const slots = [] as ChartSlot[];
@@ -122,7 +125,7 @@ export default class ModifyChartHelper {
     (data: ChartData) =>
     (
       element: XmlDocument | XmlElement,
-      chart?: Document,
+      chart?: XmlDocument,
       workbook?: Workbook,
     ): void => {
       const slots = [] as ChartSlot[];
@@ -163,7 +166,7 @@ export default class ModifyChartHelper {
     (data: ChartData) =>
     (
       element: XmlDocument | XmlElement,
-      chart?: Document,
+      chart?: XmlDocument,
       workbook?: Workbook,
     ): void => {
       const slots = [] as ChartSlot[];
@@ -213,7 +216,7 @@ export default class ModifyChartHelper {
     (data: ChartData) =>
     (
       element: XmlDocument | XmlElement,
-      chart?: Document,
+      chart?: XmlDocument,
       workbook?: Workbook,
     ): void => {
       const slots = [] as ChartSlot[];
@@ -276,4 +279,133 @@ export default class ModifyChartHelper {
       }
     }
   };
+  static setLabelHidden = () =>
+  (
+      element: XmlDocument | XmlElement,
+      chart?: XmlDocument,
+      workbook?: Workbook,
+  ): void => {
+      this.setLabelArea(
+        {
+          w:0.0, h:0.0, x:0.0, y:0.0
+        })(element, chart, workbook);
+  }
+  static setLabelArea = (legendArea: ChartPlotArea) =>
+    (
+      element: XmlDocument | XmlElement,
+      chart?: XmlDocument,
+      workbook?: Workbook,
+    ): void => {
+      const modifyXmlHelper = new ModifyXmlHelper(chart);
+      modifyXmlHelper.modify({
+        'c:legend': {
+          children: {
+            'c:manualLayout': {
+              children: {
+                'c:w': {
+                  modify: [
+                    ModifyXmlHelper.attribute('val', legendArea.w),
+                  ],
+                },
+                'c:h': {
+                  modify: [
+                    ModifyXmlHelper.attribute('val', legendArea.h),
+                  ],
+                },
+                'c:x': {
+                  modify: [
+                    ModifyXmlHelper.attribute('val', legendArea.x),
+                  ],
+                },
+                'c:y': {
+                  modify: [
+                    ModifyXmlHelper.attribute('val', legendArea.y),
+                  ],
+                },
+              },
+            },
+          },
+        },
+      });
+      XmlHelper.dump(
+        chart
+          .getElementsByTagName('c:legendPos')[0]
+      );
+    };
+  /**
+   * Set plot area size.
+   */
+  static setPlotArea =
+    (plotArea: ChartPlotArea) =>
+    (
+      element: XmlDocument | XmlElement,
+      chart?: XmlDocument,
+      workbook?: Workbook,
+    ): void => {
+      // Each chart has a separate chart xml file. It is required
+      // to alter everything that's "inside" the chart, e.g. data, legend,
+      // axis... and: plot area
+
+      // ModifyXmlHelper class provides a lot of functions to access
+      // and edit xml elements.
+      const modifyXmlHelper = new ModifyXmlHelper(chart);
+
+      // We need to locate the required xml elements and target them
+      // with ModifyXmlHelper's help.
+      // We can therefore log the entire chart.xml to console:
+      // XmlHelper.dump(chart);
+
+      modifyXmlHelper.modify({
+        'c:plotArea': {
+          children: {
+            'c:manualLayout': {
+              children: {
+                'c:w': {
+                  // Finally, we attach ModifyCallbacks to all
+                  // matching elements
+                  modify: [
+                    ModifyXmlHelper.attribute('val', plotArea.w),
+                    // ...
+                  ],
+                },
+                'c:h': {
+                  modify: [
+                    ModifyXmlHelper.attribute('val', plotArea.h),
+                  ],
+                },
+                'c:x': {
+                  modify: [
+                    ModifyXmlHelper.attribute('val', plotArea.x),
+                  ],
+                },
+                'c:y': {
+                  modify: [
+                    ModifyXmlHelper.attribute('val', plotArea.y),
+                  ],
+                },
+              },
+            },
+          },
+        },
+      });
+
+      // We can dump the target node and see if our modification
+      // took effect.
+      XmlHelper.dump(
+        chart
+          .getElementsByTagName('c:plotArea')[0]
+          .getElementsByTagName('c:manualLayout')[0],
+      );
+
+      // You can also take a look at element xml, which is a child node
+      // of current slide. It holds general shape properties, but no
+      // data or so.
+      // XmlHelper.dump(element);
+
+      // Rough ones might also want to look inside the linked workbook.
+      // It is located inside an extra xlsx file. We don't need this
+      // for now.
+      // XmlHelper.dump(workbook.table)
+      // XmlHelper.dump(workbook.sheet)
+    };
 }

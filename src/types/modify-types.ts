@@ -6,6 +6,11 @@ export type ModifyCallback = {
 export type ModifyCollectionCallback = {
   (collection: HTMLCollectionOf<XmlElement>);
 };
+/**
+ * A Modification is applied to xml elements by ModificationTags.
+ * Specify an index if not 0 and put one or more ModifyCallbacks to
+ * 'modify' prop.
+ */
 export type Modification = {
   index?: number;
   last?: boolean;
@@ -17,6 +22,10 @@ export type Modification = {
   fromPrevious?: boolean;
   forceCreate?: boolean;
 };
+/**
+ * ModificationTags will specify the target xml tags for your
+ * modifications. ModificationTags can be nested by using 'children'.
+ */
 export type ModificationTags = {
   [tag: string]: Modification;
 };

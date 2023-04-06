@@ -80,6 +80,18 @@ const automizer = new Automizer({
   // Higher compression levels produce smaller files.
   compression: 0,
 
+  // You can enable 'archiveType' and set mode: 'fs'.
+  // This will extract all templates and output to disk.
+  // It will not improve performance, but it can help debugging:
+  // You don't have to manually extract pptx contents, which can
+  // be annoying if you need to look inside your files.
+  // archiveType: {
+  //   mode: 'fs',
+  //   baseDir: `${__dirname}/../__tests__/pptx-cache`,
+  //   workDir: 'tmpWorkDir',
+  //   cleanupWorkDir: true,
+  // },
+  
   // use a callback function to track pptx generation process.
   // statusTracker: myStatusTracker,
 })
