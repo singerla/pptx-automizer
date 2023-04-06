@@ -1,4 +1,5 @@
 import { Color, ModificationTags } from './modify-types';
+import { ShapeCoordinates } from './shape-types';
 
 export type ChartPointValue = null | number;
 export type ChartValueStyle = {
@@ -83,3 +84,6 @@ export type ChartAxisRange = {
   formatCode?: string;
   sourceLinked?: boolean;
 };
+// Elements inside a chart (e.g. a legend) require shares as coordinates.
+// E.g. "w: 0.5" means "half of chart width"
+export type ChartElementCoordinateShares = ShapeCoordinates;

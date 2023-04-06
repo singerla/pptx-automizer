@@ -5,12 +5,15 @@ import {
   ChartBubble,
   ChartCategory,
   ChartData,
+  ChartElementCoordinateShares,
   ChartPoint,
   ChartSeries,
   ChartSlot,
 } from '../types/chart-types';
 import ModifyXmlHelper from './modify-xml-helper';
 import { XmlDocument, XmlElement } from '../types/xml-types';
+import { XmlHelper } from './xml-helper';
+import { vd } from './general-helper';
 
 export default class ModifyChartHelper {
   /**
@@ -48,7 +51,7 @@ export default class ModifyChartHelper {
     (data: ChartData) =>
     (
       element: XmlDocument | XmlElement,
-      chart?: Document,
+      chart?: XmlDocument,
       workbook?: Workbook,
     ): void => {
       const slots = [] as ChartSlot[];
@@ -79,7 +82,7 @@ export default class ModifyChartHelper {
     (data: ChartData) =>
     (
       element: XmlDocument | XmlElement,
-      chart?: Document,
+      chart?: XmlDocument,
       workbook?: Workbook,
     ): void => {
       const slots = [] as ChartSlot[];
@@ -122,7 +125,7 @@ export default class ModifyChartHelper {
     (data: ChartData) =>
     (
       element: XmlDocument | XmlElement,
-      chart?: Document,
+      chart?: XmlDocument,
       workbook?: Workbook,
     ): void => {
       const slots = [] as ChartSlot[];
@@ -163,7 +166,7 @@ export default class ModifyChartHelper {
     (data: ChartData) =>
     (
       element: XmlDocument | XmlElement,
-      chart?: Document,
+      chart?: XmlDocument,
       workbook?: Workbook,
     ): void => {
       const slots = [] as ChartSlot[];
@@ -213,7 +216,7 @@ export default class ModifyChartHelper {
     (data: ChartData) =>
     (
       element: XmlDocument | XmlElement,
-      chart?: Document,
+      chart?: XmlDocument,
       workbook?: Workbook,
     ): void => {
       const slots = [] as ChartSlot[];
@@ -276,4 +279,172 @@ export default class ModifyChartHelper {
       }
     }
   };
+
+  /**
+   * Set legend coordinates to zero. Could be advantageous for pptx users to
+   * be able to maximize a legend easily. Legend will still be selectible for
+   * a user.
+   */
+  static minimizeChartLegend =
+    () =>
+    (
+      element: XmlDocument | XmlElement,
+      chart?: XmlDocument,
+      workbook?: Workbook,
+    ): void => {
+      this.setLegendPosition({
+        w: 0.0,
+        h: 0.0,
+        x: 0.0,
+        y: 0.0,
+      })(element, chart, workbook);
+    };
+
+  /**
+   * Completely remove a chart legend. Please notice: This will trigger
+   * PowerPoint to automatically maximize chart space.
+   */
+  static removeChartLegend =
+    () =>
+    (element: XmlDocument | XmlElement, chart?: XmlDocument): void => {
+      if (chart.getElementsByTagName('c:legend')) {
+        XmlHelper.remove(chart.getElementsByTagName('c:legend')[0]);
+      }
+    };
+
+  /**
+   * Update the coordinates of a chart legend.
+   * legendArea coordinates are shares of chart coordinates, e.g.
+   * "w: 0.5" means "half of chart width"
+   * @param legendArea
+   */
+  static setLegendPosition =
+    (legendArea: ChartElementCoordinateShares) =>
+    (
+      element: XmlDocument | XmlElement,
+      chart?: XmlDocument,
+      workbook?: Workbook,
+    ): void => {
+      const modifyXmlHelper = new ModifyXmlHelper(chart);
+      modifyXmlHelper.modify({
+        'c:legend': {
+          children: {
+            'c:manualLayout': {
+              children: {
+                'c:w': {
+                  modify: [ModifyXmlHelper.attribute('val', legendArea.w)],
+                },
+                'c:h': {
+                  modify: [ModifyXmlHelper.attribute('val', legendArea.h)],
+                },
+                'c:x': {
+                  modify: [ModifyXmlHelper.attribute('val', legendArea.x)],
+                },
+                'c:y': {
+                  modify: [ModifyXmlHelper.attribute('val', legendArea.y)],
+                },
+              },
+            },
+          },
+        },
+      });
+      // XmlHelper.dump(chart.getElementsByTagName('c:legendPos')[0]);
+    };
+
+  /**
+   * Set the plot area coordinates of a chart.
+   *
+   * This modifier requires a 'c:manualLayout' element. It will only appear if
+   * plot area coordinates are edited manually in ppt before. Recently fresh
+   * created charts will not have a manualLayout by default.
+   *
+   * This is especially useful if you have problems with edgy elements on a
+   * chart area that do not fit into the given space, e.g. when having a lot
+   * of data labels. You can increase the chart and decrease the plot area
+   * to create a margin.
+   *
+   * plotArea coordinates are shares of chart coordinates, e.g.
+   * "w: 0.5" means "half of chart width"
+   *
+   * @param plotArea
+   */
+  static setPlotArea =
+    (plotArea: ChartElementCoordinateShares) =>
+    (
+      element: XmlDocument | XmlElement,
+      chart?: XmlDocument,
+      workbook?: Workbook,
+    ): void => {
+      // Each chart has a separate chart xml file. It is required
+      // to alter everything that's "inside" the chart, e.g. data, legend,
+      // axis... and: plot area
+
+      // ModifyXmlHelper class provides a lot of functions to access
+      // and edit xml elements.
+      const modifyXmlHelper = new ModifyXmlHelper(chart);
+
+      // We need to locate the required xml elements and target them
+      // with ModifyXmlHelper's help.
+      // We can therefore log the entire chart.xml to console:
+      // XmlHelper.dump(chart);
+
+      // There needs to be a 'c:manualLayout' element. This will only appear if
+      // a plot area was edited manually in ppt before. Recently fresh created
+      // charts will not have a manualLayout by default.
+      if (
+        !chart
+          .getElementsByTagName('c:plotArea')[0]
+          .getElementsByTagName('c:manualLayout')[0]
+      ) {
+        console.error("Can't update plot area. No c:manualLayout found.");
+        return;
+      }
+
+      modifyXmlHelper.modify({
+        'c:plotArea': {
+          children: {
+            'c:manualLayout': {
+              children: {
+                'c:w': {
+                  // Finally, we attach ModifyCallbacks to all
+                  // matching elements
+                  modify: [
+                    ModifyXmlHelper.attribute('val', plotArea.w),
+                    // ...
+                  ],
+                },
+                'c:h': {
+                  modify: [ModifyXmlHelper.attribute('val', plotArea.h)],
+                },
+                'c:x': {
+                  modify: [ModifyXmlHelper.attribute('val', plotArea.x)],
+                },
+                'c:y': {
+                  modify: [ModifyXmlHelper.attribute('val', plotArea.y)],
+                },
+              },
+            },
+          },
+        },
+      });
+
+      // We can dump the target node and see if our modification
+      // took effect.
+      // XmlHelper.dump(
+      //   chart
+      //     .getElementsByTagName('c:plotArea')[0]
+      //     .getElementsByTagName('c:manualLayout')[0],
+      // );
+
+      // You can also take a look at element xml, which is a child node
+      // of current slide. It holds general shape properties, but no
+      // data or so.
+      // XmlHelper.dump(chart);
+
+      // Rough ones might also want to look inside the linked workbook.
+      // It is located inside an extra xlsx file. We don't need this
+      // for now.
+      // XmlHelper.dump(workbook.table)
+      // XmlHelper.dump(workbook.sheet)
+    };
 }

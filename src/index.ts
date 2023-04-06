@@ -51,6 +51,11 @@ const setChartVerticalLines = ModifyChartHelper.setChartVerticalLines;
 const setChartScatter = ModifyChartHelper.setChartScatter;
 const setChartBubbles = ModifyChartHelper.setChartBubbles;
 const setChartCombo = ModifyChartHelper.setChartCombo;
+const setAxisRange = ModifyChartHelper.setAxisRange;
+const setPlotArea = ModifyChartHelper.setPlotArea;
+const setLegendPosition = ModifyChartHelper.setLegendPosition;
+const removeChartLegend = ModifyChartHelper.removeChartLegend;
+const minimizeChartLegend = ModifyChartHelper.minimizeChartLegend;
 
 export type {
   ChartBubble,
@@ -94,11 +99,16 @@ export const modify = {
   adjustWidth,
   setTable,
   setChartData,
+  setAxisRange,
   setExtendedChartData,
   setChartVerticalLines,
   setChartScatter,
   setChartCombo,
   setChartBubbles,
+  setPlotArea,
+  setLegendPosition,
+  removeChartLegend,
+  minimizeChartLegend,
 };
 export type {
   AutomizerSummary,

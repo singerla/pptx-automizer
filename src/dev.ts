@@ -1,35 +1,29 @@
 import { vd } from './helper/general-helper';
 import Automizer, { modify } from './index';
 
-const outputName = 'create-presentation-file-proxy.test.pptx';
+const outputName = 'modify-chart-props.test.pptx';
 const automizer = new Automizer({
   templateDir: `${__dirname}/../__tests__/pptx-templates`,
   outputDir: `${__dirname}/../__tests__/pptx-output`,
-  // Streaming is only implemented for jszip
+  // You can enable 'archiveType' and set mode: 'fs'
+  // This will extract all templates and output to disk.
+  // It will not improve performance, but it can help debugging:
+  // You don't have to manually extract pptx contents, which can
+  // be annoying if you need to look inside your files.
   // archiveType: {
   //   mode: 'fs',
   //   baseDir: `${__dirname}/../__tests__/pptx-cache`,
   //   workDir: outputName,
   //   cleanupWorkDir: true,
   // },
-  rootTemplate: 'RootTemplateWithImages.pptx',
-  presTemplates: [
-    `RootTemplate.pptx`,
-    `SlideWithImages.pptx`,
-    `ChartBarsStacked.pptx`,
-  ],
+  rootTemplate: 'RootTemplate.pptx',
+  presTemplates: [`ChartBarsStacked.pptx`],
   removeExistingSlides: true,
   cleanup: true,
-  compression: 1,
+  compression: 0,
 });
 
 const run = async () => {
-  // const pres = automizer
-  //   .loadRoot(`RootTemplateWithImages.pptx`)
-  //   .load(`RootTemplate.pptx`, 'root')
-  //   .load(`SlideWithImages.pptx`, 'images')
-  //   .load(`ChartBarsStacked.pptx`, 'charts');
-
   const dataSmaller = {
     series: [{ label: 'series s1' }, { label: 'series s2' }],
     categories: [
@@ -38,41 +32,37 @@ const run = async () => {
     ],
   };
 
-  const pres = await automizer
+  const result = await automizer
     .addSlide('ChartBarsStacked.pptx', 1, (slide) => {
-      slide.modifyElement('BarsStacked', [modify.setChartData(dataSmaller)]);
-      slide.addElement('ChartBarsStacked.pptx', 1, 'BarsStacked', [
-        modify.setChartData(dataSmaller),
+      slide.modifyElement('BarsStacked', [
+        // This needs to be worked out:
+        modify.setPlotArea({
+          // Plot area width is a share of chart space.
+          // We shrink it to 50% of available chart width.
+          w: 0.4,
+          h: 0.4,
+          x: 0.0,
+          y: 0.0,
+        }),
+        // Label area position and dimensions. Automatically sets the label visible.
+        modify.setLegendPosition({
+          w: 0.2,
+          h: 1.0,
+          x: 1.0,
+          y: 0.0,
+        }),
+        // Hides the label by zeroing label area
+        modify.minimizeChartLegend(),
+        // We can as well set chart data to insert our custom values.
+        // modify.setChartData(dataSmaller),
+
+        // Dump the shape:
+        // modify.dump,
       ]);
     })
-    .addSlide('SlideWithImages.pptx', 1)
-    .addSlide('RootTemplate.pptx', 1, (slide) => {
-      slide.addElement('ChartBarsStacked.pptx', 1, 'BarsStacked', [
-        modify.setChartData(dataSmaller),
-      ]);
-    })
-    .addSlide('ChartBarsStacked.pptx', 1, (slide) => {
-      slide.addElement('SlideWithImages.pptx', 2, 'imageJPG');
-      slide.modifyElement('BarsStacked', [modify.setChartData(dataSmaller)]);
-    })
-    .addSlide('ChartBarsStacked.pptx', 1, (slide) => {
-      slide.addElement('SlideWithImages.pptx', 2, 'imageJPG');
-      slide.modifyElement('BarsStacked', [modify.setChartData(dataSmaller)]);
-    });
+    .write(outputName);
 
-  const stream = await pres.stream({
-    compressionOptions: {
-      level: 9,
-    },
-  });
-
-  const jszip = await pres.getJSZip();
-  const base64 = await jszip.generateAsync({ type: 'base64' });
-  vd(stream);
-
-  // stream.pipe(process.stdout);
-
-  // vd(pres.rootTemplate.content);
+  vd('It took ' + result.duration.toPrecision(2) + 's');
 };
 
 run().catch((error) => {
