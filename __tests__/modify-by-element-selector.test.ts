@@ -1,7 +1,7 @@
 import Automizer, { modify } from '../src/index';
 import { vd } from '../src/helper/general-helper';
 
-test('create presentation, add and modify an existing table by creation id.', async () => {
+test('create presentation, add and modify an existing table by FindElementSelector', async () => {
   const automizer = new Automizer({
     templateDir: `${__dirname}/pptx-templates`,
     outputDir: `${__dirname}/pptx-output`,
@@ -25,19 +25,28 @@ test('create presentation, add and modify an existing table by creation id.', as
 
   const result = await pres
     .addSlide('tables', 1950777067, (slide) => {
-      slide.modifyElement('{EFC74B4C-D832-409B-9CF4-73C1EFF132D8}', [
-        modify.setTableData(data1),
-      ]);
-    })
-    .addSlide('tables', 1950777067, (slide) => {
+      // This will try to match the given creationId first, and, if failed,
+      // match by element name.
+      slide.modifyElement(
+        {
+          creationId: '{EFC74B4C-D832-409B-9CF4-73C1EFF132D8}',
+          name: 'TableDefault',
+        },
+        [modify.setTableData(data1)],
+      );
+
+      // CreationID is not valid/has changed, but we can use a fallback element name:
       slide.addElement(
         'tables',
         1950777067,
-        '{EFC74B4C-D832-409B-9CF4-73C1EFF132D8}',
+        {
+          creationId: '{XXXXX-XXXXX-XXXXX-XX-XXX}',
+          name: 'TableWithLabels',
+        },
         [modify.setTableData(data1)],
       );
     })
-    .write(`modify-by-creation-id.test.pptx`);
+    .write(`modify-by-element-selector.test.pptx`);
 
   // expect(result.tables).toBe(2); // tbd
 });

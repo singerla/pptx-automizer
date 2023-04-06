@@ -130,9 +130,20 @@ export type ArchiveParams = {
 export type ImportElement = {
   presName: string;
   slideNumber: number;
-  selector: string;
+  selector: FindElementSelector;
   mode: string;
   callback?: ShapeModificationCallback | ShapeModificationCallback[];
+  info?: any;
+};
+export type FindElementSelector =
+  | string
+  | {
+      creationId: string;
+      name: string;
+    };
+export type FindElementStrategy = {
+  mode: 'findByElementCreationId' | 'findByElementName';
+  selector: string;
 };
 export type ImportedElement = {
   mode: string;

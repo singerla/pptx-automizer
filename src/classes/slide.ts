@@ -2,6 +2,8 @@ import { FileHelper } from '../helper/file-helper';
 import { XmlHelper } from '../helper/xml-helper';
 import {
   AnalyzedElementType,
+  FindElementSelector,
+  FindElementStrategy,
   ImportedElement,
   ImportElement,
   ShapeModificationCallback,
@@ -239,7 +241,7 @@ export class Slide implements ISlide {
    * Depending on the shape type (e.g. chart or table), different arguments will be passed to the callback.
    */
   modifyElement(
-    selector: string,
+    selector: FindElementSelector,
     callback: ShapeModificationCallback | ShapeModificationCallback[],
   ): this {
     const presName = this.sourceTemplate.name;
@@ -265,7 +267,7 @@ export class Slide implements ISlide {
   addElement(
     presName: string,
     slideNumber: number,
-    selector: string,
+    selector: FindElementSelector,
     callback?: ShapeModificationCallback | ShapeModificationCallback[],
   ): this {
     return this.addElementToModificationsList(
@@ -281,7 +283,7 @@ export class Slide implements ISlide {
    * Remove a single element from slide.
    * @param {string} selector - Element's name on the slide.
    */
-  removeElement(selector: string): this {
+  removeElement(selector: FindElementSelector): this {
     const presName = this.sourceTemplate.name;
     const slideNumber = this.sourceNumber;
 
@@ -290,6 +292,7 @@ export class Slide implements ISlide {
       slideNumber,
       selector,
       'remove',
+      undefined,
     );
   }
 
@@ -306,7 +309,7 @@ export class Slide implements ISlide {
   private addElementToModificationsList(
     presName: string,
     slideNumber: number,
-    selector: string,
+    selector: FindElementSelector,
     mode: string,
     callback?: ShapeModificationCallback | ShapeModificationCallback[],
   ): this {
@@ -374,24 +377,19 @@ export class Slide implements ISlide {
     const sourceArchive = await template.archive;
     const useCreationIds =
       template.useCreationIds === true && template.creationIds !== undefined;
-    const method = useCreationIds
-      ? 'findByElementCreationId'
-      : 'findByElementName';
 
-    const sourceElement = await XmlHelper[method](
+    const { sourceElement, selector } = await this.findElementOnSlide(
+      importElement.selector,
       sourceArchive,
       sourcePath,
-      importElement.selector,
+      useCreationIds,
     );
 
     if (!sourceElement) {
-      vd(importElement);
-      vd(
-        `Can't find ${importElement.selector} on slide ${slideNumber} in ${importElement.presName}`,
+      console.error(
+        `Can't find element on slide ${slideNumber} in ${importElement.presName}: `,
       );
-      // throw new Error(
-      //   `Can't find ${importElement.selector} on slide ${slideNumber} in ${importElement.presName}`,
-      // );
+      console.log(importElement);
       return;
     }
 
@@ -403,7 +401,7 @@ export class Slide implements ISlide {
 
     return {
       mode: importElement.mode,
-      name: importElement.selector,
+      name: selector,
       hasCreationId: useCreationIds,
       sourceArchive,
       sourceSlideNumber: slideNumber,
@@ -412,6 +410,55 @@ export class Slide implements ISlide {
       target: appendElementParams.target,
       type: appendElementParams.type,
     };
+  }
+
+  async findElementOnSlide(
+    selector: FindElementSelector,
+    sourceArchive: IArchive,
+    sourcePath: string,
+    useCreationIds: boolean,
+  ): Promise<{
+    sourceElement: XmlDocument;
+    selector: string;
+  }> {
+    const strategies: FindElementStrategy[] = [];
+    if (typeof selector === 'string') {
+      if (useCreationIds) {
+        strategies.push({
+          mode: 'findByElementCreationId',
+          selector: selector,
+        });
+      }
+      strategies.push({
+        mode: 'findByElementName',
+        selector: selector,
+      });
+    } else if (selector.name) {
+      strategies.push({
+        mode: 'findByElementCreationId',
+        selector: selector.creationId,
+      });
+      strategies.push({
+        mode: 'findByElementName',
+        selector: selector.name,
+      });
+    }
+
+    for (const findElement of strategies) {
+      const mode = findElement.mode;
+
+      const sourceElement = await XmlHelper[mode](
+        sourceArchive,
+        sourcePath,
+        findElement.selector,
+      );
+
+      if (sourceElement) {
+        return { sourceElement, selector: findElement.selector };
+      }
+    }
+
+    return { sourceElement: undefined, selector: JSON.stringify(selector) };
   }
 
   /**
