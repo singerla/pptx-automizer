@@ -84,6 +84,6 @@ export type ChartAxisRange = {
   formatCode?: string;
   sourceLinked?: boolean;
 };
-export type ChartPlotArea = ShapeCoordinates & {
-  // Add additional plot area specific attributes
-};
+// Elements inside a chart (e.g. a legend) require shares as coordinates.
+// E.g. "w: 0.5" means "half of chart width"
+export type ChartElementCoordinateShares = ShapeCoordinates;

@@ -330,6 +330,8 @@ Take a look into [__tests__-directory](https://github.com/singerla/pptx-automize
 * [Use tags inside text to replace contents](https://github.com/singerla/pptx-automizer/blob/main/__tests__/replace-tagged-text.test.ts)
 * [Modify vertical line charts](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-chart-vertical-lines.test.ts)
 * [Set table cell and border styles](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-existing-table.test.ts)
+* [Update chart plot area coordinates](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-chart-plot-area.test.ts)
+* [Update chart legend](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-chart-legend.test.ts)
 
 
 ### Testing

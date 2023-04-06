@@ -5,7 +5,7 @@ import {
   ChartBubble,
   ChartCategory,
   ChartData,
-  ChartPlotArea,
+  ChartElementCoordinateShares,
   ChartPoint,
   ChartSeries,
   ChartSlot,
@@ -13,7 +13,7 @@ import {
 import ModifyXmlHelper from './modify-xml-helper';
 import { XmlDocument, XmlElement } from '../types/xml-types';
 import { XmlHelper } from './xml-helper';
-import { disconnect } from 'process';
+import { vd } from './general-helper';
 
 export default class ModifyChartHelper {
   /**
@@ -279,18 +279,47 @@ export default class ModifyChartHelper {
       }
     }
   };
-  static setLabelHidden = () =>
-  (
+
+  /**
+   * Set legend coordinates to zero. Could be advantageous for pptx users to
+   * be able to maximize a legend easily. Legend will still be selectible for
+   * a user.
+   */
+  static minimizeChartLegend =
+    () =>
+    (
       element: XmlDocument | XmlElement,
       chart?: XmlDocument,
       workbook?: Workbook,
-  ): void => {
-      this.setLabelArea(
-        {
-          w:0.0, h:0.0, x:0.0, y:0.0
-        })(element, chart, workbook);
-  }
-  static setLabelArea = (legendArea: ChartPlotArea) =>
+    ): void => {
+      this.setLegendPosition({
+        w: 0.0,
+        h: 0.0,
+        x: 0.0,
+        y: 0.0,
+      })(element, chart, workbook);
+    };
+
+  /**
+   * Completely remove a chart legend. Please notice: This will trigger
+   * PowerPoint to automatically maximize chart space.
+   */
+  static removeChartLegend =
+    () =>
+    (element: XmlDocument | XmlElement, chart?: XmlDocument): void => {
+      if (chart.getElementsByTagName('c:legend')) {
+        XmlHelper.remove(chart.getElementsByTagName('c:legend')[0]);
+      }
+    };
+
+  /**
+   * Update the coordinates of a chart legend.
+   * legendArea coordinates are shares of chart coordinates, e.g.
+   * "w: 0.5" means "half of chart width"
+   * @param legendArea
+   */
+  static setLegendPosition =
+    (legendArea: ChartElementCoordinateShares) =>
     (
       element: XmlDocument | XmlElement,
       chart?: XmlDocument,
@@ -303,40 +332,44 @@ export default class ModifyChartHelper {
             'c:manualLayout': {
               children: {
                 'c:w': {
-                  modify: [
-                    ModifyXmlHelper.attribute('val', legendArea.w),
-                  ],
+                  modify: [ModifyXmlHelper.attribute('val', legendArea.w)],
                 },
                 'c:h': {
-                  modify: [
-                    ModifyXmlHelper.attribute('val', legendArea.h),
-                  ],
+                  modify: [ModifyXmlHelper.attribute('val', legendArea.h)],
                 },
                 'c:x': {
-                  modify: [
-                    ModifyXmlHelper.attribute('val', legendArea.x),
-                  ],
+                  modify: [ModifyXmlHelper.attribute('val', legendArea.x)],
                 },
                 'c:y': {
-                  modify: [
-                    ModifyXmlHelper.attribute('val', legendArea.y),
-                  ],
+                  modify: [ModifyXmlHelper.attribute('val', legendArea.y)],
                 },
               },
             },
           },
         },
       });
-      XmlHelper.dump(
-        chart
-          .getElementsByTagName('c:legendPos')[0]
-      );
+      // XmlHelper.dump(chart.getElementsByTagName('c:legendPos')[0]);
     };
+
   /**
-   * Set plot area size.
+   * Set the plot area coordinates of a chart.
+   *
+   * This modifier requires a 'c:manualLayout' element. It will only appear if
+   * plot area coordinates are edited manually in ppt before. Recently fresh
+   * created charts will not have a manualLayout by default.
+   *
+   * This is especially useful if you have problems with edgy elements on a
+   * chart area that do not fit into the given space, e.g. when having a lot
+   * of data labels. You can increase the chart and decrease the plot area
+   * to create a margin.
+   *
+   * plotArea coordinates are shares of chart coordinates, e.g.
+   * "w: 0.5" means "half of chart width"
+   *
+   * @param plotArea
    */
   static setPlotArea =
-    (plotArea: ChartPlotArea) =>
+    (plotArea: ChartElementCoordinateShares) =>
     (
       element: XmlDocument | XmlElement,
       chart?: XmlDocument,
@@ -355,6 +388,18 @@ export default class ModifyChartHelper {
       // We can therefore log the entire chart.xml to console:
       // XmlHelper.dump(chart);
 
+      // There needs to be a 'c:manualLayout' element. This will only appear if
+      // a plot area was edited manually in ppt before. Recently fresh created
+      // charts will not have a manualLayout by default.
+      if (
+        !chart
+          .getElementsByTagName('c:plotArea')[0]
+          .getElementsByTagName('c:manualLayout')[0]
+      ) {
+        console.error("Can't update plot area. No c:manualLayout found.");
+        return;
+      }
+
       modifyXmlHelper.modify({
         'c:plotArea': {
           children: {
@@ -369,19 +414,13 @@ export default class ModifyChartHelper {
                   ],
                 },
                 'c:h': {
-                  modify: [
-                    ModifyXmlHelper.attribute('val', plotArea.h),
-                  ],
+                  modify: [ModifyXmlHelper.attribute('val', plotArea.h)],
                 },
                 'c:x': {
-                  modify: [
-                    ModifyXmlHelper.attribute('val', plotArea.x),
-                  ],
+                  modify: [ModifyXmlHelper.attribute('val', plotArea.x)],
                 },
                 'c:y': {
-                  modify: [
-                    ModifyXmlHelper.attribute('val', plotArea.y),
-                  ],
+                  modify: [ModifyXmlHelper.attribute('val', plotArea.y)],
                 },
               },
             },
@@ -391,16 +430,16 @@ export default class ModifyChartHelper {
 
       // We can dump the target node and see if our modification
       // took effect.
-      XmlHelper.dump(
-        chart
-          .getElementsByTagName('c:plotArea')[0]
-          .getElementsByTagName('c:manualLayout')[0],
-      );
+      // XmlHelper.dump(
+      //   chart
+      //     .getElementsByTagName('c:plotArea')[0]
+      //     .getElementsByTagName('c:manualLayout')[0],
+      // );
 
       // You can also take a look at element xml, which is a child node
       // of current slide. It holds general shape properties, but no
       // data or so.
-      // XmlHelper.dump(element);
+      // XmlHelper.dump(chart);
 
       // Rough ones might also want to look inside the linked workbook.
       // It is located inside an extra xlsx file. We don't need this
