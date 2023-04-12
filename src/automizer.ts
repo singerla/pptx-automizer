@@ -256,20 +256,22 @@ export default class Automizer implements IPresentationProps {
    * WIP: copy and modify a master from template to output
    * @param name
    * @param masterNumber
+   * @param alias An optional label to find the master laster.
    * @param callback
    */
   public addMaster(
     name: string,
     masterNumber: number,
+    alias?: string,
     callback?: (slide: Slide) => void,
   ): this {
-    const template = this.getTemplate(name);
-
-    const newMaster = new Master({
-      presentation: this,
-      template,
-      masterNumber,
-    });
+    // const template = this.getTemplate(name);
+    //
+    // const newMaster = new Master({
+    //   presentation: this,
+    //   template,
+    //   masterNumber,
+    // });
 
     // this.rootTemplate.slides.push(newMaster);
 

@@ -210,6 +210,14 @@ export class Slide implements ISlide {
   }
 
   /**
+   * Use another slide master
+   * @param alias
+   */
+  useMaster(masterSelector: string, layoutSelector?: string): void {
+    // TODO: get aliased master params and update current slide rels
+  }
+
+  /**
    * Modifies slide
    * @internal
    * @param callback
