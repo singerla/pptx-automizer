@@ -180,25 +180,6 @@ export class XmlHelper {
     );
   }
 
-  static async getTargetsFromRelationships2(
-    archive: IArchive,
-    path: string,
-    prefix: string | string[],
-  ): Promise<Target[]> {
-    const prefixes = typeof prefix === 'string' ? [prefix] : prefix;
-
-    return XmlHelper.getRelationships(
-      archive,
-      path,
-      (element: XmlElement, targets: Target[]) => {
-        vd(targets);
-        prefixes.forEach((prefix) => {
-          XmlHelper.pushRelTargets(element, prefix, targets);
-        });
-      },
-    );
-  }
-
   static pushRelTargets(
     element: XmlElement,
     prefix: string,
@@ -234,6 +215,7 @@ export class XmlHelper {
         filename,
         filenameExt,
         filenameBase,
+        element,
       } as Target);
     }
   }
@@ -315,6 +297,7 @@ export class XmlHelper {
     attributeName: string,
     attributeValue: string,
     replaceValue: string,
+    replaceAttributeName?: string,
   ): Promise<void> {
     const xml = await XmlHelper.getXmlFromArchive(archive, path);
     const elements = xml.getElementsByTagName(tagName);
@@ -324,7 +307,10 @@ export class XmlHelper {
         element.getAttribute !== undefined &&
         element.getAttribute(attributeName) === attributeValue
       ) {
-        element.setAttribute(attributeName, replaceValue);
+        element.setAttribute(
+          replaceAttributeName || attributeName,
+          replaceValue,
+        );
       }
 
       if (element.getAttribute !== undefined) {

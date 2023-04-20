@@ -190,20 +190,10 @@ export class Master implements IMaster {
     this.status.info = 'Appending slideMaster ' + this.targetNumber;
 
     await this.copySlideFiles();
-    await this.getRelatedSlideLayoutTargets();
-
+    await this.copyRelatedLayouts();
     await this.copyRelatedContent();
     await this.addSlideToPresentation();
-
-    const sourceNotesNumber = await this.getSlideNoteSourceNumber();
-    if (sourceNotesNumber) {
-      await this.copySlideNoteFiles(sourceNotesNumber);
-      await this.updateSlideNoteFile(sourceNotesNumber);
-      await this.appendNotesToContentType(
-        this.targetArchive,
-        this.targetNumber,
-      );
-    }
+    await this.copyThemeFiles();
 
     if (this.importElements.length) {
       await this.importedSelectedElements();
@@ -215,8 +205,8 @@ export class Master implements IMaster {
     this.status.increment();
   }
 
-  async getRelatedSlideLayoutTargets(): Promise<Target[]> {
-    const targets = await XmlHelper.getTargetsFromRelationships2(
+  async copyRelatedLayouts(): Promise<Target[]> {
+    const targets = await XmlHelper.getTargetsFromRelationships(
       this.sourceArchive,
       `ppt/slideMasters/_rels/slideMaster${this.sourceNumber}.xml.rels`,
       '../slideLayouts/slideLayout',
@@ -226,17 +216,82 @@ export class Master implements IMaster {
       const nextSlideLayoutNumber =
         this.targetTemplate.incrementCounter('layouts');
 
-      target.copiedTarget = `ppt/slideLayouts/slideLayout${nextSlideLayoutNumber}.xml`;
-
       await FileHelper.zipCopy(
         this.sourceArchive,
         `ppt/slideLayouts/slideLayout${target.number}.xml`,
         this.targetArchive,
-        target.copiedTarget,
+        `ppt/slideLayouts/slideLayout${nextSlideLayoutNumber}.xml`,
+      );
+
+      await XmlHelper.replaceAttribute(
+        this.targetArchive,
+        `ppt/slideMasters/_rels/slideMaster${this.targetNumber}.xml.rels`,
+        'Relationship',
+        'Id',
+        target.rId,
+        `../slideLayouts/slideLayout${nextSlideLayoutNumber}.xml`,
+        'Target',
+      );
+
+      await FileHelper.zipCopy(
+        this.sourceArchive,
+        `ppt/slideLayouts/_rels/slideLayout${target.number}.xml.rels`,
+        this.targetArchive,
+        `ppt/slideLayouts/_rels/slideLayout${nextSlideLayoutNumber}.xml.rels`,
+      );
+
+      await XmlHelper.replaceAttribute(
+        this.targetArchive,
+        `ppt/slideLayouts/_rels/slideLayout${nextSlideLayoutNumber}.xml.rels`,
+        'Relationship',
+        'Id',
+        'rId1',
+        `../slideMasters/slideMaster${this.targetNumber}.xml`,
+        'Target',
+      );
+
+      await this.appendSlideLayoutToContentType(
+        this.targetArchive,
+        nextSlideLayoutNumber,
       );
     }
 
     return targets;
+  }
+
+  async copyThemeFiles() {
+    const targets = await XmlHelper.getTargetsFromRelationships(
+      this.sourceArchive,
+      `ppt/slideMasters/_rels/slideMaster${this.sourceNumber}.xml.rels`,
+      '../theme/theme',
+    );
+
+    if (!targets.length) {
+      return;
+    }
+
+    const themeTarget = targets[0];
+
+    const themeSourceId = themeTarget.number;
+    const themeTargetId = this.targetNumber;
+    await FileHelper.zipCopy(
+      this.sourceArchive,
+      `ppt/theme/theme${themeSourceId}.xml`,
+      this.targetArchive,
+      `ppt/theme/theme${themeTargetId}.xml`,
+    );
+
+    await this.appendThemeToContentType(this.targetArchive, themeTargetId);
+
+    await XmlHelper.replaceAttribute(
+      this.targetArchive,
+      `ppt/slideMasters/_rels/slideMaster${this.targetNumber}.xml.rels`,
+      'Relationship',
+      'Id',
+      themeTarget.rId,
+      `../theme/theme${themeTargetId}.xml`,
+      'Target',
+    );
   }
 
   /**
@@ -619,74 +674,6 @@ export class Master implements IMaster {
   }
 
   /**
-   * slideNote numbers differ from slide numbers if presentation
-   * contains slides without notes. We need to find out
-   * the proper enumeration of slideNote xml files.
-   * @internal
-   * @returns slide note file number
-   */
-  async getSlideNoteSourceNumber(): Promise<number | undefined> {
-    const targets = await XmlHelper.getTargetsByRelationshipType(
-      this.sourceArchive,
-      `ppt/slideMasters/_rels/slideMaster${this.sourceNumber}.xml.rels`,
-      'http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide',
-    );
-
-    if (targets.length) {
-      const targetNumber = targets[0].file
-        .replace('../notesSlides/notesSlide', '')
-        .replace('.xml', '');
-      return Number(targetNumber);
-    }
-  }
-
-  /**
-   * Copys slide note files
-   * @internal
-   * @returns slide note files
-   */
-  async copySlideNoteFiles(sourceNotesNumber: number): Promise<void> {
-    await FileHelper.zipCopy(
-      this.sourceArchive,
-      `ppt/notesSlides/notesSlide${sourceNotesNumber}.xml`,
-      this.targetArchive,
-      `ppt/notesSlides/notesSlide${this.targetNumber}.xml`,
-    );
-
-    await FileHelper.zipCopy(
-      this.sourceArchive,
-      `ppt/notesSlides/_rels/notesSlide${sourceNotesNumber}.xml.rels`,
-      this.targetArchive,
-      `ppt/notesSlides/_rels/notesSlide${this.targetNumber}.xml.rels`,
-    );
-  }
-
-  /**
-   * Updates slide note file
-   * @internal
-   * @returns slide note file
-   */
-  async updateSlideNoteFile(sourceNotesNumber: number): Promise<void> {
-    await XmlHelper.replaceAttribute(
-      this.targetArchive,
-      `ppt/notesSlides/_rels/notesSlide${this.targetNumber}.xml.rels`,
-      'Relationship',
-      'Target',
-      `../slides/slide${this.sourceNumber}.xml`,
-      `../slides/slide${this.targetNumber}.xml`,
-    );
-
-    await XmlHelper.replaceAttribute(
-      this.targetArchive,
-      `ppt/slides/_rels/slide${this.targetNumber}.xml.rels`,
-      'Relationship',
-      'Target',
-      `../notesSlides/notesSlide${sourceNotesNumber}.xml`,
-      `../notesSlides/notesSlide${this.targetNumber}.xml`,
-    );
-  }
-
-  /**
    * Appends to slide rel
    * @internal
    * @param rootArchive
@@ -729,16 +716,9 @@ export class Master implements IMaster {
     return XmlHelper.append({
       archive: rootArchive,
       file: `ppt/presentation.xml`,
-      assert: async (xml: XmlDocument) => {
-        if (xml.getElementsByTagName('p:sldIdLst').length === 0) {
-          XmlHelper.insertAfter(
-            xml.createElement('p:sldIdLst'),
-            xml.getElementsByTagName('p:sldMasterIdLst')[0],
-          );
-        }
-      },
-      parent: (xml: XmlDocument) => xml.getElementsByTagName('p:sldIdLst')[0],
-      tag: 'p:sldId',
+      parent: (xml: XmlDocument) =>
+        xml.getElementsByTagName('p:sldMasterIdLst')[0],
+      tag: 'p:sldMasterId',
       attributes: {
         'r:id': relId,
       } as SlideListAttribute,
@@ -760,6 +740,30 @@ export class Master implements IMaster {
       XmlHelper.createContentTypeChild(rootArchive, {
         PartName: `/ppt/slideMasters/slideMaster${slideCount}.xml`,
         ContentType: `application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml`,
+      }),
+    );
+  }
+
+  appendSlideLayoutToContentType(
+    rootArchive: IArchive,
+    slideLayoutCount: number,
+  ): Promise<HelperElement> {
+    return XmlHelper.append(
+      XmlHelper.createContentTypeChild(rootArchive, {
+        PartName: `/ppt/slideLayouts/slideLayout${slideLayoutCount}.xml`,
+        ContentType: `application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml`,
+      }),
+    );
+  }
+
+  appendThemeToContentType(
+    rootArchive: IArchive,
+    themeCount: string | number,
+  ): Promise<HelperElement> {
+    return XmlHelper.append(
+      XmlHelper.createContentTypeChild(rootArchive, {
+        PartName: `/ppt/theme/theme${themeCount}.xml`,
+        ContentType: `application/vnd.openxmlformats-officedocument.theme+xml`,
       }),
     );
   }

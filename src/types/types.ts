@@ -82,6 +82,7 @@ export type Target = {
   number?: number;
   rId?: string;
   prefix?: string;
+  element?: XmlElement;
   subtype?: ElementSubtype;
   filenameExt?: string;
   filenameBase?: string;

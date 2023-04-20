@@ -266,7 +266,6 @@ export default class Automizer implements IPresentationProps {
   public addMaster(
     name: string,
     sourceIdentifier: SourceIdentifier,
-    alias?: string,
     callback?: (slide: Slide) => void,
   ): this {
     const template = this.getTemplate(name);
@@ -410,6 +409,7 @@ export default class Automizer implements IPresentationProps {
    */
   async normalizePresentation(): Promise<void> {
     this.modify(ModifyPresentationHelper.normalizeSlideIds);
+    this.modify(ModifyPresentationHelper.normalizeSlideMasterIds);
 
     if (this.params.cleanup) {
       if (this.params.removeExistingSlides) {

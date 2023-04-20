@@ -18,8 +18,8 @@ const automizer = (outputName) =>
     },
     rootTemplate: 'RootTemplate.pptx',
     presTemplates: [`SlidesWithAdditionalMaster.pptx`],
-    removeExistingSlides: true,
-    cleanup: true,
+    removeExistingSlides: false,
+    cleanup: false,
     compression: 0,
   });
 
@@ -44,19 +44,19 @@ const run = async () => {
   const outputName2 = 'import-template-master-2.test.pptx';
   const result2 = await automizer(outputName2)
     // Import another slide master and all its slide layouts:
-    .addMaster('SlidesWithAdditionalMaster.pptx', 1, 'myMaster#1')
-    .addMaster('SlidesWithAdditionalMaster.pptx', 2, 'myMaster#2')
+    .addMaster('SlidesWithAdditionalMaster.pptx', 1)
+    .addMaster('SlidesWithAdditionalMaster.pptx', 2)
 
     // Add a slide (which might require an imported master):
-    .addSlide('SlidesWithAdditionalMaster.pptx', 3, (slide) => {
-      // use another master, e.g. the imported one from 'SlidesWithAdditionalMaster.pptx'
-      slide.useMaster('myMaster#2');
-    })
+    // .addSlide('SlidesWithAdditionalMaster.pptx', 3, (slide) => {
+    //   // use another master, e.g. the imported one from 'SlidesWithAdditionalMaster.pptx'
+    //   slide.useMaster('myMaster#2');
+    // })
     // Add a slide and use another master:
-    .addSlide('SlidesWithAdditionalMaster.pptx', 2, (slide) => {
-      // find an imported master/layout by name
-      slide.useMaster('Orange Design', 'Leer');
-    })
+    // .addSlide('SlidesWithAdditionalMaster.pptx', 2, (slide) => {
+    //   // find an imported master/layout by name
+    //   slide.useMaster('Orange Design', 'Leer');
+    // })
     .write(outputName2);
 
   vd('It took ' + result2.duration.toPrecision(2) + 's');

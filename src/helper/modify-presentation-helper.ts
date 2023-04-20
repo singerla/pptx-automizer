@@ -12,6 +12,9 @@ export default class ModifyPresentationHelper {
   static getSlidesCollection = (xml: XmlDocument) => {
     return xml.getElementsByTagName('p:sldId');
   };
+  static getSlideMastersCollection = (xml: XmlDocument) => {
+    return xml.getElementsByTagName('p:sldMasterId');
+  };
 
   /**
    * Pass an array of slide numbers to define a target sort order.
@@ -31,6 +34,14 @@ export default class ModifyPresentationHelper {
   static normalizeSlideIds = (xml: XmlDocument) => {
     const slides = ModifyPresentationHelper.getSlidesCollection(xml);
     const firstId = 256;
+    XmlHelper.modifyCollection(slides, (slide: XmlElement, i) => {
+      slide.setAttribute('id', String(firstId + i));
+    });
+  };
+
+  static normalizeSlideMasterIds = (xml: XmlDocument) => {
+    const slides = ModifyPresentationHelper.getSlideMastersCollection(xml);
+    const firstId = 2147483648;
     XmlHelper.modifyCollection(slides, (slide: XmlElement, i) => {
       slide.setAttribute('id', String(firstId + i));
     });
