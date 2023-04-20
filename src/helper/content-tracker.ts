@@ -77,12 +77,12 @@ export class ContentTracker {
   }
 
   async trackSlideLayouts() {
-    const usedSlideLayouts =
-      this.getRelationTag('ppt/slideMasters').getTrackedRelations(
-        'slideLayout',
-      );
-
-    await this.addAndAnalyze(usedSlideLayouts, 'ppt/slideLayouts');
+    // const usedSlideLayouts =
+    //   this.getRelationTag('ppt/slideMasters').getTrackedRelations(
+    //     'slideLayout',
+    //   );
+    //
+    // await this.addAndAnalyze(usedSlideLayouts, 'ppt/slideLayouts');
   }
 
   async addAndAnalyze(trackedRelations: TrackedRelation[], section: string) {

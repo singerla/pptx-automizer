@@ -11,6 +11,7 @@ import { XmlHelper } from '../helper/xml-helper';
 import { ContentTracker } from '../helper/content-tracker';
 import IArchive from '../interfaces/iarchive';
 import { ArchiveParams } from '../types/types';
+import { IMaster } from '../interfaces/imaster';
 
 export class Template implements ITemplate {
   /**
@@ -44,6 +45,12 @@ export class Template implements ITemplate {
   slides: ISlide[];
 
   /**
+   * Array containing all slides coming from Automizer.addSlide()
+   * @type: ISlide[]
+   */
+  masters: IMaster[];
+
+  /**
    * Array containing all counters
    * @type: ICounter[]
    */
@@ -51,6 +58,7 @@ export class Template implements ITemplate {
 
   creationIds: SlideInfo[];
   existingSlides: number;
+  existingMasterSlides: number;
 
   constructor(location: string, params: ArchiveParams) {
     this.location = location;
@@ -69,10 +77,13 @@ export class Template implements ITemplate {
     } else {
       newTemplate = new Template(location, params) as RootPresTemplate;
       newTemplate.slides = [];
+      newTemplate.masters = [];
       newTemplate.counter = [
         new CountHelper('slides', newTemplate),
         new CountHelper('charts', newTemplate),
         new CountHelper('images', newTemplate),
+        new CountHelper('masters', newTemplate),
+        new CountHelper('layouts', newTemplate),
       ];
       newTemplate.content = new ContentTracker();
     }
@@ -87,6 +98,14 @@ export class Template implements ITemplate {
     this.creationIds = await xmlTemplateHelper.getCreationIds();
 
     return this.creationIds;
+  }
+
+  async appendMasterSlide(slideMaster: IMaster): Promise<void> {
+    if (this.counter[0].get() === undefined) {
+      await this.initializeCounter();
+    }
+
+    await slideMaster.append(this);
   }
 
   async appendSlide(slide: ISlide): Promise<void> {

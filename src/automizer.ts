@@ -3,7 +3,7 @@ import {
   AutomizerParams,
   AutomizerSummary,
   ArchiveParams,
-  SourceSlideIdentifier,
+  SourceIdentifier,
   StatusTracker,
 } from './types/types';
 import { IPresentationProps } from './interfaces/ipresentation-props';
@@ -17,7 +17,10 @@ import path from 'path';
 import * as fs from 'fs';
 import { XmlHelper } from './helper/xml-helper';
 import ModifyPresentationHelper from './helper/modify-presentation-helper';
-import { ContentTracker } from './helper/content-tracker';
+import {
+  contentTracker as Tracker,
+  ContentTracker,
+} from './helper/content-tracker';
 import JSZip, { OutputType } from 'jszip';
 
 /**
@@ -227,7 +230,7 @@ export default class Automizer implements IPresentationProps {
    */
   public addSlide(
     name: string,
-    slideIdentifier: SourceSlideIdentifier,
+    slideIdentifier: SourceIdentifier,
     callback?: (slide: Slide) => void,
   ): this {
     if (this.rootTemplate === undefined) {
@@ -253,7 +256,8 @@ export default class Automizer implements IPresentationProps {
   }
 
   /**
-   * WIP: copy and modify a master from template to output
+   * WIP: Copy and modify a master and the associated layouts from template
+   * to output.
    * @param name
    * @param masterNumber
    * @param alias An optional label to find the master laster.
@@ -261,19 +265,19 @@ export default class Automizer implements IPresentationProps {
    */
   public addMaster(
     name: string,
-    masterNumber: number,
+    sourceIdentifier: SourceIdentifier,
     alias?: string,
     callback?: (slide: Slide) => void,
   ): this {
-    // const template = this.getTemplate(name);
-    //
-    // const newMaster = new Master({
-    //   presentation: this,
-    //   template,
-    //   masterNumber,
-    // });
+    const template = this.getTemplate(name);
 
-    // this.rootTemplate.slides.push(newMaster);
+    const newMaster = new Master({
+      presentation: this,
+      template,
+      sourceIdentifier,
+    });
+
+    this.rootTemplate.masters.push(newMaster);
 
     return this;
   }
@@ -316,6 +320,7 @@ export default class Automizer implements IPresentationProps {
       slides: this.rootTemplate.count('slides'),
       charts: this.rootTemplate.count('charts'),
       images: this.rootTemplate.count('images'),
+      masters: this.rootTemplate.count('masters'),
     };
   }
 
@@ -351,9 +356,21 @@ export default class Automizer implements IPresentationProps {
   }
 
   async finalizePresentation() {
+    await this.writeMasterSlides();
     await this.writeSlides();
     await this.normalizePresentation();
     await this.applyModifyPresentationCallbacks();
+  }
+
+  /**
+   * Write all masterSlides to archive.
+   */
+  public async writeMasterSlides(): Promise<void> {
+    this.status.max = this.rootTemplate.masters.length;
+
+    for (const slide of this.rootTemplate.masters) {
+      await this.rootTemplate.appendMasterSlide(slide);
+    }
   }
 
   /**

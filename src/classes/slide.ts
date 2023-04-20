@@ -8,7 +8,7 @@ import {
   ImportElement,
   ShapeModificationCallback,
   SlideModificationCallback,
-  SourceSlideIdentifier,
+  SourceIdentifier,
   StatusTracker,
 } from '../types/types';
 import { ISlide } from '../interfaces/islide';
@@ -115,7 +115,7 @@ export class Slide implements ISlide {
   constructor(params: {
     presentation: IPresentationProps;
     template: PresTemplate;
-    slideIdentifier: SourceSlideIdentifier;
+    slideIdentifier: SourceIdentifier;
   }) {
     this.sourceTemplate = params.template;
     this.sourceNumber = this.getSlideNumber(
@@ -143,7 +143,7 @@ export class Slide implements ISlide {
    */
   getSlideNumber(
     template: PresTemplate,
-    slideIdentifier: SourceSlideIdentifier,
+    slideIdentifier: SourceIdentifier,
   ): number {
     if (
       template.useCreationIds === true &&

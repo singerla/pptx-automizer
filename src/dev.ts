@@ -14,7 +14,7 @@ const automizer = (outputName) =>
       mode: 'fs',
       baseDir: `${__dirname}/../__tests__/pptx-cache`,
       workDir: outputName,
-      cleanupWorkDir: true,
+      // cleanupWorkDir: true,
     },
     rootTemplate: 'RootTemplate.pptx',
     presTemplates: [`SlidesWithAdditionalMaster.pptx`],
@@ -46,6 +46,7 @@ const run = async () => {
     // Import another slide master and all its slide layouts:
     .addMaster('SlidesWithAdditionalMaster.pptx', 1, 'myMaster#1')
     .addMaster('SlidesWithAdditionalMaster.pptx', 2, 'myMaster#2')
+
     // Add a slide (which might require an imported master):
     .addSlide('SlidesWithAdditionalMaster.pptx', 3, (slide) => {
       // use another master, e.g. the imported one from 'SlidesWithAdditionalMaster.pptx'

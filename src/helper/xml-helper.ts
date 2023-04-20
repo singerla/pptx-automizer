@@ -180,6 +180,25 @@ export class XmlHelper {
     );
   }
 
+  static async getTargetsFromRelationships2(
+    archive: IArchive,
+    path: string,
+    prefix: string | string[],
+  ): Promise<Target[]> {
+    const prefixes = typeof prefix === 'string' ? [prefix] : prefix;
+
+    return XmlHelper.getRelationships(
+      archive,
+      path,
+      (element: XmlElement, targets: Target[]) => {
+        vd(targets);
+        prefixes.forEach((prefix) => {
+          XmlHelper.pushRelTargets(element, prefix, targets);
+        });
+      },
+    );
+  }
+
   static pushRelTargets(
     element: XmlElement,
     prefix: string,
