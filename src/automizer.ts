@@ -266,7 +266,7 @@ export default class Automizer implements IPresentationProps {
   public addMaster(
     name: string,
     sourceIdentifier: SourceIdentifier,
-    callback?: (slide: Slide) => void,
+    callback?: (slide: Master) => void,
   ): this {
     const template = this.getTemplate(name);
 
@@ -275,6 +275,11 @@ export default class Automizer implements IPresentationProps {
       template,
       sourceIdentifier,
     });
+
+    if (callback !== undefined) {
+      newMaster.root = this;
+      callback(newMaster);
+    }
 
     this.rootTemplate.masters.push(newMaster);
 

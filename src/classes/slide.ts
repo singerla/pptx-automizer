@@ -7,6 +7,7 @@ import {
   ImportedElement,
   ImportElement,
   ShapeModificationCallback,
+  ShapeTargetType,
   SlideModificationCallback,
   SourceIdentifier,
   StatusTracker,
@@ -117,6 +118,8 @@ export class Slide implements ISlide {
     //'a14:imgProps',
   ];
 
+  targetType: ShapeTargetType = 'slide';
+
   constructor(params: {
     presentation: IPresentationProps;
     template: PresTemplate;
@@ -218,12 +221,11 @@ export class Slide implements ISlide {
   }
 
   /**
-   * Use another slide master
+   * Use another slide layout.
    * @param alias
    */
   useSlideLayout(targetLayoutId: number): void {
     this.relModifications.push(async (slideRelXml) => {
-      XmlHelper.dump(slideRelXml);
       const relationshipItems =
         slideRelXml.getElementsByTagName('Relationship');
       const relItems = await XmlHelper.parseRelationshipItems(
@@ -232,12 +234,10 @@ export class Slide implements ISlide {
           `http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout`,
         ),
       );
-
       relItems[0].element.setAttribute(
         'Target',
         `../slideLayouts/slideLayout${targetLayoutId}.xml`,
       );
-      vd(relItems);
     });
   }
 
@@ -367,19 +367,19 @@ export class Slide implements ISlide {
 
       switch (info?.type) {
         case ElementType.Chart:
-          await new Chart(info)[info.mode](
+          await new Chart(info, this.targetType)[info.mode](
             this.targetTemplate,
             this.targetNumber,
           );
           break;
         case ElementType.Image:
-          await new Image(info)[info.mode](
+          await new Image(info, this.targetType)[info.mode](
             this.targetTemplate,
             this.targetNumber,
           );
           break;
         case ElementType.Shape:
-          await new GenericShape(info)[info.mode](
+          await new GenericShape(info, this.targetType)[info.mode](
             this.targetTemplate,
             this.targetNumber,
           );
@@ -799,22 +799,28 @@ export class Slide implements ISlide {
     const charts = await Chart.getAllOnSlide(this.sourceArchive, this.relsPath);
 
     for (const chart of charts) {
-      await new Chart({
-        mode: 'append',
-        target: chart,
-        sourceArchive: this.sourceArchive,
-        sourceSlideNumber: this.sourceNumber,
-      }).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);
+      await new Chart(
+        {
+          mode: 'append',
+          target: chart,
+          sourceArchive: this.sourceArchive,
+          sourceSlideNumber: this.sourceNumber,
+        },
+        this.targetType,
+      ).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);
     }
 
     const images = await Image.getAllOnSlide(this.sourceArchive, this.relsPath);
     for (const image of images) {
-      await new Image({
-        mode: 'append',
-        target: image,
-        sourceArchive: this.sourceArchive,
-        sourceSlideNumber: this.sourceNumber,
-      }).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);
+      await new Image(
+        {
+          mode: 'append',
+          target: image,
+          sourceArchive: this.sourceArchive,
+          sourceSlideNumber: this.sourceNumber,
+        },
+        this.targetType,
+      ).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);
     }
   }
 }

@@ -9,7 +9,12 @@ import {
   XmlDocument,
   XmlElement,
 } from '../types/xml-types';
-import { ImportedElement, Target, Workbook } from '../types/types';
+import {
+  ImportedElement,
+  ShapeTargetType,
+  Target,
+  Workbook,
+} from '../types/types';
 import { IChart } from '../interfaces/ichart';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { contentTracker } from '../helper/content-tracker';
@@ -29,8 +34,8 @@ export class Chart extends Shape implements IChart {
     [key: string]: string[];
   };
 
-  constructor(shape: ImportedElement) {
-    super(shape);
+  constructor(shape: ImportedElement, targetType: ShapeTargetType) {
+    super(shape, targetType);
 
     this.relRootTag = this.subtype === 'chart' ? 'c:chart' : 'cx:chart';
     this.relAttribute = 'r:id';

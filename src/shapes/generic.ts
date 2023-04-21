@@ -1,4 +1,4 @@
-import { ImportedElement } from '../types/types';
+import { ImportedElement, ShapeTargetType } from '../types/types';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { Shape } from '../classes/shape';
 import { XmlDocument } from '../types/xml-types';
@@ -6,8 +6,8 @@ import { XmlDocument } from '../types/xml-types';
 export class GenericShape extends Shape {
   sourceElement: XmlDocument;
 
-  constructor(shape: ImportedElement) {
-    super(shape);
+  constructor(shape: ImportedElement, targetType: ShapeTargetType) {
+    super(shape, targetType);
   }
 
   async modify(

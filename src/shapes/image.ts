@@ -6,7 +6,7 @@ import {
   RelationshipAttribute,
   XmlElement,
 } from '../types/xml-types';
-import { ImportedElement, Target } from '../types/types';
+import { ImportedElement, ShapeTargetType, Target } from '../types/types';
 import { IImage } from '../interfaces/iimage';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { ElementType } from '../enums/element-type';
@@ -15,8 +15,8 @@ import IArchive from '../interfaces/iarchive';
 export class Image extends Shape implements IImage {
   extension: string;
 
-  constructor(shape: ImportedElement) {
-    super(shape);
+  constructor(shape: ImportedElement, targetType: ShapeTargetType) {
+    super(shape, targetType);
 
     this.sourceFile = shape.target.file.replace('../media/', '');
     this.extension = FileHelper.getFileExtension(this.sourceFile);
@@ -75,13 +75,16 @@ export class Image extends Shape implements IImage {
         this.targetElement,
         'image:svg',
       );
-      await new Image({
-        mode: 'append',
-        target,
-        sourceArchive: this.sourceArchive,
-        sourceSlideNumber: this.sourceSlideNumber,
-        type: ElementType.Image,
-      }).modify(targetTemplate, targetSlideNumber);
+      await new Image(
+        {
+          mode: 'append',
+          target,
+          sourceArchive: this.sourceArchive,
+          sourceSlideNumber: this.sourceSlideNumber,
+          type: ElementType.Image,
+        },
+        this.targetType,
+      ).modify(targetTemplate, targetSlideNumber);
     }
 
     return this;

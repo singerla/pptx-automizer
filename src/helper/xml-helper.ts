@@ -389,6 +389,9 @@ export class XmlHelper {
     const names = doc.getElementsByTagName('p:cNvPr');
 
     for (const i in names) {
+      if (names[i].getAttribute) {
+        vd(names[i].getAttribute('name'));
+      }
       if (names[i].getAttribute && names[i].getAttribute('name') === name) {
         return names[i].parentNode.parentNode as XmlDocument;
       }

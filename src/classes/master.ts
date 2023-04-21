@@ -7,6 +7,7 @@ import {
   ImportedElement,
   ImportElement,
   ShapeModificationCallback,
+  ShapeTargetType,
   SlideModificationCallback,
   SourceIdentifier,
   StatusTracker,
@@ -113,6 +114,8 @@ export class Master implements IMaster {
     //'mc:AlternateContent',
     //'a14:imgProps',
   ];
+
+  targetType: ShapeTargetType = 'slideMaster';
 
   constructor(params: {
     presentation: IPresentationProps;
@@ -296,14 +299,6 @@ export class Master implements IMaster {
   }
 
   /**
-   * Use another slide master
-   * @param alias
-   */
-  useMaster(masterSelector: string, layoutSelector?: string): void {
-    // TODO: get aliased master params and update current slide rels
-  }
-
-  /**
    * Modifies slide
    * @internal
    * @param callback
@@ -429,21 +424,24 @@ export class Master implements IMaster {
 
       switch (info?.type) {
         case ElementType.Chart:
-          await new Chart(info)[info.mode](
+          await new Chart(info, this.targetType)[info.mode](
             this.targetTemplate,
             this.targetNumber,
+            'slideMaster',
           );
           break;
         case ElementType.Image:
-          await new Image(info)[info.mode](
+          await new Image(info, this.targetType)[info.mode](
             this.targetTemplate,
             this.targetNumber,
+            'slideMaster',
           );
           break;
         case ElementType.Shape:
-          await new GenericShape(info)[info.mode](
+          await new GenericShape(info, this.targetType)[info.mode](
             this.targetTemplate,
             this.targetNumber,
+            'slideMaster',
           );
           break;
         default:
@@ -466,7 +464,15 @@ export class Master implements IMaster {
         ? this.getSlideNumber(template, importElement.slideNumber)
         : importElement.slideNumber;
 
-    const sourcePath = `ppt/slides/slide${slideNumber}.xml`;
+    // It is possible to import shapes from loaded presentations,
+    // as well as modifying existing shapes on current slideMaster
+    const sourcePath =
+      importElement.mode === 'append'
+        ? `ppt/slides/slide${slideNumber}.xml`
+        : `ppt/slideMasters/slideMaster${slideNumber}.xml`;
+
+    // const sourcePath = `ppt/slideMasters/slideMaster${slideNumber}.xml`;
+    // const sourcePath = `ppt/slides/slide${slideNumber}.xml`;
 
     const sourceArchive = await template.archive;
     const useCreationIds =
@@ -481,7 +487,7 @@ export class Master implements IMaster {
 
     if (!sourceElement) {
       console.error(
-        `Can't find element on slide ${slideNumber} in ${importElement.presName}: `,
+        `Can't find element on ${sourcePath} in ${importElement.presName}: `,
       );
       console.log(importElement);
       return;
@@ -797,22 +803,28 @@ export class Master implements IMaster {
     const charts = await Chart.getAllOnSlide(this.sourceArchive, this.relsPath);
 
     for (const chart of charts) {
-      await new Chart({
-        mode: 'append',
-        target: chart,
-        sourceArchive: this.sourceArchive,
-        sourceSlideNumber: this.sourceNumber,
-      }).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);
+      await new Chart(
+        {
+          mode: 'append',
+          target: chart,
+          sourceArchive: this.sourceArchive,
+          sourceSlideNumber: this.sourceNumber,
+        },
+        this.targetType,
+      ).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);
     }
 
     const images = await Image.getAllOnSlide(this.sourceArchive, this.relsPath);
     for (const image of images) {
-      await new Image({
-        mode: 'append',
-        target: image,
-        sourceArchive: this.sourceArchive,
-        sourceSlideNumber: this.sourceNumber,
-      }).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);
+      await new Image(
+        {
+          mode: 'append',
+          target: image,
+          sourceArchive: this.sourceArchive,
+          sourceSlideNumber: this.sourceNumber,
+        },
+        this.targetType,
+      ).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);
     }
   }
 }

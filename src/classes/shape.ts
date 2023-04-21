@@ -3,6 +3,7 @@ import { GeneralHelper } from '../helper/general-helper';
 import {
   ImportedElement,
   ShapeModificationCallback,
+  ShapeTargetType,
   Workbook,
 } from '../types/types';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
@@ -38,15 +39,17 @@ export class Shape {
   relParent: (element: XmlElement) => XmlElement;
 
   targetElement: XmlDocument;
+  targetType: ShapeTargetType;
 
   callbacks: ShapeModificationCallback[];
   hasCreationId: boolean;
   contentTypeMap: typeof ImageTypeMap;
   subtype: ElementSubtype;
 
-  constructor(shape: ImportedElement) {
+  constructor(shape: ImportedElement, targetType: ShapeTargetType) {
     this.mode = shape.mode;
     this.name = shape.name;
+    this.targetType = targetType;
 
     this.sourceArchive = shape.sourceArchive;
     this.sourceSlideNumber = shape.sourceSlideNumber;
@@ -68,11 +71,13 @@ export class Shape {
     targetTemplate: RootPresTemplate,
     targetSlideNumber: number,
   ): Promise<void> {
+    const targetType = this.targetType;
+
     this.targetTemplate = targetTemplate;
     this.targetArchive = await this.targetTemplate.archive;
     this.targetSlideNumber = targetSlideNumber;
-    this.targetSlideFile = `ppt/slides/slide${this.targetSlideNumber}.xml`;
-    this.targetSlideRelFile = `ppt/slides/_rels/slide${this.targetSlideNumber}.xml.rels`;
+    this.targetSlideFile = `ppt/${targetType}s/${targetType}${this.targetSlideNumber}.xml`;
+    this.targetSlideRelFile = `ppt/${targetType}s/_rels/${targetType}${this.targetSlideNumber}.xml.rels`;
   }
 
   async setTargetElement(): Promise<void> {
