@@ -52,6 +52,8 @@ export class CountHelper implements ICounter {
         return CountHelper.countMasters(presentation);
       case 'layouts':
         return CountHelper.countLayouts(presentation);
+      case 'themes':
+        return CountHelper.countThemes(presentation);
       case 'charts':
         return CountHelper.countCharts(presentation);
       case 'images':
@@ -91,6 +93,23 @@ export class CountHelper implements ICounter {
           o.getAttribute &&
           o.getAttribute('ContentType') ===
             `application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml`,
+      ).length;
+  }
+
+  private static async countThemes(presentation: IArchive): Promise<number> {
+    const contentTypesXml = await XmlHelper.getXmlFromArchive(
+      presentation,
+      '[Content_Types].xml',
+    );
+    const overrides = contentTypesXml.getElementsByTagName('Override');
+
+    return Object.keys(overrides)
+      .map((key) => overrides[key] as XmlElement)
+      .filter(
+        (o) =>
+          o.getAttribute &&
+          o.getAttribute('ContentType') ===
+            `application/vnd.openxmlformats-officedocument.theme+xml`,
       ).length;
   }
 

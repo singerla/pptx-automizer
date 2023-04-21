@@ -18,8 +18,8 @@ const automizer = (outputName) =>
     },
     rootTemplate: 'RootTemplate.pptx',
     presTemplates: [`SlidesWithAdditionalMaster.pptx`],
-    removeExistingSlides: false,
-    cleanup: false,
+    removeExistingSlides: true,
+    cleanup: true,
     compression: 0,
   });
 
@@ -48,10 +48,11 @@ const run = async () => {
     .addMaster('SlidesWithAdditionalMaster.pptx', 2)
 
     // Add a slide (which might require an imported master):
-    // .addSlide('SlidesWithAdditionalMaster.pptx', 3, (slide) => {
-    //   // use another master, e.g. the imported one from 'SlidesWithAdditionalMaster.pptx'
-    //   slide.useMaster('myMaster#2');
-    // })
+    .addSlide('SlidesWithAdditionalMaster.pptx', 3, (slide) => {
+      // use another master, e.g. the imported one from 'SlidesWithAdditionalMaster.pptx'
+      slide.useSlideLayout(22);
+    })
+
     // Add a slide and use another master:
     // .addSlide('SlidesWithAdditionalMaster.pptx', 2, (slide) => {
     //   // find an imported master/layout by name

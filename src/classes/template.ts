@@ -84,6 +84,7 @@ export class Template implements ITemplate {
         new CountHelper('images', newTemplate),
         new CountHelper('masters', newTemplate),
         new CountHelper('layouts', newTemplate),
+        new CountHelper('themes', newTemplate),
       ];
       newTemplate.content = new ContentTracker();
     }

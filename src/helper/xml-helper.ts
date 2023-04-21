@@ -234,24 +234,44 @@ export class XmlHelper {
     return XmlHelper.getRelationships(
       archive,
       path,
-      (element: XmlElement, rels: Target[]) => {
-        const target = element.getAttribute('Type');
-        if (target === type) {
-          rels.push({
-            file: element.getAttribute('Target'),
-            rId: element.getAttribute('Id'),
-          } as Target);
-        }
-      },
+      XmlHelper.parseRelationShipItemCb(type),
     );
   }
+
+  static parseRelationShipItemCb =
+    (type) => (element: XmlElement, rels: Target[]) => {
+      const target = element.getAttribute('Type');
+      if (target === type) {
+        rels.push({
+          file: element.getAttribute('Target'),
+          rId: element.getAttribute('Id'),
+          element: element,
+        } as Target);
+      }
+    };
 
   static async getRelationships(
     archive: IArchive,
     path: string,
     cb: GetRelationshipsCallback,
   ): Promise<Target[]> {
-    return this.getRelationshipItems(archive, path, 'Relationship', cb);
+    const xml = await XmlHelper.getXmlFromArchive(archive, path);
+    const relationshipItems = xml.getElementsByTagName('Relationship');
+
+    return this.parseRelationshipItems(relationshipItems, cb);
+  }
+
+  static async parseRelationshipItems(
+    relationshipItems,
+    cb: GetRelationshipsCallback,
+  ): Promise<Target[]> {
+    const rels = [];
+    Object.keys(relationshipItems)
+      .map((key) => relationshipItems[key] as XmlElement)
+      .filter((element) => element.getAttribute !== undefined)
+      .forEach((element) => cb(element, rels));
+
+    return rels;
   }
 
   static async getRelationshipItems(
@@ -532,6 +552,16 @@ export class XmlHelper {
     for (let i = 0; i < collection.length; i++) {
       const item = collection[i];
       callback(item, i);
+    }
+  }
+
+  static async modifyCollectionAsync(
+    collection: HTMLCollectionOf<XmlElement>,
+    callback: ModifyXmlCallback,
+  ): Promise<void> {
+    for (let i = 0; i < collection.length; i++) {
+      const item = collection[i];
+      await callback(item, i);
     }
   }
 

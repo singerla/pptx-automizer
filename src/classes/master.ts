@@ -261,8 +261,8 @@ export class Master implements IMaster {
 
   async copyThemeFiles() {
     const targets = await XmlHelper.getTargetsFromRelationships(
-      this.sourceArchive,
-      `ppt/slideMasters/_rels/slideMaster${this.sourceNumber}.xml.rels`,
+      this.targetArchive,
+      `ppt/slideMasters/_rels/slideMaster${this.targetNumber}.xml.rels`,
       '../theme/theme',
     );
 
@@ -273,7 +273,8 @@ export class Master implements IMaster {
     const themeTarget = targets[0];
 
     const themeSourceId = themeTarget.number;
-    const themeTargetId = this.targetNumber;
+    const themeTargetId = this.targetTemplate.incrementCounter('themes');
+
     await FileHelper.zipCopy(
       this.sourceArchive,
       `ppt/theme/theme${themeSourceId}.xml`,

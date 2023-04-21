@@ -71,10 +71,15 @@ export class Slide implements ISlide {
    */
   targetPath: string;
   /**
-   * Modifications  of slide
+   * Modifications of slide
    * @internal
    */
   modifications: SlideModificationCallback[];
+  /**
+   * Modifications of slide relations
+   * @internal
+   */
+  relModifications: SlideModificationCallback[];
   /**
    * Import elements of slide
    * @internal
@@ -127,6 +132,7 @@ export class Slide implements ISlide {
     this.relsPath = `ppt/slides/_rels/slide${this.sourceNumber}.xml.rels`;
 
     this.modifications = [];
+    this.relModifications = [];
     this.importElements = [];
 
     this.status = params.presentation.status;
@@ -204,6 +210,8 @@ export class Slide implements ISlide {
     }
 
     await this.applyModifications();
+    await this.applyRelModifications();
+
     await this.cleanSlide();
 
     this.status.increment();
@@ -213,8 +221,24 @@ export class Slide implements ISlide {
    * Use another slide master
    * @param alias
    */
-  useMaster(masterSelector: string, layoutSelector?: string): void {
-    // TODO: get aliased master params and update current slide rels
+  useSlideLayout(targetLayoutId: number): void {
+    this.relModifications.push(async (slideRelXml) => {
+      XmlHelper.dump(slideRelXml);
+      const relationshipItems =
+        slideRelXml.getElementsByTagName('Relationship');
+      const relItems = await XmlHelper.parseRelationshipItems(
+        relationshipItems,
+        XmlHelper.parseRelationShipItemCb(
+          `http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout`,
+        ),
+      );
+
+      relItems[0].element.setAttribute(
+        'Target',
+        `../slideLayouts/slideLayout${targetLayoutId}.xml`,
+      );
+      vd(relItems);
+    });
   }
 
   /**
@@ -544,6 +568,19 @@ export class Slide implements ISlide {
       modification(xml);
       XmlHelper.writeXmlToArchive(this.targetArchive, this.targetPath, xml);
     }
+  }
+
+  /**
+   * Apply modifications to slide relations
+   * @internal
+   * @returns modifications
+   */
+  async applyRelModifications(): Promise<void> {
+    await XmlHelper.modifyXmlInArchive(
+      this.targetArchive,
+      `ppt/slides/_rels/slide${this.targetNumber}.xml.rels`,
+      this.relModifications,
+    );
   }
 
   /**
