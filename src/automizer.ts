@@ -82,6 +82,7 @@ export default class Automizer implements IPresentationProps {
       this.rootTemplate = Template.import(
         location,
         this.archiveParams,
+        this,
       ) as RootPresTemplate;
     }
 
@@ -259,8 +260,7 @@ export default class Automizer implements IPresentationProps {
    * WIP: Copy and modify a master and the associated layouts from template
    * to output.
    * @param name
-   * @param masterNumber
-   * @param alias An optional label to find the master laster.
+   * @param sourceIdentifier
    * @param callback
    */
   public addMaster(
@@ -370,8 +370,6 @@ export default class Automizer implements IPresentationProps {
    * Write all masterSlides to archive.
    */
   public async writeMasterSlides(): Promise<void> {
-    this.status.max = this.rootTemplate.masters.length;
-
     for (const slide of this.rootTemplate.masters) {
       await this.rootTemplate.appendMasterSlide(slide);
     }
@@ -382,7 +380,8 @@ export default class Automizer implements IPresentationProps {
    */
   public async writeSlides(): Promise<void> {
     await this.rootTemplate.countExistingSlides();
-    this.status.max = this.rootTemplate.slides.length;
+    this.status.max =
+      this.rootTemplate.slides.length + this.rootTemplate.masters.length;
 
     for (const slide of this.rootTemplate.slides) {
       await this.rootTemplate.appendSlide(slide);

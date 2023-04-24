@@ -89,6 +89,9 @@ export type Target = {
   filenameBase?: string;
   getCreatedContent?: () => TrackedRelationInfo;
   getRelatedContent?: () => Promise<Target>;
+  getTargetValue?: () => string;
+  updateTargetValue?: (newTarget: string) => void;
+  updateTargetIndex?: (newIndex: number) => void;
   relatedContent?: Target;
   copiedTarget?: string;
 };

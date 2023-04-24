@@ -169,7 +169,6 @@ export class ContentTracker {
     const addTargets = await XmlHelper.getRelationshipItems(
       this.archive,
       file,
-      relationTag.tag,
       (element, rels) => {
         rels.push({
           file,
@@ -178,6 +177,7 @@ export class ContentTracker {
           type: relationTag.type,
         });
       },
+      relationTag.tag,
     );
 
     this.addCreatedRelationsFunctions(
@@ -232,7 +232,6 @@ export class ContentTracker {
       const relationTarget = await XmlHelper.getRelationshipItems(
         this.archive,
         relationsFile,
-        'Relationship',
         (element, rels) => {
           const rId = element.getAttribute('Id');
 

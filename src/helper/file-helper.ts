@@ -70,6 +70,44 @@ export class FileHelper {
     return archive.fileExists(file);
   }
 
+  static async zipCopyWithRelations(
+    parentClass,
+    type: string,
+    sourceNumber: number,
+    targetNumber: number,
+  ) {
+    const typePlural = type + 's';
+    await FileHelper.zipCopyByIndex(
+      parentClass,
+      `ppt/${typePlural}/${type}`,
+      sourceNumber,
+      targetNumber,
+    );
+    await FileHelper.zipCopyByIndex(
+      parentClass,
+      `ppt/${typePlural}/_rels/${type}`,
+      sourceNumber,
+      targetNumber,
+      '.xml.rels',
+    );
+  }
+
+  static async zipCopyByIndex(
+    parentClass,
+    prefix,
+    sourceId,
+    targetId,
+    suffix?,
+  ): Promise<IArchive> {
+    suffix = suffix || '.xml';
+    return FileHelper.zipCopy(
+      parentClass.sourceArchive,
+      `${prefix}${sourceId}${suffix}`,
+      parentClass.targetArchive,
+      `${prefix}${targetId}${suffix}`,
+    );
+  }
+
   /**
    * Copies a file from one archive to another. The new file can have a different name to the origin.
    * @param {IArchive} sourceArchive - Source archive

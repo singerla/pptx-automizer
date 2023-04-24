@@ -66,6 +66,14 @@ export type ElementInfo = {
   };
 };
 
+export type ContentMapType = 'slideMaster' | 'slideLayout';
+export type ContentMap = {
+  type: ContentMapType;
+  key: string;
+  sourceId: number;
+  targetId: number;
+};
+
 export type ModifyXmlCallback = (
   xml: XmlDocument | XmlElement,
   index?: number,

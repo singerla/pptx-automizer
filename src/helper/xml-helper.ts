@@ -162,62 +162,68 @@ export class XmlHelper {
     return max;
   }
 
-  static async getTargetsFromRelationships(
+  static async getRelationshipTargetsByPrefix(
     archive: IArchive,
     path: string,
     prefix: string | string[],
   ): Promise<Target[]> {
     const prefixes = typeof prefix === 'string' ? [prefix] : prefix;
 
-    return XmlHelper.getRelationships(
+    return XmlHelper.getRelationshipItems(
       archive,
       path,
       (element: XmlElement, targets: Target[]) => {
         prefixes.forEach((prefix) => {
-          XmlHelper.pushRelTargets(element, prefix, targets);
+          const target = XmlHelper.parseRelationTarget(element, prefix);
+          if (target.prefix) {
+            targets.push(target);
+          }
         });
       },
     );
   }
 
-  static pushRelTargets(
-    element: XmlElement,
-    prefix: string,
-    targets: Target[],
-  ) {
+  static parseRelationTarget(element: XmlElement, prefix?: string): Target {
     const type = element.getAttribute('Type');
     const file = element.getAttribute('Target');
-    const rId = element.getAttribute('Id');
-
     const last = (arr: string[]): string => arr[arr.length - 1];
 
+    const filename = last(file.split('/'));
     const subtype = last(prefix.split('/'));
     const relType = last(type.split('/'));
-    const filename = last(file.split('/'));
+    const rId = element.getAttribute('Id');
     const filenameExt = last(filename.split('.'));
     const filenameMatch = filename
       .replace('.' + filenameExt, '')
       .match(/^(.+?)(\d+)*$/);
-
-    const number =
-      filenameMatch && filenameMatch[2] ? Number(filenameMatch[2]) : 0;
     const filenameBase =
       filenameMatch && filenameMatch[1] ? filenameMatch[1] : filename;
+    const number =
+      filenameMatch && filenameMatch[2] ? Number(filenameMatch[2]) : 0;
 
-    if (XmlHelper.targetMatchesRelationship(relType, subtype, file, prefix)) {
-      targets.push({
-        file,
-        rId,
-        number,
-        type,
-        subtype,
+    const target = <Target>{
+      rId,
+      type,
+      file,
+      filename,
+      filenameBase,
+      number,
+      subtype,
+      relType,
+      element,
+    };
+
+    if (
+      prefix &&
+      XmlHelper.targetMatchesRelationship(relType, subtype, file, prefix)
+    ) {
+      return {
+        ...target,
         prefix,
-        filename,
-        filenameExt,
-        filenameBase,
-        element,
-      } as Target);
+      } as Target;
     }
+
+    return target;
   }
 
   static targetMatchesRelationship(relType, subtype, target, prefix) {
@@ -231,63 +237,40 @@ export class XmlHelper {
     path: string,
     type: string,
   ): Promise<Target[]> {
-    return XmlHelper.getRelationships(
+    const rels = XmlHelper.getRelationshipItems(
       archive,
       path,
-      XmlHelper.parseRelationShipItemCb(type),
+      (element: XmlElement, rels: Target[]) => {
+        const target = element.getAttribute('Type');
+        if (target === type) {
+          rels.push({
+            file: element.getAttribute('Target'),
+            rId: element.getAttribute('Id'),
+            element: element,
+          } as Target);
+        }
+      },
     );
-  }
-
-  static parseRelationShipItemCb =
-    (type) => (element: XmlElement, rels: Target[]) => {
-      const target = element.getAttribute('Type');
-      if (target === type) {
-        rels.push({
-          file: element.getAttribute('Target'),
-          rId: element.getAttribute('Id'),
-          element: element,
-        } as Target);
-      }
-    };
-
-  static async getRelationships(
-    archive: IArchive,
-    path: string,
-    cb: GetRelationshipsCallback,
-  ): Promise<Target[]> {
-    const xml = await XmlHelper.getXmlFromArchive(archive, path);
-    const relationshipItems = xml.getElementsByTagName('Relationship');
-
-    return this.parseRelationshipItems(relationshipItems, cb);
-  }
-
-  static async parseRelationshipItems(
-    relationshipItems,
-    cb: GetRelationshipsCallback,
-  ): Promise<Target[]> {
-    const rels = [];
-    Object.keys(relationshipItems)
-      .map((key) => relationshipItems[key] as XmlElement)
-      .filter((element) => element.getAttribute !== undefined)
-      .forEach((element) => cb(element, rels));
-
     return rels;
   }
 
   static async getRelationshipItems(
     archive: IArchive,
     path: string,
-    tag: string,
     cb: GetRelationshipsCallback,
+    tag?: string,
   ): Promise<Target[]> {
+    tag = tag || 'Relationship';
+
     const xml = await XmlHelper.getXmlFromArchive(archive, path);
     const relationshipItems = xml.getElementsByTagName(tag);
-    const rels = [];
 
-    Object.keys(relationshipItems)
-      .map((key) => relationshipItems[key] as XmlElement)
-      .filter((element) => element.getAttribute !== undefined)
-      .forEach((element) => cb(element, rels));
+    const rels = [];
+    for (const i in relationshipItems) {
+      if (relationshipItems[i].getAttribute) {
+        cb(relationshipItems[i], rels);
+      }
+    }
 
     return rels;
   }
@@ -355,7 +338,7 @@ export class XmlHelper {
       .getElementsByTagName(params.relRootTag)[0]
       .getAttribute(params.relAttribute);
     const relsPath = `ppt/slides/_rels/slide${slideNumber}.xml.rels`;
-    const imageRels = await XmlHelper.getTargetsFromRelationships(
+    const imageRels = await XmlHelper.getRelationshipTargetsByPrefix(
       archive,
       relsPath,
       params.prefix,
@@ -389,9 +372,6 @@ export class XmlHelper {
     const names = doc.getElementsByTagName('p:cNvPr');
 
     for (const i in names) {
-      if (names[i].getAttribute) {
-        vd(names[i].getAttribute('name'));
-      }
       if (names[i].getAttribute && names[i].getAttribute('name') === name) {
         return names[i].parentNode.parentNode as XmlDocument;
       }

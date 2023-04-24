@@ -203,7 +203,7 @@ export class Chart extends Shape implements IChart {
       this.wbRelsPath,
     );
 
-    const worksheets = await XmlHelper.getTargetsFromRelationships(
+    const worksheets = await XmlHelper.getRelationshipTargetsByPrefix(
       this.sourceArchive,
       this.wbRelsPath,
       `${this.wbEmbeddingsPath}${this.worksheetFilePrefix}`,
@@ -219,7 +219,7 @@ export class Chart extends Shape implements IChart {
   }
 
   async getWorksheetFilePrefix(targetRelFile: string): Promise<string> {
-    const relationTargets = await XmlHelper.getTargetsFromRelationships(
+    const relationTargets = await XmlHelper.getRelationshipTargetsByPrefix(
       this.sourceArchive,
       targetRelFile,
       this.wbEmbeddingsPath,
@@ -475,7 +475,7 @@ export class Chart extends Shape implements IChart {
     archive: IArchive,
     relsPath: string,
   ): Promise<Target[]> {
-    return await XmlHelper.getTargetsFromRelationships(archive, relsPath, [
+    return await XmlHelper.getRelationshipTargetsByPrefix(archive, relsPath, [
       '../charts/chart',
       '../charts/chartEx',
     ]);

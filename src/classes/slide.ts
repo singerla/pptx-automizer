@@ -26,9 +26,12 @@ import {
 import { Image } from '../shapes/image';
 import { Chart } from '../shapes/chart';
 import { GenericShape } from '../shapes/generic';
-import { vd } from '../helper/general-helper';
 import { ContentTracker } from '../helper/content-tracker';
 import IArchive from '../interfaces/iarchive';
+import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
+import { last, vd } from '../helper/general-helper';
+import { Master } from './master';
+import { IMaster } from '../interfaces/imaster';
 
 export class Slide implements ISlide {
   /**
@@ -222,23 +225,62 @@ export class Slide implements ISlide {
 
   /**
    * Use another slide layout.
-   * @param alias
+   * @param targetLayoutId
    */
-  useSlideLayout(targetLayoutId: number): void {
+  useSlideLayout(targetLayoutId?: number): void {
     this.relModifications.push(async (slideRelXml) => {
-      const relationshipItems =
-        slideRelXml.getElementsByTagName('Relationship');
-      const relItems = await XmlHelper.parseRelationshipItems(
-        relationshipItems,
-        XmlHelper.parseRelationShipItemCb(
-          `http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout`,
-        ),
-      );
-      relItems[0].element.setAttribute(
-        'Target',
-        `../slideLayouts/slideLayout${targetLayoutId}.xml`,
-      );
+      if (!targetLayoutId) {
+        const sourceLayoutId = await XmlRelationshipHelper.getSlideLayoutNumber(
+          this.sourceArchive,
+          this.sourceNumber,
+        );
+
+        const templateName = this.sourceTemplate.name;
+        const alreadyImported = this.targetTemplate.getMappedContent(
+          'slideLayout',
+          templateName,
+          sourceLayoutId,
+        );
+
+        if (alreadyImported) {
+          targetLayoutId = alreadyImported.targetId;
+        } else {
+          targetLayoutId = await this.autoImportSourceSlideMaster(
+            templateName,
+            sourceLayoutId,
+          );
+        }
+      }
+
+      const slideLayouts = new XmlRelationshipHelper(slideRelXml)
+        .readTargets()
+        .getTargetsByPrefix('../slideLayouts/slideLayout');
+
+      if (slideLayouts.length) {
+        slideLayouts[0].updateTargetIndex(targetLayoutId);
+      }
     });
+  }
+
+  async autoImportSourceSlideMaster(
+    templateName: string,
+    sourceLayoutId: number,
+  ) {
+    const sourceMasterId = await XmlRelationshipHelper.getSlideMasterNumber(
+      this.sourceArchive,
+      sourceLayoutId,
+    );
+
+    await this.targetTemplate.automizer.addMaster(templateName, sourceMasterId);
+
+    const previouslyAddedMaster = last<IMaster>(this.targetTemplate.masters);
+    await this.targetTemplate.appendMasterSlide(previouslyAddedMaster);
+    const alreadyImported = this.targetTemplate.getMappedContent(
+      'slideLayout',
+      templateName,
+      sourceLayoutId,
+    );
+    return alreadyImported.targetId;
   }
 
   /**

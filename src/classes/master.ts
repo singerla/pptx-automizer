@@ -13,7 +13,6 @@ import {
   StatusTracker,
   Target,
 } from '../types/types';
-import { ISlide } from '../interfaces/islide';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
 import { PresTemplate } from '../interfaces/pres-template';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
@@ -27,10 +26,11 @@ import {
 import { Image } from '../shapes/image';
 import { Chart } from '../shapes/chart';
 import { GenericShape } from '../shapes/generic';
-import { vd } from '../helper/general-helper';
 import { ContentTracker } from '../helper/content-tracker';
 import IArchive from '../interfaces/iarchive';
 import { IMaster } from '../interfaces/imaster';
+import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
+import { vd } from '../helper/general-helper';
 
 export class Master implements IMaster {
   /**
@@ -209,9 +209,12 @@ export class Master implements IMaster {
   }
 
   async copyRelatedLayouts(): Promise<Target[]> {
-    const targets = await XmlHelper.getTargetsFromRelationships(
-      this.sourceArchive,
-      `ppt/slideMasters/_rels/slideMaster${this.sourceNumber}.xml.rels`,
+    const targetHelper = await new XmlRelationshipHelper().initialize(
+      this.targetArchive,
+      `ppt/slideMasters/_rels/slideMaster${this.targetNumber}.xml.rels`,
+    );
+
+    const targets = targetHelper.getTargetsByPrefix(
       '../slideLayouts/slideLayout',
     );
 
@@ -219,39 +222,30 @@ export class Master implements IMaster {
       const nextSlideLayoutNumber =
         this.targetTemplate.incrementCounter('layouts');
 
-      await FileHelper.zipCopy(
-        this.sourceArchive,
-        `ppt/slideLayouts/slideLayout${target.number}.xml`,
-        this.targetArchive,
-        `ppt/slideLayouts/slideLayout${nextSlideLayoutNumber}.xml`,
+      this.targetTemplate.mapContents(
+        'slideLayout',
+        this.sourceTemplate.name,
+        target.number,
+        nextSlideLayoutNumber,
       );
 
-      await XmlHelper.replaceAttribute(
-        this.targetArchive,
-        `ppt/slideMasters/_rels/slideMaster${this.targetNumber}.xml.rels`,
-        'Relationship',
-        'Id',
-        target.rId,
-        `../slideLayouts/slideLayout${nextSlideLayoutNumber}.xml`,
-        'Target',
+      target.updateTargetIndex(nextSlideLayoutNumber);
+
+      await FileHelper.zipCopyWithRelations(
+        this,
+        'slideLayout',
+        target.number,
+        nextSlideLayoutNumber,
       );
 
-      await FileHelper.zipCopy(
-        this.sourceArchive,
-        `ppt/slideLayouts/_rels/slideLayout${target.number}.xml.rels`,
+      const layoutTargetHelper = await new XmlRelationshipHelper().initialize(
         this.targetArchive,
         `ppt/slideLayouts/_rels/slideLayout${nextSlideLayoutNumber}.xml.rels`,
       );
-
-      await XmlHelper.replaceAttribute(
-        this.targetArchive,
-        `ppt/slideLayouts/_rels/slideLayout${nextSlideLayoutNumber}.xml.rels`,
-        'Relationship',
-        'Id',
-        'rId1',
-        `../slideMasters/slideMaster${this.targetNumber}.xml`,
-        'Target',
+      const layoutToMaster = layoutTargetHelper.getTargetsByPrefix(
+        '../slideMasters/slideMaster',
       );
+      layoutToMaster[0].updateTargetIndex(this.targetNumber);
 
       await this.appendSlideLayoutToContentType(
         this.targetArchive,
@@ -263,7 +257,7 @@ export class Master implements IMaster {
   }
 
   async copyThemeFiles() {
-    const targets = await XmlHelper.getTargetsFromRelationships(
+    const targets = await XmlHelper.getRelationshipTargetsByPrefix(
       this.targetArchive,
       `ppt/slideMasters/_rels/slideMaster${this.targetNumber}.xml.rels`,
       '../theme/theme',
@@ -465,7 +459,7 @@ export class Master implements IMaster {
         : importElement.slideNumber;
 
     // It is possible to import shapes from loaded presentations,
-    // as well as modifying existing shapes on current slideMaster
+    // as well as to modify an existing shape on current slideMaster
     const sourcePath =
       importElement.mode === 'append'
         ? `ppt/slides/slide${slideNumber}.xml`
