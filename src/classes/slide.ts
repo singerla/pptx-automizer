@@ -227,7 +227,7 @@ export class Slide implements ISlide {
    * Use another slide layout.
    * @param targetLayoutId
    */
-  useSlideLayout(targetLayoutId?: number): void {
+  useSlideLayout(targetLayoutId?: number): this {
     this.relModifications.push(async (slideRelXml) => {
       if (!targetLayoutId) {
         const sourceLayoutId = await XmlRelationshipHelper.getSlideLayoutNumber(
@@ -260,6 +260,8 @@ export class Slide implements ISlide {
         slideLayouts[0].updateTargetIndex(targetLayoutId);
       }
     });
+
+    return this;
   }
 
   async autoImportSourceSlideMaster(
