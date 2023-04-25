@@ -6,10 +6,8 @@ export interface ISlide {
   sourceArchive: IArchive;
   sourceNumber: SourceIdentifier;
   modifications: SlideModificationCallback[];
-
   modify(callback: SlideModificationCallback): void;
-
   append(targetTemplate: RootPresTemplate): Promise<void>;
-
   addElement(presName: string, slideNumber: number, selector: string): void;
+  useSlideLayout(index?: number): void;
 }

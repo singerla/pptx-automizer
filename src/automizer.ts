@@ -22,6 +22,7 @@ import {
   ContentTracker,
 } from './helper/content-tracker';
 import JSZip, { OutputType } from 'jszip';
+import { ISlide } from './interfaces/islide';
 
 /**
  * Automizer
@@ -232,7 +233,7 @@ export default class Automizer implements IPresentationProps {
   public addSlide(
     name: string,
     slideIdentifier: SourceIdentifier,
-    callback?: (slide: Slide) => void,
+    callback?: (slide: ISlide) => void,
   ): this {
     if (this.rootTemplate === undefined) {
       throw new Error('You have to set a root template first.');

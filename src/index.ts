@@ -4,7 +4,7 @@ import ModifyHelper from './helper/modify-helper';
 import ModifyShapeHelper from './helper/modify-shape-helper';
 import ModifyTableHelper from './helper/modify-table-helper';
 import ModifyChartHelper from './helper/modify-chart-helper';
-import { TemplateInfo } from './types/xml-types';
+import { TemplateInfo, XmlDocument, XmlElement } from './types/xml-types';
 import {
   AutomizerSummary,
   ShapeModificationCallback,
@@ -115,5 +115,7 @@ export type {
   TemplateInfo,
   StatusTracker,
   ShapeModificationCallback,
+  XmlElement,
+  XmlDocument,
 };
 export default Automizer;
