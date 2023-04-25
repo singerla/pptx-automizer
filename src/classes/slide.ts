@@ -28,9 +28,9 @@ import { Chart } from '../shapes/chart';
 import { GenericShape } from '../shapes/generic';
 import { ContentTracker } from '../helper/content-tracker';
 import IArchive from '../interfaces/iarchive';
-import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import { last, vd } from '../helper/general-helper';
 import { Master } from './master';
+import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import { IMaster } from '../interfaces/imaster';
 
 export class Slide implements ISlide {
@@ -270,16 +270,22 @@ export class Slide implements ISlide {
       this.sourceArchive,
       sourceLayoutId,
     );
-
     await this.targetTemplate.automizer.addMaster(templateName, sourceMasterId);
 
     const previouslyAddedMaster = last<IMaster>(this.targetTemplate.masters);
-    await this.targetTemplate.appendMasterSlide(previouslyAddedMaster);
+
+    await this.targetTemplate
+      .appendMasterSlide(previouslyAddedMaster)
+      .catch((e) => {
+        throw e;
+      });
+
     const alreadyImported = this.targetTemplate.getMappedContent(
       'slideLayout',
       templateName,
       sourceLayoutId,
     );
+
     return alreadyImported.targetId;
   }
 

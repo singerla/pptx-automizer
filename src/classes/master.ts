@@ -28,9 +28,10 @@ import { Chart } from '../shapes/chart';
 import { GenericShape } from '../shapes/generic';
 import { ContentTracker } from '../helper/content-tracker';
 import IArchive from '../interfaces/iarchive';
+
+import { vd } from '../helper/general-helper';
 import { IMaster } from '../interfaces/imaster';
 import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
-import { vd } from '../helper/general-helper';
 
 export class Master implements IMaster {
   /**

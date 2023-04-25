@@ -11,8 +11,9 @@ import { XmlHelper } from '../helper/xml-helper';
 import { ContentTracker } from '../helper/content-tracker';
 import IArchive from '../interfaces/iarchive';
 import { ArchiveParams } from '../types/types';
-import { IMaster } from '../interfaces/imaster';
+
 import Automizer from '../automizer';
+import { IMaster } from '../interfaces/imaster';
 
 export class Template implements ITemplate {
   /**
@@ -138,7 +139,9 @@ export class Template implements ITemplate {
       await this.initializeCounter();
     }
 
-    await slideMaster.append(this);
+    await slideMaster.append(this).catch((e) => {
+      throw e;
+    });
   }
 
   async appendSlide(slide: ISlide): Promise<void> {
@@ -146,7 +149,9 @@ export class Template implements ITemplate {
       await this.initializeCounter();
     }
 
-    await slide.append(this);
+    await slide.append(this).catch((e) => {
+      throw e;
+    });
   }
 
   async countExistingSlides(): Promise<void> {

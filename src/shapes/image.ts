@@ -128,7 +128,7 @@ export class Image extends Shape implements IImage {
   }
 
   async appendToSlideRels(): Promise<HelperElement> {
-    const targetRelFile = `ppt/slides/_rels/slide${this.targetSlideNumber}.xml.rels`;
+    const targetRelFile = `ppt/${this.targetType}s/_rels/${this.targetType}${this.targetSlideNumber}.xml.rels`;
     this.createdRid = await XmlHelper.getNextRelId(
       this.targetArchive,
       targetRelFile,

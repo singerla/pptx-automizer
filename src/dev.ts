@@ -34,12 +34,13 @@ const run = async () => {
 
   const pres = await automizer
     .loadRoot(`EmptyTemplate.pptx`)
+    .load('SlideMasters.pptx')
     .load('SlidesWithAdditionalMaster.pptx')
 
     // We can disable .addMaster according to "autoImportSlideMasters: true"
     // .addMaster('SlidesWithAdditionalMaster.pptx', 1)
 
-    .addSlide('SlidesWithAdditionalMaster.pptx', 3, (slide) => {
+    .addSlide('SlideMasters.pptx', 3, (slide) => {
       // We can also disable "slide.useSlideLayout()"
       // with "autoImportSlideMasters: true"
       // slide.useSlideLayout();

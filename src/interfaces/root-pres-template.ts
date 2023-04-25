@@ -2,8 +2,8 @@ import { ISlide } from './islide';
 import { ICounter } from './icounter';
 import { ITemplate } from './itemplate';
 import { ContentTracker } from '../helper/content-tracker';
-import { IMaster } from './imaster';
 import Automizer from '../automizer';
+import { IMaster } from './imaster';
 
 export interface RootPresTemplate extends ITemplate {
   slides: ISlide[];
