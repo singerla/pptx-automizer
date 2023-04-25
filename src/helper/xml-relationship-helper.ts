@@ -104,6 +104,18 @@ export class XmlRelationshipHelper {
     return this;
   }
 
+  /**
+   * This will copy all unhandled related contents into
+   * the target archive.
+   *
+   * Pptx messages on opening a corrupted file are most likely
+   * caused by broken relations and this is going to prevent
+   * files from being missed.
+   *
+   * @param sourceArchive
+   * @param check
+   * @param assert
+   */
   async assertRelatedContent(
     sourceArchive: IArchive,
     check?: boolean,
