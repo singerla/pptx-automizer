@@ -4,10 +4,12 @@ import IArchive from '../interfaces/iarchive';
 import { XmlHelper } from './xml-helper';
 import { last, vd } from './general-helper';
 import { ElementSubtype } from '../enums/element-type';
+import { FileHelper } from './file-helper';
 
 export class XmlRelationshipHelper {
   archive: IArchive;
   file: string;
+  path: string;
   tag: string;
   xml: XmlDocument;
   xmlTargets: XmlElement[] = [];
@@ -21,19 +23,19 @@ export class XmlRelationshipHelper {
     return this;
   }
 
-  async initialize(archive: IArchive, file: string) {
+  async initialize(archive: IArchive, file: string, path: string) {
     this.archive = archive;
     this.file = file;
+    this.path = path + '/';
     const fileProxy = await this.archive;
-    this.xml = await XmlHelper.getXmlFromArchive(fileProxy, this.file);
+    this.xml = await XmlHelper.getXmlFromArchive(
+      fileProxy,
+      this.path + this.file,
+    );
 
     await this.readTargets();
 
     return this;
-  }
-
-  async writeArchive() {
-    await XmlHelper.writeXmlToArchive(this.archive, this.file, this.xml);
   }
 
   setXml(xml) {
@@ -99,6 +101,30 @@ export class XmlRelationshipHelper {
     }
 
     return this;
+  }
+
+  async checkTargets(sourceArchive) {
+    for (const xmlTarget of this.xmlTargets) {
+      const targetFile = xmlTarget.getAttribute('Target');
+      const targetPath = targetFile.replace('../', 'ppt/');
+
+      if (this.archive.fileExists(targetPath) === false) {
+        console.error(
+          'Relation target @' + this.file + ' does not exist: ' + targetPath,
+        );
+
+        // This could be activated to assure all contents being available in
+        // the target archive.
+
+        // await FileHelper.zipCopy(
+        //   sourceArchive,
+        //   targetPath,
+        //   this.archive,
+        //   targetPath + '.fixed',
+        // );
+        // xmlTarget.setAttribute('Target', targetFile + '.fixed');
+      }
+    }
   }
 
   static parseRelationTarget(
@@ -187,7 +213,8 @@ export class XmlRelationshipHelper {
   static async getSlideLayoutNumber(sourceArchive, slideId: number) {
     const slideToLayoutHelper = await new XmlRelationshipHelper().initialize(
       sourceArchive,
-      `ppt/slides/_rels/slide${slideId}.xml.rels`,
+      `slide${slideId}.xml.rels`,
+      `ppt/slides/_rels`,
     );
     const slideToLayout = slideToLayoutHelper.getTargetsByPrefix(
       '../slideLayouts/slideLayout',
@@ -198,7 +225,8 @@ export class XmlRelationshipHelper {
   static async getSlideMasterNumber(sourceArchive, slideLayoutId: number) {
     const layoutToMasterHelper = await new XmlRelationshipHelper().initialize(
       sourceArchive,
-      `ppt/slideLayouts/_rels/slideLayout${slideLayoutId}.xml.rels`,
+      `slideLayout${slideLayoutId}.xml.rels`,
+      `ppt/slideLayouts/_rels`,
     );
     const layoutToMaster = layoutToMasterHelper.getTargetsByPrefix(
       '../slideMasters/slideMaster',

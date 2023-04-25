@@ -385,8 +385,7 @@ export default class Automizer implements IPresentationProps {
    */
   public async writeSlides(): Promise<void> {
     await this.rootTemplate.countExistingSlides();
-    this.status.max =
-      this.rootTemplate.slides.length + this.rootTemplate.masters.length;
+    this.status.max = this.rootTemplate.slides.length;
 
     for (const slide of this.rootTemplate.slides) {
       await this.rootTemplate.appendSlide(slide);

@@ -125,7 +125,11 @@ export class FileHelper {
     FileHelper.check(sourceArchive, sourceFile);
     contentTracker.trackFile(targetFile);
 
-    const content = await sourceArchive.read(sourceFile, 'nodebuffer');
+    const content = await sourceArchive
+      .read(sourceFile, 'nodebuffer')
+      .catch((e) => {
+        throw e;
+      });
 
     return targetArchive.write(targetFile || sourceFile, content);
   }

@@ -127,6 +127,12 @@ export class Image extends Shape implements IImage {
     await this.appendImageExtensionToContentType(this.extension);
   }
 
+  /**
+   * ToDo: This will always append a new relation, and never replace an
+   * existing relation. At the end of creation process, unused relations will
+   * remain existing in the .xml.rels file. PowerPoint will not complain, but
+   * integrity checks will not be valid by this.
+   */
   async appendToSlideRels(): Promise<HelperElement> {
     const targetRelFile = `ppt/${this.targetType}s/_rels/${this.targetType}${this.targetSlideNumber}.xml.rels`;
     this.createdRid = await XmlHelper.getNextRelId(

@@ -38,13 +38,11 @@ const run = async () => {
     .load('SlidesWithAdditionalMaster.pptx')
 
     // We can disable .addMaster according to "autoImportSlideMasters: true"
-    // .addMaster('SlidesWithAdditionalMaster.pptx', 1)
+    // .addMaster('SlideMasters.pptx', 1)
 
-    .addSlide('SlideMasters.pptx', 3, (slide) => {
-      // We can also disable "slide.useSlideLayout()"
-      // with "autoImportSlideMasters: true"
-      // slide.useSlideLayout();
-    })
+    .addSlide('SlideMasters.pptx', 1)
+    .addSlide('SlideMasters.pptx', 2)
+    .addSlide('SlideMasters.pptx', 3)
     .write(`add-slide-master-auto-import.test.pptx`);
 };
 

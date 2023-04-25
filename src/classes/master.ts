@@ -112,7 +112,7 @@ export class Master implements IMaster {
    */
   unsupportedTags = [
     'p:custDataLst',
-    //'mc:AlternateContent',
+    'mc:AlternateContent',
     //'a14:imgProps',
   ];
 
@@ -195,7 +195,7 @@ export class Master implements IMaster {
     this.targetRelsPath = `ppt/slideMasters/_rels/slideMaster${this.targetNumber}.xml.rels`;
     this.sourceArchive = await this.sourceTemplate.archive;
 
-    this.status.info = 'Appending slideMaster ' + this.targetNumber;
+    console.log('Importing slideMaster ' + this.targetNumber);
 
     await this.copySlideFiles();
     await this.copyRelatedLayouts();
@@ -208,18 +208,27 @@ export class Master implements IMaster {
     }
 
     await this.applyModifications();
-    await this.cleanSlide();
+    await this.cleanSlide(this.targetPath);
 
-    this.status.increment();
+    /**
+     * ToDo: Integrity checks could be used in many places
+     * to log warnings in case we have skipped out related contents from copying
+     * to the target archive.
+     *
+     * By now, this is disabled because appendToSlideRels() could leave some
+     * artifacts from unused relations.
+     */
+    // await this.checkIntegrity();
   }
 
   async copyRelatedLayouts(): Promise<Target[]> {
-    const targetHelper = await new XmlRelationshipHelper().initialize(
+    const masterToLayout = await new XmlRelationshipHelper().initialize(
       this.targetArchive,
-      `ppt/slideMasters/_rels/slideMaster${this.targetNumber}.xml.rels`,
+      `slideMaster${this.targetNumber}.xml.rels`,
+      `ppt/slideMasters/_rels`,
     );
 
-    const targets = targetHelper.getTargetsByPrefix(
+    const targets = masterToLayout.getTargetsByPrefix(
       '../slideLayouts/slideLayout',
     );
 
@@ -245,12 +254,18 @@ export class Master implements IMaster {
 
       const layoutTargetHelper = await new XmlRelationshipHelper().initialize(
         this.targetArchive,
-        `ppt/slideLayouts/_rels/slideLayout${nextSlideLayoutNumber}.xml.rels`,
+        `slideLayout${nextSlideLayoutNumber}.xml.rels`,
+        `ppt/slideLayouts/_rels`,
       );
       const layoutToMaster = layoutTargetHelper.getTargetsByPrefix(
         '../slideMasters/slideMaster',
       );
       layoutToMaster[0].updateTargetIndex(this.targetNumber);
+      await layoutTargetHelper.checkTargets(this.sourceArchive);
+
+      await this.cleanSlide(
+        `ppt/slideLayouts/slideLayout${nextSlideLayoutNumber}.xml`,
+      );
 
       await this.appendSlideLayoutToContentType(
         this.targetArchive,
@@ -259,6 +274,15 @@ export class Master implements IMaster {
     }
 
     return targets;
+  }
+
+  async checkIntegrity(): Promise<void> {
+    const masterToLayout = await new XmlRelationshipHelper().initialize(
+      this.targetArchive,
+      `slideMaster${this.targetNumber}.xml.rels`,
+      `ppt/slideMasters/_rels`,
+    );
+    await masterToLayout.checkTargets(this.sourceArchive);
   }
 
   async copyThemeFiles() {
@@ -665,17 +689,17 @@ export class Master implements IMaster {
   }
 
   /**
-   * ToDo: This equals the corresponding method in slide.ts
+   * ToDo: This *almost* equals the corresponding method in slide.ts
    *
    * Removes all unsupported tags from slide xml.
    * E.g. added relations & tags by Thinkcell cannot
    * be processed by pptx-automizer at the moment.
    * @internal
    */
-  async cleanSlide(): Promise<void> {
+  async cleanSlide(targetPath: string): Promise<void> {
     const xml = await XmlHelper.getXmlFromArchive(
       this.targetArchive,
-      this.targetPath,
+      targetPath,
     );
 
     this.unsupportedTags.forEach((tag) => {
@@ -685,7 +709,7 @@ export class Master implements IMaster {
         XmlHelper.sliceCollection(drop, 0);
       }
     });
-    XmlHelper.writeXmlToArchive(this.targetArchive, this.targetPath, xml);
+    XmlHelper.writeXmlToArchive(this.targetArchive, targetPath, xml);
   }
 
   /**
