@@ -329,7 +329,7 @@ It is only supported to add and modify shapes on the underlying slideMaster, you
 To specify the target index of the required slide master to import, you need to count slideMasters in your *template* presentation.
 To specify another slideLayout for an added output slide, you need to count slideLayouts in your *output* presentation 
 
-To add and modify shapes on a slide master, please take a look at [Add and modify shapes](#Add and modify shapes).
+To add and modify shapes on a slide master, please take a look at [Add and modify shapes](https://github.com/singerla/pptx-automizer#add-and-modify-shapes).
 
 ```ts
 // Import another slide master and all its slide layouts.
