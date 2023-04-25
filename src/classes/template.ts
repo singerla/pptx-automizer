@@ -46,8 +46,8 @@ export class Template implements ITemplate {
   slides: ISlide[];
 
   /**
-   * Array containing all slides coming from Automizer.addSlide()
-   * @type: ISlide[]
+   * Array containing all slideMasters coming from Automizer.addMaster()
+   * @type: IMaster[]
    */
   masters: IMaster[];
 

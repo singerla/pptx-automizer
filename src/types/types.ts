@@ -43,6 +43,12 @@ export type AutomizerParams = {
   presTemplates?: string[];
   useCreationIds?: boolean;
   /**
+   * If you have trouble with messed up slideMasters, and if you don't worry
+   * about the impact on performance, you can try this to always import all
+   * required files:
+   */
+  autoImportSlideMasters?: boolean;
+  /**
    * Delete all existing slides from rootTemplate
    * before automation starts.
    */

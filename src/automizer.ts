@@ -180,7 +180,7 @@ export default class Automizer implements IPresentationProps {
       name,
     };
 
-    const newTemplate = Template.import(location, importParams);
+    const newTemplate = Template.import(location, importParams, this);
 
     if (!this.isPresTemplate(newTemplate)) {
       this.rootTemplate = newTemplate;
@@ -251,21 +251,26 @@ export default class Automizer implements IPresentationProps {
       callback(newSlide);
     }
 
+    if (this.params.autoImportSlideMasters) {
+      newSlide.useSlideLayout();
+    }
+
     this.rootTemplate.slides.push(newSlide);
 
     return this;
   }
 
   /**
-   * WIP: Copy and modify a master and the associated layouts from template
-   * to output.
+   * Copy and modify a master and the associated layouts from template to output.
+   *
    * @param name
    * @param sourceIdentifier
    * @param callback
    */
   public addMaster(
     name: string,
-    sourceIdentifier: SourceIdentifier,
+    // sourceIdentifier: SourceIdentifier,
+    sourceIdentifier: number,
     callback?: (slide: Master) => void,
   ): this {
     const template = this.getTemplate(name);

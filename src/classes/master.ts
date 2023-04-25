@@ -123,6 +123,8 @@ export class Master implements IMaster {
     sourceIdentifier: SourceIdentifier;
   }) {
     this.sourceTemplate = params.template;
+
+    // ToDo analogue for slideMasters
     // this.sourceNumber = this.getSlideNumber(
     //   params.template,
     //   params.sourceIdentifier,
@@ -141,6 +143,8 @@ export class Master implements IMaster {
   }
 
   /**
+   * ToDo: Implement creationIds as well for slideMasters
+   *
    * Try to convert a given slide's creationId to corresponding slide number.
    * Used if automizer is run with useCreationIds: true
    * @internal
@@ -195,7 +199,7 @@ export class Master implements IMaster {
     await this.copySlideFiles();
     await this.copyRelatedLayouts();
     await this.copyRelatedContent();
-    await this.addSlideToPresentation();
+    await this.addSlideMasterToPresentation();
     await this.copyThemeFiles();
 
     if (this.importElements.length) {
@@ -306,17 +310,22 @@ export class Master implements IMaster {
    * @internal
    * @returns slide to presentation
    */
-  async addSlideToPresentation(): Promise<void> {
+  async addSlideMasterToPresentation(): Promise<void> {
     const relId = await XmlHelper.getNextRelId(
       this.targetArchive,
       'ppt/_rels/presentation.xml.rels',
     );
     await this.appendToSlideRel(this.targetArchive, relId, this.targetNumber);
     await this.appendToSlideList(this.targetArchive, relId);
-    await this.appendSlideToContentType(this.targetArchive, this.targetNumber);
+    await this.appendSlideMasterToContentType(
+      this.targetArchive,
+      this.targetNumber,
+    );
   }
 
   /**
+   * ToDo: This equals the corresponding method in slide.ts
+   *
    * Select and modify a single element on an added slide.
    * @param {string} selector - Element's name on the slide.
    * Should be a unique string defined on the "Selection"-pane within ppt.
@@ -340,6 +349,8 @@ export class Master implements IMaster {
   }
 
   /**
+   * ToDo: This equals the corresponding method in slide.ts
+   *
    * Select, insert and (optionally) modify a single element to a slide.
    * @param {string} presName - Filename or alias name of the template presentation.
    * Must have been importet with Automizer.load().
@@ -363,6 +374,8 @@ export class Master implements IMaster {
   }
 
   /**
+   * ToDo: This equals the corresponding method in slide.ts
+   *
    * Remove a single element from slide.
    * @param {string} selector - Element's name on the slide.
    */
@@ -380,6 +393,8 @@ export class Master implements IMaster {
   }
 
   /**
+   * ToDo: This equals the corresponding method in slide.ts
+   *
    * Adds element to modifications list
    * @internal
    * @param presName
@@ -408,6 +423,8 @@ export class Master implements IMaster {
   }
 
   /**
+   * ToDo: This equals the corresponding method in slide.ts
+   *
    * Imported selected elements
    * @internal
    * @returns selected elements
@@ -445,6 +462,8 @@ export class Master implements IMaster {
   }
 
   /**
+   * ToDo: This *ALMOST* equals the corresponding method in slide.ts
+   *
    * Gets element info
    * @internal
    * @param importElement
@@ -506,6 +525,14 @@ export class Master implements IMaster {
     };
   }
 
+  /**
+   * ToDo: This equals the corresponding method in slide.ts
+   *
+   * @param selector
+   * @param sourceArchive
+   * @param sourcePath
+   * @param useCreationIds
+   */
   async findElementOnSlide(
     selector: FindElementSelector,
     sourceArchive: IArchive,
@@ -556,6 +583,8 @@ export class Master implements IMaster {
   }
 
   /**
+   * ToDo: This equals the corresponding method in slide.ts
+   *
    * Analyzes element
    * @internal
    * @param sourceElement
@@ -617,6 +646,8 @@ export class Master implements IMaster {
   }
 
   /**
+   * ToDo: This equals the corresponding method in slide.ts
+   *
    * Applys modifications
    * @internal
    * @returns modifications
@@ -633,6 +664,8 @@ export class Master implements IMaster {
   }
 
   /**
+   * ToDo: This equals the corresponding method in slide.ts
+   *
    * Removes all unsupported tags from slide xml.
    * E.g. added relations & tags by Thinkcell cannot
    * be processed by pptx-automizer at the moment.
@@ -733,7 +766,7 @@ export class Master implements IMaster {
    * @param slideCount
    * @returns slide to content type
    */
-  appendSlideToContentType(
+  appendSlideMasterToContentType(
     rootArchive: IArchive,
     slideCount: number,
   ): Promise<HelperElement> {
@@ -770,6 +803,8 @@ export class Master implements IMaster {
   }
 
   /**
+   * ToDo: This equals the corresponding method in slide.ts
+   *
    * Appends notes to content type
    * @internal
    * @param rootArchive
@@ -789,6 +824,8 @@ export class Master implements IMaster {
   }
 
   /**
+   * ToDo: This equals the corresponding method in slide.ts
+   *
    * Copys related content
    * @internal
    * @returns related content
