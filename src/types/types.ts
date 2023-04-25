@@ -49,6 +49,19 @@ export type AutomizerParams = {
    */
   autoImportSlideMasters?: boolean;
   /**
+   * In case you encounter weird pptx messages on opening a created presentation,
+   * you can turn this to true. It will log a message on missing related contents
+   * and help you to locate where it is. Use this along with "assertRelatedContents"
+   * to auto-fix broken relations.
+   */
+  showIntegrityInfo?: boolean;
+  /**
+   * Pptx-automizer can try to add any missing related content that could not be
+   * handled properly by "addElement" or "addMaster" or one of their subroutines.
+   * This probably fixes corrupted pptx files.
+   */
+  assertRelatedContents?: boolean;
+  /**
    * Delete all existing slides from rootTemplate
    * before automation starts.
    */

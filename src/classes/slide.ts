@@ -32,95 +32,9 @@ import { last, vd } from '../helper/general-helper';
 import { Master } from './master';
 import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import { IMaster } from '../interfaces/imaster';
+import HasShapes from './has-shapes';
 
-export class Slide implements ISlide {
-  /**
-   * Source template of slide
-   * @internal
-   */
-  sourceTemplate: PresTemplate;
-  /**
-   * Target template of slide
-   * @internal
-   */
-  targetTemplate: RootPresTemplate;
-  /**
-   * Target number of slide
-   * @internal
-   */
-  targetNumber: number;
-  /**
-   * Source number of slide
-   * @internal
-   */
-  sourceNumber: number;
-  /**
-   * Target archive of slide
-   * @internal
-   */
-  targetArchive: IArchive;
-  /**
-   * Source archive of slide
-   * @internal
-   */
-  sourceArchive: IArchive;
-  /**
-   * Source path of slide
-   * @internal
-   */
-  sourcePath: string;
-  /**
-   * Target path of slide
-   * @internal
-   */
-  targetPath: string;
-  /**
-   * Modifications of slide
-   * @internal
-   */
-  modifications: SlideModificationCallback[];
-  /**
-   * Modifications of slide relations
-   * @internal
-   */
-  relModifications: SlideModificationCallback[];
-  /**
-   * Import elements of slide
-   * @internal
-   */
-  importElements: ImportElement[];
-  /**
-   * Rels path of slide
-   * @internal
-   */
-  relsPath: string;
-  /**
-   * Root template of slide
-   * @internal
-   */
-  rootTemplate: RootPresTemplate;
-  /**
-   * Root  of slide
-   * @internal
-   */
-  root: IPresentationProps;
-  /**
-   * Target rels path of slide
-   * @internal
-   */
-  targetRelsPath: string;
-  status: StatusTracker;
-  content: ContentTracker;
-  /**
-   * List of unsupported tags in slide xml
-   * @internal
-   */
-  unsupportedTags = [
-    'p:custDataLst',
-    //'mc:AlternateContent',
-    //'a14:imgProps',
-  ];
-
+export class Slide extends HasShapes implements ISlide {
   targetType: ShapeTargetType = 'slide';
 
   constructor(params: {
@@ -128,6 +42,8 @@ export class Slide implements ISlide {
     template: PresTemplate;
     slideIdentifier: SourceIdentifier;
   }) {
+    super();
+
     this.sourceTemplate = params.template;
     this.sourceNumber = this.getSlideNumber(
       params.template,
@@ -218,6 +134,7 @@ export class Slide implements ISlide {
     await this.applyModifications();
     await this.applyRelModifications();
 
+    await this.checkIntegrity();
     await this.cleanSlide();
 
     this.status.increment();

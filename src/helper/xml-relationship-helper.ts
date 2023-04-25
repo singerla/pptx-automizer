@@ -5,6 +5,7 @@ import { XmlHelper } from './xml-helper';
 import { last, vd } from './general-helper';
 import { ElementSubtype } from '../enums/element-type';
 import { FileHelper } from './file-helper';
+import { randomBytes } from 'crypto';
 
 export class XmlRelationshipHelper {
   archive: IArchive;
@@ -103,26 +104,37 @@ export class XmlRelationshipHelper {
     return this;
   }
 
-  async checkTargets(sourceArchive) {
+  async assertRelatedContent(
+    sourceArchive: IArchive,
+    check?: boolean,
+    assert?: boolean,
+  ) {
     for (const xmlTarget of this.xmlTargets) {
       const targetFile = xmlTarget.getAttribute('Target');
       const targetPath = targetFile.replace('../', 'ppt/');
 
       if (this.archive.fileExists(targetPath) === false) {
-        console.error(
-          'Relation target @' + this.file + ' does not exist: ' + targetPath,
-        );
+        if (check) {
+          console.error(
+            'Related content from ' +
+              sourceArchive.filename +
+              ' not found: ' +
+              targetFile,
+          );
+        }
 
-        // This could be activated to assure all contents being available in
-        // the target archive.
-
-        // await FileHelper.zipCopy(
-        //   sourceArchive,
-        //   targetPath,
-        //   this.archive,
-        //   targetPath + '.fixed',
-        // );
-        // xmlTarget.setAttribute('Target', targetFile + '.fixed');
+        if (assert) {
+          const target = XmlRelationshipHelper.parseRelationTarget(xmlTarget);
+          const buf = randomBytes(5).toString('hex');
+          const targetSuffix = '-' + buf + '.' + target.filenameExt;
+          await FileHelper.zipCopy(
+            sourceArchive,
+            targetPath,
+            this.archive,
+            targetPath + targetSuffix,
+          );
+          xmlTarget.setAttribute('Target', targetFile + targetSuffix);
+        }
       }
     }
   }

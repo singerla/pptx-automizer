@@ -30,6 +30,14 @@ const run = async () => {
     templateDir: `${__dirname}/../__tests__/pptx-templates`,
     outputDir: `${__dirname}/../__tests__/pptx-output`,
     autoImportSlideMasters: true,
+    showIntegrityInfo: false,
+    assertRelatedContents: true,
+    archiveType: {
+      mode: 'fs',
+      baseDir: `${__dirname}/../__tests__/pptx-cache`,
+      workDir: `add-slide-master-auto-import.test.pptx`,
+      // cleanupWorkDir: true,
+    },
   });
 
   const pres = await automizer
@@ -41,6 +49,7 @@ const run = async () => {
     // .addMaster('SlideMasters.pptx', 1)
 
     .addSlide('SlideMasters.pptx', 1)
+    .addSlide('SlidesWithAdditionalMaster.pptx', 2)
     .addSlide('SlideMasters.pptx', 2)
     .addSlide('SlideMasters.pptx', 3)
     .write(`add-slide-master-auto-import.test.pptx`);

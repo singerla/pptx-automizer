@@ -16,6 +16,7 @@ export type ArchivedFolderCallback = (file: ArchivedFile) => boolean;
 export type ArchiveInput = InputType;
 
 export default interface IArchive {
+  filename: string;
   read: (file: string, type) => Promise<string | Buffer>;
   write: (file: string, data: string | Buffer) => Promise<ArchiveType>;
   readXml: (file: string) => Promise<XmlDocument>;

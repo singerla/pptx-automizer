@@ -32,90 +32,9 @@ import IArchive from '../interfaces/iarchive';
 import { vd } from '../helper/general-helper';
 import { IMaster } from '../interfaces/imaster';
 import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
+import HasShapes from './has-shapes';
 
-export class Master implements IMaster {
-  /**
-   * Source template of slide
-   * @internal
-   */
-  sourceTemplate: PresTemplate;
-  /**
-   * Target template of slide
-   * @internal
-   */
-  targetTemplate: RootPresTemplate;
-  /**
-   * Target number of slide
-   * @internal
-   */
-  targetNumber: number;
-  /**
-   * Source number of slide
-   * @internal
-   */
-  sourceNumber: number;
-  /**
-   * Target archive of slide
-   * @internal
-   */
-  targetArchive: IArchive;
-  /**
-   * Source archive of slide
-   * @internal
-   */
-  sourceArchive: IArchive;
-  /**
-   * Source path of slide
-   * @internal
-   */
-  sourcePath: string;
-  /**
-   * Target path of slide
-   * @internal
-   */
-  targetPath: string;
-  /**
-   * Modifications  of slide
-   * @internal
-   */
-  modifications: SlideModificationCallback[];
-  /**
-   * Import elements of slide
-   * @internal
-   */
-  importElements: ImportElement[];
-  /**
-   * Rels path of slide
-   * @internal
-   */
-  relsPath: string;
-  /**
-   * Root template of slide
-   * @internal
-   */
-  rootTemplate: RootPresTemplate;
-  /**
-   * Root  of slide
-   * @internal
-   */
-  root: IPresentationProps;
-  /**
-   * Target rels path of slide
-   * @internal
-   */
-  targetRelsPath: string;
-  status: StatusTracker;
-  content: ContentTracker;
-  /**
-   * List of unsupported tags in slide xml
-   * @internal
-   */
-  unsupportedTags = [
-    'p:custDataLst',
-    'mc:AlternateContent',
-    //'a14:imgProps',
-  ];
-
+export class Master extends HasShapes implements IMaster {
   targetType: ShapeTargetType = 'slideMaster';
 
   constructor(params: {
@@ -123,6 +42,7 @@ export class Master implements IMaster {
     template: PresTemplate;
     sourceIdentifier: SourceIdentifier;
   }) {
+    super();
     this.sourceTemplate = params.template;
 
     // ToDo analogue for slideMasters
@@ -210,15 +130,7 @@ export class Master implements IMaster {
     await this.applyModifications();
     await this.cleanSlide(this.targetPath);
 
-    /**
-     * ToDo: Integrity checks could be used in many places
-     * to log warnings in case we have skipped out related contents from copying
-     * to the target archive.
-     *
-     * By now, this is disabled because appendToSlideRels() could leave some
-     * artifacts from unused relations.
-     */
-    // await this.checkIntegrity();
+    await this.checkIntegrity();
   }
 
   async copyRelatedLayouts(): Promise<Target[]> {
@@ -261,7 +173,11 @@ export class Master implements IMaster {
         '../slideMasters/slideMaster',
       );
       layoutToMaster[0].updateTargetIndex(this.targetNumber);
-      await layoutTargetHelper.checkTargets(this.sourceArchive);
+      await layoutTargetHelper.assertRelatedContent(
+        this.sourceArchive,
+        false,
+        true,
+      );
 
       await this.cleanSlide(
         `ppt/slideLayouts/slideLayout${nextSlideLayoutNumber}.xml`,
@@ -274,15 +190,6 @@ export class Master implements IMaster {
     }
 
     return targets;
-  }
-
-  async checkIntegrity(): Promise<void> {
-    const masterToLayout = await new XmlRelationshipHelper().initialize(
-      this.targetArchive,
-      `slideMaster${this.targetNumber}.xml.rels`,
-      `ppt/slideMasters/_rels`,
-    );
-    await masterToLayout.checkTargets(this.sourceArchive);
   }
 
   async copyThemeFiles() {
