@@ -12,6 +12,9 @@ export default class ModifyPresentationHelper {
   static getSlidesCollection = (xml: XmlDocument) => {
     return xml.getElementsByTagName('p:sldId');
   };
+  static getSlideMastersCollection = (xml: XmlDocument) => {
+    return xml.getElementsByTagName('p:sldMasterId');
+  };
 
   /**
    * Pass an array of slide numbers to define a target sort order.
@@ -34,6 +37,50 @@ export default class ModifyPresentationHelper {
     XmlHelper.modifyCollection(slides, (slide: XmlElement, i) => {
       slide.setAttribute('id', String(firstId + i));
     });
+  };
+
+  /**
+   * Update slideMaster ids to prevent corrupted pptx.
+   * - Take first slideMaster id from presentation.xml to start,
+   * - then update incremental ids of each p:sldLayoutId in slideMaster[i].xml
+   *   (starting by slideMasterId + 1)
+   * - and update next slideMaster id with previous p:sldLayoutId + 1
+   *
+   * p:sldMasterId-ids and p:sldLayoutId-ids need to be in a row, otherwise
+   * PowerPoint will complain on any p:sldLayoutId-id lower than its
+   * corresponding slideMaster-id. omg.
+   */
+  static normalizeSlideMasterIds = async (
+    xml: XmlDocument,
+    i: number,
+    archive: IArchive,
+  ) => {
+    const slides = ModifyPresentationHelper.getSlideMastersCollection(xml);
+    let currentId;
+    await XmlHelper.modifyCollectionAsync(
+      slides,
+      async (slide: XmlElement, i) => {
+        const masterId = i + 1;
+        if (i === 0) {
+          currentId = Number(slide.getAttribute('id'));
+        }
+
+        slide.setAttribute('id', String(currentId));
+        currentId++;
+
+        const slideMasterXml = await XmlHelper.getXmlFromArchive(
+          archive,
+          `ppt/slideMasters/slideMaster${masterId}.xml`,
+        );
+
+        const slideLayouts =
+          slideMasterXml.getElementsByTagName('p:sldLayoutId');
+        XmlHelper.modifyCollection(slideLayouts, (slideLayout: XmlElement) => {
+          slideLayout.setAttribute('id', String(currentId));
+          currentId++;
+        });
+      },
+    );
   };
 
   /**

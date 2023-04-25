@@ -2,14 +2,13 @@ import { RootPresTemplate } from './root-pres-template';
 import { SlideModificationCallback, SourceIdentifier } from '../types/types';
 import IArchive from './iarchive';
 
-export interface ISlide {
+export interface IMaster {
   sourceArchive: IArchive;
   sourceNumber: SourceIdentifier;
   modifications: SlideModificationCallback[];
 
-  modify(callback: SlideModificationCallback): void;
-
   append(targetTemplate: RootPresTemplate): Promise<void>;
 
-  addElement(presName: string, slideNumber: number, selector: string): void;
+  // modify(callback: SlideModificationCallback): void;
+  // addElement(presName: string, slideNumber: number, selector: string): void;
 }

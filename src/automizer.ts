@@ -3,7 +3,7 @@ import {
   AutomizerParams,
   AutomizerSummary,
   ArchiveParams,
-  SourceSlideIdentifier,
+  SourceIdentifier,
   StatusTracker,
 } from './types/types';
 import { IPresentationProps } from './interfaces/ipresentation-props';
@@ -17,7 +17,10 @@ import path from 'path';
 import * as fs from 'fs';
 import { XmlHelper } from './helper/xml-helper';
 import ModifyPresentationHelper from './helper/modify-presentation-helper';
-import { ContentTracker } from './helper/content-tracker';
+import {
+  contentTracker as Tracker,
+  ContentTracker,
+} from './helper/content-tracker';
 import JSZip, { OutputType } from 'jszip';
 
 /**
@@ -79,6 +82,7 @@ export default class Automizer implements IPresentationProps {
       this.rootTemplate = Template.import(
         location,
         this.archiveParams,
+        this,
       ) as RootPresTemplate;
     }
 
@@ -176,7 +180,7 @@ export default class Automizer implements IPresentationProps {
       name,
     };
 
-    const newTemplate = Template.import(location, importParams);
+    const newTemplate = Template.import(location, importParams, this);
 
     if (!this.isPresTemplate(newTemplate)) {
       this.rootTemplate = newTemplate;
@@ -227,7 +231,7 @@ export default class Automizer implements IPresentationProps {
    */
   public addSlide(
     name: string,
-    slideIdentifier: SourceSlideIdentifier,
+    slideIdentifier: SourceIdentifier,
     callback?: (slide: Slide) => void,
   ): this {
     if (this.rootTemplate === undefined) {
@@ -247,31 +251,42 @@ export default class Automizer implements IPresentationProps {
       callback(newSlide);
     }
 
+    if (this.params.autoImportSlideMasters) {
+      newSlide.useSlideLayout();
+    }
+
     this.rootTemplate.slides.push(newSlide);
 
     return this;
   }
 
   /**
-   * WIP: copy and modify a master from template to output
+   * Copy and modify a master and the associated layouts from template to output.
+   *
    * @param name
-   * @param masterNumber
+   * @param sourceIdentifier
    * @param callback
    */
   public addMaster(
     name: string,
-    masterNumber: number,
-    callback?: (slide: Slide) => void,
+    // sourceIdentifier: SourceIdentifier,
+    sourceIdentifier: number,
+    callback?: (slide: Master) => void,
   ): this {
     const template = this.getTemplate(name);
 
     const newMaster = new Master({
       presentation: this,
       template,
-      masterNumber,
+      sourceIdentifier,
     });
 
-    // this.rootTemplate.slides.push(newMaster);
+    if (callback !== undefined) {
+      newMaster.root = this;
+      callback(newMaster);
+    }
+
+    this.rootTemplate.masters.push(newMaster);
 
     return this;
   }
@@ -314,6 +329,7 @@ export default class Automizer implements IPresentationProps {
       slides: this.rootTemplate.count('slides'),
       charts: this.rootTemplate.count('charts'),
       images: this.rootTemplate.count('images'),
+      masters: this.rootTemplate.count('masters'),
     };
   }
 
@@ -349,9 +365,19 @@ export default class Automizer implements IPresentationProps {
   }
 
   async finalizePresentation() {
+    await this.writeMasterSlides();
     await this.writeSlides();
     await this.normalizePresentation();
     await this.applyModifyPresentationCallbacks();
+  }
+
+  /**
+   * Write all masterSlides to archive.
+   */
+  public async writeMasterSlides(): Promise<void> {
+    for (const slide of this.rootTemplate.masters) {
+      await this.rootTemplate.appendMasterSlide(slide);
+    }
   }
 
   /**
@@ -359,7 +385,8 @@ export default class Automizer implements IPresentationProps {
    */
   public async writeSlides(): Promise<void> {
     await this.rootTemplate.countExistingSlides();
-    this.status.max = this.rootTemplate.slides.length;
+    this.status.max =
+      this.rootTemplate.slides.length + this.rootTemplate.masters.length;
 
     for (const slide of this.rootTemplate.slides) {
       await this.rootTemplate.appendSlide(slide);
@@ -391,6 +418,7 @@ export default class Automizer implements IPresentationProps {
    */
   async normalizePresentation(): Promise<void> {
     this.modify(ModifyPresentationHelper.normalizeSlideIds);
+    this.modify(ModifyPresentationHelper.normalizeSlideMasterIds);
 
     if (this.params.cleanup) {
       if (this.params.removeExistingSlides) {

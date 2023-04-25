@@ -24,3 +24,5 @@ export const vd = (v: any, keys?: boolean): void => {
   console.log(new Error().stack.split('\n')[2].trim());
   console.dir(v, { depth: 10 });
 };
+
+export const last = <T>(arr: T[]): T => arr[arr.length - 1];

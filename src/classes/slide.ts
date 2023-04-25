@@ -7,8 +7,9 @@ import {
   ImportedElement,
   ImportElement,
   ShapeModificationCallback,
+  ShapeTargetType,
   SlideModificationCallback,
-  SourceSlideIdentifier,
+  SourceIdentifier,
   StatusTracker,
 } from '../types/types';
 import { ISlide } from '../interfaces/islide';
@@ -25,9 +26,12 @@ import {
 import { Image } from '../shapes/image';
 import { Chart } from '../shapes/chart';
 import { GenericShape } from '../shapes/generic';
-import { vd } from '../helper/general-helper';
 import { ContentTracker } from '../helper/content-tracker';
 import IArchive from '../interfaces/iarchive';
+import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
+import { last, vd } from '../helper/general-helper';
+import { Master } from './master';
+import { IMaster } from '../interfaces/imaster';
 
 export class Slide implements ISlide {
   /**
@@ -71,10 +75,15 @@ export class Slide implements ISlide {
    */
   targetPath: string;
   /**
-   * Modifications  of slide
+   * Modifications of slide
    * @internal
    */
   modifications: SlideModificationCallback[];
+  /**
+   * Modifications of slide relations
+   * @internal
+   */
+  relModifications: SlideModificationCallback[];
   /**
    * Import elements of slide
    * @internal
@@ -112,10 +121,12 @@ export class Slide implements ISlide {
     //'a14:imgProps',
   ];
 
+  targetType: ShapeTargetType = 'slide';
+
   constructor(params: {
     presentation: IPresentationProps;
     template: PresTemplate;
-    slideIdentifier: SourceSlideIdentifier;
+    slideIdentifier: SourceIdentifier;
   }) {
     this.sourceTemplate = params.template;
     this.sourceNumber = this.getSlideNumber(
@@ -127,6 +138,7 @@ export class Slide implements ISlide {
     this.relsPath = `ppt/slides/_rels/slide${this.sourceNumber}.xml.rels`;
 
     this.modifications = [];
+    this.relModifications = [];
     this.importElements = [];
 
     this.status = params.presentation.status;
@@ -143,7 +155,7 @@ export class Slide implements ISlide {
    */
   getSlideNumber(
     template: PresTemplate,
-    slideIdentifier: SourceSlideIdentifier,
+    slideIdentifier: SourceIdentifier,
   ): number {
     if (
       template.useCreationIds === true &&
@@ -204,9 +216,71 @@ export class Slide implements ISlide {
     }
 
     await this.applyModifications();
+    await this.applyRelModifications();
+
     await this.cleanSlide();
 
     this.status.increment();
+  }
+
+  /**
+   * Use another slide layout.
+   * @param targetLayoutId
+   */
+  useSlideLayout(targetLayoutId?: number): void {
+    this.relModifications.push(async (slideRelXml) => {
+      if (!targetLayoutId) {
+        const sourceLayoutId = await XmlRelationshipHelper.getSlideLayoutNumber(
+          this.sourceArchive,
+          this.sourceNumber,
+        );
+
+        const templateName = this.sourceTemplate.name;
+        const alreadyImported = this.targetTemplate.getMappedContent(
+          'slideLayout',
+          templateName,
+          sourceLayoutId,
+        );
+
+        if (alreadyImported) {
+          targetLayoutId = alreadyImported.targetId;
+        } else {
+          targetLayoutId = await this.autoImportSourceSlideMaster(
+            templateName,
+            sourceLayoutId,
+          );
+        }
+      }
+
+      const slideLayouts = new XmlRelationshipHelper(slideRelXml)
+        .readTargets()
+        .getTargetsByPrefix('../slideLayouts/slideLayout');
+
+      if (slideLayouts.length) {
+        slideLayouts[0].updateTargetIndex(targetLayoutId);
+      }
+    });
+  }
+
+  async autoImportSourceSlideMaster(
+    templateName: string,
+    sourceLayoutId: number,
+  ) {
+    const sourceMasterId = await XmlRelationshipHelper.getSlideMasterNumber(
+      this.sourceArchive,
+      sourceLayoutId,
+    );
+
+    await this.targetTemplate.automizer.addMaster(templateName, sourceMasterId);
+
+    const previouslyAddedMaster = last<IMaster>(this.targetTemplate.masters);
+    await this.targetTemplate.appendMasterSlide(previouslyAddedMaster);
+    const alreadyImported = this.targetTemplate.getMappedContent(
+      'slideLayout',
+      templateName,
+      sourceLayoutId,
+    );
+    return alreadyImported.targetId;
   }
 
   /**
@@ -335,19 +409,19 @@ export class Slide implements ISlide {
 
       switch (info?.type) {
         case ElementType.Chart:
-          await new Chart(info)[info.mode](
+          await new Chart(info, this.targetType)[info.mode](
             this.targetTemplate,
             this.targetNumber,
           );
           break;
         case ElementType.Image:
-          await new Image(info)[info.mode](
+          await new Image(info, this.targetType)[info.mode](
             this.targetTemplate,
             this.targetNumber,
           );
           break;
         case ElementType.Shape:
-          await new GenericShape(info)[info.mode](
+          await new GenericShape(info, this.targetType)[info.mode](
             this.targetTemplate,
             this.targetNumber,
           );
@@ -536,6 +610,19 @@ export class Slide implements ISlide {
       modification(xml);
       XmlHelper.writeXmlToArchive(this.targetArchive, this.targetPath, xml);
     }
+  }
+
+  /**
+   * Apply modifications to slide relations
+   * @internal
+   * @returns modifications
+   */
+  async applyRelModifications(): Promise<void> {
+    await XmlHelper.modifyXmlInArchive(
+      this.targetArchive,
+      `ppt/slides/_rels/slide${this.targetNumber}.xml.rels`,
+      this.relModifications,
+    );
   }
 
   /**
@@ -754,22 +841,28 @@ export class Slide implements ISlide {
     const charts = await Chart.getAllOnSlide(this.sourceArchive, this.relsPath);
 
     for (const chart of charts) {
-      await new Chart({
-        mode: 'append',
-        target: chart,
-        sourceArchive: this.sourceArchive,
-        sourceSlideNumber: this.sourceNumber,
-      }).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);
+      await new Chart(
+        {
+          mode: 'append',
+          target: chart,
+          sourceArchive: this.sourceArchive,
+          sourceSlideNumber: this.sourceNumber,
+        },
+        this.targetType,
+      ).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);
     }
 
     const images = await Image.getAllOnSlide(this.sourceArchive, this.relsPath);
     for (const image of images) {
-      await new Image({
-        mode: 'append',
-        target: image,
-        sourceArchive: this.sourceArchive,
-        sourceSlideNumber: this.sourceNumber,
-      }).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);
+      await new Image(
+        {
+          mode: 'append',
+          target: image,
+          sourceArchive: this.sourceArchive,
+          sourceSlideNumber: this.sourceNumber,
+        },
+        this.targetType,
+      ).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);
     }
   }
 }

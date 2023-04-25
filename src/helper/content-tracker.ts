@@ -11,6 +11,7 @@ import { XmlHelper } from './xml-helper';
 import { RelationshipAttribute } from '../types/xml-types';
 import { contentTrack } from '../constants/constants';
 import IArchive from '../interfaces/iarchive';
+import { vd } from './general-helper';
 
 export class ContentTracker {
   archive: IArchive;
@@ -168,7 +169,6 @@ export class ContentTracker {
     const addTargets = await XmlHelper.getRelationshipItems(
       this.archive,
       file,
-      relationTag.tag,
       (element, rels) => {
         rels.push({
           file,
@@ -177,6 +177,7 @@ export class ContentTracker {
           type: relationTag.type,
         });
       },
+      relationTag.tag,
     );
 
     this.addCreatedRelationsFunctions(
@@ -198,7 +199,7 @@ export class ContentTracker {
         createdRelations,
         addTarget,
       );
-      addTarget.getRelatedContent = this.getRelatedContent(
+      addTarget.getRelatedContent = this.addRelatedContent(
         relationTagInfo,
         addTarget,
       );
@@ -219,7 +220,7 @@ export class ContentTracker {
     };
   }
 
-  getRelatedContent(relationTagInfo: TrackedRelationTag, addTarget: Target) {
+  addRelatedContent(relationTagInfo: TrackedRelationTag, addTarget: Target) {
     return async () => {
       if (addTarget.relatedContent) return addTarget.relatedContent;
 
@@ -231,7 +232,6 @@ export class ContentTracker {
       const relationTarget = await XmlHelper.getRelationshipItems(
         this.archive,
         relationsFile,
-        'Relationship',
         (element, rels) => {
           const rId = element.getAttribute('Id');
 
@@ -260,12 +260,23 @@ export class ContentTracker {
   async collect(
     section: string,
     role: string,
-    collection: string[],
-  ): Promise<void> {
-    const trackedRelations =
-      this.getRelationTag(section).getTrackedRelations(role);
-    const images = await this.getRelatedContents(trackedRelations);
-    images.forEach((image) => collection.push(image.filename));
+    collection?: string[],
+  ): Promise<string[]> {
+    collection = collection || [];
+    const trackedRelationTag = this.getRelationTag(section);
+    const trackedRelations = trackedRelationTag.getTrackedRelations(role);
+
+    const relatedTargets = await this.getRelatedContents(trackedRelations);
+    relatedTargets.forEach((relatedTarget) =>
+      collection.push(relatedTarget.filename),
+    );
+
+    return collection;
+  }
+
+  filterRelations(section: string, target: string): TrackedRelationInfo[] {
+    const relations = this.relations[section];
+    return relations.filter((rel) => rel.attributes.Target === target);
   }
 }
 

@@ -2,7 +2,8 @@ import { ElementSubtype, ElementType } from '../enums/element-type';
 import { RelationshipAttribute, XmlDocument, XmlElement } from './xml-types';
 import IArchive, { ArchiveMode } from '../interfaces/iarchive';
 
-export type SourceSlideIdentifier = number | string;
+export type ShapeTargetType = 'slide' | 'slideMaster';
+export type SourceIdentifier = number | string;
 export type SlideModificationCallback = (document: XmlDocument) => void;
 export type ShapeModificationCallback = (
   XmlDocument: XmlDocument | XmlElement,
@@ -42,6 +43,12 @@ export type AutomizerParams = {
   presTemplates?: string[];
   useCreationIds?: boolean;
   /**
+   * If you have trouble with messed up slideMasters, and if you don't worry
+   * about the impact on performance, you can try this to always import all
+   * required files:
+   */
+  autoImportSlideMasters?: boolean;
+  /**
    * Delete all existing slides from rootTemplate
    * before automation starts.
    */
@@ -73,6 +80,7 @@ export type AutomizerSummary = {
   slides: number;
   charts: number;
   images: number;
+  masters: number;
 };
 export type Target = {
   file: string;
@@ -81,12 +89,17 @@ export type Target = {
   number?: number;
   rId?: string;
   prefix?: string;
+  element?: XmlElement;
   subtype?: ElementSubtype;
   filenameExt?: string;
   filenameBase?: string;
   getCreatedContent?: () => TrackedRelationInfo;
   getRelatedContent?: () => Promise<Target>;
+  getTargetValue?: () => string;
+  updateTargetValue?: (newTarget: string) => void;
+  updateTargetIndex?: (newIndex: number) => void;
   relatedContent?: Target;
+  copiedTarget?: string;
 };
 export type FileInfo = {
   base: string;
