@@ -26,7 +26,10 @@ All testing focuses on PowerPoint 2019 pptx file format.
 
 ### Slide Masters and -Layouts
 
-It is basically supported to import slide masters and related slide layouts into the root presentation, but you can only import a master together with its related layouts. Any appended slide can use any of the available layouts afterwards. It is currently not possible to add, modify or remove a single slideLayout, but you can modify the underlying slideMaster.
+It is basically supported to import slide masters and related slide layouts into the root presentation, but you can only import a master together with its related layouts. Any appended slide can use any of the available layouts afterwards. It is currently not possible to add, modify or remove a single slideLayout, but you can modify the underlying slideMaster. 
+
+It is also not possible to import slideLayouts that contain complex contents (charts and images). This means, e.g. if you have an icon on a slideLayout, but not on the slideMaster, the icon will be broken when the slideMaster is auto-imported to an output presentation. To avoid this, you need to assure that all images and charts are being placed *only* on a slideMaster, and not on a slideLayout.
+
 
 ## Install
 
