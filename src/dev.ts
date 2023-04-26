@@ -32,30 +32,28 @@ const run = async () => {
     autoImportSlideMasters: true,
     showIntegrityInfo: true,
     assertRelatedContents: true,
-    archiveType: {
-      mode: 'fs',
-      baseDir: `${__dirname}/../__tests__/pptx-cache`,
-      workDir: `add-slide-master-auto-import.test.pptx`,
-      // cleanupWorkDir: true,
-    },
+    // archiveType: {
+    //   mode: 'fs',
+    //   baseDir: `${__dirname}/../__tests__/pptx-cache`,
+    //   workDir: `add-slide-master-auto-import.test.pptx`,
+    //   // cleanupWorkDir: true,
+    // },
   });
 
   const pres = await automizer
     .loadRoot(`EmptyTemplate.pptx`)
     .load('SlideMasters.pptx')
     .load('SlidesWithAdditionalMaster.pptx')
-    .load('Face - Slides - Chapter 1.pptx')
-    .load('Hansa - Chapter 5 - Sedcard - Medical Addon.pptx')
 
     // We can disable .addMaster according to "autoImportSlideMasters: true"
     .addMaster('SlideMasters.pptx', 1, (master) => {})
-
+    .addSlide('SlidesWithAdditionalMaster.pptx', 1)
     .addSlide('SlideMasters.pptx', 1)
+    .addSlide('SlideMasters.pptx', 2)
+    .addSlide('SlidesWithAdditionalMaster.pptx', 2)
+    .addSlide('SlideMasters.pptx', 3)
     .addSlide('SlideMasters.pptx', 1)
     .addSlide('SlidesWithAdditionalMaster.pptx', 2)
-    .addSlide('Hansa - Chapter 5 - Sedcard - Medical Addon.pptx', 1)
-    .addSlide('SlideMasters.pptx', 3)
-    .addSlide('Face - Slides - Chapter 1.pptx', 1)
     .write(`add-slide-master-auto-import.test.pptx`);
 };
 
