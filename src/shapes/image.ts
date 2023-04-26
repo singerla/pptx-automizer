@@ -133,12 +133,18 @@ export class Image extends Shape implements IImage {
    * remain existing in the .xml.rels file. PowerPoint will not complain, but
    * integrity checks will not be valid by this.
    */
-  async appendToSlideRels(): Promise<HelperElement> {
+  async appendToSlideRels(): Promise<void> {
     const targetRelFile = `ppt/${this.targetType}s/_rels/${this.targetType}${this.targetSlideNumber}.xml.rels`;
     this.createdRid = await XmlHelper.getNextRelId(
       this.targetArchive,
       targetRelFile,
     );
+
+    // this.target.element.setAttribute('Id', this.createdRid);
+    // this.target.element.setAttribute(
+    //   'Target',
+    //   `../media/image${this.targetNumber}.${this.extension}`,
+    // );
 
     const attributes = {
       Id: this.createdRid,
@@ -146,7 +152,7 @@ export class Image extends Shape implements IImage {
       Target: `../media/image${this.targetNumber}.${this.extension}`,
     } as RelationshipAttribute;
 
-    return XmlHelper.append(
+    await XmlHelper.append(
       XmlHelper.createRelationshipChild(
         this.targetArchive,
         targetRelFile,

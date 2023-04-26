@@ -4,6 +4,7 @@ import {
   ImportedElement,
   ShapeModificationCallback,
   ShapeTargetType,
+  Target,
   Workbook,
 } from '../types/types';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
@@ -40,6 +41,7 @@ export class Shape {
 
   targetElement: XmlDocument;
   targetType: ShapeTargetType;
+  target: Target;
 
   callbacks: ShapeModificationCallback[];
   hasCreationId: boolean;
@@ -64,6 +66,7 @@ export class Shape {
       this.sourceNumber = shape.target.number;
       this.sourceRid = shape.target.rId;
       this.subtype = shape.target.subtype;
+      this.target = shape.target;
     }
   }
 
@@ -207,18 +210,9 @@ export class Shape {
   appendImageExtensionToContentType(
     extension,
   ): Promise<HelperElement | boolean> {
-    const contentType = this.contentTypeMap[extension]
-      ? this.contentTypeMap[extension]
-      : 'image/' + extension;
-
-    return XmlHelper.appendIf({
-      ...XmlHelper.createContentTypeChild(this.targetArchive, {
-        Extension: extension,
-        ContentType: contentType,
-      }),
-      tag: 'Default',
-      clause: (xml: XmlDocument) =>
-        !XmlHelper.findByAttribute(xml, 'Default', 'Extension', extension),
-    });
+    return XmlHelper.appendImageExtensionToContentType(
+      this.targetArchive,
+      extension,
+    );
   }
 }

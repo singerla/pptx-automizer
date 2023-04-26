@@ -14,6 +14,7 @@ import { ArchiveParams } from '../types/types';
 
 import Automizer from '../automizer';
 import { IMaster } from '../interfaces/imaster';
+import { ILayout } from '../interfaces/ilayout';
 
 export class Template implements ITemplate {
   /**
@@ -150,6 +151,16 @@ export class Template implements ITemplate {
     }
 
     await slide.append(this).catch((e) => {
+      throw e;
+    });
+  }
+
+  async appendLayout(slideLayout: ILayout): Promise<void> {
+    if (this.counter[0].get() === undefined) {
+      await this.initializeCounter();
+    }
+
+    await slideLayout.append(this).catch((e) => {
       throw e;
     });
   }

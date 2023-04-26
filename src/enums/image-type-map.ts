@@ -7,4 +7,5 @@ export enum ImageTypeMap {
   m4v = 'video/mp4',
   mp4 = 'video/mp4',
   emf = 'image/x-emf',
+  wdp = 'image/vnd.ms-photo',
 }

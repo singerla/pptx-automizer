@@ -24,7 +24,12 @@ export class XmlRelationshipHelper {
     return this;
   }
 
-  async initialize(archive: IArchive, file: string, path: string) {
+  async initialize(
+    archive: IArchive,
+    file: string,
+    path: string,
+    prefix?: string,
+  ) {
     this.archive = archive;
     this.file = file;
     this.path = path + '/';
@@ -35,6 +40,10 @@ export class XmlRelationshipHelper {
     );
 
     await this.readTargets();
+
+    if (prefix) {
+      return this.getTargetsByPrefix(prefix);
+    }
 
     return this;
   }
@@ -146,6 +155,11 @@ export class XmlRelationshipHelper {
             targetPath + targetSuffix,
           );
           xmlTarget.setAttribute('Target', targetFile + targetSuffix);
+
+          await XmlHelper.appendImageExtensionToContentType(
+            this.archive,
+            target.filenameExt,
+          );
         }
       }
     }
@@ -191,6 +205,9 @@ export class XmlRelationshipHelper {
       updateTargetValue: (newTarget: string) => {
         target.element.setAttribute('Target', newTarget);
       },
+      updateId: (newId: string) => {
+        target.element.setAttribute('Id', newId);
+      },
     };
 
     if (prefix) {
@@ -235,26 +252,24 @@ export class XmlRelationshipHelper {
   }
 
   static async getSlideLayoutNumber(sourceArchive, slideId: number) {
-    const slideToLayoutHelper = await new XmlRelationshipHelper().initialize(
+    const slideToLayouts = await new XmlRelationshipHelper().initialize(
       sourceArchive,
       `slide${slideId}.xml.rels`,
       `ppt/slides/_rels`,
-    );
-    const slideToLayout = slideToLayoutHelper.getTargetsByPrefix(
       '../slideLayouts/slideLayout',
     );
-    return slideToLayout[0].number;
+
+    return slideToLayouts[0].number;
   }
 
   static async getSlideMasterNumber(sourceArchive, slideLayoutId: number) {
-    const layoutToMasterHelper = await new XmlRelationshipHelper().initialize(
+    const layoutToMaster = (await new XmlRelationshipHelper().initialize(
       sourceArchive,
       `slideLayout${slideLayoutId}.xml.rels`,
       `ppt/slideLayouts/_rels`,
-    );
-    const layoutToMaster = layoutToMasterHelper.getTargetsByPrefix(
       '../slideMasters/slideMaster',
-    );
+    )) as Target[];
+
     return layoutToMaster[0].number;
   }
 }

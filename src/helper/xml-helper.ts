@@ -14,6 +14,7 @@ import { GetRelationshipsCallback, Target } from '../types/types';
 import { vd } from './general-helper';
 import { contentTracker } from './content-tracker';
 import IArchive from '../interfaces/iarchive';
+import { ImageTypeMap } from '../enums/image-type-map';
 
 export class XmlHelper {
   static async modifyXmlInArchive(
@@ -459,6 +460,25 @@ export class XmlHelper {
       tag: 'Relationship',
       attributes,
     };
+  }
+
+  static appendImageExtensionToContentType(
+    targetArchive: IArchive,
+    extension: string,
+  ): Promise<HelperElement | boolean> {
+    const contentType = ImageTypeMap[extension]
+      ? ImageTypeMap[extension]
+      : 'image/' + extension;
+
+    return XmlHelper.appendIf({
+      ...XmlHelper.createContentTypeChild(targetArchive, {
+        Extension: extension,
+        ContentType: contentType,
+      }),
+      tag: 'Default',
+      clause: (xml: XmlDocument) =>
+        !XmlHelper.findByAttribute(xml, 'Default', 'Extension', extension),
+    });
   }
 
   static appendSharedString(

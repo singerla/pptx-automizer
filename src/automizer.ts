@@ -23,6 +23,7 @@ import {
 } from './helper/content-tracker';
 import JSZip, { OutputType } from 'jszip';
 import { ISlide } from './interfaces/islide';
+import { IMaster } from './interfaces/imaster';
 
 /**
  * Automizer
@@ -270,9 +271,8 @@ export default class Automizer implements IPresentationProps {
    */
   public addMaster(
     name: string,
-    // sourceIdentifier: SourceIdentifier,
     sourceIdentifier: number,
-    callback?: (slide: Master) => void,
+    callback?: (slideMaster: IMaster) => void,
   ): this {
     const template = this.getTemplate(name);
 

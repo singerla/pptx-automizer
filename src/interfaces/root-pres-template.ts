@@ -4,6 +4,7 @@ import { ITemplate } from './itemplate';
 import { ContentTracker } from '../helper/content-tracker';
 import Automizer from '../automizer';
 import { IMaster } from './imaster';
+import { ILayout } from './ilayout';
 
 export interface RootPresTemplate extends ITemplate {
   slides: ISlide[];
@@ -20,6 +21,7 @@ export interface RootPresTemplate extends ITemplate {
   incrementCounter(name: string): number;
   appendSlide(slide: ISlide): Promise<void>;
   appendMasterSlide(slideMaster: IMaster): Promise<void>;
+  appendLayout(slideLayout: ILayout): Promise<void>;
   countExistingSlides(): Promise<void>;
   truncate(): Promise<void>;
   content?: ContentTracker;
