@@ -50,6 +50,7 @@ const run = async () => {
     .addSlide('SlidesWithAdditionalMaster.pptx', 1)
     .addSlide('SlideMasters.pptx', 1)
     .addSlide('SlideMasters.pptx', 2)
+    .addSlide('SlideMasters.pptx', 2)
     .addSlide('SlidesWithAdditionalMaster.pptx', 2)
     .addSlide('SlideMasters.pptx', 3)
     .addSlide('SlideMasters.pptx', 1)
