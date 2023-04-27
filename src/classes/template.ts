@@ -60,6 +60,7 @@ export class Template implements ITemplate {
   counter: ICounter[];
 
   creationIds: SlideInfo[];
+  slideNumbers: number[];
   existingSlides: number;
 
   contentMap: ContentMap[] = [];
@@ -124,6 +125,20 @@ export class Template implements ITemplate {
       (map) =>
         map.type === type && map.key === key && map.sourceId === sourceId,
     );
+  }
+
+ /**
+   * Returns the slide numbers of a given template as a sorted array of integers.
+   * @returns {Promise<number[]>} - A promise that resolves to a sorted array of slide numbers in the template.
+   */
+  async getAllSlideNumbers(): Promise<number[]> {
+    try {
+      const xmlTemplateHelper = new XmlTemplateHelper(this.archive);
+     this.slideNumbers = await xmlTemplateHelper.getAllSlideNumbers();
+     return this.slideNumbers
+    } catch (error) {
+      throw new Error(error.message);
+    }
   }
 
   async setCreationIds(): Promise<SlideInfo[]> {

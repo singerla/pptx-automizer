@@ -3,6 +3,7 @@ import { Target } from '../types/types';
 import { ElementInfo, SlideInfo, TemplateSlideInfo } from '../types/xml-types';
 import { XmlHelper } from './xml-helper';
 import IArchive from '../interfaces/iarchive';
+import { XmlRelationshipHelper } from './xml-relationship-helper';
 
 export class XmlTemplateHelper {
   archive: IArchive;
@@ -142,7 +143,31 @@ export class XmlTemplateHelper {
 
     return nameFragments;
   }
+/**
+ * Returns the slide numbers of a given template as a sorted array of integers.
+ * @returns {Promise<number[]>} - A promise that resolves to a sorted array of slide numbers in the template.
+ */
+ async getAllSlideNumbers(): Promise<number[]> {
+  try {
+    const archive = this.archive;
+    const xmlRelationshipHelper = new XmlRelationshipHelper();
+    const allSlides = (await xmlRelationshipHelper.initialize(
+      archive,
+      'presentation.xml.rels',
+      'ppt/_rels',
+      'slides/slide',
+    )) as Target[];
 
+    // Extract slide numbers from each slide using the 'number' property and sort the array of integers.
+    const slideNumbers = allSlides.map(slide => slide.number);
+    slideNumbers.sort((a, b) => a - b);
+
+    return slideNumbers;
+
+  } catch (error) {
+    throw new Error(`Error getting slide numbers: ${error.message}`);
+  }
+}
   elementCreationIds(slideXml, archive): ElementInfo[] {
     const slideElements = slideXml.getElementsByTagName('p:cNvPr');
 
@@ -159,6 +184,9 @@ export class XmlTemplateHelper {
     }
     return elementIds;
   }
+
+
+
 
   getElementInfo(slideElement, archive): ElementInfo {
     const elementName = slideElement.getAttribute('name');
