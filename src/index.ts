@@ -30,6 +30,10 @@ import { XmlHelper } from './helper/xml-helper';
 import ModifyTextHelper from './helper/modify-text-helper';
 import ModifyColorHelper from './helper/modify-color-helper';
 
+import { ITemplate } from './interfaces/itemplate';
+import { IMaster } from './interfaces/imaster';
+import { ISlide } from './interfaces/islide';
+
 const dump = ModifyHelper.dump;
 const dumpChart = ModifyHelper.dumpChart;
 const setAttribute = ModifyHelper.setAttribute;
@@ -118,4 +122,5 @@ export type {
   XmlElement,
   XmlDocument,
 };
+export { ITemplate, IMaster, ISlide };
 export default Automizer;
