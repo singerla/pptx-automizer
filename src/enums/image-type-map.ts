@@ -8,4 +8,9 @@ export enum ImageTypeMap {
   mp4 = 'video/mp4',
   emf = 'image/x-emf',
   wdp = 'image/vnd.ms-photo',
+
+  // This is required to support think-cell contents
+  xml = 'application/xml',
+  bin = 'application/vnd.openxmlformats-officedocument.oleObject',
+  vml = 'application/vnd.openxmlformats-officedocument.vmlDrawing',
 }

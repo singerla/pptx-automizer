@@ -56,7 +56,7 @@ export class Layout extends HasShapes implements ILayout {
     await this.updateRelation();
 
     await this.cleanSlide(this.targetPath);
-    await this.checkIntegrity(false, false);
+    await this.checkIntegrity(false, true);
   }
 
   /**
