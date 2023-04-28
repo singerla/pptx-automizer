@@ -1,5 +1,5 @@
-import Automizer, {ChartData, modify} from './index';
-import {vd} from './helper/general-helper';
+import Automizer, { ChartData, modify } from './index';
+import { vd } from './helper/general-helper';
 
 const automizer = new Automizer({
   templateDir: `${__dirname}/../__tests__/pptx-templates`,
@@ -10,16 +10,11 @@ const pres = automizer
   .loadRoot(`RootTemplate.pptx`)
   .load(`TemplateWithMaster.pptx`, 'master');
 
-
 const run = async () => {
   await pres
-    .addMaster('master', 2, (slide) => {
-
-    })
-    .addSlide('master', 2, (slide) => {
-
-    })
-    .write(`add-master.test.pptx`)
+    .addMaster('master', 2, (slide) => {})
+    .addSlide('master', 2, (slide) => {})
+    .write(`add-master.test.pptx`);
 
   return pres;
 };

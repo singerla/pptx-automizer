@@ -24,4 +24,5 @@ export interface ISlide {
   ): ISlide;
   removeElement(selector: FindElementSelector): ISlide;
   useSlideLayout(index?: number): ISlide;
+  getAllTextElementIds(): Promise<string[]>;
 }

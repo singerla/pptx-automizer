@@ -155,9 +155,9 @@ export default class TextReplaceHelper {
     const replace =
       this.options.openingTag + replaceText.replace + this.options.closingTag;
     let textNode = this.getTextElement(textBlock);
-    const sourceText = textNode.firstChild.textContent;
+    const sourceText = textNode.firstChild?.textContent;
 
-    if (sourceText.includes(replace)) {
+    if (sourceText?.includes(replace)) {
       const bys = GeneralHelper.arrayify(replaceText.by);
       const modifyBlocks = this.assertTextBlocks(bys.length, textBlock);
 
