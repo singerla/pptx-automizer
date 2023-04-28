@@ -136,8 +136,7 @@ export default class ModifyXmlHelper {
   static attribute =
     (attribute: string, value: string | number) =>
     (element: XmlElement): void => {
-      if (value != undefined)
-        element.setAttribute(attribute, String(value));
+      if (value != undefined) element.setAttribute(attribute, String(value));
     };
 
   static booleanAttribute =

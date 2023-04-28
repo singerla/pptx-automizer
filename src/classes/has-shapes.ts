@@ -129,32 +129,33 @@ export default class HasShapes {
   }
 
   /**
- * Asynchronously retrieves all text element IDs from the slide.
- * @returns {Promise<string[]>} A promise that resolves to an array of text element IDs.
- */
-async getAllTextElementIds(): Promise<string[]> {
-  try {
-    const template = this.sourceTemplate
-    // Retrieve the slide XML data
-    const slideXml = await XmlHelper.getXmlFromArchive(
-      template.archive,
-      this.sourcePath,
-    );
-    // Initialize the XmlSlideHelper
-    const xmlSlideHelper = new XmlSlideHelper(slideXml);
+   * Asynchronously retrieves all text element IDs from the slide.
+   * @returns {Promise<string[]>} A promise that resolves to an array of text element IDs.
+   */
+  async getAllTextElementIds(): Promise<string[]> {
+    try {
+      const template = this.sourceTemplate;
+      // Retrieve the slide XML data
+      const slideXml = await XmlHelper.getXmlFromArchive(
+        template.archive,
+        this.sourcePath,
+      );
+      // Initialize the XmlSlideHelper
+      const xmlSlideHelper = new XmlSlideHelper(slideXml);
 
-    // Get all text element IDs 
-    const textElementIds = xmlSlideHelper.getAllTextElementIds(template.useCreationIds || false);
+      // Get all text element IDs
+      const textElementIds = xmlSlideHelper.getAllTextElementIds(
+        template.useCreationIds || false,
+      );
 
-    return textElementIds;
-  } catch (error) {
-    // Log the error message and return an empty array, none of the others seem to have any error handling.. so not sure whats best throw actual Error.., console.error, something else?
-   /*  console.error(error.message);
+      return textElementIds;
+    } catch (error) {
+      // Log the error message and return an empty array, none of the others seem to have any error handling.. so not sure whats best throw actual Error.., console.error, something else?
+      /*  console.error(error.message);
     return []; */
-    throw new Error(error.message)
+      throw new Error(error.message);
+    }
   }
-}
-
 
   /**
    * Push modifications list
@@ -187,7 +188,6 @@ async getAllTextElementIds(): Promise<string[]> {
       callback,
     );
   }
-
 
   /**
    * Select, insert and (optionally) modify a single element to a slide.
@@ -767,9 +767,6 @@ async getAllTextElementIds(): Promise<string[]> {
       type: ElementType.Shape,
     } as AnalyzedElementType;
   }
-
-
-
 
   /**
    * Applys modifications
