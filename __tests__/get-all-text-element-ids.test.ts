@@ -1,4 +1,5 @@
 import Automizer, { modify } from '../src/index';
+import { vd } from '../src/helper/general-helper';
 
 test('create presentation, modify text elements using getAllTextElementIds.', async () => {
   const automizer = new Automizer({
@@ -20,27 +21,29 @@ test('create presentation, modify text elements using getAllTextElementIds.', as
     for (const elementId of elementIds) {
       slide.modifyElement(
         elementId,
-        modify.replaceText([
-          {
-            replace: 'placeholder',
-            by: {
-              text: 'New Text',
+        modify.replaceText(
+          [
+            {
+              replace: 'placeholder',
+              by: {
+                text: 'New Text',
+              },
             },
-          },
-          {
-            replace: 'placeholder2',
-            by: {
-              text: 'New Text 2',
+            {
+              replace: 'placeholder2',
+              by: {
+                text: 'New Text 2',
+              },
             },
+          ],
+          {
+            openingTag: '{',
+            closingTag: '}',
           },
-        ], {
-          openingTag: '{',
-          closingTag: '}'
-        })
+        ),
       );
     }
   });
 
   const result = await pres.write(`get-all-text-element-ids.test.pptx`);
-
 });

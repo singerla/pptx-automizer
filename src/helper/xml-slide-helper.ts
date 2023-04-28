@@ -52,16 +52,11 @@ export class XmlSlideHelper {
           // Check if the shape node contains a non-visual drawing properties element
           if (cNvPr) {
             let id: string;
-            let creationIds: HTMLCollectionOf<Element>;
-
             if (useCreationIds) {
-              creationIds =
-                this.slideXml.getElementsByTagName('a16:creationId');
-            }
-
-            // Use the creation ID if useCreationIds is true and creationIds.length > 1; otherwise, use the element name
-            if (useCreationIds && creationIds.length > 1) {
-              id = cNvPr.getAttribute('id');
+              const creationIds = cNvPr.getElementsByTagName(
+                'a16:creationId',
+              ) as HTMLCollectionOf<XmlElement>;
+              id = creationIds.item(0).getAttribute('id');
             } else {
               id = cNvPr.getAttribute('name');
             }
