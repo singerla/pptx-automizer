@@ -360,7 +360,7 @@ export default class HasShapes {
     const useCreationIds =
       template.useCreationIds === true && template.creationIds !== undefined;
 
-    const { sourceElement, selector } = await this.findElementOnSlide(
+    const { sourceElement, selector, mode } = await this.findElementOnSlide(
       importElement.selector,
       sourceArchive,
       sourcePath,
@@ -384,7 +384,7 @@ export default class HasShapes {
     return {
       mode: importElement.mode,
       name: selector,
-      hasCreationId: useCreationIds,
+      hasCreationId: mode === 'findByElementCreationId',
       sourceArchive,
       sourceSlideNumber: slideNumber,
       sourceElement,
@@ -408,6 +408,7 @@ export default class HasShapes {
   ): Promise<{
     sourceElement: XmlDocument;
     selector: string;
+    mode?: 'findByElementCreationId' | 'findByElementName';
   }> {
     const strategies: FindElementStrategy[] = [];
     if (typeof selector === 'string') {
@@ -442,7 +443,7 @@ export default class HasShapes {
       );
 
       if (sourceElement) {
-        return { sourceElement, selector: findElement.selector };
+        return { sourceElement, selector: findElement.selector, mode };
       }
     }
 
