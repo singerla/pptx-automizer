@@ -128,6 +128,11 @@ export class Shape {
       this.name,
     );
 
+    if (!sourceElementOnTargetSlide) {
+      console.error(`Can't modify slide tree for ${this.name}`);
+      return;
+    }
+
     if (insertBefore === true) {
       sourceElementOnTargetSlide.parentNode.insertBefore(
         this.targetElement,
@@ -138,8 +143,6 @@ export class Shape {
     sourceElementOnTargetSlide.parentNode.removeChild(
       sourceElementOnTargetSlide,
     );
-
-    // vd(insertBefore);
 
     XmlHelper.writeXmlToArchive(archive, slideFile, targetSlideXml);
   }
