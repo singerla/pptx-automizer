@@ -10,7 +10,6 @@ import {
   ShapeModificationCallback,
   StatusTracker,
 } from './types/types';
-
 import {
   ModifyTableParams,
   TableData,
@@ -24,7 +23,7 @@ import {
   ChartSeries,
   ChartValueStyle,
 } from './types/chart-types';
-import { Color, ReplaceText, TextStyle } from './types/modify-types';
+import { Border, Color, ReplaceText, TextStyle } from './types/modify-types';
 import { ShapeCoordinates, ShapeValueStyle } from './types/shape-types';
 import { XmlHelper } from './helper/xml-helper';
 import ModifyTextHelper from './helper/modify-text-helper';
@@ -73,6 +72,7 @@ export type {
   ChartData,
   ChartValueStyle,
   Color,
+  Border,
   ShapeValueStyle,
   ShapeCoordinates,
   ReplaceText,

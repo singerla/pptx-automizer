@@ -1,4 +1,4 @@
-import { Color, TextStyle } from './modify-types';
+import { Color, Border, TextStyle } from './modify-types';
 
 export type TableRow = {
   label?: string;
@@ -8,6 +8,7 @@ export type TableRow = {
 
 export type TableRowStyle = TextStyle & {
   background?: Color;
+  border?: Border[];
 };
 
 export type TableData = {

@@ -1,10 +1,11 @@
 import { XmlHelper } from '../helper/xml-helper';
 import ModifyXmlHelper from '../helper/modify-xml-helper';
 import { TableData, TableRow, TableRowStyle } from '../types/table-types';
-import { Modification, ModificationTags } from '../types/modify-types';
+import { Border, Modification, ModificationTags } from '../types/modify-types';
 import ModifyTextHelper from '../helper/modify-text-helper';
 import { ModifyColorHelper } from '../index';
 import { XmlDocument, XmlElement } from '../types/xml-types';
+import { GeneralHelper, vd } from '../helper/general-helper';
 
 export class ModifyTable {
   data: TableData;
@@ -97,20 +98,61 @@ export class ModifyTable {
       'a:rPr': {
         modify: ModifyTextHelper.style(style),
       },
-      ...this.setCellBackground(style),
+      'a:tcPr': {
+        ...this.setCellStyle(style),
+      },
     };
   };
 
-  setCellBackground(style) {
-    if (!style.background) {
-      return {};
+  setCellStyle(style) {
+    const cellProps = {
+      modify: [],
+      children: {},
+    };
+
+    if (style.background) {
+      cellProps.modify.push(
+        ModifyColorHelper.solidFill(style.background, 'last'),
+      );
     }
 
-    return {
-      'a:tcPr': {
-        modify: ModifyColorHelper.solidFill(style.background, 'last'),
-      },
-    };
+    if (style.border) {
+      cellProps.children = this.setCellBorder(style);
+    }
+
+    return cellProps;
+  }
+
+  setCellBorder(style) {
+    const borders = GeneralHelper.arrayify<Border>(style.border);
+    const modifications = {};
+
+    borders.forEach((border) => {
+      const tag = 'a:' + border.tag;
+
+      const modifyCell = [];
+
+      if (border.color) {
+        modifyCell.push(ModifyColorHelper.solidFill(border.color));
+      }
+      if (border.weight) {
+        modifyCell.push(ModifyXmlHelper.attribute('w', border.weight));
+      }
+
+      modifications[tag] = {
+        modify: modifyCell,
+      };
+
+      if (border.type) {
+        modifications[tag].children = {
+          'a:prstDash': {
+            modify: ModifyXmlHelper.attribute('val', border.type),
+          },
+        };
+      }
+    });
+
+    return modifications;
   }
 
   slice(tag: string, length: number): Modification {

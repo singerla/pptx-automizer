@@ -1,5 +1,5 @@
-import Automizer, { modify } from '../src/index';
-import {TableRow, TableRowStyle} from '../dist/types/table-types';
+import Automizer, { modify, XmlHelper } from '../src/index';
+import { TableRow, TableRowStyle } from '../src/index';
 
 test('create presentation, add and modify an existing table.', async () => {
   const automizer = new Automizer({
@@ -31,22 +31,61 @@ test('create presentation, add and modify an existing table.', async () => {
 
   const data3 = {
     body: [
-      <TableRow> {
+      <TableRow>{
         label: 'item test r1',
         values: ['test1', 10, 16],
-        styles:
-          [
-            null,
-            <TableRowStyle> {
-              color: {
-                type: 'srgbClr', value: 'cccccc'
-              },
-              size: 1400
-            }
-          ]
-        },
+        styles: [
+          null,
+          <TableRowStyle>{
+            color: {
+              type: 'srgbClr',
+              value: 'cccccc',
+            },
+            size: 1400,
+          },
+        ],
+      },
       { label: 'item test r2', values: ['test2', 12, 18] },
-      { label: 'item test r3', values: ['test3', 14, 12] },
+      {
+        label: 'item test r3',
+        values: ['test3', 14, 13],
+      },
+    ],
+  };
+
+  const data4 = {
+    body: [
+      <TableRow>{
+        label: 'item test r1',
+        values: ['test1', 12],
+        styles: [
+          {
+            border: [
+              {
+                tag: 'lnB',
+                weight: 35000,
+                color: {
+                  type: 'srgbClr',
+                  value: 'aacc00',
+                },
+              },
+            ],
+          },
+          {
+            border: [
+              {
+                tag: 'lnB',
+                weight: 3500,
+                type: 'sysDot',
+                color: {
+                  type: 'srgbClr',
+                  value: 'aacc00',
+                },
+              },
+            ],
+          },
+        ],
+      },
     ],
   };
 
@@ -56,9 +95,7 @@ test('create presentation, add and modify an existing table.', async () => {
 
   const result = await pres
     .addSlide('tables', 1, (slide) => {
-      slide.modifyElement('TableDefault', [
-        modify.setTable(data1),
-      ]);
+      slide.modifyElement('TableDefault', [modify.setTable(data1)]);
 
       slide.modifyElement('TableWithLabels', [
         modify.setTable(data2),
@@ -70,6 +107,12 @@ test('create presentation, add and modify an existing table.', async () => {
         modify.adjustHeight(data3),
         modify.adjustWidth(data3),
       ]);
+    })
+    .addSlide('tables', 2, (slide) => {
+      // You can set a cell border, but you need to make sure your target cell
+      // has a border already. Use a white line if you need to toggle a border.
+      // It is currently not implemented to "create" a border.
+      slide.modifyElement('LabelsVertical', [modify.setTable(data4)]);
     })
     .write(`modify-existing-table.test.pptx`);
 

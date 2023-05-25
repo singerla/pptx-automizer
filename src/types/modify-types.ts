@@ -34,6 +34,13 @@ export type Color = {
   value: string;
 };
 
+export type Border = {
+  tag: 'lnL' | 'lnR' | 'lnT' | 'lnB';
+  type?: 'solid' | 'sysDot' | string;
+  weight?: number;
+  color?: Color;
+};
+
 export type TextStyle = {
   size?: number;
   color?: Color;
