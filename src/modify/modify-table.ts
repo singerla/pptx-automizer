@@ -125,32 +125,38 @@ export class ModifyTable {
 
   setCellBorder(style) {
     const borders = GeneralHelper.arrayify<Border>(style.border);
+    const sortBorderTags = ['lnB', 'lnT', 'lnR', 'lnL'];
     const modifications = {};
+    borders
+      .sort((b1, b2) =>
+        sortBorderTags.indexOf(b1.tag) < sortBorderTags.indexOf(b2.tag)
+          ? -1
+          : 1,
+      )
+      .forEach((border) => {
+        const tag = 'a:' + border.tag;
 
-    borders.forEach((border) => {
-      const tag = 'a:' + border.tag;
+        const modifyCell = [];
 
-      const modifyCell = [];
+        if (border.color) {
+          modifyCell.push(ModifyColorHelper.solidFill(border.color));
+        }
+        if (border.weight) {
+          modifyCell.push(ModifyXmlHelper.attribute('w', border.weight));
+        }
 
-      if (border.color) {
-        modifyCell.push(ModifyColorHelper.solidFill(border.color));
-      }
-      if (border.weight) {
-        modifyCell.push(ModifyXmlHelper.attribute('w', border.weight));
-      }
-
-      modifications[tag] = {
-        modify: modifyCell,
-      };
-
-      if (border.type) {
-        modifications[tag].children = {
-          'a:prstDash': {
-            modify: ModifyXmlHelper.attribute('val', border.type),
-          },
+        modifications[tag] = {
+          modify: modifyCell,
         };
-      }
-    });
+
+        if (border.type) {
+          modifications[tag].children = {
+            'a:prstDash': {
+              modify: ModifyXmlHelper.attribute('val', border.type),
+            },
+          };
+        }
+      });
 
     return modifications;
   }

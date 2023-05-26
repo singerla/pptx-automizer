@@ -9,7 +9,54 @@ test('create presentation, add and modify an existing table.', async () => {
 
   const data1 = {
     body: [
-      { label: 'item test r1', values: ['test1', 10, 16, 12, 11] },
+      <TableRow>{
+        label: 'item test r1',
+        values: ['test1', 10, 16, 12, 11],
+        styles: [
+          {
+            border: [
+              {
+                tag: 'lnB',
+                weight: 18500,
+                type: 'sysDot',
+                color: {
+                  type: 'srgbClr',
+                  value: 'aacc00',
+                },
+              },
+
+              {
+                tag: 'lnR',
+                weight: 18500,
+                type: 'sysDot',
+                color: {
+                  type: 'srgbClr',
+                  value: 'aacc00',
+                },
+              },
+              {
+                tag: 'lnL',
+                weight: 18500,
+                type: 'sysDot',
+                color: {
+                  type: 'srgbClr',
+                  value: 'aacc00',
+                },
+              },
+
+              {
+                tag: 'lnT',
+                weight: 18500,
+                type: 'sysDot',
+                color: {
+                  type: 'srgbClr',
+                  value: 'aacc00',
+                },
+              },
+            ],
+          },
+        ],
+      },
       { label: 'item test r2', values: ['test2', 12, 18, 15, 12] },
       { label: 'item test r3', values: ['test3', 14, 12, 11, 14] },
     ],
@@ -75,7 +122,16 @@ test('create presentation, add and modify an existing table.', async () => {
             border: [
               {
                 tag: 'lnT',
-                weight: 3500,
+                weight: 8500,
+                type: 'sysDot',
+                color: {
+                  type: 'srgbClr',
+                  value: 'aacc00',
+                },
+              },
+              {
+                tag: 'lnR',
+                weight: 8500,
                 type: 'sysDot',
                 color: {
                   type: 'srgbClr',
