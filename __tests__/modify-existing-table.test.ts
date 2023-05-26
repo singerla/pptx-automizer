@@ -74,7 +74,7 @@ test('create presentation, add and modify an existing table.', async () => {
           {
             border: [
               {
-                tag: 'lnB',
+                tag: 'lnT',
                 weight: 3500,
                 type: 'sysDot',
                 color: {
@@ -109,9 +109,6 @@ test('create presentation, add and modify an existing table.', async () => {
       ]);
     })
     .addSlide('tables', 2, (slide) => {
-      // You can set a cell border, but you need to make sure your target cell
-      // has a border already. Use a white line if you need to toggle a border.
-      // It is currently not implemented to "create" a border.
       slide.modifyElement('LabelsVertical', [modify.setTable(data4)]);
     })
     .write(`modify-existing-table.test.pptx`);

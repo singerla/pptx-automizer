@@ -1,7 +1,8 @@
-import { Color } from '../types/modify-types';
+import { Border, Color } from '../types/modify-types';
 import { XmlHelper } from './xml-helper';
 import { DOMParser } from '@xmldom/xmldom';
 import { dLblXml } from './xml/dLbl';
+import { lnLRTB } from './xml/lnLRTB';
 import { XmlDocument, XmlElement } from '../types/xml-types';
 
 export type XmlElementParams = {
@@ -155,6 +156,12 @@ export default class XmlElements {
   dataPointLabel() {
     const doc = new DOMParser().parseFromString(dLblXml);
     const ele = doc.getElementsByTagName('c:dLbl')[0];
+    const firstChild = this.element.firstChild;
+    this.element.insertBefore(ele.cloneNode(true), firstChild);
+  }
+  tableCellBorder(tag: 'a:lnL' | 'a:lnR' | 'a:lnT' | 'a:lnB') {
+    const doc = new DOMParser().parseFromString(lnLRTB);
+    const ele = doc.getElementsByTagName(tag)[0];
     const firstChild = this.element.firstChild;
     this.element.insertBefore(ele.cloneNode(true), firstChild);
   }

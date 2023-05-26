@@ -105,6 +105,12 @@ export default class ModifyXmlHelper {
       case 'c:dLbl':
         new XmlElements(parent).dataPointLabel();
         return true;
+      case 'a:lnL':
+      case 'a:lnR':
+      case 'a:lnT':
+      case 'a:lnB':
+        new XmlElements(parent).tableCellBorder(tag);
+        return true;
     }
     return false;
   }
