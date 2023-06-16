@@ -13,7 +13,6 @@ import {
 import ModifyXmlHelper from './modify-xml-helper';
 import { XmlDocument, XmlElement } from '../types/xml-types';
 import { XmlHelper } from './xml-helper';
-import { vd } from './general-helper';
 
 export default class ModifyChartHelper {
   /**
@@ -156,6 +155,12 @@ export default class ModifyChartHelper {
       });
 
       new ModifyChart(chart, workbook, data, slots).modify();
+
+      ModifyChartHelper.setAxisRange({
+        axisIndex: 1,
+        min: 0,
+        max: data.categories.length,
+      })(chart);
     };
 
   /**
