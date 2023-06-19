@@ -5,7 +5,7 @@ import { ISlide } from '../interfaces/islide';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
 import { PresTemplate } from '../interfaces/pres-template';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
-import { last } from '../helper/general-helper';
+import { last, vd } from '../helper/general-helper';
 import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import { IMaster } from '../interfaces/imaster';
 import HasShapes from './has-shapes';
@@ -80,29 +80,20 @@ export class Slide extends HasShapes implements ISlide {
    * Use another slide layout.
    * @param targetLayoutId
    */
-  useSlideLayout(targetLayoutId?: number): this {
+  useSlideLayout(layoutId?: number | string): this {
     this.relModifications.push(async (slideRelXml) => {
-      if (!targetLayoutId) {
-        const sourceLayoutId = await XmlRelationshipHelper.getSlideLayoutNumber(
-          this.sourceArchive,
-          this.sourceNumber,
-        );
+      let targetLayoutId;
 
-        const templateName = this.sourceTemplate.name;
-        const alreadyImported = this.targetTemplate.getMappedContent(
-          'slideLayout',
-          templateName,
-          sourceLayoutId,
-        );
+      if (typeof layoutId === 'string') {
+        targetLayoutId = await this.useNamedSlideLayout(layoutId as string);
 
-        if (alreadyImported) {
-          targetLayoutId = alreadyImported.targetId;
-        } else {
-          targetLayoutId = await this.autoImportSourceSlideMaster(
-            templateName,
-            sourceLayoutId,
-          );
+        if (!targetLayoutId) {
+          layoutId = null;
         }
+      }
+
+      if (!layoutId || typeof layoutId === 'number') {
+        targetLayoutId = await this.useIndexedSlideLayout(layoutId as number);
       }
 
       const slideLayouts = new XmlRelationshipHelper(slideRelXml)
@@ -110,11 +101,74 @@ export class Slide extends HasShapes implements ISlide {
         .getTargetsByPrefix('../slideLayouts/slideLayout');
 
       if (slideLayouts.length) {
-        slideLayouts[0].updateTargetIndex(targetLayoutId);
+        slideLayouts[0].updateTargetIndex(targetLayoutId as number);
       }
     });
 
     return this;
+  }
+
+  /**
+   * Find another slide layout by name.
+   * @param targetLayoutId
+   */
+  async useNamedSlideLayout(targetLayoutName: string): Promise<number> {
+    const templateName = this.sourceTemplate.name;
+    const sourceLayoutId = await XmlRelationshipHelper.getSlideLayoutNumber(
+      this.sourceArchive,
+      this.sourceNumber,
+    );
+
+    await this.autoImportSourceSlideMaster(templateName, sourceLayoutId);
+
+    const alreadyImported = this.targetTemplate.getNamedMappedContent(
+      'slideLayout',
+      targetLayoutName,
+    );
+
+    if (!alreadyImported) {
+      console.error(
+        'Could not find "' +
+          targetLayoutName +
+          '"@' +
+          templateName +
+          '@' +
+          'sourceLayoutId:' +
+          sourceLayoutId,
+      );
+    }
+
+    return alreadyImported?.targetId;
+  }
+
+  /**
+   * Use another slide layout by index or detect original index.
+   * @param targetLayoutId
+   */
+  async useIndexedSlideLayout(targetLayoutIndex?: number): Promise<number> {
+    if (!targetLayoutIndex) {
+      const sourceLayoutId = await XmlRelationshipHelper.getSlideLayoutNumber(
+        this.sourceArchive,
+        this.sourceNumber,
+      );
+
+      const templateName = this.sourceTemplate.name;
+      const alreadyImported = this.targetTemplate.getMappedContent(
+        'slideLayout',
+        templateName,
+        sourceLayoutId,
+      );
+
+      if (alreadyImported) {
+        return alreadyImported.targetId;
+      } else {
+        return await this.autoImportSourceSlideMaster(
+          templateName,
+          sourceLayoutId,
+        );
+      }
+    }
+    return targetLayoutIndex;
   }
 
   async autoImportSourceSlideMaster(

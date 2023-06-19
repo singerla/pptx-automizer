@@ -248,13 +248,13 @@ export default class Automizer implements IPresentationProps {
       slideIdentifier,
     });
 
+    if (this.params.autoImportSlideMasters) {
+      newSlide.useSlideLayout();
+    }
+
     if (callback !== undefined) {
       newSlide.root = this;
       callback(newSlide);
-    }
-
-    if (this.params.autoImportSlideMasters) {
-      newSlide.useSlideLayout();
     }
 
     this.rootTemplate.slides.push(newSlide);
@@ -274,6 +274,13 @@ export default class Automizer implements IPresentationProps {
     sourceIdentifier: number,
     callback?: (slideMaster: IMaster) => void,
   ): this {
+    const key = sourceIdentifier + '@' + name;
+
+    if (this.rootTemplate.masters.find((master) => master.key === key)) {
+      console.log('Already imported ' + key);
+      return this;
+    }
+
     const template = this.getTemplate(name);
 
     const newMaster = new Master({
@@ -286,6 +293,8 @@ export default class Automizer implements IPresentationProps {
       newMaster.root = this;
       callback(newMaster);
     }
+
+    newMaster.key = key;
 
     this.rootTemplate.masters.push(newMaster);
 

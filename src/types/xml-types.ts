@@ -72,6 +72,8 @@ export type ContentMap = {
   key: string;
   sourceId: number;
   targetId: number;
+  name?: string;
+  creationId?: string;
 };
 
 export type ModifyXmlCallback = (

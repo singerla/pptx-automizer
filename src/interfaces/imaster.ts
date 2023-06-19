@@ -10,6 +10,7 @@ import IArchive from './iarchive';
 export interface IMaster {
   sourceArchive: IArchive;
   sourceNumber: number;
+  key: string;
   modify(callback: SlideModificationCallback): void;
   append(targetTemplate: RootPresTemplate): Promise<void>;
   addElement(

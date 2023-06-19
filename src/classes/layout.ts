@@ -89,4 +89,17 @@ export class Layout extends HasShapes implements ILayout {
 
     layoutToMaster[0].updateTargetIndex(this.targetMaster);
   }
+
+  async getName(): Promise<string> {
+    const slideLayoutXml = await XmlHelper.getXmlFromArchive(
+      this.sourceArchive,
+      `ppt/slideLayouts/slideLayout${this.sourceNumber}.xml`,
+    );
+
+    const layout = slideLayoutXml.getElementsByTagName('p:cSld')?.item(0);
+    if (layout) {
+      const name = layout.getAttribute('name');
+      return name;
+    }
+  }
 }

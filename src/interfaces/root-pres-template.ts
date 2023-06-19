@@ -15,8 +15,10 @@ export interface RootPresTemplate extends ITemplate {
     key: string,
     sourceId: number,
     targetId: number,
+    name?: string,
   ) => void;
   getMappedContent: (type: string, key: string, sourceId: number) => any;
+  getNamedMappedContent: (type: string, name: string) => any;
   count(name: string): number;
   incrementCounter(name: string): number;
   appendSlide(slide: ISlide): Promise<void>;

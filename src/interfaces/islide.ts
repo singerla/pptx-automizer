@@ -23,6 +23,6 @@ export interface ISlide {
     callback: ShapeModificationCallback | ShapeModificationCallback[],
   ): ISlide;
   removeElement(selector: FindElementSelector): ISlide;
-  useSlideLayout(index?: number): ISlide;
+  useSlideLayout(targetLayout?: number | string): ISlide;
   getAllTextElementIds(): Promise<string[]>;
 }

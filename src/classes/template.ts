@@ -15,6 +15,7 @@ import { ArchiveParams } from '../types/types';
 import Automizer from '../automizer';
 import { IMaster } from '../interfaces/imaster';
 import { ILayout } from '../interfaces/ilayout';
+import { vd } from '../helper/general-helper';
 
 export class Template implements ITemplate {
   /**
@@ -107,13 +108,21 @@ export class Template implements ITemplate {
     key: string,
     sourceId: number,
     targetId: number,
+    name?: string,
   ) {
     this.contentMap.push({
       type,
       key,
       sourceId,
       targetId,
+      name,
     });
+  }
+
+  getNamedMappedContent(type: 'slideMaster' | 'slideLayout', name: string) {
+    return this.contentMap.find(
+      (map) => map.type === type && map.name === name,
+    );
   }
 
   getMappedContent(

@@ -13,6 +13,7 @@ import { Layout } from './layout';
 
 export class Master extends HasShapes implements IMaster {
   targetType: ShapeTargetType = 'slideMaster';
+  key: string;
 
   constructor(params: {
     presentation: IPresentationProps;
@@ -87,11 +88,14 @@ export class Master extends HasShapes implements IMaster {
 
       await this.targetTemplate.appendLayout(layout);
 
+      const layoutName = await layout.getName();
+
       this.targetTemplate.mapContents(
         'slideLayout',
         this.sourceTemplate.name,
         target.number,
         layout.targetNumber,
+        layoutName,
       );
 
       target.updateTargetIndex(layout.targetNumber);
