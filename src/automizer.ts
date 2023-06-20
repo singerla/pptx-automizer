@@ -294,8 +294,6 @@ export default class Automizer implements IPresentationProps {
       callback(newMaster);
     }
 
-    newMaster.key = key;
-
     this.rootTemplate.masters.push(newMaster);
 
     return this;

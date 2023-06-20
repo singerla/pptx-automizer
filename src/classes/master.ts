@@ -30,8 +30,14 @@ export class Master extends HasShapes implements IMaster {
 
     this.sourceNumber = Number(params.sourceIdentifier);
 
+    this.key = Master.getKey(this.sourceNumber, params.template.name);
+
     this.sourcePath = `ppt/slideMasters/slideMaster${this.sourceNumber}.xml`;
     this.relsPath = `ppt/slideMasters/_rels/slideMaster${this.sourceNumber}.xml.rels`;
+  }
+
+  static getKey(slideLayoutNumber: number, templateName: string) {
+    return slideLayoutNumber + '@' + templateName;
   }
 
   /**

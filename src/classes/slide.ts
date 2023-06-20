@@ -9,6 +9,7 @@ import { last, vd } from '../helper/general-helper';
 import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import { IMaster } from '../interfaces/imaster';
 import HasShapes from './has-shapes';
+import { Master } from './master';
 
 export class Slide extends HasShapes implements ISlide {
   targetType: ShapeTargetType = 'slide';
@@ -179,15 +180,22 @@ export class Slide extends HasShapes implements ISlide {
       this.sourceArchive,
       sourceLayoutId,
     );
-    await this.targetTemplate.automizer.addMaster(templateName, sourceMasterId);
+    const key = Master.getKey(sourceMasterId, templateName);
 
-    const previouslyAddedMaster = last<IMaster>(this.targetTemplate.masters);
+    if (!this.targetTemplate.masters.find((master) => master.key === key)) {
+      await this.targetTemplate.automizer.addMaster(
+        templateName,
+        sourceMasterId,
+      );
 
-    await this.targetTemplate
-      .appendMasterSlide(previouslyAddedMaster)
-      .catch((e) => {
-        throw e;
-      });
+      const previouslyAddedMaster = last<IMaster>(this.targetTemplate.masters);
+
+      await this.targetTemplate
+        .appendMasterSlide(previouslyAddedMaster)
+        .catch((e) => {
+          throw e;
+        });
+    }
 
     const alreadyImported = this.targetTemplate.getMappedContent(
       'slideLayout',
@@ -195,7 +203,7 @@ export class Slide extends HasShapes implements ISlide {
       sourceLayoutId,
     );
 
-    return alreadyImported.targetId;
+    return alreadyImported?.targetId;
   }
 
   /**
