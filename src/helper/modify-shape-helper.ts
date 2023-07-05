@@ -59,8 +59,12 @@ export default class ModifyShapeHelper {
   static setPosition =
     (pos: ShapeCoordinates) =>
     (element: XmlDocument | XmlElement): void => {
-      const xfrm = element.getElementsByTagName('a:off')[0]
-        .parentNode as XmlElement;
+      const aOff = element.getElementsByTagName('a:off');
+      if (!aOff?.item(0)) {
+        return;
+      }
+
+      const xfrm = aOff.item(0).parentNode as XmlElement;
 
       Object.keys(pos).forEach((key) => {
         let value = Math.round(pos[key]);
