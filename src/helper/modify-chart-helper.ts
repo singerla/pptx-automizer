@@ -1,5 +1,5 @@
 import { ModifyChart } from '../modify/modify-chart';
-import { Workbook } from '../types/types';
+import { ShapeModificationCallback, Workbook } from '../types/types';
 import {
   ChartAxisRange,
   ChartBubble,
@@ -13,6 +13,7 @@ import {
 import ModifyXmlHelper from './modify-xml-helper';
 import { XmlDocument, XmlElement } from '../types/xml-types';
 import { XmlHelper } from './xml-helper';
+import { vd } from './general-helper';
 
 export default class ModifyChartHelper {
   /**
@@ -160,7 +161,7 @@ export default class ModifyChartHelper {
         axisIndex: 1,
         min: 0,
         max: data.categories.length,
-      })(chart);
+      })(element, chart);
     };
 
   /**
@@ -240,9 +241,15 @@ export default class ModifyChartHelper {
       // XmlHelper.dump(workbook.table)
     };
 
+  /**
+   * Set range and format for chart axis.
+   * Please notice: It will only work if the value to update is not set to
+   * "Auto" in powerpoint. Only manually scaled min/max can be altered by this.
+   * See `__tests__/modify-chart-axis.test.js`
+   */
   static setAxisRange =
-    (range: ChartAxisRange) =>
-    (chart: XmlDocument): void => {
+    (range: ChartAxisRange): ShapeModificationCallback =>
+    (element: XmlElement, chart: XmlDocument): void => {
       const axis = chart.getElementsByTagName('c:valAx')[range.axisIndex || 0];
       if (!axis) return;
 
@@ -265,6 +272,8 @@ export default class ModifyChartHelper {
 
       ModifyChartHelper.setAxisAttribute(scaling, 'c:min', range.min);
       ModifyChartHelper.setAxisAttribute(scaling, 'c:max', range.max);
+
+      XmlHelper.dump(chart);
     };
 
   static setAxisAttribute = (
