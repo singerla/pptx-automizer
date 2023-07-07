@@ -1,6 +1,6 @@
 {
   "name": "pptx-automizer",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "A template based pptx generator",
   "repository": {
     "type": "git",
