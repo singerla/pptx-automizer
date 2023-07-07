@@ -272,8 +272,6 @@ export default class ModifyChartHelper {
 
       ModifyChartHelper.setAxisAttribute(scaling, 'c:min', range.min);
       ModifyChartHelper.setAxisAttribute(scaling, 'c:max', range.max);
-
-      XmlHelper.dump(chart);
     };
 
   static setAxisAttribute = (
