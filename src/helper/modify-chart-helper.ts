@@ -72,6 +72,12 @@ export default class ModifyChartHelper {
       });
 
       new ModifyChart(chart, workbook, data, slots).modify();
+
+      ModifyChartHelper.setAxisRange({
+        axisIndex: 0,
+        min: 0,
+        max: data.categories.length,
+      })(element, chart);
     };
 
   /**
