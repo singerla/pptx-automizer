@@ -42,6 +42,7 @@ const setText = ModifyShapeHelper.setText;
 const replaceText = ModifyShapeHelper.replaceText;
 const setPosition = ModifyShapeHelper.setPosition;
 const updatePosition = ModifyShapeHelper.updatePosition;
+const rotateShape = ModifyShapeHelper.rotate;
 
 const setTableData = ModifyTableHelper.setTableData;
 const adjustHeight = ModifyTableHelper.adjustHeight;
@@ -98,6 +99,7 @@ export const modify = {
   replaceText,
   setPosition,
   updatePosition,
+  rotateShape,
   setTableData,
   adjustHeight,
   adjustWidth,

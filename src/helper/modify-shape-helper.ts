@@ -4,6 +4,7 @@ import { GeneralHelper } from './general-helper';
 import TextReplaceHelper from './text-replace-helper';
 import ModifyTextHelper from './modify-text-helper';
 import { XmlDocument, XmlElement } from '../types/xml-types';
+import { XmlHelper } from './xml-helper';
 
 const map = {
   x: { tag: 'a:off', attribute: 'x' },
@@ -100,5 +101,22 @@ export default class ModifyShapeHelper {
           .getElementsByTagName(map[key].tag)[0]
           .setAttribute(map[key].attribute, value);
       });
+    };
+
+  /**
+   * Rotate a shape by a given value. Use e.g. 180 to flip a shape.
+   * A negative value will rotate counter clockwise.
+   * @param degrees Rotate by °
+   */
+  static rotate =
+    (degrees: number) =>
+    (element: XmlDocument | XmlElement): void => {
+      const spPr = element.getElementsByTagName('p:spPr');
+
+      if (spPr) {
+        const xfrm = spPr.item(0).getElementsByTagName('a:xfrm').item(0);
+        degrees = degrees < 0 ? 360 + degrees : degrees;
+        xfrm.setAttribute('rot', String(Math.round(degrees * 60000)));
+      }
     };
 }

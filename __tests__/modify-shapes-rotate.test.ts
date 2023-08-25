@@ -1,13 +1,9 @@
-import Automizer, { modify } from './index';
+import Automizer, { modify } from '../src/index';
 
-const run = async () => {
+test('Add and rotate a shape.', async () => {
   const automizer = new Automizer({
-    templateDir: `${__dirname}/../__tests__/pptx-templates`,
-    outputDir: `${__dirname}/../__tests__/pptx-output`,
-    // autoImportSlideMasters: true,
-    showIntegrityInfo: true,
-    assertRelatedContents: true,
-    useCreationIds: true,
+    templateDir: `${__dirname}/pptx-templates`,
+    outputDir: `${__dirname}/pptx-output`,
   });
 
   const pres = automizer
@@ -21,8 +17,6 @@ const run = async () => {
       slide.modifyElement('Arrow', [modify.rotateShape(180)]);
     })
     .write(`modify-shapes-rotate.test.pptx`);
-};
 
-run().catch((error) => {
-  console.error(error);
+  expect(result.slides).toBe(2);
 });
