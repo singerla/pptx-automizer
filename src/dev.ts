@@ -2,9 +2,9 @@ import Automizer, { modify } from './index';
 
 const run = async () => {
   const automizer = new Automizer({
-    templateDir: `${__dirname}/../__tests__/pptx-templates`,
-    outputDir: `${__dirname}/../__tests__/pptx-output`,
-    // autoImportSlideMasters: true,
+    templateDir: `${__dirname}/../__tests__/pptx-templates/customer`,
+    outputDir: `${__dirname}/../__tests__/pptx-templates/customer`,
+    autoImportSlideMasters: true,
     showIntegrityInfo: true,
     assertRelatedContents: true,
     useCreationIds: true,
@@ -12,15 +12,11 @@ const run = async () => {
 
   const pres = automizer
     .loadRoot(`RootTemplate.pptx`)
-    .load(`SlideWithShapes.pptx`, 'shapes');
+    .load(`Chapter 8 - Online Shopping.pptx`, 'shapes');
 
   const result = await pres
-    .addSlide('shapes', 2, (slide) => {
-      slide.modifyElement('Drum', [modify.rotateShape(45)]);
-      slide.modifyElement('Cloud', [modify.rotateShape(-45)]);
-      slide.modifyElement('Arrow', [modify.rotateShape(180)]);
-    })
-    .write(`modify-shapes-rotate.test.pptx`);
+    .addSlide('shapes', 1, (slide) => {})
+    .write(`test.pptx`);
 };
 
 run().catch((error) => {

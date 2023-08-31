@@ -23,6 +23,7 @@ import {
   RelationshipAttribute,
   SlideListAttribute,
   XmlDocument,
+  XmlElement,
 } from '../types/xml-types';
 import { XmlHelper } from '../helper/xml-helper';
 import { FileHelper } from '../helper/file-helper';
@@ -111,8 +112,18 @@ export default class HasShapes {
    */
   unsupportedTags = [
     'p:custDataLst',
+    'p:oleObj',
     // 'mc:AlternateContent',
     //'a14:imgProps',
+  ];
+  /**
+   * List of unsupported tags in slide xml
+   * @internal
+   */
+  unsupportedRelationTypes = [
+    'http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject',
+    'http://schemas.openxmlformats.org/officeDocument/2006/relationships/vmlDrawing',
+    'http://schemas.openxmlformats.org/officeDocument/2006/relationships/tags',
   ];
   targetType: ShapeTargetType;
   params: AutomizerParams;
@@ -805,5 +816,22 @@ export default class HasShapes {
       }
     });
     XmlHelper.writeXmlToArchive(this.targetArchive, targetPath, xml);
+  }
+
+  /**
+   * Removes all unsupported relations from _rels xml.
+   * @internal
+   */
+  async cleanRelations(targetRelsPath: string): Promise<void> {
+    await XmlHelper.removeIf({
+      archive: this.targetArchive,
+      file: targetRelsPath,
+      tag: 'Relationship',
+      clause: (xml, item) => {
+        return this.unsupportedRelationTypes.includes(
+          item.getAttribute('Type'),
+        );
+      },
+    });
   }
 }
