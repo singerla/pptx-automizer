@@ -23,7 +23,13 @@ import {
   ChartSeries,
   ChartValueStyle,
 } from './types/chart-types';
-import { Border, Color, ReplaceText, TextStyle } from './types/modify-types';
+import {
+  Border,
+  Color,
+  ReplaceText,
+  TextStyle,
+  ImageStyle,
+} from './types/modify-types';
 import { ShapeCoordinates, ShapeValueStyle } from './types/shape-types';
 import { XmlHelper } from './helper/xml-helper';
 import ModifyTextHelper from './helper/modify-text-helper';
@@ -68,6 +74,7 @@ export type {
   TableData,
   TableRow,
   TextStyle,
+  ImageStyle,
   ModifyTableParams,
   TableRowStyle,
   ChartData,

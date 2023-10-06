@@ -40,12 +40,20 @@ export type Border = {
   weight?: number;
   color?: Color;
 };
-
 export type TextStyle = {
   size?: number;
   color?: Color;
   isBold?: boolean;
   isItalics?: boolean;
+};
+
+export type ImageStyle = {
+  duotone?: {
+    color?: Color;
+    prstClr?: string;
+    tint?: number;
+    satMod?: number;
+  };
 };
 export type ReplaceText = {
   replace: string;

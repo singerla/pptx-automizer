@@ -35,7 +35,9 @@ export default class ModifyTextHelper {
   static content =
     (label: number | string) =>
     (element: XmlElement): void => {
-      element.firstChild.textContent = String(label);
+      if (element.firstChild) {
+        element.firstChild.textContent = String(label);
+      }
     };
 
   /**
