@@ -38,6 +38,7 @@ import ModifyColorHelper from './helper/modify-color-helper';
 import { ITemplate } from './interfaces/itemplate';
 import { IMaster } from './interfaces/imaster';
 import { ISlide } from './interfaces/islide';
+import ModifyImageHelper from './helper/modify-image-helper';
 
 const dump = ModifyHelper.dump;
 const dumpChart = ModifyHelper.dumpChart;
@@ -54,6 +55,9 @@ const setTableData = ModifyTableHelper.setTableData;
 const adjustHeight = ModifyTableHelper.adjustHeight;
 const adjustWidth = ModifyTableHelper.adjustWidth;
 const setTable = ModifyTableHelper.setTable;
+
+const setRelationTarget = ModifyImageHelper.setRelationTarget;
+const setDuotoneFill = ModifyImageHelper.setDuotoneFill;
 
 const setChartData = ModifyChartHelper.setChartData;
 const setExtendedChartData = ModifyChartHelper.setExtendedChartData;
@@ -95,6 +99,7 @@ export {
   ModifyChartHelper,
   ModifyTextHelper,
   ModifyColorHelper,
+  ModifyImageHelper,
 };
 
 export const modify = {
@@ -111,6 +116,8 @@ export const modify = {
   adjustHeight,
   adjustWidth,
   setTable,
+  setRelationTarget,
+  setDuotoneFill,
   setChartData,
   setAxisRange,
   setExtendedChartData,

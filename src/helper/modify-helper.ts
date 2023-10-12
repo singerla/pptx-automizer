@@ -40,3 +40,17 @@ export default class ModifyHelper {
     XmlHelper.dump(chart);
   };
 }
+
+/*
+  Convert cm to ppt's dxa unit
+ */
+export const CmToDxa = (cm: number): number => {
+  return Math.round(cm * 360000);
+};
+
+/*
+  Convert ppt's dxa unit to cm
+ */
+export const DxaToCm = (dxa: number): number => {
+  return dxa / 360000;
+};

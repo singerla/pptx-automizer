@@ -5,11 +5,13 @@ import { ContentTracker } from '../helper/content-tracker';
 import Automizer from '../automizer';
 import { IMaster } from './imaster';
 import { ILayout } from './ilayout';
+import { MediaFile } from '../types/types';
 
 export interface RootPresTemplate extends ITemplate {
   slides: ISlide[];
   masters: IMaster[];
   counter: ICounter[];
+  mediaFiles: MediaFile[];
   mapContents: (
     type: string,
     key: string,

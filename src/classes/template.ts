@@ -10,7 +10,7 @@ import { ContentMap, SlideInfo } from '../types/xml-types';
 import { XmlHelper } from '../helper/xml-helper';
 import { ContentTracker } from '../helper/content-tracker';
 import IArchive from '../interfaces/iarchive';
-import { ArchiveParams } from '../types/types';
+import { ArchiveParams, MediaFile } from '../types/types';
 
 import Automizer from '../automizer';
 import { IMaster } from '../interfaces/imaster';
@@ -65,6 +65,7 @@ export class Template implements ITemplate {
   existingSlides: number;
 
   contentMap: ContentMap[] = [];
+  mediaFiles: MediaFile[] = [];
 
   constructor(location: string, params: ArchiveParams) {
     this.location = location;

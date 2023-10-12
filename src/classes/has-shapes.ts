@@ -75,7 +75,7 @@ export default class HasShapes {
    */
   targetPath: string;
   /**
-   * Root template of slide
+   * Modifications of root template slide
    * @internal
    */
   modifications: SlideModificationCallback[];
@@ -794,6 +794,19 @@ export default class HasShapes {
       modification(xml);
       XmlHelper.writeXmlToArchive(this.targetArchive, this.targetPath, xml);
     }
+  }
+
+  /**
+   * Apply modifications to slide relations
+   * @internal
+   * @returns modifications
+   */
+  async applyRelModifications(): Promise<void> {
+    await XmlHelper.modifyXmlInArchive(
+      this.targetArchive,
+      `ppt/slides/_rels/slide${this.targetNumber}.xml.rels`,
+      this.relModifications,
+    );
   }
 
   /**

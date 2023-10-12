@@ -1,8 +1,8 @@
 import { Slide } from './classes/slide';
 import {
+  ArchiveParams,
   AutomizerParams,
   AutomizerSummary,
-  ArchiveParams,
   SourceIdentifier,
   StatusTracker,
 } from './types/types';
@@ -11,17 +11,14 @@ import { PresTemplate } from './interfaces/pres-template';
 import { RootPresTemplate } from './interfaces/root-pres-template';
 import { Template } from './classes/template';
 import { ModifyXmlCallback, TemplateInfo } from './types/xml-types';
-import { vd } from './helper/general-helper';
+import { GeneralHelper, vd } from './helper/general-helper';
 import { Master } from './classes/master';
 import path from 'path';
 import * as fs from 'fs';
 import { XmlHelper } from './helper/xml-helper';
 import ModifyPresentationHelper from './helper/modify-presentation-helper';
-import {
-  contentTracker as Tracker,
-  ContentTracker,
-} from './helper/content-tracker';
-import JSZip, { OutputType } from 'jszip';
+import { ContentTracker } from './helper/content-tracker';
+import JSZip from 'jszip';
 import { ISlide } from './interfaces/islide';
 import { IMaster } from './interfaces/imaster';
 
@@ -37,7 +34,7 @@ export default class Automizer implements IPresentationProps {
    * Templates  of automizer
    * @internal
    */
-  templates: PresTemplate[];
+  templates: PresTemplate[] = [];
   templateDir: string;
   templateFallbackDir: string;
   outputDir: string;
@@ -58,7 +55,6 @@ export default class Automizer implements IPresentationProps {
    * @param [params]
    */
   constructor(params: AutomizerParams) {
-    this.templates = [];
     this.params = params;
 
     this.templateDir = params?.templateDir ? params.templateDir + '/' : '';
@@ -190,6 +186,36 @@ export default class Automizer implements IPresentationProps {
       this.templates.push(newTemplate);
     }
 
+    return this;
+  }
+
+  /**
+   * Load media files to output presentation.
+   * @returns Instance of Automizer
+   * @param filename Filename or path to the media file.
+   * @param dir Specify custom path for media instead of mediaDir from AutomizerParams.
+   */
+  public loadMedia(filename: string | string[], dir?: string): this {
+    const files = GeneralHelper.arrayify(filename);
+    if (!this.rootTemplate) {
+      throw "Can't load media, you need to load a root template first";
+    }
+    files.forEach((file) => {
+      const directory = dir || this.params.mediaDir;
+      const filepath = path.join(directory, file);
+      const extension = path.extname(file).replace('.', '');
+      try {
+        fs.accessSync(filepath, fs.constants.F_OK);
+      } catch (e) {
+        throw `Can't load media: ${filepath} does not exist.`;
+      }
+      this.rootTemplate.mediaFiles.push({
+        file,
+        directory,
+        filepath,
+        extension,
+      });
+    });
     return this;
   }
 
@@ -375,6 +401,7 @@ export default class Automizer implements IPresentationProps {
   async finalizePresentation() {
     await this.writeMasterSlides();
     await this.writeSlides();
+    await this.writeMediaFiles();
     await this.normalizePresentation();
     await this.applyModifyPresentationCallbacks();
   }
@@ -401,6 +428,25 @@ export default class Automizer implements IPresentationProps {
 
     if (this.params.removeExistingSlides) {
       await this.rootTemplate.truncate();
+    }
+  }
+
+  /**
+   * Write all media files to archive.
+   */
+  public async writeMediaFiles(): Promise<void> {
+    for (const file of this.rootTemplate.mediaFiles) {
+      const archiveFilename = 'ppt/media/' + file.file;
+      fs.readFile(file.filepath, (e, data) => {
+        if (e) {
+          throw e;
+        }
+        this.rootTemplate.archive.write(archiveFilename, data);
+        return XmlHelper.appendImageExtensionToContentType(
+          this.rootTemplate.archive,
+          file.extension,
+        );
+      });
     }
   }
 

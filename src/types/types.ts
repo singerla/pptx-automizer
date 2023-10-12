@@ -7,7 +7,7 @@ export type SourceIdentifier = number | string;
 export type SlideModificationCallback = (document: XmlDocument) => void;
 export type ShapeModificationCallback = (
   XmlDocument: XmlDocument | XmlElement,
-  arg1?: XmlDocument,
+  arg1?: XmlDocument | XmlElement,
   arg2?: Workbook,
 ) => void;
 export type GetRelationshipsCallback = (
@@ -25,12 +25,16 @@ export type AutomizerParams = {
    * in templateDir.
    */
   templateFallbackDir?: string;
-
   /**
    * Prefix for the output files for `Automizer` instance.
    * You can set a path here.
    */
   outputDir?: string;
+  /**
+   * Path to media directory, in case you need to import additional
+   * files. You can set a path here. Load files with Automizer.loadMedia
+   */
+  mediaDir?: string;
   /**
    * Absolute path to cache directory.
    */
@@ -120,6 +124,12 @@ export type FileInfo = {
   extension: string;
   dir: string;
   isDir: boolean;
+};
+export type MediaFile = {
+  file: string;
+  directory: string;
+  filepath: string;
+  extension: string;
 };
 export type TrackedFiles = Record<string, string[]>;
 export type TrackedRelationInfo = {

@@ -49,49 +49,4 @@ export default class ModifyColorHelper {
         element.removeChild(hasNoFill);
       }
     };
-
-  /*
-    Update an existing duotone image overlay element (WIP)
-    Apply a duotone color to an image p:blipFill -> a:blip fill element.
-   */
-  static duotone =
-    (duotoneParams: ImageStyle['duotone']) =>
-    (element: XmlElement): void => {
-      const blipFill = element.getElementsByTagName('p:blipFill');
-      if (!blipFill) {
-        return;
-      }
-      const duotone = blipFill.item(0).getElementsByTagName('a:duotone')[0];
-      if (duotone) {
-        if (duotoneParams?.color) {
-          const srgbClr = duotone.getElementsByTagName('a:srgbClr')[0];
-          if (srgbClr) {
-            // Only sRgb supported
-            srgbClr.setAttribute('val', String(duotoneParams.color.value));
-
-            if (duotoneParams?.tint !== undefined) {
-              // tint needs to be 0 - 100000
-              const tint = srgbClr.getElementsByTagName('a:tint')[0];
-              if (tint) {
-                tint.setAttribute('val', String(duotoneParams.tint));
-              }
-            }
-
-            if (duotoneParams?.satMod !== undefined) {
-              const satMod = srgbClr.getElementsByTagName('a:satMod')[0];
-              if (satMod) {
-                satMod.setAttribute('val', String(duotoneParams.satMod));
-              }
-            }
-          }
-        }
-        if (duotoneParams?.prstClr) {
-          const prstClr = duotone.getElementsByTagName('a:prstClr')[0];
-          if (prstClr) {
-            // Only tested with "black" and "white"
-            prstClr.setAttribute('val', String(duotoneParams.prstClr));
-          }
-        }
-      }
-    };
 }

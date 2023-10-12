@@ -207,19 +207,6 @@ export class Slide extends HasShapes implements ISlide {
   }
 
   /**
-   * Apply modifications to slide relations
-   * @internal
-   * @returns modifications
-   */
-  async applyRelModifications(): Promise<void> {
-    await XmlHelper.modifyXmlInArchive(
-      this.targetArchive,
-      `ppt/slides/_rels/slide${this.targetNumber}.xml.rels`,
-      this.relModifications,
-    );
-  }
-
-  /**
    * Copys slide files
    * @internal
    */

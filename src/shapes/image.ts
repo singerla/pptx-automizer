@@ -14,6 +14,7 @@ import IArchive from '../interfaces/iarchive';
 
 export class Image extends Shape implements IImage {
   extension: string;
+  createdRelation: XmlElement;
 
   constructor(shape: ImportedElement, targetType: ShapeTargetType) {
     super(shape, targetType);
@@ -63,10 +64,16 @@ export class Image extends Shape implements IImage {
     await this.prepare(targetTemplate, targetSlideNumber);
     await this.setTargetElement();
 
-    this.applyCallbacks(this.callbacks, this.targetElement);
-
     await this.updateTargetElementRelId();
     await this.appendToSlideTree();
+
+    // We pass this.createdRelation as third argument;
+    // allows editing the relation recently created for this image.
+    this.applyCallbacks(
+      this.callbacks,
+      this.targetElement,
+      this.createdRelation as any,
+    );
 
     if (this.hasSvgRelation()) {
       const target = await XmlHelper.getTargetByRelId(
@@ -111,7 +118,7 @@ export class Image extends Shape implements IImage {
 
     await this.copyFiles();
     await this.appendTypes();
-    await this.appendToSlideRels();
+    this.createdRelation = await this.appendToSlideRels();
   }
 
   async copyFiles(): Promise<void> {
@@ -133,7 +140,7 @@ export class Image extends Shape implements IImage {
    * remain existing in the .xml.rels file. PowerPoint will not complain, but
    * integrity checks will not be valid by this.
    */
-  async appendToSlideRels(): Promise<void> {
+  async appendToSlideRels(): Promise<XmlElement> {
     const targetRelFile = `ppt/${this.targetType}s/_rels/${this.targetType}${this.targetSlideNumber}.xml.rels`;
     this.createdRid = await XmlHelper.getNextRelId(
       this.targetArchive,
@@ -152,13 +159,14 @@ export class Image extends Shape implements IImage {
       Target: `../media/image${this.targetNumber}.${this.extension}`,
     } as RelationshipAttribute;
 
-    await XmlHelper.append(
+    const newRelation = (await XmlHelper.append(
       XmlHelper.createRelationshipChild(
         this.targetArchive,
         targetRelFile,
         attributes,
       ),
-    );
+    )) as unknown as XmlElement;
+    return newRelation;
   }
 
   hasSvgRelation(): boolean {
