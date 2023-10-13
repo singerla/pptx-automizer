@@ -1,4 +1,4 @@
-export enum ImageTypeMap {
+export enum ContentTypeMap {
   jpg = 'image/jpeg',
   jpeg = 'image/jpeg',
   png = 'image/png',
@@ -14,3 +14,5 @@ export enum ImageTypeMap {
   bin = 'application/vnd.openxmlformats-officedocument.oleObject',
   vml = 'application/vnd.openxmlformats-officedocument.vmlDrawing',
 }
+
+export type ContentTypeExtension = keyof typeof ContentTypeMap;

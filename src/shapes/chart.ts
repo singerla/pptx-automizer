@@ -18,6 +18,7 @@ import { IChart } from '../interfaces/ichart';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { contentTracker } from '../helper/content-tracker';
 import IArchive from '../interfaces/iarchive';
+import { ContentTypeExtension } from '../enums/content-type-map';
 
 export class Chart extends Shape implements IChart {
   sourceWorksheet: number | string;
@@ -404,10 +405,12 @@ export class Chart extends Shape implements IChart {
     source: string;
     target: string;
     rel: string;
-    extension: string;
+    extension: ContentTypeExtension;
   } {
     const file = origin.replace('../media/', '');
-    const extension = path.extname(file).replace('.', '');
+    const extension = path
+      .extname(file)
+      .replace('.', '') as ContentTypeExtension;
     return {
       source: `ppt/media/${file}`,
       target: `ppt/media/${file}-chart-${this.targetNumber}.${extension}`,

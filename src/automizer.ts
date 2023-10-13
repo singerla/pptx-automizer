@@ -10,7 +10,7 @@ import { IPresentationProps } from './interfaces/ipresentation-props';
 import { PresTemplate } from './interfaces/pres-template';
 import { RootPresTemplate } from './interfaces/root-pres-template';
 import { Template } from './classes/template';
-import { ModifyXmlCallback, TemplateInfo } from './types/xml-types';
+import { ModifyXmlCallback, TemplateInfo, XmlElement } from './types/xml-types';
 import { GeneralHelper, vd } from './helper/general-helper';
 import { Master } from './classes/master';
 import path from 'path';
@@ -21,6 +21,7 @@ import { ContentTracker } from './helper/content-tracker';
 import JSZip from 'jszip';
 import { ISlide } from './interfaces/islide';
 import { IMaster } from './interfaces/imaster';
+import { ContentTypeExtension } from './enums/content-type-map';
 
 /**
  * Automizer
@@ -203,7 +204,9 @@ export default class Automizer implements IPresentationProps {
     files.forEach((file) => {
       const directory = dir || this.params.mediaDir;
       const filepath = path.join(directory, file);
-      const extension = path.extname(file).replace('.', '');
+      const extension = path
+        .extname(file)
+        .replace('.', '') as ContentTypeExtension;
       try {
         fs.accessSync(filepath, fs.constants.F_OK);
       } catch (e) {

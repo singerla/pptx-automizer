@@ -10,6 +10,7 @@ import IArchive, {
 import ArchiveJszip from './archive/archive-jszip';
 import ArchiveFs from './archive/archive-fs';
 import { vd } from './general-helper';
+import { ContentTypeExtension } from '../enums/content-type-map';
 
 export class FileHelper {
   static importArchive(location: string, params: ArchiveParams): IArchive {
@@ -42,8 +43,8 @@ export class FileHelper {
     return removed;
   }
 
-  static getFileExtension(filename: string): string {
-    return path.extname(filename).replace('.', '');
+  static getFileExtension(filename: string): ContentTypeExtension {
+    return path.extname(filename).replace('.', '') as ContentTypeExtension;
   }
 
   static getFileInfo(filename: string): FileInfo {

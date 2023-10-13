@@ -9,7 +9,10 @@ import {
 } from '../types/types';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { HelperElement, XmlDocument, XmlElement } from '../types/xml-types';
-import { ImageTypeMap } from '../enums/image-type-map';
+import {
+  ContentTypeExtension,
+  ContentTypeMap,
+} from '../enums/content-type-map';
 import { ElementSubtype } from '../enums/element-type';
 import IArchive from '../interfaces/iarchive';
 
@@ -23,7 +26,7 @@ export class Shape {
   sourceNumber: number;
   sourceFile: string;
   sourceRid: string;
-  sourceElement: XmlDocument;
+  sourceElement: XmlElement;
 
   targetFile: string;
   targetArchive: IArchive;
@@ -39,13 +42,13 @@ export class Shape {
   relAttribute: string;
   relParent: (element: XmlElement) => XmlElement;
 
-  targetElement: XmlDocument;
+  targetElement: XmlElement;
   targetType: ShapeTargetType;
   target: Target;
 
   callbacks: ShapeModificationCallback[];
   hasCreationId: boolean;
-  contentTypeMap: typeof ImageTypeMap;
+  contentTypeMap: typeof ContentTypeMap;
   subtype: ElementSubtype;
 
   constructor(shape: ImportedElement, targetType: ShapeTargetType) {
@@ -60,7 +63,7 @@ export class Shape {
     this.hasCreationId = shape.hasCreationId;
 
     this.callbacks = GeneralHelper.arrayify(shape.callback);
-    this.contentTypeMap = ImageTypeMap;
+    this.contentTypeMap = ContentTypeMap;
 
     if (shape.target) {
       this.sourceNumber = shape.target.number;
@@ -84,7 +87,7 @@ export class Shape {
   }
 
   async setTargetElement(): Promise<void> {
-    this.targetElement = this.sourceElement.cloneNode(true) as XmlDocument;
+    this.targetElement = this.sourceElement.cloneNode(true) as XmlElement;
   }
 
   async appendToSlideTree(): Promise<void> {
@@ -128,7 +131,7 @@ export class Shape {
       this.name,
     );
 
-    if (!sourceElementOnTargetSlide) {
+    if (!sourceElementOnTargetSlide?.parentNode) {
       console.error(`Can't modify slide tree for ${this.name}`);
       return;
     }
@@ -195,8 +198,8 @@ export class Shape {
 
   applyCallbacks(
     callbacks: ShapeModificationCallback[],
-    element: XmlDocument,
-    arg1?: XmlDocument,
+    element: XmlElement | XmlDocument,
+    arg1?: XmlElement | XmlDocument,
     arg2?: Workbook,
   ): void {
     callbacks.forEach((callback) => {
@@ -210,7 +213,9 @@ export class Shape {
     });
   }
 
-  appendImageExtensionToContentType(extension): Promise<XmlElement | boolean> {
+  appendImageExtensionToContentType(
+    extension: ContentTypeExtension,
+  ): Promise<XmlElement | boolean> {
     return XmlHelper.appendImageExtensionToContentType(
       this.targetArchive,
       extension,

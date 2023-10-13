@@ -1,10 +1,10 @@
 import { ImportedElement, ShapeTargetType } from '../types/types';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { Shape } from '../classes/shape';
-import { XmlDocument } from '../types/xml-types';
+import { XmlDocument, XmlElement } from '../types/xml-types';
 
 export class GenericShape extends Shape {
-  sourceElement: XmlDocument;
+  sourceElement: XmlElement;
 
   constructor(shape: ImportedElement, targetType: ShapeTargetType) {
     super(shape, targetType);

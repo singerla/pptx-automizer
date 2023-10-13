@@ -11,9 +11,11 @@ import { IImage } from '../interfaces/iimage';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { ElementType } from '../enums/element-type';
 import IArchive from '../interfaces/iarchive';
+import { vd } from '../helper/general-helper';
+import { ContentTypeExtension } from '../enums/content-type-map';
 
 export class Image extends Shape implements IImage {
-  extension: string;
+  extension: ContentTypeExtension;
   createdRelation: XmlElement;
 
   constructor(shape: ImportedElement, targetType: ShapeTargetType) {
@@ -37,7 +39,11 @@ export class Image extends Shape implements IImage {
     }
   }
 
-  async modify(
+  /*
+   * It is necessary to update existing rIds for all
+   * unmodified images on an added slide at first.
+   */
+  async modifyOnAddedSlide(
     targetTemplate: RootPresTemplate,
     targetSlideNumber: number,
   ): Promise<Image> {
@@ -47,12 +53,17 @@ export class Image extends Shape implements IImage {
     return this;
   }
 
-  async modifyOnAddedSlide(
+  async modify(
     targetTemplate: RootPresTemplate,
     targetSlideNumber: number,
   ): Promise<Image> {
     await this.prepare(targetTemplate, targetSlideNumber);
-    await this.updateElementsRelId();
+    await this.setTargetElement();
+    await this.updateTargetElementRelId();
+
+    this.applyImageCallbacks();
+
+    await this.replaceIntoSlideTree();
 
     return this;
   }
@@ -67,13 +78,7 @@ export class Image extends Shape implements IImage {
     await this.updateTargetElementRelId();
     await this.appendToSlideTree();
 
-    // We pass this.createdRelation as third argument;
-    // allows editing the relation recently created for this image.
-    this.applyCallbacks(
-      this.callbacks,
-      this.targetElement,
-      this.createdRelation as any,
-    );
+    this.applyImageCallbacks();
 
     if (this.hasSvgRelation()) {
       const target = await XmlHelper.getTargetByRelId(
@@ -95,6 +100,19 @@ export class Image extends Shape implements IImage {
     }
 
     return this;
+  }
+
+  /*
+   * Apply all ShapeModificationCallbacks to target element.
+   * Third argument this.createdRelation is necessery to directly
+   * manipulate relation Target and change the image.
+   */
+  applyImageCallbacks() {
+    this.applyCallbacks(
+      this.callbacks,
+      this.targetElement,
+      this.createdRelation,
+    );
   }
 
   async remove(

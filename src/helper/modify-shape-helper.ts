@@ -25,7 +25,7 @@ export default class ModifyShapeHelper {
   /**
    * Set solid fill of modified shape
    */
-  static setSolidFill = (element: XmlDocument | XmlElement): void => {
+  static setSolidFill = (element: XmlElement): void => {
     element
       .getElementsByTagName('a:solidFill')[0]
       .getElementsByTagName('a:schemeClr')[0]
@@ -37,7 +37,7 @@ export default class ModifyShapeHelper {
    */
   static setText =
     (text: string) =>
-    (element: XmlDocument | XmlElement): void => {
+    (element: XmlElement): void => {
       ModifyTextHelper.setText(text)(element as XmlElement);
     };
 
@@ -46,7 +46,7 @@ export default class ModifyShapeHelper {
    */
   static replaceText =
     (replaceText: ReplaceText | ReplaceText[], options?: ReplaceTextOptions) =>
-    (element: XmlDocument | XmlElement): void => {
+    (element: XmlElement): void => {
       const replaceTexts = GeneralHelper.arrayify(replaceText);
 
       new TextReplaceHelper(options, element as XmlElement)
@@ -59,7 +59,7 @@ export default class ModifyShapeHelper {
    */
   static setPosition =
     (pos: ShapeCoordinates) =>
-    (element: XmlDocument | XmlElement): void => {
+    (element: XmlElement): void => {
       const aOff = element.getElementsByTagName('a:off');
       if (!aOff?.item(0)) {
         return;
@@ -83,7 +83,7 @@ export default class ModifyShapeHelper {
    */
   static updatePosition =
     (pos: ShapeCoordinates) =>
-    (element: XmlDocument | XmlElement): void => {
+    (element: XmlElement): void => {
       const xfrm = element.getElementsByTagName('a:off')[0]
         .parentNode as XmlElement;
 
@@ -119,5 +119,4 @@ export default class ModifyShapeHelper {
         xfrm.setAttribute('rot', String(Math.round(degrees * 60000)));
       }
     };
-
 }

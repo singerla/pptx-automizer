@@ -14,7 +14,10 @@ import { GetRelationshipsCallback, Target } from '../types/types';
 import { vd } from './general-helper';
 import { contentTracker } from './content-tracker';
 import IArchive from '../interfaces/iarchive';
-import { ImageTypeMap } from '../enums/image-type-map';
+import {
+  ContentTypeExtension,
+  ContentTypeMap,
+} from '../enums/content-type-map';
 
 export class XmlHelper {
   static async modifyXmlInArchive(
@@ -329,7 +332,7 @@ export class XmlHelper {
   static async getTargetByRelId(
     archive: IArchive,
     slideNumber: number,
-    element: XmlDocument,
+    element: XmlElement,
     type: string,
   ): Promise<Target> {
     const params = TargetByRelIdMap[type];
@@ -351,7 +354,7 @@ export class XmlHelper {
     archive: IArchive,
     path: string,
     creationId: string,
-  ): Promise<XmlDocument> {
+  ): Promise<XmlElement> {
     const slideXml = await XmlHelper.getXmlFromArchive(archive, path);
 
     return XmlHelper.findByCreationId(slideXml, creationId);
@@ -361,25 +364,25 @@ export class XmlHelper {
     archive: IArchive,
     path: string,
     name: string,
-  ): Promise<XmlDocument> {
+  ): Promise<XmlElement> {
     const slideXml = await XmlHelper.getXmlFromArchive(archive, path);
 
     return XmlHelper.findByName(slideXml, name);
   }
 
-  static findByName(doc: Document, name: string): XmlDocument {
+  static findByName(doc: Document, name: string): XmlElement {
     const names = doc.getElementsByTagName('p:cNvPr');
 
     for (const i in names) {
       if (names[i].getAttribute && names[i].getAttribute('name') === name) {
-        return names[i].parentNode.parentNode as XmlDocument;
+        return names[i].parentNode.parentNode as XmlElement;
       }
     }
 
     return null;
   }
 
-  static findByCreationId(doc: Document, creationId: string): XmlDocument {
+  static findByCreationId(doc: Document, creationId: string): XmlElement {
     const creationIds = doc.getElementsByTagName('a16:creationId');
 
     for (const i in creationIds) {
@@ -388,7 +391,7 @@ export class XmlHelper {
         creationIds[i].getAttribute('id') === creationId
       ) {
         return creationIds[i].parentNode.parentNode.parentNode.parentNode
-          .parentNode as XmlDocument;
+          .parentNode as XmlElement;
       }
     }
 
@@ -462,10 +465,10 @@ export class XmlHelper {
 
   static appendImageExtensionToContentType(
     targetArchive: IArchive,
-    extension: string,
+    extension: ContentTypeExtension,
   ): Promise<XmlElement | boolean> {
-    const contentType = ImageTypeMap[extension]
-      ? ImageTypeMap[extension]
+    const contentType = ContentTypeMap[extension]
+      ? ContentTypeMap[extension]
       : 'image/' + extension;
 
     return XmlHelper.appendIf({

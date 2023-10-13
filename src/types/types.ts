@@ -1,6 +1,7 @@
 import { ElementSubtype, ElementType } from '../enums/element-type';
 import { RelationshipAttribute, XmlDocument, XmlElement } from './xml-types';
 import IArchive, { ArchiveMode } from '../interfaces/iarchive';
+import { ContentTypeExtension } from '../enums/content-type-map';
 
 export type ShapeTargetType = 'slide' | 'slideMaster' | 'slideLayout';
 export type SourceIdentifier = number | string;
@@ -108,7 +109,7 @@ export type Target = {
   prefix?: string;
   element?: XmlElement;
   subtype?: ElementSubtype;
-  filenameExt?: string;
+  filenameExt?: ContentTypeExtension;
   filenameBase?: string;
   getCreatedContent?: () => TrackedRelationInfo;
   getRelatedContent?: () => Promise<Target>;
@@ -129,7 +130,7 @@ export type MediaFile = {
   file: string;
   directory: string;
   filepath: string;
-  extension: string;
+  extension: ContentTypeExtension;
 };
 export type TrackedFiles = Record<string, string[]>;
 export type TrackedRelationInfo = {
@@ -191,12 +192,17 @@ export type ImportedElement = {
   callback?: ImportElement['callback'];
   target?: AnalyzedElementType['target'];
   type?: AnalyzedElementType['type'];
-  sourceElement?: AnalyzedElementType['element'];
+  sourceElement?: XmlElement;
 };
 export type AnalyzedElementType = {
   type: ElementType;
   target?: Target;
-  element?: XmlDocument;
+  element?: XmlElement;
+};
+export type ElementOnSlide = {
+  sourceElement: XmlElement;
+  selector: string;
+  mode?: 'findByElementCreationId' | 'findByElementName';
 };
 export type TargetByRelIdMapParam = {
   relRootTag: string;

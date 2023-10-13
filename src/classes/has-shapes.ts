@@ -6,6 +6,7 @@ import { IPresentationProps } from '../interfaces/ipresentation-props';
 import {
   AnalyzedElementType,
   AutomizerParams,
+  ElementOnSlide,
   FindElementSelector,
   FindElementStrategy,
   ImportedElement,
@@ -191,13 +192,15 @@ export default class HasShapes {
     const presName = this.sourceTemplate.name;
     const slideNumber = this.sourceNumber;
 
-    return this.addElementToModificationsList(
+    this.addElementToModificationsList(
       presName,
       slideNumber,
       selector,
       'modify',
       callback,
     );
+
+    return this;
   }
 
   /**
@@ -214,13 +217,15 @@ export default class HasShapes {
     selector: FindElementSelector,
     callback?: ShapeModificationCallback | ShapeModificationCallback[],
   ): this {
-    return this.addElementToModificationsList(
+    this.addElementToModificationsList(
       presName,
       slideNumber,
       selector,
       'append',
       callback,
     );
+
+    return this;
   }
 
   /**
@@ -231,13 +236,15 @@ export default class HasShapes {
     const presName = this.sourceTemplate.name;
     const slideNumber = this.sourceNumber;
 
-    return this.addElementToModificationsList(
+    this.addElementToModificationsList(
       presName,
       slideNumber,
       selector,
       'remove',
       undefined,
     );
+
+    return this;
   }
 
   /**
@@ -256,7 +263,7 @@ export default class HasShapes {
     selector: FindElementSelector,
     mode: string,
     callback?: ShapeModificationCallback | ShapeModificationCallback[],
-  ): this {
+  ): void {
     this.importElements.push({
       presName,
       slideNumber,
@@ -264,8 +271,6 @@ export default class HasShapes {
       mode,
       callback,
     });
-
-    return this;
   }
 
   /**
@@ -416,11 +421,7 @@ export default class HasShapes {
     sourceArchive: IArchive,
     sourcePath: string,
     useCreationIds: boolean,
-  ): Promise<{
-    sourceElement: XmlDocument;
-    selector: string;
-    mode?: 'findByElementCreationId' | 'findByElementName';
-  }> {
+  ): Promise<ElementOnSlide> {
     const strategies: FindElementStrategy[] = [];
     if (typeof selector === 'string') {
       if (useCreationIds) {
@@ -725,7 +726,7 @@ export default class HasShapes {
    * @returns element
    */
   async analyzeElement(
-    sourceElement: XmlDocument,
+    sourceElement: XmlElement,
     sourceArchive: IArchive,
     slideNumber: number,
   ): Promise<AnalyzedElementType> {
