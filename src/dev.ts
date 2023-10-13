@@ -30,38 +30,7 @@ const run = async () => {
           },
         }),
       ]);
-
-      slide.modifyElement('Textfeld 1', [
-        ModifyShapeHelper.setPosition({
-          w: CmToDxa(5),
-          h: CmToDxa(5),
-        }),
-        // ModifyImageHelper.setRelationTarget('feather.png'),
-        // ModifyImageHelper.setDuotoneFill({
-        //   tint: 100000,
-        //   color: {
-        //     type: 'srgbClr',
-        //     value: 'ff850c',
-        //   },
-        // }),
-      ]);
     })
-    // .addSlide('shapes', 1, (slide) => {
-    //   slide.addElement('images', 2, 'imagePNGduotone', [
-    //     ModifyShapeHelper.setPosition({
-    //       w: CmToDxa(5),
-    //       h: CmToDxa(5),
-    //     }),
-    //     ModifyImageHelper.setRelationTarget('feather.png'),
-    //     ModifyImageHelper.setDuotoneFill({
-    //       tint: 100000,
-    //       color: {
-    //         type: 'srgbClr',
-    //         value: 'ff850c',
-    //       },
-    //     }),
-    //   ]);
-    // })
     .write(`modify-shapes.test.pptx`);
 };
 

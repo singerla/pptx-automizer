@@ -17,10 +17,10 @@ test('Add image and set duotone fill', async () => {
   pres.addSlide('shapes', 1, (slide) => {
     slide.addElement('images', 2, 'imagePNGduotone', [
       ModifyImageHelper.setDuotoneFill({
-        tint: 10000,
+        tint: 100000,
         color: {
           type: 'srgbClr',
-          value: 'ffffff',
+          value: 'ff0000',
         },
       }),
     ]);
@@ -28,5 +28,7 @@ test('Add image and set duotone fill', async () => {
 
   const result = await pres.write(`modify-image-duotone.test.pptx`);
 
-  // expect(result.images).toBe(5);
+  // Expect cord loop to turn red by duotone overlay
+
+  expect(result.images).toBe(1);
 });
