@@ -437,16 +437,12 @@ export default class Automizer implements IPresentationProps {
   public async writeMediaFiles(): Promise<void> {
     for (const file of this.rootTemplate.mediaFiles) {
       const archiveFilename = 'ppt/media/' + file.file;
-      fs.readFile(file.filepath, (e, data) => {
-        if (e) {
-          throw e;
-        }
-        this.rootTemplate.archive.write(archiveFilename, data);
-        return XmlHelper.appendImageExtensionToContentType(
-          this.rootTemplate.archive,
-          file.extension,
-        );
-      });
+      const data = fs.readFileSync(file.filepath);
+      await this.rootTemplate.archive.write(archiveFilename, data);
+      await XmlHelper.appendImageExtensionToContentType(
+        this.rootTemplate.archive,
+        file.extension,
+      );
     }
   }
 

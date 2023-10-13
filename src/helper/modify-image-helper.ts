@@ -1,5 +1,7 @@
 import { XmlElement } from '../types/xml-types';
 import { ImageStyle } from '../types/modify-types';
+import { XmlHelper } from './xml-helper';
+import { vd } from './general-helper';
 
 export default class ModifyImageHelper {
   /**
@@ -7,11 +9,11 @@ export default class ModifyImageHelper {
    * This will change the image itself. Load images with Automizer.loadMedia
    * @param filename name of target image in root template media folder.
    */
-  static setRelationTarget =
-    (filename: string) =>
-    (element: XmlElement, arg1: XmlElement): void => {
+  static setRelationTarget = (filename: string) => {
+    return (element: XmlElement, arg1: XmlElement): void => {
       arg1.setAttribute('Target', '../media/' + filename);
     };
+  };
 
   /*
     Update an existing duotone image overlay element (WIP)
