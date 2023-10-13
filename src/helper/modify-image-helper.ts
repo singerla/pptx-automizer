@@ -18,6 +18,7 @@ export default class ModifyImageHelper {
   /*
     Update an existing duotone image overlay element (WIP)
     Apply a duotone color to an image p:blipFill -> a:blip fill element.
+    Works best on white icons, see __tests__/media/feather.png
    */
   static setDuotoneFill =
     (duotoneParams: ImageStyle['duotone']) =>

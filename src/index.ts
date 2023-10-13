@@ -39,6 +39,7 @@ import { ITemplate } from './interfaces/itemplate';
 import { IMaster } from './interfaces/imaster';
 import { ISlide } from './interfaces/islide';
 import ModifyImageHelper from './helper/modify-image-helper';
+import { CmToDxa, DxaToCm } from './helper/modify-helper';
 
 const dump = ModifyHelper.dump;
 const dumpChart = ModifyHelper.dumpChart;
@@ -130,6 +131,7 @@ export const modify = {
   removeChartLegend,
   minimizeChartLegend,
 };
+export { CmToDxa, DxaToCm };
 export type {
   AutomizerSummary,
   TemplateInfo,

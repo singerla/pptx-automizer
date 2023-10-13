@@ -25,6 +25,7 @@ Extended chart types, like waterfall or map charts, are basically supported. You
 All testing focuses on PowerPoint 2019 .pptx file format.
 
 ### Slide Masters and -Layouts
+
 `pptx-automizer` supports importing slide masters and their associated slide layouts into the output presentation.
 
 While `pptx-automizer` allows you to import and work with slide layouts, it's important to note that you cannot add, modify, or remove individual slideLayouts directly. However, you have the flexibility to modify the underlying slideMaster, which can serve as a workaround for certain changes.
@@ -70,6 +71,8 @@ $ npm install pptx-automizer
 in the root folder of your project. This will download and install the most recent version into your existing project.
 
 ## General Example
+
+Take a look into [**tests**-directory](https://github.com/singerla/pptx-automizer/blob/main/__tests__) to see a lot of examples for several use cases. You will also find example .pptx-files there. Most of the examples shown below make use of [those files](https://github.com/singerla/pptx-automizer/blob/main/__tests__/pptx-templates).
 
 ```ts
 import Automizer from 'pptx-automizer';
@@ -168,32 +171,39 @@ const base64 = await finalJSZip.generateAsync({ type: 'base64' });
 `pptx-automizer` needs a selector to find the required shape on a template slide. While an imported .pptx file is identified by filename or custom label, there are different ways to address its slides and shapes.
 
 ### Select slide by number and shape by name
-If your .pptx-templates are more or less static and you do not expect them to evolve a lot, it's ok to use the slide number and the shape name to find the proper source of automation. 
+
+If your .pptx-templates are more or less static and you do not expect them to evolve a lot, it's ok to use the slide number and the shape name to find the proper source of automation.
 
 ```ts
 // This will take slide #2 from 'SlideWithGraph.pptx' and expect it
 // to contain a shape called 'ColumnChart':
 pres.addSlide('SlideWithGraph.pptx', 2, (slide) => {
   // `slide` is slide #2 of 'SlideWithGraph.pptx'
-  slide.modifyElement('ColumnChart', [ /* ... */ ]);
+  slide.modifyElement('ColumnChart', [
+    /* ... */
+  ]);
 });
 
 // This example will take slide #1 from 'RootTemplate.pptx' and place
 // 'ColumnChart' from slide #2 of 'SlideWithGraph.pptx' on it.
 pres.addSlide('RootTemplate.pptx', 1, (slide) => {
-   // `slide` is slide #1 of 'RootTemplate.pptx'
-   slide.addElement('SlideWithGraph.pptx', 2, 'ColumnChart', [ /* ... */ ]);
+  // `slide` is slide #1 of 'RootTemplate.pptx'
+  slide.addElement('SlideWithGraph.pptx', 2, 'ColumnChart', [
+    /* ... */
+  ]);
 });
 ```
 
-> You can display and manage shape names directly in PowerPoint by opening the "Selection"-pane for your current slide. Hit `ALT+F10` and PowerPoint will give you a (nested) list including all (grouped) shapes. You can edit a shape name by double-click or by hitting `F2` after selecting a shape from the list. [See MS-docs for more info.](https://support.microsoft.com/en-us/office/use-the-selection-pane-to-manage-objects-in-documents-a6b2fd3e-d769-46c1-9b9c-b94e04a72550)  
+> You can display and manage shape names directly in PowerPoint by opening the "Selection"-pane for your current slide. Hit `ALT+F10` and PowerPoint will give you a (nested) list including all (grouped) shapes. You can edit a shape name by double-click or by hitting `F2` after selecting a shape from the list. [See MS-docs for more info.](https://support.microsoft.com/en-us/office/use-the-selection-pane-to-manage-objects-in-documents-a6b2fd3e-d769-46c1-9b9c-b94e04a72550)
 
 But be aware: Whenever your template slides are rearranged or a template shape is renamed, you need to update your code as well.
 
 Please also make sure that each shape to add or modify has a unique name on its slide. Otherwise, only the last matching shape will be taken as target.
 
 ### Select slides by creationId
+
 Additionally, each slide and shape is stored together with a (more or less) unique `creationId`. In XML, it looks like this:
+
 ```xml
 <p:cNvPr name="MyPicture" id="64">
     <a:extLst>
@@ -203,9 +213,11 @@ Additionally, each slide and shape is stored together with a (more or less) uniq
     </a:extLst>
 </p:cNvPr>
 ```
+
 This is where `name` and `creationId` are coupled together for each shape.
 
-While our shape could now be identified by both, `MyPicture` or by `{0980FF19-E7E7-493C-8D3E-15B2100EA940}`, `creationIds` for slides consist of an integer value, e.g. `501735012` below: 
+While our shape could now be identified by both, `MyPicture` or by `{0980FF19-E7E7-493C-8D3E-15B2100EA940}`, `creationIds` for slides consist of an integer value, e.g. `501735012` below:
+
 ```xml
 <p:extLst>
    <p:ext uri="{BB962C8B-B14F-4D97-AF65-F5344CB8AC3E}">
@@ -215,104 +227,230 @@ While our shape could now be identified by both, `MyPicture` or by `{0980FF19-E7
 ```
 
 You can add a simple code snippet to get a list of the available `creationIds` of your loaded templates:
+
 ```ts
 const pres = automizer
- .loadRoot(`RootTemplate.pptx`)
- .load(`SlideWithShapes.pptx`, 'shapes');
+  .loadRoot(`RootTemplate.pptx`)
+  .load(`SlideWithShapes.pptx`, 'shapes');
 
 const creationIds = await pres.setCreationIds();
 
 // This is going to print the slide creationId and a list of all
 // shapes from slide #1 in `SlideWithShapes.pptx` (aka `shapes`).
 console.log(
- creationIds
-   .find((template) => template.name === 'shapes')
-   .slides.find((slide) => slide.number === 1),
+  creationIds
+    .find((template) => template.name === 'shapes')
+    .slides.find((slide) => slide.number === 1),
 );
 // Find the corresponding slide-creationId and -number on top of this list.
 ```
 
 If your templates are not final and if you expect to have new slides and shapes added in the future, it is worth the effort and use `creationId` in general:
+
 ```ts
 const automizer = new Automizer({
-   templateDir: `${__dirname}/pptx-templates`,
-   outputDir: `${__dirname}/pptx-output`,
-   // turn this to true and use creationIds for both, slides and shapes
-   useCreationIds: true,
+  templateDir: `${__dirname}/pptx-templates`,
+  outputDir: `${__dirname}/pptx-output`,
+  // turn this to true and use creationIds for both, slides and shapes
+  useCreationIds: true,
 });
 ```
 
 Regarding shapes, it is also possible to use a `creationId` and the shape name as a fallback. These are the different types of a `FindElementSelector`:
+
 ```ts
 import { FindElementSelector } from './types/types';
 
 // This is default when set up with `useCreationIds: true`:
-const myShapeSelectorCreationId: FindElementSelector = '{E43D12C3-AD5A-4317-BC00-FDED287C0BE8}'
+const myShapeSelectorCreationId: FindElementSelector =
+  '{E43D12C3-AD5A-4317-BC00-FDED287C0BE8}';
 
 // pptx-generator will try to find the shape even if one of the given keys
 // won't match any shape on the target slide:
 const myShapeSelectorFallback: FindElementSelector = {
-   creationId: '{E43D12C3-AD5A-4317-BC00-FDED287C0BE8}',
-   name: 'Drum',
-}
+  creationId: '{E43D12C3-AD5A-4317-BC00-FDED287C0BE8}',
+  name: 'Drum',
+};
 
 // Use this only if `useCreationIds: false`:
-const myShapeSelectorName: FindElementSelector = 'Drum'
-
+const myShapeSelectorName: FindElementSelector = 'Drum';
 
 // Whenever `useCreationIds` was set to true, you need to replace slide numbers
 // by `creationId`, too:
 await pres.addSlide('shapes', 4167997312, (slide) => {
-   // slide is now #1 of `SlideWithShapes.pptx`
-   slide.addElement('shapes', 273148976, {
-      creationId: '{E43D12C3-AD5A-4317-BC00-FDED287C0BE8}',
-      name: 'Drum',
-   });
-   // 'Drum' is from #2 of `SlideWithShapes.pptx`, see __tests__ dir for an
-   // example.
-})
+  // slide is now #1 of `SlideWithShapes.pptx`
+  slide.addElement('shapes', 273148976, {
+    creationId: '{E43D12C3-AD5A-4317-BC00-FDED287C0BE8}',
+    name: 'Drum',
+  });
+  // 'Drum' is from #2 of `SlideWithShapes.pptx`, see __tests__ dir for an
+  // example.
+});
 ```
 
-If you decide to use the `creationId` method, you are safe to add, remove and rearrange slides in your templates. It is also no problem to update shape names, and you also don't need to pay attention to unique shape names per slide.  
+If you decide to use the `creationId` method, you are safe to add, remove and rearrange slides in your templates. It is also no problem to update shape names, and you also don't need to pay attention to unique shape names per slide.
 
 > Please note: PowerPoint is going to update a shape's `creationId` only in case the shape was copied & pasted on a slide with an already existing identical shape `creationId`. If you were copying a slide, each shape `creationId` will be copied, too. As a result, you have unique shape ids, but different slide `creationIds`. If you are now going to paste a shape an such a slide, a new creationId will be given to the pasted shape. As a result, slide ids are unique throughout a presentation, but shape ids are unique only on one slide.
 
+## Find and modify shapes
 
-## Modify shapes with built-in functions
+There are basically to ways to access a target shape on a slide:
 
-It is possible to modify an existing element on a newly added slide.
+- `slide.modifyElement(...)` requires an existing shape on the current slide,
+- `slide.addElement(...)` adds a shape from another slide to the current slide.
+
+Modifications can be applied to both in the same way:
 
 ```ts
-import { modify } from 'pptx-automizer';
+import { modify, CmToDxa } from 'pptx-automizer';
 
 pres.addSlide('shapes', 2, (slide) => {
+  // This will only work if there is a shape called 'Drum'
+  // on slide #2 of the template labelled 'shapes'.
   slide.modifyElement('Drum', [
     // You can use some of the builtin modifiers to edit a shape's xml:
-    modify.setPosition({ x: 1000000, h: 5000000, w: 5000000 }),
+    modify.setPosition({
+      // set position from the left to 5 cm
+      x: CmToDxa(5),
+      // or use a number in DXA unit
+      h: 5000000,
+      w: 5000000,
+    }),
     // Log your target xml into the console:
     modify.dump,
   ]);
 });
-```
 
-## Add and modify shapes
-
-You can also select and import a single element from a template slide. The desired shape will be identified by its name from slide-xml's `p:cNvPr`-element.
-
-```ts
-pres.addSlide('SlideWithImages.pptx', 1, (slide) => {
-  // Pass the template name, the slide number, the element's name and
-  // (optionally) a callback function to directly modify the child nodes
-  // of <p:sp>
-  slide.addElement('shapes', 2, 'Arrow', (element) => {
-    element.getElementsByTagName('a:t')[0].firstChild.data = 'Custom content';
-  });
+pres.addSlide('shapes', 1, (slide) => {
+  // This will import the 'Drum' shape from
+  // slide #2 of the template labelled 'shapes'.
+  slide.addElement('shapes', 2, 'Drum', [
+    // add modifiers as seen in the example above
+  ]);
 });
 ```
 
+## Modify text
+
+You can select and import generic shapes from any loaded template. It is possible to update the containing text in several ways:
+
+```ts
+import { ModifyTextHelper } from 'pptx-automizer';
+
+pres.addSlide('SlideWithImages.pptx', 1, (slide) => {
+  // You can directly modify the child nodes of <p:sp>
+  slide.addElement('shapes', 2, 'Arrow', (element) => {
+    element.getElementsByTagName('a:t').item(0).firstChild.data =
+      'Custom content';
+  });
+
+  // You might prefer a built-in function to set text:
+  slide.addElement('shapes', 2, 'Arrow', [
+    ModifyTextHelper.setText('This is my text'),
+  ]);
+});
+```
+
+`pptx-automizer` also provides a powerful helper to replace tagged text. You can use e.g. `{{myTag}}` on your slide and apply a modifier to insert dynamic text. Font style can be inherited from template or updated by the modifier.
+
+```ts
+import { modify } from 'pptx-automizer';
+
+pres.addSlide('TextReplace.pptx', 1, (slide) => {
+  slide.modifyElement(
+    // This is the name of the target element on slide #1 of
+    // 'TextReplace.pptx
+    'replaceText',
+    // This will look for a string `{{replace}}` inside the text
+    // contents of 'replaceText' shape
+    modify.replaceText([
+      {
+        replace: 'replace',
+        by: {
+          text: 'Apples',
+        },
+      },
+    ]),
+  );
+});
+```
+
+Find out more about text replacement:
+
+- [Replace and style by tags](https://github.com/singerla/pptx-automizer/blob/main/__tests__/replace-tagged-text.test.ts)
+- [Modify text elements using getAllTextElementIds](https://github.com/singerla/pptx-automizer/blob/main/__tests__/get-all-text-element-ids.test.ts)
+
+## Modify images
+
+`pptx-automizer` can extract images from loaded .pptx template files and add to your output presentation. You can use shape modifiers (e.g. for size and position) on images, too. Additionally, it is possible to load external media files directly and update relation `Target` of an existing image. This works on both, existing or added images.
+
+```ts
+const automizer = new Automizer({
+  // ...
+  // Specify a directory to import external media files from:
+  mediaDir: `path/to/media`,
+});
+
+const pres = automizer
+  .loadRoot(`RootTemplate.pptx`)
+  // load one or more files from mediaDir
+  .loadMedia([`feather.png`, `test.png`] /* or use a custom dir */)
+  // and/or use a custom dir
+  .loadMedia(`icon.png`, 'path/to/icons')
+  .load(`SlideWithImages.pptx`, 'images');
+
+pres.addSlide('images', 2, (slide) => {
+  slide.modifyElement('imagePNG', [
+    // Override the original media source of element 'imagePNG'
+    // by an imported file:
+    ModifyImageHelper.setRelationTarget('feather.png'),
+
+    // You might need to update size
+    ModifyShapeHelper.setPosition({
+      w: CmToDxa(5),
+      h: CmToDxa(3),
+    }),
+  ]);
+});
+```
+
+Find more examples on image manipulation:
+
+- [Add external image](https://github.com/singerla/pptx-automizer/blob/main/__tests__/add-external-image.test.ts)
+- [Modify duotone color overlay for images](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-image-duotone.test.ts)
+
+## Modify tables
+
+You can use a PowerPoint table and add/modify data and style. It is also possible to add rows and columns and to style cells.
+
+```ts
+const pres = automizer
+  .loadRoot(`RootTemplate.pptx`)
+  .load(`SlideWithTables.pptx`, 'tables');
+
+const result = await pres.addSlide('tables', 3, (slide) => {
+  slide.modifyElement('TableWithEmptyCells', [
+    modify.setTable({
+      // Use an array of rows to insert data.
+      // use `label` key for your information only
+      body: [
+        { label: 'item test r1', values: ['test1', 10, 16, 12, 11] },
+        { label: 'item test r2', values: ['test2', 12, 18, 15, 12] },
+        { label: 'item test r3', values: ['test3', 14, 12, 11, 14] },
+      ],
+    }),
+  ]);
+});
+```
+
+Find out more about formatting cells:
+
+- [Modify and style table cells](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-existing-table.test.ts)
+- [Insert data into table with empty cells](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-existing-table-create-text.test.ts)
+
 ## Modify charts
 
-All data and styles can be modified. Please notice: If your template has more data than your data object, automizer will remove these nodes. The other way round, new nodes will be created from the existing ones in case you provide more data.
+All data and styles of a chart can be modified. Please notice: If your template has more data than your data object, automizer will remove these nodes. Vice versa, new nodes will be cloned from the first existing one in case you provide more data.
 
 ```ts
 // Modify an existing chart on an added slide.
@@ -337,6 +475,13 @@ pres.addSlide('charts', 2, (slide) => {
   ]);
 });
 ```
+
+Find out more about modifying charts:
+- [Modify chart axis](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-chart-axis.test.ts)
+- [Dealing with bubble charts](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-chart-bubbles.test.ts)
+- [Vertical line charts](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-chart-vertical-lines.test.ts)
+- [Style chart series and data points](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-existing-chart-styled.test.ts)
+
 
 ## Modify extended charts
 
@@ -389,7 +534,7 @@ There are three ways to arrange slides in an output presentation.
 2. You can alternatively remove all existing slides by setting the `removeExistingSlides` flag to true. The first slide added with `addSlide` will be first slide in the output presentation. If you want to insert slides from root template, you need to load it a second time.
 
 ```ts
-import Automizer from "pptx-automizer";
+import Automizer from 'pptx-automizer';
 
 const automizer = new Automizer({
   templateDir: `my/pptx/templates`,
@@ -399,21 +544,22 @@ const automizer = new Automizer({
   removeExistingSlides: true,
 });
 
-
-let pres = automizer.loadRoot(`RootTemplate.pptx`)
+let pres = automizer
+  .loadRoot(`RootTemplate.pptx`)
   // We load this twice to make it available for sorting slide
   .load(`RootTemplate.pptx`, 'root')
   .load(`SlideWithShapes.pptx`, 'shapes')
-  .load(`SlideWithGraph.pptx`, 'graph')
+  .load(`SlideWithGraph.pptx`, 'graph');
 
-pres.addSlide('root', 1)  // First slide will be taken from root
+pres
+  .addSlide('root', 1) // First slide will be taken from root
   .addSlide('graph', 1)
   .addSlide('shapes', 1)
-  .addSlide('root', 3)    // Third slide from root will be appended
-  .addSlide('root', 2);    // Second and third slide will switch position
+  .addSlide('root', 3) // Third slide from root will be appended
+  .addSlide('root', 2); // Second and third slide will switch position
 
-pres.write(`mySortedPresentation.pptx`).then(summary => {
-  console.log(summary)
+pres.write(`mySortedPresentation.pptx`).then((summary) => {
+  console.log(summary);
 });
 ```
 
@@ -431,7 +577,8 @@ import ModifyPresentationHelper from './helper/modify-presentation-helper';
 // ...
 
 // It is possible to skip adding slides, try sorting an unmodified presentation
-pres.addSlide('charts', 1)
+pres
+  .addSlide('charts', 1)
   .addSlide('charts', 2)
   .addSlide('images', 1)
   .addSlide('images', 2);
@@ -441,11 +588,12 @@ pres.modify(ModifyPresentationHelper.sortSlides(order));
 ```
 
 ## Import and modify slide Masters
+
 You can import, modify and use one or more slideMasters and the related slideLayouts.
 It is only supported to add and modify shapes on the underlying slideMaster, you cannot modify something on a slideLayout. This means, each modification on a slideMaster will appear on all related slideLayouts.
 
-To specify the target index of the required slide master to import, you need to count slideMasters in your *template* presentation.
-To specify another slideLayout for an added output slide, you need to count slideLayouts in your *output* presentation 
+To specify the target index of the required slide master to import, you need to count slideMasters in your _template_ presentation.
+To specify another slideLayout for an added output slide, you need to count slideLayouts in your _output_ presentation
 
 To add and modify shapes on a slide master, please take a look at [Add and modify shapes](https://github.com/singerla/pptx-automizer#add-and-modify-shapes).
 
@@ -482,14 +630,14 @@ pres.addSlide('SlidesWithAdditionalMaster.pptx', 3, (slide) => {
   // To use the original master from 'SlidesWithAdditionalMaster.pptx',
   // we can skip the argument:
   slide.useSlideLayout();
-  // This will also auto-import the original slideMaster, if not done already, 
+  // This will also auto-import the original slideMaster, if not done already,
   // and look for the created index of the source slideLayout.
 });
 ```
 
 Please notice: If your root template and your imported slides have an equal structure of slideMasters and slideLayouts, it won't be necessary to add slideMasters manually.
 
-If you have trouble with messed up slideMasters, and if you don't worry about the impact on performance, you can try and set ``autoImportSlideMasters: true`` to always import all required files:
+If you have trouble with messed up slideMasters, and if you don't worry about the impact on performance, you can try and set `autoImportSlideMasters: true` to always import all required files:
 
 ```ts
 import Automizer from 'pptx-automizer';
