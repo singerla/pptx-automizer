@@ -48,9 +48,7 @@ export class XmlHelper {
     archive.writeXml(file, xml);
   }
 
-  static async appendIf(
-    element: HelperElement,
-  ): Promise<HelperElement | boolean> {
+  static async appendIf(element: HelperElement): Promise<XmlElement | boolean> {
     const xml = await XmlHelper.getXmlFromArchive(
       element.archive,
       element.file,
@@ -61,7 +59,7 @@ export class XmlHelper {
       : XmlHelper.append(element);
   }
 
-  static async append(element: HelperElement): Promise<HelperElement> {
+  static async append(element: HelperElement): Promise<XmlElement> {
     const xml = await XmlHelper.getXmlFromArchive(
       element.archive,
       element.file,
@@ -89,7 +87,7 @@ export class XmlHelper {
 
     XmlHelper.writeXmlToArchive(element.archive, element.file, xml);
 
-    return newElement as unknown as HelperElement;
+    return newElement as XmlElement;
   }
 
   static async removeIf(element: HelperElement): Promise<XmlElement[]> {
@@ -465,7 +463,7 @@ export class XmlHelper {
   static appendImageExtensionToContentType(
     targetArchive: IArchive,
     extension: string,
-  ): Promise<HelperElement | boolean> {
+  ): Promise<XmlElement | boolean> {
     const contentType = ImageTypeMap[extension]
       ? ImageTypeMap[extension]
       : 'image/' + extension;

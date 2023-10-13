@@ -210,9 +210,7 @@ export class Shape {
     });
   }
 
-  appendImageExtensionToContentType(
-    extension,
-  ): Promise<HelperElement | boolean> {
+  appendImageExtensionToContentType(extension): Promise<XmlElement | boolean> {
     return XmlHelper.appendImageExtensionToContentType(
       this.targetArchive,
       extension,

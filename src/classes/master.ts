@@ -4,7 +4,7 @@ import { ShapeTargetType, SourceIdentifier, Target } from '../types/types';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
 import { PresTemplate } from '../interfaces/pres-template';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
-import { HelperElement } from '../types/xml-types';
+import { HelperElement, XmlElement } from '../types/xml-types';
 import IArchive from '../interfaces/iarchive';
 import { IMaster } from '../interfaces/imaster';
 import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
@@ -147,7 +147,7 @@ export class Master extends HasShapes implements IMaster {
   }
 
   /**
-   * Copys slide master files
+   * Copy slide master files
    * @internal
    */
   async copySlideMasterFiles(): Promise<void> {
@@ -169,7 +169,7 @@ export class Master extends HasShapes implements IMaster {
   appendThemeToContentType(
     rootArchive: IArchive,
     themeCount: string | number,
-  ): Promise<HelperElement> {
+  ): Promise<XmlElement> {
     return XmlHelper.append(
       XmlHelper.createContentTypeChild(rootArchive, {
         PartName: `/ppt/theme/theme${themeCount}.xml`,

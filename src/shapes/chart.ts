@@ -4,7 +4,6 @@ import { Shape } from '../classes/shape';
 import path from 'path';
 
 import {
-  HelperElement,
   RelationshipAttribute,
   XmlDocument,
   XmlElement,
@@ -312,7 +311,7 @@ export class Chart extends Shape implements IChart {
     }
   }
 
-  async appendToSlideRels(): Promise<HelperElement> {
+  async appendToSlideRels(): Promise<XmlElement> {
     this.createdRid = await XmlHelper.getNextRelId(
       this.targetArchive,
       this.targetSlideRelFile,
@@ -427,7 +426,7 @@ export class Chart extends Shape implements IChart {
     );
   }
 
-  appendChartExtensionToContentType(): Promise<HelperElement | boolean> {
+  appendChartExtensionToContentType(): Promise<XmlElement | boolean> {
     return XmlHelper.appendIf({
       ...XmlHelper.createContentTypeChild(this.targetArchive, {
         Extension: `xlsx`,
@@ -439,7 +438,7 @@ export class Chart extends Shape implements IChart {
     });
   }
 
-  appendChartToContentType(): Promise<HelperElement> {
+  appendChartToContentType(): Promise<XmlElement> {
     const contentType =
       this.subtype === 'chart'
         ? 'application/vnd.openxmlformats-officedocument.drawingml.chart+xml'
@@ -453,7 +452,7 @@ export class Chart extends Shape implements IChart {
     );
   }
 
-  appendColorToContentType(): Promise<HelperElement> {
+  appendColorToContentType(): Promise<XmlElement> {
     return XmlHelper.append(
       XmlHelper.createContentTypeChild(this.targetArchive, {
         PartName: `/ppt/charts/colors${this.targetNumber}.xml`,
@@ -462,7 +461,7 @@ export class Chart extends Shape implements IChart {
     );
   }
 
-  appendStyleToContentType(): Promise<HelperElement> {
+  appendStyleToContentType(): Promise<XmlElement> {
     return XmlHelper.append(
       XmlHelper.createContentTypeChild(this.targetArchive, {
         PartName: `/ppt/charts/style${this.targetNumber}.xml`,

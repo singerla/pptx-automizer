@@ -507,7 +507,7 @@ export default class HasShapes {
     rootArchive: IArchive,
     relId: string,
     slideCount: number,
-  ): Promise<HelperElement> {
+  ): Promise<XmlElement> {
     return XmlHelper.append({
       archive: rootArchive,
       file: `ppt/_rels/presentation.xml.rels`,
@@ -531,10 +531,7 @@ export default class HasShapes {
    * @param relId
    * @returns to slide list
    */
-  appendToSlideList(
-    rootArchive: IArchive,
-    relId: string,
-  ): Promise<HelperElement> {
+  appendToSlideList(rootArchive: IArchive, relId: string): Promise<XmlElement> {
     return XmlHelper.append({
       archive: rootArchive,
       file: `ppt/presentation.xml`,
@@ -566,7 +563,7 @@ export default class HasShapes {
   appendToSlideMasterList(
     rootArchive: IArchive,
     relId: string,
-  ): Promise<HelperElement> {
+  ): Promise<XmlElement> {
     return XmlHelper.append({
       archive: rootArchive,
       file: `ppt/presentation.xml`,
@@ -589,7 +586,7 @@ export default class HasShapes {
   appendToContentType(
     rootArchive: IArchive,
     count: number,
-  ): Promise<HelperElement> {
+  ): Promise<XmlElement> {
     return XmlHelper.append(
       XmlHelper.createContentTypeChild(rootArchive, {
         PartName: `/ppt/${this.targetType}s/${this.targetType}${count}.xml`,
@@ -676,7 +673,7 @@ export default class HasShapes {
   appendNotesToContentType(
     rootArchive: IArchive,
     slideCount: number,
-  ): Promise<HelperElement> {
+  ): Promise<XmlElement> {
     return XmlHelper.append(
       XmlHelper.createContentTypeChild(rootArchive, {
         PartName: `/ppt/notesSlides/notesSlide${slideCount}.xml`,
