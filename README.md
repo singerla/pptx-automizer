@@ -1,6 +1,6 @@
 # pptx-automizer: A Powerful PPTX Modifier for Node.js
 
-pptx-automizer is a Node.js-based PowerPoint (.pptx) generator that automates the manipulation of existing .pptx files. With pptx-automizer, you can merge templates, customize slide content, and maintain your library of .pptx templates. `pptx-automizer` will not write files from scratch, but edit and merge existing pptx files. You can style template slides within PowerPoint, and these templates will be seamlessly integrated into the output presentation. Most of the content can be modified by using callbacks with [xmldom](https://github.com/xmldom/xmldom).
+`pptx-automizer` is a Node.js-based PowerPoint (.pptx) generator that automates the manipulation of existing .pptx files. With pptx-automizer, you can merge templates, customize slide content, and maintain your library of .pptx templates. `pptx-automizer` will not write files from scratch, but edit and merge existing pptx files. You can style template slides within PowerPoint, and these templates will be seamlessly integrated into the output presentation. Most of the content can be modified by using callbacks with [xmldom](https://github.com/xmldom/xmldom).
 
 `pptx-automizer` will fit best to users who try to maintain their own library of pptx template files. This is perfect to anyone who uses complex and well-styled customized layouts. Any existing slide and even a single element can be a data driven template for output pptx files.
 
@@ -130,12 +130,20 @@ const automizer = new Automizer({
 // any existing slide in RootTemplate.pptx. Otherwise, we are going to start
 // with a truncated root template.
 let pres = automizer
-  .loadRoot(`RootTemplate.pptx`)
+  .loadRoot('RootTemplate.pptx')
   // We want to make some more files available and give them a handy label.
-  .load(`SlideWithShapes.pptx`, 'shapes')
-  .load(`SlideWithGraph.pptx`, 'graph')
+  .load('SlideWithShapes.pptx', 'shapes')
+  .load('SlideWithGraph.pptx', 'graph')
   // Skipping the second argument will not set a label.
-  .load(`SlideWithImages.pptx`);
+  .load('SlideWithImages.pptx');
+
+// Get useful information about loaded templates:
+/*
+const presInfo = await pres.getInfo();
+const mySlides = presInfo.slidesByTemplate('shapes');
+const mySlide = presInfo.slideByNumber('shapes', 2);
+const myShape = presInfo.elementByName('shapes', 2, 'Cloud');
+*/ 
 
 // addSlide takes two arguments: The first will specify the source
 // presentation's label to get the template from, the second will set the
@@ -143,10 +151,10 @@ let pres = automizer
 pres
   .addSlide('graph', 1)
   .addSlide('shapes', 1)
-  .addSlide(`SlideWithImages.pptx`, 2);
+  .addSlide('SlideWithImages.pptx', 2);
 
 // Finally, we want to write the output file.
-pres.write(`myPresentation.pptx`).then((summary) => {
+pres.write('myPresentation.pptx').then((summary) => {
   console.log(summary);
 });
 
@@ -478,11 +486,11 @@ pres.addSlide('charts', 2, (slide) => {
 ```
 
 Find out more about modifying charts:
+
 - [Modify chart axis](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-chart-axis.test.ts)
 - [Dealing with bubble charts](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-chart-bubbles.test.ts)
 - [Vertical line charts](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-chart-vertical-lines.test.ts)
 - [Style chart series and data points](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-existing-chart-styled.test.ts)
-
 
 ## Modify extended charts
 
@@ -524,6 +532,94 @@ pres
     slide.removeElement('Textfeld 5');
     slide.addElement('images', 2, 'imageJPG');
   });
+```
+
+# Examples
+
+## Loop through an existing presentation
+
+If you would like to modify some elements in a single .pptx file, it is important to that `pptx-automizer` is not able to directly "jump" to a shape and modify.
+
+This is how it works internally:
+
+- Load a root template to append slides to
+- (Probably) load root template again to modify slides
+- Load other templates
+- Append a loaded slide to (probably truncated) root template
+- Modify the recently added slide
+- Write root template and appended slides as output presentation.
+
+In case you need to apply modifications to the root template, you need to load it as a normal template:
+
+```ts
+import Automizer, {
+  CmToDxa,
+  ISlide,
+  ModifyColorHelper,
+  ModifyShapeHelper,
+  ModifyTextHelper,
+} from 'pptx-automizer';
+
+const run = async () => {
+  const automizer = new Automizer({
+    templateDir: `path/to/pptx-templates`,
+    outputDir: `path/to/pptx-output`,
+    // this is required to start with no slides:
+    removeExistingSlides: true,
+  });
+
+  let pres = automizer
+    .loadRoot(`SlideWithShapes.pptx`)
+    // We load it twice to make it available for modifying slides.
+    // Defining a "name" as second params makes it a little easier
+    .load(`SlideWithShapes.pptx`, 'myTemplate');
+
+  // This is brandnew: get useful information about loaded templates:
+  const myTemplates = await pres.getInfo();
+  const mySlides = myTemplates.slidesByTemplate(`myTemplate`);
+
+  // Feel free to create some functions to pre-define all modifications
+  // you need to apply to your slides.
+  type CallbackBySlideNumber = {
+    slideNumber: number;
+    callback: (slide: ISlide) => void;
+  };
+  const callbacks: CallbackBySlideNumber[] = [
+    {
+      slideNumber: 2,
+      callback: (slide: ISlide) => {
+        slide.modifyElement('Cloud', [
+          ModifyTextHelper.setText('My content'),
+          ModifyShapeHelper.setPosition({
+            h: CmToDxa(5),
+          }),
+          ModifyColorHelper.solidFill({
+            type: 'srgbClr',
+            value: 'cccccc',
+          }),
+        ]);
+      },
+    },
+  ];
+  const getCallbacks = (slideNumber: number) => {
+    return callbacks.find((callback) => callback.slideNumber === slideNumber)
+      ?.callback;
+  };
+
+  // We can loop all slides an apply the callbacks if defined
+  mySlides.forEach((mySlide) => {
+    pres.addSlide('myTemplate', mySlide.number, getCallbacks(mySlide.number));
+  });
+
+  // This will result to an output presentation containing all slides of "SlideWithShapes.pptx"
+  pres.write(`myOutputPresentation.pptx`).then((summary) => {
+    console.log(summary);
+  });
+};
+
+run().catch((error) => {
+  console.error(error);
+});
 ```
 
 ## Sort output slides
@@ -700,7 +796,6 @@ This project is deeply inspired by:
 - [officegen](https://github.com/Ziv-Barber/officegen)
 - [node-pptx](https://github.com/heavysixer/node-pptx)
 - [docxtemplater](https://github.com/open-xml-templating/docxtemplater)
-
 
 ### Commercial Support
 

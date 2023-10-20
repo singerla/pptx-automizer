@@ -3,6 +3,7 @@ import {
   ArchiveParams,
   AutomizerParams,
   AutomizerSummary,
+  PresentationInfo,
   SourceIdentifier,
   StatusTracker,
 } from './types/types';
@@ -10,7 +11,12 @@ import { IPresentationProps } from './interfaces/ipresentation-props';
 import { PresTemplate } from './interfaces/pres-template';
 import { RootPresTemplate } from './interfaces/root-pres-template';
 import { Template } from './classes/template';
-import { ModifyXmlCallback, TemplateInfo, XmlElement } from './types/xml-types';
+import {
+  ModifyXmlCallback,
+  SlideInfo,
+  TemplateInfo,
+  XmlElement,
+} from './types/xml-types';
 import { GeneralHelper, vd } from './helper/general-helper';
 import { Master } from './classes/master';
 import path from 'path';
@@ -240,6 +246,37 @@ export default class Automizer implements IPresentationProps {
       });
     }
     return templateCreationId;
+  }
+
+  /**
+   * Get some info about the imported templates
+   * @returns Promise<PresentationInfo>
+   */
+  public async getInfo(): Promise<PresentationInfo> {
+    const creationIds = await this.setCreationIds();
+    const info: PresentationInfo = {
+      templateByName: (tplName: string) => {
+        return creationIds.find((template) => template.name === tplName);
+      },
+      slidesByTemplate: (tplName: string) => {
+        return info.templateByName(tplName)?.slides || [];
+      },
+      slideByNumber: (tplName: string, slideNumber: number) => {
+        return info
+          .slidesByTemplate(tplName)
+          .find((slide) => slide.number === slideNumber);
+      },
+      elementByName: (
+        tplName: string,
+        slideNumber: number,
+        elementName: string,
+      ) => {
+        return info
+          .slideByNumber(tplName, slideNumber)
+          ?.elements.find((element) => elementName === element.name);
+      },
+    };
+    return info;
   }
 
   /**

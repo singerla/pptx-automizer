@@ -1,5 +1,12 @@
 import { ElementSubtype, ElementType } from '../enums/element-type';
-import { RelationshipAttribute, XmlDocument, XmlElement } from './xml-types';
+import {
+  ElementInfo,
+  RelationshipAttribute,
+  SlideInfo,
+  TemplateInfo,
+  XmlDocument,
+  XmlElement,
+} from './xml-types';
 import IArchive, { ArchiveMode } from '../interfaces/iarchive';
 import { ContentTypeExtension } from '../enums/content-type-map';
 
@@ -99,6 +106,16 @@ export type AutomizerSummary = {
   charts: number;
   images: number;
   masters: number;
+};
+export type PresentationInfo = {
+  templateByName: (tplName: string) => TemplateInfo;
+  slidesByTemplate: (tplName: string) => SlideInfo[];
+  slideByNumber: (tplName: string, slideNumber: number) => SlideInfo;
+  elementByName: (
+    tplName: string,
+    slideNumber: number,
+    elementName: string,
+  ) => ElementInfo;
 };
 export type Target = {
   file: string;

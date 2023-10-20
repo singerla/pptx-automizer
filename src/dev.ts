@@ -1,37 +1,65 @@
-import Automizer, { ModifyImageHelper, ModifyShapeHelper } from './index';
-import { CmToDxa } from './helper/modify-helper';
+import Automizer, {
+  CmToDxa,
+  ISlide,
+  ModifyColorHelper,
+  ModifyShapeHelper,
+  ModifyTextHelper,
+} from './index';
 
 const run = async () => {
   const automizer = new Automizer({
     templateDir: `${__dirname}/../__tests__/pptx-templates`,
     outputDir: `${__dirname}/../__tests__/pptx-output`,
-    mediaDir: `${__dirname}/../__tests__/media`,
+    removeExistingSlides: true,
   });
 
-  const pres = automizer
-    .loadRoot(`RootTemplate.pptx`)
-    .loadMedia(`feather.png`)
-    .load(`SlideWithShapes.pptx`, 'shapes')
-    .load(`SlideWithImages.pptx`, 'images');
+  let pres = automizer
+    .loadRoot(`SlideWithShapes.pptx`)
+    // We load it twice to make it available for modifying slides
+    // Defining a "name" as second params makes it a little easier
+    .load(`SlideWithShapes.pptx`, 'myTemplate');
 
-  await pres
-    .addSlide('images', 2, (slide) => {
-      slide.modifyElement('imagePNG', [
-        ModifyShapeHelper.setPosition({
-          w: CmToDxa(5),
-          h: CmToDxa(5),
-        }),
-        ModifyImageHelper.setRelationTarget('feather.png'),
-        ModifyImageHelper.setDuotoneFill({
-          tint: 100000,
-          color: {
+  // This is brandnew: get useful information about loaded templates:
+  const myTemplates = await pres.getInfo();
+  const mySlides = myTemplates.slidesByTemplate(`myTemplate`);
+
+  // Feel free to create some functions to pre-define all modifications
+  // you need to apply to your slides.
+  type CallbackBySlideNumber = {
+    slideNumber: number;
+    callback: (slide: ISlide) => void;
+  };
+  const callbacks: CallbackBySlideNumber[] = [
+    {
+      slideNumber: 2,
+      callback: (slide: ISlide) => {
+        slide.modifyElement('Cloud', [
+          ModifyTextHelper.setText('My content'),
+          ModifyShapeHelper.setPosition({
+            h: CmToDxa(5),
+          }),
+          ModifyColorHelper.solidFill({
             type: 'srgbClr',
-            value: 'ff850c',
-          },
-        }),
-      ]);
-    })
-    .write(`modify-shapes.test.pptx`);
+            value: 'cccccc',
+          }),
+        ]);
+      },
+    },
+  ];
+  const getCallbacks = (slideNumber: number) => {
+    return callbacks.find((callback) => callback.slideNumber === slideNumber)
+      ?.callback;
+  };
+
+  // We can loop all slides an apply the callbacks if defined
+  mySlides.forEach((mySlide) => {
+    pres.addSlide('myTemplate', mySlide.number, getCallbacks(mySlide.number));
+  });
+
+  // This will result to an output presentation containing all slides of "SlideWithShapes.pptx"
+  pres.write(`myOutputPresentation.pptx`).then((summary) => {
+    console.log(summary);
+  });
 };
 
 run().catch((error) => {
