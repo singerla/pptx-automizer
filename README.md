@@ -5,6 +5,7 @@ pptx-automizer is a Node.js-based PowerPoint (.pptx) generator that automates th
 `pptx-automizer` will fit best to users who try to maintain their own library of pptx template files. This is perfect to anyone who uses complex and well-styled customized layouts. Any existing slide and even a single element can be a data driven template for output pptx files.
 
 This project is accompanied by [automizer-data](https://github.com/singerla/automizer-data). You can use `automizer-data` to import, browse and transform XSLX- or SAV-data into perfectly fitting graph or table data.
+Find commercial support for .pptx automation at [ensembl.io](https://ensembl.io).
 
 ## Requirements
 
@@ -20,10 +21,6 @@ At the moment, you might encounter difficulties for special shape types that req
 
 Extended chart types, like waterfall or map charts, are basically supported. You might need additional modifiers to handle extended properties, which are not implemented yet. Please help to improve `pptx-automizer` and [report](https://github.com/singerla/pptx-automizer/issues/new) issues regarding extended charts.
 
-### PowerPoint Version
-
-All testing focuses on PowerPoint 2019 .pptx file format.
-
 ### Slide Masters and -Layouts
 
 `pptx-automizer` supports importing slide masters and their associated slide layouts into the output presentation.
@@ -31,6 +28,10 @@ All testing focuses on PowerPoint 2019 .pptx file format.
 While `pptx-automizer` allows you to import and work with slide layouts, it's important to note that you cannot add, modify, or remove individual slideLayouts directly. However, you have the flexibility to modify the underlying slideMaster, which can serve as a workaround for certain changes.
 
 Please be aware that importing slideLayouts containing complex contents, such as charts and images, is currently not supported. For instance, if a slideLayout includes an icon that is not present on the slideMaster, this icon will break when the slideMaster is auto-imported into an output presentation. To avoid this issue, ensure that all images and charts are placed exclusively on a slideMaster and not on a slideLayout.
+
+### PowerPoint Version
+
+All testing focuses on PowerPoint 2019 .pptx file format.
 
 ## Install
 
@@ -699,3 +700,9 @@ This project is deeply inspired by:
 - [officegen](https://github.com/Ziv-Barber/officegen)
 - [node-pptx](https://github.com/heavysixer/node-pptx)
 - [docxtemplater](https://github.com/open-xml-templating/docxtemplater)
+
+
+### Commercial Support
+
+If you need commercial support on complex .pptx automation, please take a look at [ensembl.io](https://ensembl.io).
+![ensemblio](https://ensembl.io/ensemblio-lg.png)
