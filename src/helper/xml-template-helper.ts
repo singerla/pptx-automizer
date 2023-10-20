@@ -30,7 +30,7 @@ export class XmlTemplateHelper {
       this.relType,
     );
 
-    const creationIds = [];
+    const creationIds: SlideInfo[] = [];
     for (const slideRel of relationships) {
       const slideXml = await XmlHelper.getXmlFromArchive(
         archive,
@@ -57,7 +57,9 @@ export class XmlTemplateHelper {
       });
     }
 
-    return creationIds;
+    return creationIds.sort((slideA, slideB) =>
+      slideA.number < slideB.number ? -1 : 1,
+    );
   }
 
   parseSlideRelFile(slideRelFile: string): number {
