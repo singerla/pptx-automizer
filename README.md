@@ -1,43 +1,82 @@
-# pptx-automizer: A Powerful PPTX Modifier for Node.js
+# pptx-automizer: A Powerful .pptx Modifier for Node.js
 
-`pptx-automizer` is a Node.js-based PowerPoint (.pptx) generator that automates the manipulation of existing .pptx files. With pptx-automizer, you can merge templates, customize slide content, and maintain your library of .pptx templates. `pptx-automizer` will not write files from scratch, but edit and merge existing pptx files. You can style template slides within PowerPoint, and these templates will be seamlessly integrated into the output presentation. Most of the content can be modified by using callbacks with [xmldom](https://github.com/xmldom/xmldom).
+`pptx-automizer` is a Node.js-based PowerPoint (.pptx) generator that automates the manipulation of existing .pptx files. With `pptx-automizer`, you can import your library of .pptx templates, merge templates, and customize slide content. `pptx-automizer` will not write files from scratch, but edit and merge existing pptx files. You can style template slides within PowerPoint, and these templates will be seamlessly integrated into the output presentation. Most of the content can be modified by using callbacks with [xmldom](https://github.com/xmldom/xmldom).
 
-`pptx-automizer` will fit best to users who try to maintain their own library of pptx template files. This is perfect to anyone who uses complex and well-styled customized layouts. Any existing slide and even a single element can be a data driven template for output pptx files.
+`pptx-automizer` is particularly well-suited for users who aim to manage their own library of .pptx template files, making it an ideal choice for those who work with intricate, well-designed customized layouts. With this tool, any existing slide or even a single element can serve as a data-driven template for generating output .pptx files.
 
-This project is accompanied by [automizer-data](https://github.com/singerla/automizer-data). You can use `automizer-data` to import, browse and transform XSLX- or SAV-data into perfectly fitting graph or table data.
-Find commercial support for .pptx automation at [ensembl.io](https://ensembl.io).
+This project is accompanied by [automizer-data](https://github.com/singerla/automizer-data). You can use `automizer-data` to import, browse and transform .xlsx- or .sav-data into perfectly fitting graph or table data.
 
-## Requirements
+Thanks to all contributors! You are always welcome to share code, tipps and ideas. We appreciate all levels of expertise and encourage everyone to get involved. Whether you're a seasoned pro or just starting out, your contributions are invaluable. [Get started](https://github.com/singerla/pptx-automizer/issues/new)
+
+If you require commercial support for complex .pptx automation, you can explore [ensemblio.com](https://ensemblio.com). Ensemblio is a web application that leverages `pptx-automizer` and `automizer-data` to provide an accessible and convenient solution for automating .pptx files. Engaging with Ensemblio is likely to enhance and further develop this library.
+
+## Table of contents
+<!-- TOC -->
+* [Requirements and Limitations](#requirements-and-limitations)
+  * [Shape Types](#shape-types)
+  * [Chart Types](#chart-types)
+  * [Slide Masters and -Layouts](#slide-masters-and--layouts)
+  * [Direct Manipulation of Elements](#direct-manipulation-of-elements)
+  * [PowerPoint Version](#powerpoint-version)
+* [Installation](#installation)
+  * [As a Cloned Repository](#as-a-cloned-repository)
+  * [As a Package](#as-a-package)
+* [Usage](#usage)
+  * [Basic Example](#basic-example)
+  * [How to Select Slides Shapes](#how-to-select-slides-shapes)
+    * [Select slide by number and shape by name](#select-slide-by-number-and-shape-by-name)
+    * [Select slides by creationId](#select-slides-by-creationid)
+  * [Find and Modify Shapes](#find-and-modify-shapes)
+  * [Modify Text](#modify-text)
+  * [Modify Images](#modify-images)
+  * [Modify Tables](#modify-tables)
+  * [Modify Charts](#modify-charts)
+  * [Modify Extended Charts](#modify-extended-charts)
+  * [Remove elements from a slide](#remove-elements-from-a-slide)
+* [Tipps and Tricks](#tipps-and-tricks)
+  * [Loop through the slides of a presentation](#loop-through-the-slides-of-a-presentation)
+  * [Quickly get all slide numbers of a template](#quickly-get-all-slide-numbers-of-a-template)
+  * [Find all text elements on a slide](#find-all-text-elements-on-a-slide)
+  * [Sort output slides](#sort-output-slides)
+  * [Import and modify slide Masters](#import-and-modify-slide-masters)
+  * [Track status of automation process](#track-status-of-automation-process)
+  * [More examples](#more-examples)
+  * [Testing](#testing)
+* [Special Thanks](#special-thanks)
+* [Commercial Support](#commercial-support)
+<!-- TOC -->
+
+# Requirements and Limitations
 
 This generator can only be used on the server-side and requires a [Node.js](https://nodejs.org/en/download/package-manager/) environment.
 
-## Limitations
+## Shape Types
 
-### Shape types
+At the moment, you might encounter difficulties with special shape types that require additional relations (e.g., hyperlinks, video and audio may not work correctly). However, most shape types, including connection shapes, tables, and charts, are already supported. If you encounter any issues, please feel free to [report any issue](https://github.com/singerla/pptx-automizer/issues/new).
 
-At the moment, you might encounter difficulties for special shape types that require further relations (e.g. links will not work properly). Although, most shape types are already supported, such as connection shapes, tables or charts. You are welcome to [report any issue](https://github.com/singerla/pptx-automizer/issues/new).
-
-### Chart types
+## Chart Types
 
 Extended chart types, like waterfall or map charts, are basically supported. You might need additional modifiers to handle extended properties, which are not implemented yet. Please help to improve `pptx-automizer` and [report](https://github.com/singerla/pptx-automizer/issues/new) issues regarding extended charts.
 
-### Slide Masters and -Layouts
+## Slide Masters and -Layouts
 
-`pptx-automizer` supports importing slide masters and their associated slide layouts into the output presentation.
-
-While `pptx-automizer` allows you to import and work with slide layouts, it's important to note that you cannot add, modify, or remove individual slideLayouts directly. However, you have the flexibility to modify the underlying slideMaster, which can serve as a workaround for certain changes.
+`pptx-automizer` supports importing slide masters and their associated slide layouts into the output presentation. It is important to note that you cannot add, modify, or remove individual slideLayouts directly. However, you have the flexibility to modify the underlying slideMaster, which can serve as a workaround for certain changes.
 
 Please be aware that importing slideLayouts containing complex contents, such as charts and images, is currently not supported. For instance, if a slideLayout includes an icon that is not present on the slideMaster, this icon will break when the slideMaster is auto-imported into an output presentation. To avoid this issue, ensure that all images and charts are placed exclusively on a slideMaster and not on a slideLayout.
 
-### PowerPoint Version
+## Direct Manipulation of Elements
+
+It is also important to know that `pptx-automizer` is currently limited to _adding_ things to the output presentation. If you require the ability to, for instance, modify a specific element on a slide within an existing presentation and leave the rest untouched, you will need to include all the other slides in the process. Find some workarounds [below](#loop-through-the-slides-of-a-presentation).
+
+## PowerPoint Version
 
 All testing focuses on PowerPoint 2019 .pptx file format.
 
-## Install
+# Installation
 
 There are basically two ways to use `pptx-automizer`.
 
-### As a cloned repository
+## As a Cloned Repository
 
 If you want to see how it works and you like to run own tests, you should clone this repository and install the dependencies:
 
@@ -55,7 +94,7 @@ $ yarn dev
 
 and see the most recent feature from `src/dev.ts`. Every time you change & save this file, you will see new console output and a pptx file in the destination folder. Take a look into `__tests__`-directory to see a lot of examples for several use cases!
 
-### As a package
+## As a Package
 
 If you are working on an existing project, you can add `pptx-automizer` to it using npm or yarn. Run
 
@@ -71,9 +110,13 @@ $ npm install pptx-automizer
 
 in the root folder of your project. This will download and install the most recent version into your existing project.
 
-## General Example
+# Usage
 
 Take a look into [**tests**-directory](https://github.com/singerla/pptx-automizer/blob/main/__tests__) to see a lot of examples for several use cases. You will also find example .pptx-files there. Most of the examples shown below make use of [those files](https://github.com/singerla/pptx-automizer/blob/main/__tests__/pptx-templates).
+
+## Basic Example
+
+This is a basic example on how to use `pptx-automizer` in your code:
 
 ```ts
 import Automizer from 'pptx-automizer';
@@ -143,7 +186,7 @@ const presInfo = await pres.getInfo();
 const mySlides = presInfo.slidesByTemplate('shapes');
 const mySlide = presInfo.slideByNumber('shapes', 2);
 const myShape = presInfo.elementByName('shapes', 2, 'Cloud');
-*/ 
+*/
 
 // addSlide takes two arguments: The first will specify the source
 // presentation's label to get the template from, the second will set the
@@ -175,7 +218,7 @@ const finalJSZip = await pres.getJSZip();
 const base64 = await finalJSZip.generateAsync({ type: 'base64' });
 ```
 
-## How to select target slide and shapes
+## How to Select Slides Shapes
 
 `pptx-automizer` needs a selector to find the required shape on a template slide. While an imported .pptx file is identified by filename or custom label, there are different ways to address its slides and shapes.
 
@@ -301,7 +344,7 @@ If you decide to use the `creationId` method, you are safe to add, remove and re
 
 > Please note: PowerPoint is going to update a shape's `creationId` only in case the shape was copied & pasted on a slide with an already existing identical shape `creationId`. If you were copying a slide, each shape `creationId` will be copied, too. As a result, you have unique shape ids, but different slide `creationIds`. If you are now going to paste a shape an such a slide, a new creationId will be given to the pasted shape. As a result, slide ids are unique throughout a presentation, but shape ids are unique only on one slide.
 
-## Find and modify shapes
+## Find and Modify Shapes
 
 There are basically to ways to access a target shape on a slide:
 
@@ -339,7 +382,7 @@ pres.addSlide('shapes', 1, (slide) => {
 });
 ```
 
-## Modify text
+## Modify Text
 
 You can select and import generic shapes from any loaded template. It is possible to update the containing text in several ways:
 
@@ -389,7 +432,7 @@ Find out more about text replacement:
 - [Replace and style by tags](https://github.com/singerla/pptx-automizer/blob/main/__tests__/replace-tagged-text.test.ts)
 - [Modify text elements using getAllTextElementIds](https://github.com/singerla/pptx-automizer/blob/main/__tests__/get-all-text-element-ids.test.ts)
 
-## Modify images
+## Modify Images
 
 `pptx-automizer` can extract images from loaded .pptx template files and add to your output presentation. You can use shape modifiers (e.g. for size and position) on images, too. Additionally, it is possible to load external media files directly and update relation `Target` of an existing image. This works on both, existing or added images.
 
@@ -428,7 +471,7 @@ Find more examples on image manipulation:
 - [Add external image](https://github.com/singerla/pptx-automizer/blob/main/__tests__/add-external-image.test.ts)
 - [Modify duotone color overlay for images](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-image-duotone.test.ts)
 
-## Modify tables
+## Modify Tables
 
 You can use a PowerPoint table and add/modify data and style. It is also possible to add rows and columns and to style cells.
 
@@ -457,9 +500,9 @@ Find out more about formatting cells:
 - [Modify and style table cells](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-existing-table.test.ts)
 - [Insert data into table with empty cells](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-existing-table-create-text.test.ts)
 
-## Modify charts
+## Modify Charts
 
-All data and styles of a chart can be modified. Please notice: If your template has more data than your data object, automizer will remove these nodes. Vice versa, new nodes will be cloned from the first existing one in case you provide more data.
+All data and styles of a chart can be modified. Please note that if your template contains more data than your data object, Automizer will remove these extra nodes. Conversely, if you provide more data, new nodes will be cloned from the first existing one in the template.
 
 ```ts
 // Modify an existing chart on an added slide.
@@ -492,7 +535,7 @@ Find out more about modifying charts:
 - [Vertical line charts](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-chart-vertical-lines.test.ts)
 - [Style chart series and data points](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-existing-chart-styled.test.ts)
 
-## Modify extended charts
+## Modify Extended Charts
 
 If you need to modify extended chart types, such like waterfall or map charts, you need to use `modify.setExtendedChartData`.
 
@@ -504,13 +547,9 @@ pres.addSlide('charts', 2, (slide) => {
       series: [{ label: 'series 1' }],
       categories: [
         { label: 'cat 2-1', values: [100] },
-        { label: 'cat 2-2', values: [20] },
         { label: 'cat 2-3', values: [50] },
         { label: 'cat 2-4', values: [-40] },
-        { label: 'cat 2-5', values: [130] },
-        { label: 'cat 2-6', values: [-60] },
-        { label: 'cat 2-7', values: [70] },
-        { label: 'cat 2-8', values: [140] },
+        // ...
       ],
     }),
   ]);
@@ -534,11 +573,11 @@ pres
   });
 ```
 
-# Examples
+# Tipps and Tricks
 
-## Loop through an existing presentation
+## Loop through the slides of a presentation
 
-If you would like to modify some elements in a single .pptx file, it is important to that `pptx-automizer` is not able to directly "jump" to a shape and modify.
+If you would like to modify elements in a single .pptx file, it is important to know that `pptx-automizer` is not able to directly "jump" to a shape to modify it.
 
 This is how it works internally:
 
@@ -619,6 +658,47 @@ const run = async () => {
 
 run().catch((error) => {
   console.error(error);
+});
+```
+
+## Quickly get all slide numbers of a template
+
+When calling `pres.getInfo()`, it will gather information about all elements on all slides of all templates. In case you just want to loop through all slides of a certain template, you can use this shortcut:
+
+```ts
+const slideNumbers = await pres
+  .getTemplate('myTemplate.pptx')
+  .getAllSlideNumbers();
+
+for (const slideNumber of slideNumbers) {
+  // do the thing
+}
+```
+
+## Find all text elements on a slide
+
+When processing an added slide, you might want to apply a modifier to any existing text element. Call `slide.getAllTextElementIds()` for this:
+
+```ts
+import Automizer, { modify } from 'pptx-automizer';
+
+pres.addSlide('myTemplate.pptx', 1, async (slide) => {
+  const elements = await slide.getAllTextElementIds();
+  elements.forEach((element) => {
+    // element has a text body:
+    slide.modifyElement(element, [modify.setText('my text')]);
+    // ... or use the tag replace function:
+    slide.modifyElement(element, [
+      modify.replaceText([
+        {
+          replace: 'TAG',
+          by: {
+            text: 'my tag text',
+          },
+        },
+      ]),
+    ]);
+  });
 });
 ```
 
@@ -779,7 +859,7 @@ Take a look into [**tests**-directory](https://github.com/singerla/pptx-automize
 - [Update chart plot area coordinates](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-chart-plot-area.test.ts)
 - [Update chart legend](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-chart-legend.test.ts)
 
-### Testing
+## Testing
 
 You can run all unit tests using these commands:
 
@@ -788,16 +868,16 @@ yarn test
 yarn test-coverage
 ```
 
-### Special Thanks
+# Special Thanks
 
-This project is deeply inspired by:
+This project was inspired by:
 
 - [PptxGenJS](https://github.com/gitbrent/PptxGenJS)
 - [officegen](https://github.com/Ziv-Barber/officegen)
 - [node-pptx](https://github.com/heavysixer/node-pptx)
 - [docxtemplater](https://github.com/open-xml-templating/docxtemplater)
 
-### Commercial Support
+# Commercial Support
 
-If you need commercial support on complex .pptx automation, please take a look at [ensembl.io](https://ensembl.io).
-![ensemblio](https://ensembl.io/ensemblio-lg.png)
+If you need commercial support on complex .pptx automation, please take a look at [ensemblio.com](https://ensemblio.com).
+![ensemblio](https://ensemblio.com/ensemblio-lg.png)
