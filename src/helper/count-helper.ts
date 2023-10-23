@@ -13,6 +13,7 @@ export class CountHelper implements ICounter {
   constructor(name: string, template: RootPresTemplate) {
     this.name = name;
     this.template = template;
+    this.count = 0;
   }
 
   static increment(name: string, counters: ICounter[]): number | null {
