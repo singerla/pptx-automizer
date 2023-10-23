@@ -1,6 +1,7 @@
 import { XmlHelper } from '../helper/xml-helper';
 import { GeneralHelper } from '../helper/general-helper';
 import {
+  ChartModificationCallback,
   ImportedElement,
   ShapeModificationCallback,
   ShapeTargetType,
@@ -8,7 +9,7 @@ import {
   Workbook,
 } from '../types/types';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
-import { HelperElement, XmlDocument, XmlElement } from '../types/xml-types';
+import { XmlDocument, XmlElement } from '../types/xml-types';
 import {
   ContentTypeExtension,
   ContentTypeMap,
@@ -46,7 +47,7 @@ export class Shape {
   targetType: ShapeTargetType;
   target: Target;
 
-  callbacks: ShapeModificationCallback[];
+  callbacks: (ShapeModificationCallback | ChartModificationCallback)[];
   hasCreationId: boolean;
   contentTypeMap: typeof ContentTypeMap;
   subtype: ElementSubtype;
@@ -199,15 +200,31 @@ export class Shape {
   applyCallbacks(
     callbacks: ShapeModificationCallback[],
     element: XmlElement,
-    arg1?: XmlElement | XmlDocument,
-    arg2?: Workbook,
+    arg1?: XmlElement,
   ): void {
     callbacks.forEach((callback) => {
       if (typeof callback === 'function') {
         try {
-          callback(element, arg1, arg2);
+          callback(element, arg1);
         } catch (e) {
-          console.log(e);
+          console.warn(e);
+        }
+      }
+    });
+  }
+
+  applyChartCallbacks(
+    callbacks: ChartModificationCallback[],
+    element: XmlElement,
+    chart: XmlDocument,
+    workbook: Workbook,
+  ): void {
+    callbacks.forEach((callback) => {
+      if (typeof callback === 'function') {
+        try {
+          callback(element, chart, workbook);
+        } catch (e) {
+          console.warn(e);
         }
       }
     });

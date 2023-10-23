@@ -13,10 +13,17 @@ import { ContentTypeExtension } from '../enums/content-type-map';
 export type ShapeTargetType = 'slide' | 'slideMaster' | 'slideLayout';
 export type SourceIdentifier = number | string;
 export type SlideModificationCallback = (document: XmlDocument) => void;
+export type ModificationCallback =
+  | ChartModificationCallback
+  | ShapeModificationCallback;
 export type ShapeModificationCallback = (
   element: XmlElement,
-  arg1?: XmlDocument | XmlElement,
-  arg2?: Workbook,
+  relation?: XmlElement,
+) => void;
+export type ChartModificationCallback = (
+  element: XmlElement,
+  chart?: XmlDocument,
+  workbook?: Workbook,
 ) => void;
 export type GetRelationshipsCallback = (
   element: XmlElement,

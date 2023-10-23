@@ -9,6 +9,7 @@ import {
   XmlElement,
 } from '../types/xml-types';
 import {
+  ChartModificationCallback,
   ImportedElement,
   ShapeTargetType,
   Target,
@@ -33,6 +34,7 @@ export class Chart extends Shape implements IChart {
   styleRelationFiles: {
     [key: string]: string[];
   };
+  callbacks: ChartModificationCallback[];
 
   constructor(shape: ImportedElement, targetType: ShapeTargetType) {
     super(shape, targetType);
@@ -129,7 +131,12 @@ export class Chart extends Shape implements IChart {
 
     const workbook = await this.readWorkbook();
 
-    this.applyCallbacks(this.callbacks, this.targetElement, chartXml, workbook);
+    this.applyChartCallbacks(
+      this.callbacks as ChartModificationCallback[],
+      this.targetElement,
+      chartXml,
+      workbook,
+    );
 
     XmlHelper.writeXmlToArchive(
       this.targetArchive,

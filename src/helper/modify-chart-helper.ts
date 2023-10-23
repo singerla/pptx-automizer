@@ -1,5 +1,9 @@
 import { ModifyChart } from '../modify/modify-chart';
-import { ShapeModificationCallback, Workbook } from '../types/types';
+import {
+  ChartModificationCallback,
+  ShapeModificationCallback,
+  Workbook,
+} from '../types/types';
 import {
   ChartAxisRange,
   ChartBubble,
@@ -21,12 +25,8 @@ export default class ModifyChartHelper {
    * See `__tests__/modify-existing-chart.test.js`
    */
   static setChartData =
-    (data: ChartData) =>
-    (
-      element: XmlDocument | XmlElement,
-      chart?: XmlDocument,
-      workbook?: Workbook,
-    ): void => {
+    (data: ChartData): ChartModificationCallback =>
+    (element: XmlElement, chart?: XmlDocument, workbook?: Workbook): void => {
       const slots = [] as ChartSlot[];
       data.series.forEach((series: ChartSeries, s: number) => {
         slots.push({
@@ -48,12 +48,8 @@ export default class ModifyChartHelper {
    * See `__tests__/modify-chart-vertical-lines.test.js`
    */
   static setChartVerticalLines =
-    (data: ChartData) =>
-    (
-      element: XmlDocument | XmlElement,
-      chart?: XmlDocument,
-      workbook?: Workbook,
-    ): void => {
+    (data: ChartData): ChartModificationCallback =>
+    (element: XmlElement, chart?: XmlDocument, workbook?: Workbook): void => {
       const slots = [] as ChartSlot[];
 
       slots.push({
@@ -85,12 +81,8 @@ export default class ModifyChartHelper {
    * See `__tests__/modify-chart-scatter.test.js`
    */
   static setChartScatter =
-    (data: ChartData) =>
-    (
-      element: XmlDocument | XmlElement,
-      chart?: XmlDocument,
-      workbook?: Workbook,
-    ): void => {
+    (data: ChartData): ChartModificationCallback =>
+    (element: XmlElement, chart?: XmlDocument, workbook?: Workbook): void => {
       const slots = [] as ChartSlot[];
 
       data.series.forEach((series: ChartSeries, s: number) => {
@@ -128,7 +120,7 @@ export default class ModifyChartHelper {
    * See `__tests__/modify-chart-scatter.test.js`
    */
   static setChartCombo =
-    (data: ChartData) =>
+    (data: ChartData): ChartModificationCallback =>
     (element: XmlElement, chart?: XmlDocument, workbook?: Workbook): void => {
       const slots = [] as ChartSlot[];
 
@@ -171,12 +163,8 @@ export default class ModifyChartHelper {
    * See `__tests__/modify-chart-bubbles.test.js`
    */
   static setChartBubbles =
-    (data: ChartData) =>
-    (
-      element: XmlDocument | XmlElement,
-      chart?: XmlDocument,
-      workbook?: Workbook,
-    ): void => {
+    (data: ChartData): ChartModificationCallback =>
+    (element: XmlElement, chart?: XmlDocument, workbook?: Workbook): void => {
       const slots = [] as ChartSlot[];
 
       data.series.forEach((series: ChartSeries, s: number) => {
@@ -221,12 +209,8 @@ export default class ModifyChartHelper {
    * See `__tests__/modify-existing-extended-chart.test.js`
    */
   static setExtendedChartData =
-    (data: ChartData) =>
-    (
-      element: XmlDocument | XmlElement,
-      chart?: XmlDocument,
-      workbook?: Workbook,
-    ): void => {
+    (data: ChartData): ChartModificationCallback =>
+    (element: XmlElement, chart?: XmlDocument, workbook?: Workbook): void => {
       const slots = [] as ChartSlot[];
       data.series.forEach((series: ChartSeries, s: number) => {
         slots.push({
@@ -250,7 +234,7 @@ export default class ModifyChartHelper {
    * See `__tests__/modify-chart-axis.test.js`
    */
   static setAxisRange =
-    (range: ChartAxisRange): ShapeModificationCallback =>
+    (range: ChartAxisRange): ChartModificationCallback =>
     (element: XmlElement, chart: XmlDocument): void => {
       const axis = chart.getElementsByTagName('c:valAx')[range.axisIndex || 0];
       if (!axis) return;
@@ -300,12 +284,8 @@ export default class ModifyChartHelper {
    * a user.
    */
   static minimizeChartLegend =
-    () =>
-    (
-      element: XmlDocument | XmlElement,
-      chart?: XmlDocument,
-      workbook?: Workbook,
-    ): void => {
+    (): ChartModificationCallback =>
+    (element: XmlElement, chart: XmlDocument, workbook?: Workbook): void => {
       this.setLegendPosition({
         w: 0.0,
         h: 0.0,
@@ -319,8 +299,8 @@ export default class ModifyChartHelper {
    * PowerPoint to automatically maximize chart space.
    */
   static removeChartLegend =
-    () =>
-    (element: XmlDocument | XmlElement, chart?: XmlDocument): void => {
+    (): ChartModificationCallback =>
+    (element: XmlElement, chart: XmlDocument): void => {
       if (chart.getElementsByTagName('c:legend')) {
         XmlHelper.remove(chart.getElementsByTagName('c:legend')[0]);
       }
@@ -333,12 +313,8 @@ export default class ModifyChartHelper {
    * @param legendArea
    */
   static setLegendPosition =
-    (legendArea: ChartElementCoordinateShares) =>
-    (
-      element: XmlDocument | XmlElement,
-      chart?: XmlDocument,
-      workbook?: Workbook,
-    ): void => {
+    (legendArea: ChartElementCoordinateShares): ChartModificationCallback =>
+    (element: XmlElement, chart: XmlDocument): void => {
       const modifyXmlHelper = new ModifyXmlHelper(chart);
       modifyXmlHelper.modify({
         'c:legend': {
@@ -383,12 +359,8 @@ export default class ModifyChartHelper {
    * @param plotArea
    */
   static setPlotArea =
-    (plotArea: ChartElementCoordinateShares) =>
-    (
-      element: XmlDocument | XmlElement,
-      chart?: XmlDocument,
-      workbook?: Workbook,
-    ): void => {
+    (plotArea: ChartElementCoordinateShares): ChartModificationCallback =>
+    (element: XmlElement, chart?: XmlDocument): void => {
       // Each chart has a separate chart xml file. It is required
       // to alter everything that's "inside" the chart, e.g. data, legend,
       // axis... and: plot area

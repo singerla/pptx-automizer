@@ -2,7 +2,12 @@ import { FileHelper } from '../helper/file-helper';
 import { XmlHelper } from '../helper/xml-helper';
 import { Shape } from '../classes/shape';
 import { RelationshipAttribute, XmlElement } from '../types/xml-types';
-import { ImportedElement, ShapeTargetType, Target } from '../types/types';
+import {
+  ImportedElement,
+  ShapeModificationCallback,
+  ShapeTargetType,
+  Target,
+} from '../types/types';
 import { IImage } from '../interfaces/iimage';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { ElementType } from '../enums/element-type';
@@ -12,6 +17,7 @@ import { ContentTypeExtension } from '../enums/content-type-map';
 export class Image extends Shape implements IImage {
   extension: ContentTypeExtension;
   createdRelation: XmlElement;
+  callbacks: ShapeModificationCallback[];
 
   constructor(shape: ImportedElement, targetType: ShapeTargetType) {
     super(shape, targetType);

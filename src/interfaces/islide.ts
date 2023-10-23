@@ -1,7 +1,7 @@
 import { RootPresTemplate } from './root-pres-template';
 import {
   FindElementSelector,
-  ShapeModificationCallback,
+  ModificationCallback,
   SlideModificationCallback,
   SourceIdentifier,
 } from '../types/types';
@@ -16,11 +16,11 @@ export interface ISlide {
     presName: string,
     slideNumber: number,
     selector: FindElementSelector,
-    callback?: ShapeModificationCallback | ShapeModificationCallback[],
+    callback?: ModificationCallback | ModificationCallback[],
   ): ISlide;
   modifyElement(
     selector: FindElementSelector,
-    callback: ShapeModificationCallback | ShapeModificationCallback[],
+    callback: ModificationCallback | ModificationCallback[],
   ): ISlide;
   removeElement(selector: FindElementSelector): ISlide;
   useSlideLayout(targetLayout?: number | string): ISlide;
