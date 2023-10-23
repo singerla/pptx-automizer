@@ -198,7 +198,7 @@ export class Shape {
 
   applyCallbacks(
     callbacks: ShapeModificationCallback[],
-    element: XmlElement | XmlDocument,
+    element: XmlElement,
     arg1?: XmlElement | XmlDocument,
     arg2?: Workbook,
   ): void {

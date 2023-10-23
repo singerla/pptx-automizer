@@ -129,11 +129,7 @@ export default class ModifyChartHelper {
    */
   static setChartCombo =
     (data: ChartData) =>
-    (
-      element: XmlDocument | XmlElement,
-      chart?: XmlDocument,
-      workbook?: Workbook,
-    ): void => {
+    (element: XmlElement, chart?: XmlDocument, workbook?: Workbook): void => {
       const slots = [] as ChartSlot[];
 
       slots.push({

@@ -14,7 +14,7 @@ export type ShapeTargetType = 'slide' | 'slideMaster' | 'slideLayout';
 export type SourceIdentifier = number | string;
 export type SlideModificationCallback = (document: XmlDocument) => void;
 export type ShapeModificationCallback = (
-  XmlDocument: XmlDocument | XmlElement,
+  element: XmlElement,
   arg1?: XmlDocument | XmlElement,
   arg2?: Workbook,
 ) => void;
