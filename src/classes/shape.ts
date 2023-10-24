@@ -200,12 +200,12 @@ export class Shape {
   applyCallbacks(
     callbacks: ShapeModificationCallback[],
     element: XmlElement,
-    arg1?: XmlElement,
+    relation?: XmlElement,
   ): void {
     callbacks.forEach((callback) => {
       if (typeof callback === 'function') {
         try {
-          callback(element, arg1);
+          callback(element, relation);
         } catch (e) {
           console.warn(e);
         }
