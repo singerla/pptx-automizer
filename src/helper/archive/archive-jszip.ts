@@ -53,7 +53,9 @@ export default class ArchiveJszip extends Archive implements IArchive {
     }
 
     if (!this.archive.files[file]) {
-      throw new Error('Could not find file ' + file);
+      throw new Error(
+        'Could not find file ' + file + '@' + path.basename(this.filename),
+      );
     }
 
     return this.archive.files[file].async(type || 'string');

@@ -23,7 +23,10 @@ import path from 'path';
 import * as fs from 'fs';
 import { XmlHelper } from './helper/xml-helper';
 import ModifyPresentationHelper from './helper/modify-presentation-helper';
-import { ContentTracker } from './helper/content-tracker';
+import {
+  contentTracker as Tracker,
+  ContentTracker,
+} from './helper/content-tracker';
 import JSZip from 'jszip';
 import { ISlide } from './interfaces/islide';
 import { IMaster } from './interfaces/imaster';
@@ -444,6 +447,9 @@ export default class Automizer implements IPresentationProps {
     await this.writeMediaFiles();
     await this.normalizePresentation();
     await this.applyModifyPresentationCallbacks();
+
+    // TODO: refactor content tracker, move this to root template
+    Tracker.reset();
   }
 
   /**

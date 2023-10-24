@@ -98,7 +98,8 @@ export class Template implements ITemplate {
         new CountHelper('layouts', newTemplate),
         new CountHelper('themes', newTemplate),
       ];
-      newTemplate.content = new ContentTracker();
+      // TODO: refactor content tracker, let root template have an instance
+      // newTemplate.content = new ContentTracker();
     }
 
     return newTemplate;

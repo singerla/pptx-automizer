@@ -33,9 +33,18 @@ export class ContentTracker {
     ppt: [],
   };
 
-  relationTags = contentTrack;
+  relationTags = contentTrack();
 
   constructor() {}
+
+  reset(): void {
+    ['files', 'relations'].forEach((section) =>
+      Object.keys(this[section]).forEach((key) => {
+        this[section][key] = [];
+      }),
+    );
+    this.relationTags = contentTrack();
+  }
 
   trackFile(file: string): void {
     const info = FileHelper.getFileInfo(file);
