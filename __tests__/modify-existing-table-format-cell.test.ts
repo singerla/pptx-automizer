@@ -22,17 +22,55 @@ test('Add and modify an existing table, apply styles to cell.', async () => {
             },
             isItalics: true,
             isBold: true,
+            size: 1200,
           },
         ],
       },
-      { values: ['test2', 12, 18, 15, 12] },
+      {
+        values: ['test2', 12, 18, 15, 12],
+        styles: [
+          null,
+          null,
+          null,
+          null,
+          {
+            // If you want to style a cell border, you
+            // need to style adjacent borders as well:
+            border: [
+              {
+                // This is required to complete top border
+                // of adjacent cell in row below:
+                tag: 'lnB',
+                type: 'solid',
+                weight: 5000,
+                color: {
+                  type: 'srgbClr',
+                  value: '00FF00',
+                },
+              },
+            ],
+          },
+        ],
+      },
       {
         values: ['test3', 14, 12, 11, 14],
         styles: [
           null,
           null,
           null,
-          null,
+          {
+            border: [
+              {
+                tag: 'lnR',
+                type: 'solid',
+                weight: 5000,
+                color: {
+                  type: 'srgbClr',
+                  value: '00FF00',
+                },
+              },
+            ],
+          },
           {
             color: {
               type: 'srgbClr',
@@ -40,10 +78,51 @@ test('Add and modify an existing table, apply styles to cell.', async () => {
             },
             background: {
               type: 'srgbClr',
-              value: '333333',
+              value: 'ffffff',
             },
             isItalics: true,
             isBold: true,
+            size: 600,
+            border: [
+              {
+                // This will only work in case you style
+                // adjacent cell in row above with 'lnB':
+                tag: 'lnT',
+                type: 'solid',
+                weight: 5000,
+                color: {
+                  type: 'srgbClr',
+                  value: '00FF00',
+                },
+              },
+              {
+                tag: 'lnB',
+                type: 'solid',
+                weight: 5000,
+                color: {
+                  type: 'srgbClr',
+                  value: '00FF00',
+                },
+              },
+              {
+                tag: 'lnL',
+                type: 'solid',
+                weight: 5000,
+                color: {
+                  type: 'srgbClr',
+                  value: '00FF00',
+                },
+              },
+              {
+                tag: 'lnR',
+                type: 'solid',
+                weight: 5000,
+                color: {
+                  type: 'srgbClr',
+                  value: '00FF00',
+                },
+              },
+            ],
           },
         ],
       },
