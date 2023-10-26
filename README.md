@@ -15,6 +15,7 @@ If you require commercial support for complex .pptx automation, you can explore 
 * [Requirements and Limitations](#requirements-and-limitations)
   * [Shape Types](#shape-types)
   * [Chart Types](#chart-types)
+  * [Animations](#animations)
   * [Slide Masters and -Layouts](#slide-masters-and--layouts)
   * [Direct Manipulation of Elements](#direct-manipulation-of-elements)
   * [PowerPoint Version](#powerpoint-version)
