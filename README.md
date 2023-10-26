@@ -58,6 +58,10 @@ At the moment, you might encounter difficulties with special shape types that re
 
 Extended chart types, like waterfall or map charts, are basically supported. You might need additional modifiers to handle extended properties, which are not implemented yet. Please help to improve `pptx-automizer` and [report](https://github.com/singerla/pptx-automizer/issues/new) issues regarding extended charts.
 
+## Animations
+
+Animations are currently out of scope of this library. You might get errors on opening an output .pptx when there are added or removed shapes. This is because `pptx-automizer` doesn't synchronize `id`-attributes of animations with the existing shapes on a slide.
+
 ## Slide Masters and -Layouts
 
 `pptx-automizer` supports importing slide masters and their associated slide layouts into the output presentation. It is important to note that you cannot add, modify, or remove individual slideLayouts directly. However, you have the flexibility to modify the underlying slideMaster, which can serve as a workaround for certain changes.
