@@ -1,11 +1,4 @@
-import Automizer, {
-  CmToDxa,
-  ISlide,
-  ModifyColorHelper,
-  ModifyShapeHelper,
-  ModifyTextHelper,
-} from './index';
-import { vd } from './helper/general-helper';
+import Automizer from './index';
 import pptxgen from 'pptxgenjs';
 
 const run = async () => {
@@ -23,6 +16,12 @@ const run = async () => {
     objectName: 'Text 1',
   };
   slide.addText(textboxText, textboxOpts);
+  slide.addImage({
+    path: 'https://upload.wikimedia.org/wikipedia/en/a/a9/Example.jpg',
+    objectName: 'Image 1',
+    x: 1,
+    y: 2,
+  });
 
   await presPptxGen.writeFile({
     fileName: templateDir + '/presPptxGenTmp.pptx',
@@ -41,6 +40,7 @@ const run = async () => {
 
   pres.addSlide('shapes', 1, (slide) => {
     slide.addElement('presPptxGenTmp', 1, 'Text 1');
+    slide.addElement('presPptxGenTmp', 1, 'Image 1');
   });
 
   pres.write(`myOutputPresentation.pptx`).then((summary) => {
