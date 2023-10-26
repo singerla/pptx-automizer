@@ -135,7 +135,7 @@ test('Add and modify an existing table, apply styles to cell.', async () => {
 
   const result = await pres
     .addSlide('tables', 3, (slide) => {
-      slide.modifyElement('TableWithFormattedCells', [
+      slide.modifyElement('TableWithEmptyCells', [
         modify.setTable(data1),
         // modify.dump
       ]);
