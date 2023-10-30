@@ -6,6 +6,7 @@ import ModifyTableHelper from './helper/modify-table-helper';
 import ModifyChartHelper from './helper/modify-chart-helper';
 import { TemplateInfo, XmlDocument, XmlElement } from './types/xml-types';
 import {
+  AutomizerParams,
   AutomizerSummary,
   ShapeModificationCallback,
   StatusTracker,
@@ -133,6 +134,7 @@ export const modify = {
 };
 export { CmToDxa, DxaToCm };
 export type {
+  AutomizerParams,
   AutomizerSummary,
   TemplateInfo,
   StatusTracker,
