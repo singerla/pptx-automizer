@@ -1,5 +1,4 @@
-import Automizer, { modify } from '../src/index';
-import { vd } from '../src/helper/general-helper';
+import Automizer from '../src/index';
 
 test('load template without slide & element creation ids.', async () => {
   const automizer = new Automizer({
@@ -7,6 +6,8 @@ test('load template without slide & element creation ids.', async () => {
     outputDir: `${__dirname}/pptx-output`,
   });
 
+  // SlidesWithoutCreationIds.pptx contains some elements without creationId,
+  // also, there is no slide creationId.
   const pres = automizer
     .loadRoot(`RootTemplate.pptx`)
     .load(`SlidesWithoutCreationIds.pptx`, 'noCreationId');
