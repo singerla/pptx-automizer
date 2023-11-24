@@ -9,6 +9,9 @@ import {
 } from './xml-types';
 import IArchive, { ArchiveMode } from '../interfaces/iarchive';
 import { ContentTypeExtension } from '../enums/content-type-map';
+import PptxGenJS from 'pptxgenjs';
+import { ISlide } from '../interfaces/islide';
+import HasShapes from '../classes/has-shapes';
 
 export type ShapeTargetType = 'slide' | 'slideMaster' | 'slideLayout';
 export type SourceIdentifier = number | string;
@@ -196,6 +199,16 @@ export type ImportElement = {
   mode: string;
   callback?: ShapeModificationCallback | ShapeModificationCallback[];
   info?: any;
+};
+export type GenerateOnSlideCallback = (
+  pptxGenJSSlide: PptxGenJS.Slide,
+  objectName: string,
+  pptxGenJS: PptxGenJS,
+) => void;
+export type GenerateElements = {
+  objectName?: string;
+  tmpSlideNumber?: number;
+  callback?: GenerateOnSlideCallback;
 };
 export type FindElementSelector =
   | string

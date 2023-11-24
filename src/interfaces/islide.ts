@@ -1,6 +1,8 @@
 import { RootPresTemplate } from './root-pres-template';
 import {
   FindElementSelector,
+  GenerateElements,
+  GenerateOnSlideCallback,
   ModificationCallback,
   SlideModificationCallback,
   SourceIdentifier,
@@ -23,8 +25,16 @@ export interface ISlide {
     selector: FindElementSelector,
     callback: ModificationCallback | ModificationCallback[],
   ): ISlide;
+
+  /**
+   * Use PptxGenJs to generate a new element on this slide.
+   * @param generate
+   * @param objectName
+   */
+  generate(generate: GenerateOnSlideCallback, objectName?: string): ISlide;
   removeElement(selector: FindElementSelector): ISlide;
   useSlideLayout(targetLayout?: number | string): ISlide;
   getAllElements(filterTags?: string[]): Promise<ElementInfo[]>;
   getAllTextElementIds(): Promise<string[]>;
+  getGeneratedElements(): GenerateElements[];
 }

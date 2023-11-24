@@ -170,7 +170,6 @@ export class XmlHelper {
     prefix: string | string[],
   ): Promise<Target[]> {
     const prefixes = typeof prefix === 'string' ? [prefix] : prefix;
-
     return XmlHelper.getRelationshipItems(
       archive,
       path,
@@ -187,11 +186,17 @@ export class XmlHelper {
 
   static parseRelationTarget(element: XmlElement, prefix?: string): Target {
     const type = element.getAttribute('Type');
-    const file = element.getAttribute('Target');
+    const file = element
+      .getAttribute('Target')
+      .replace('/ppt/', '')
+      .replace('../', '');
+
     const last = (arr: string[]): string => arr[arr.length - 1];
 
     const filename = last(file.split('/'));
-    const subtype = last(prefix.split('/'));
+    const subtype = last(
+      prefix.replace('/ppt/', '').replace('../', '').split('/'),
+    );
     const relType = last(type.split('/'));
     const rId = element.getAttribute('Id');
     const filenameExt = last(filename.split('.'));

@@ -1,5 +1,4 @@
-import Automizer from './index';
-import { vd } from './helper/general-helper';
+import Automizer, { ChartData, modify } from './index';
 
 const run = async () => {
   const automizer = new Automizer({
@@ -9,13 +8,109 @@ const run = async () => {
   });
 
   let pres = automizer
-    .loadRoot(`SlidesWithoutCreationIds.pptx`)
-    .load(`SlideWithCharts.pptx`, 'noCreationId');
+    .loadRoot(`RootTemplate.pptx`)
+    .load(`SlideWithCharts.pptx`, 'charts')
+    .load(`EmptySlide.pptx`, 'emptySlide')
+    .load(`c478f233-b987-44fa-a134-4a404356bd7f.pptx`, 'chart');
 
-  pres.addSlide('noCreationId', 1, async (slide) => {
-    const elements = await slide.getAllElements();
-    const textElements = await slide.getAllTextElementIds();
-    vd(elements);
+  // pres.addSlide('emptySlide', 1, async (slide) => {
+  //   slide.generate((pptxGenJSSlide, objectName) => {
+  //     pptxGenJSSlide.addText('Test', {
+  //       x: 1,
+  //       y: 1,
+  //       color: '363636',
+  //       objectName,
+  //     });
+  //   }, 'custom object name');
+  // });
+  //
+  // pres.addSlide('charts', 2, (slide) => {
+  //   slide.modifyElement('ColumnChart', [
+  //     modify.setChartData(<ChartData>{
+  //       series: [
+  //         { label: 'series 1' },
+  //         { label: 'series 2' },
+  //         { label: 'series 3' },
+  //       ],
+  //       categories: [
+  //         { label: 'cat 2-1', values: [50, 50, 20] },
+  //         { label: 'cat 2-2', values: [14, 50, 20] },
+  //         { label: 'cat 2-3', values: [15, 50, 20] },
+  //         { label: 'cat 2-4', values: [26, 50, 20] },
+  //       ],
+  //     }),
+  //   ]);
+  // });
+  //
+  // pres.addSlide('emptySlide', 1, async (slide) => {
+  //   slide.generate((pptxGenJSSlide, objectName) => {
+  //     pptxGenJSSlide.addImage({
+  //       path: 'https://upload.wikimedia.org/wikipedia/en/a/a9/Example.jpg',
+  //       x: 1,
+  //       y: 2,
+  //       objectName,
+  //     });
+  //   });
+  // });
+
+  pres.addSlide('emptySlide', 1, async (slide) => {
+    slide.addElement('chart', 3, '33174534-89bf-4326-8085-4b6938d36f7d');
+    // slide.addElement('charts', 2, 'ColumnChart');
+
+    // slide.generate((pptxGenJSSlide, objectName, pptxGenJs) => {
+    //   let dataChartAreaLine = [
+    //     {
+    //       name: 'Actual Sales',
+    //       labels: [
+    //         'Jan',
+    //         'Feb',
+    //         'Mar',
+    //         'Apr',
+    //         'May',
+    //         'Jun',
+    //         'Jul',
+    //         'Aug',
+    //         'Sep',
+    //         'Oct',
+    //         'Nov',
+    //         'Dec',
+    //       ],
+    //       values: [
+    //         1500, 4600, 5156, 3167, 8510, 8009, 6006, 7855, 12102, 12789, 10123,
+    //         15121,
+    //       ],
+    //     },
+    //     {
+    //       name: 'Projected Sales',
+    //       labels: [
+    //         'Jan',
+    //         'Feb',
+    //         'Mar',
+    //         'Apr',
+    //         'May',
+    //         'Jun',
+    //         'Jul',
+    //         'Aug',
+    //         'Sep',
+    //         'Oct',
+    //         'Nov',
+    //         'Dec',
+    //       ],
+    //       values: [
+    //         1000, 2600, 3456, 4567, 5010, 6009, 7006, 8855, 9102, 10789, 11123,
+    //         12121,
+    //       ],
+    //     },
+    //   ];
+    //
+    //   pptxGenJSSlide.addChart('line', dataChartAreaLine, {
+    //     x: 1,
+    //     y: 1,
+    //     w: 8,
+    //     h: 4,
+    //     objectName,
+    //   });
+    // });
   });
 
   pres.write(`myOutputPresentation.pptx`).then((summary) => {

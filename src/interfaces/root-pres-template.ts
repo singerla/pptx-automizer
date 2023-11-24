@@ -26,6 +26,8 @@ export interface RootPresTemplate extends ITemplate {
   appendSlide(slide: ISlide): Promise<void>;
   appendMasterSlide(slideMaster: IMaster): Promise<void>;
   appendLayout(slideLayout: ILayout): Promise<void>;
+  injectPptxGenJS?(): Promise<void>;
+  cleanupPptxGenJS?(): Promise<void>;
   countExistingSlides(): Promise<void>;
   truncate(): Promise<void>;
   content?: ContentTracker;

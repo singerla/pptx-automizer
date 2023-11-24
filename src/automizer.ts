@@ -11,12 +11,7 @@ import { IPresentationProps } from './interfaces/ipresentation-props';
 import { PresTemplate } from './interfaces/pres-template';
 import { RootPresTemplate } from './interfaces/root-pres-template';
 import { Template } from './classes/template';
-import {
-  ModifyXmlCallback,
-  SlideInfo,
-  TemplateInfo,
-  XmlElement,
-} from './types/xml-types';
+import { ModifyXmlCallback, TemplateInfo } from './types/xml-types';
 import { GeneralHelper, vd } from './helper/general-helper';
 import { Master } from './classes/master';
 import path from 'path';
@@ -442,11 +437,15 @@ export default class Automizer implements IPresentationProps {
   }
 
   async finalizePresentation() {
+    await this.rootTemplate.injectPptxGenJS();
+
     await this.writeMasterSlides();
     await this.writeSlides();
     await this.writeMediaFiles();
     await this.normalizePresentation();
     await this.applyModifyPresentationCallbacks();
+
+    // await this.rootTemplate.cleanupPptxGenJS();
 
     // TODO: refactor content tracker, move this to root template
     Tracker.reset();

@@ -9,6 +9,8 @@ import {
   ElementOnSlide,
   FindElementSelector,
   FindElementStrategy,
+  GenerateElements,
+  GenerateOnSlideCallback,
   ImportedElement,
   ImportElement,
   ShapeModificationCallback,
@@ -32,6 +34,7 @@ import { Image } from '../shapes/image';
 import { ElementType } from '../enums/element-type';
 import { GenericShape } from '../shapes/generic';
 import { XmlSlideHelper } from '../helper/xml-slide-helper';
+import { vd } from '../helper/general-helper';
 
 export default class HasShapes {
   /**
@@ -90,6 +93,11 @@ export default class HasShapes {
    */
   importElements: ImportElement[];
   /**
+   * Generate elements on slide with PptxGenJS
+   * @internal
+   */
+  generateElements: GenerateElements[];
+  /**
    * Rels path of slide
    * @internal
    */
@@ -134,6 +142,7 @@ export default class HasShapes {
     this.modifications = [];
     this.relModifications = [];
     this.importElements = [];
+    this.generateElements = [];
 
     this.status = params.presentation.status;
     this.content = params.presentation.content;
@@ -218,10 +227,26 @@ export default class HasShapes {
   }
 
   /**
+   *
+   */
+  generate(generate: GenerateOnSlideCallback, objectName?: string): this {
+    this.generateElements.push({
+      objectName,
+      callback: generate,
+    });
+    return this;
+  }
+
+  getGeneratedElements(): GenerateElements[] {
+    return this.generateElements;
+  }
+
+  /**
    * Select, insert and (optionally) modify a single element to a slide.
    * @param {string} presName - Filename or alias name of the template presentation.
    * Must have been importet with Automizer.load().
    * @param {number} slideNumber - Slide number within the specified template to search for the required element.
+   * @param {FindElementSelector} selector - a string or object to find the target element
    * @param {ShapeModificationCallback | ShapeModificationCallback[]} callback - One or more callback functions to apply.
    * Depending on the shape type (e.g. chart or table), different arguments will be passed to the callback.
    */
@@ -327,7 +352,6 @@ export default class HasShapes {
   /**
    * Imported selected elements
    * @internal
-   * @returns selected elements
    */
   async importedSelectedElements(): Promise<void> {
     for (const element of this.importElements) {
@@ -704,7 +728,7 @@ export default class HasShapes {
    */
   async copyRelatedContent(): Promise<void> {
     const charts = await Chart.getAllOnSlide(this.sourceArchive, this.relsPath);
-
+    vd(charts.length);
     for (const chart of charts) {
       await new Chart(
         {
@@ -745,6 +769,7 @@ export default class HasShapes {
     slideNumber: number,
   ): Promise<AnalyzedElementType> {
     const isChart = sourceElement.getElementsByTagName('c:chart');
+
     if (isChart.length) {
       const target = await XmlHelper.getTargetByRelId(
         sourceArchive,
