@@ -18,9 +18,8 @@ import {
   StatusTracker,
 } from '../types/types';
 import { ContentTracker } from '../helper/content-tracker';
-import { vd } from '../helper/general-helper';
 import {
-  HelperElement,
+  ElementInfo,
   RelationshipAttribute,
   SlideListAttribute,
   XmlDocument,
@@ -145,26 +144,41 @@ export default class HasShapes {
    * @returns {Promise<string[]>} A promise that resolves to an array of text element IDs.
    */
   async getAllTextElementIds(): Promise<string[]> {
+    const xmlSlideHelper = await this.getSlideHelper();
+
+    // Get all text element IDs
+    return xmlSlideHelper.getAllTextElementIds(
+      this.sourceTemplate.useCreationIds || false,
+    );
+  }
+
+  /**
+   * Asynchronously retrieves all elements from the slide.
+   * @params filterTags Use an array of strings to filter parent tags (e.g. 'sp')
+   * @returns {Promise<ElementInfo[]>} A promise that resolves to an array of ElementInfo objects.
+   */
+  async getAllElements(filterTags?: string[]): Promise<ElementInfo[]> {
+    const xmlSlideHelper = await this.getSlideHelper();
+
+    // Get all ElementInfo objects
+    return xmlSlideHelper.getAllElements(filterTags);
+  }
+
+  /**
+   * Asynchronously retrieves an instance of XmlSlideHelper for slide.
+   * @returns {Promise<XmlSlideHelper>} An instance of XmlSlideHelper.
+   */
+  async getSlideHelper(): Promise<XmlSlideHelper> {
     try {
-      const template = this.sourceTemplate;
       // Retrieve the slide XML data
       const slideXml = await XmlHelper.getXmlFromArchive(
-        template.archive,
+        this.sourceTemplate.archive,
         this.sourcePath,
       );
       // Initialize the XmlSlideHelper
-      const xmlSlideHelper = new XmlSlideHelper(slideXml);
-
-      // Get all text element IDs
-      const textElementIds = xmlSlideHelper.getAllTextElementIds(
-        template.useCreationIds || false,
-      );
-
-      return textElementIds;
+      return new XmlSlideHelper(slideXml);
     } catch (error) {
-      // Log the error message and return an empty array, none of the others seem to have any error handling.. so not sure whats best throw actual Error.., console.error, something else?
-      /*  console.error(error.message);
-    return []; */
+      // Log the error message
       throw new Error(error.message);
     }
   }

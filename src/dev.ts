@@ -1,10 +1,5 @@
-import Automizer, {
-  CmToDxa,
-  ISlide,
-  ModifyColorHelper,
-  ModifyShapeHelper,
-  ModifyTextHelper,
-} from './index';
+import Automizer from './index';
+import { vd } from './helper/general-helper';
 
 const run = async () => {
   const automizer = new Automizer({
@@ -14,49 +9,15 @@ const run = async () => {
   });
 
   let pres = automizer
-    .loadRoot(`SlideWithShapes.pptx`)
-    // We load it twice to make it available for modifying slides
-    // Defining a "name" as second params makes it a little easier
-    .load(`SlideWithShapes.pptx`, 'myTemplate');
+    .loadRoot(`SlidesWithoutCreationIds.pptx`)
+    .load(`SlideWithCharts.pptx`, 'noCreationId');
 
-  // This is brandnew: get useful information about loaded templates:
-  const myTemplates = await pres.getInfo();
-  const mySlides = myTemplates.slidesByTemplate(`myTemplate`);
-
-  // Feel free to create some functions to pre-define all modifications
-  // you need to apply to your slides.
-  type CallbackBySlideNumber = {
-    slideNumber: number;
-    callback: (slide: ISlide) => void;
-  };
-  const callbacks: CallbackBySlideNumber[] = [
-    {
-      slideNumber: 2,
-      callback: (slide: ISlide) => {
-        slide.modifyElement('Cloud', [
-          ModifyTextHelper.setText('My content'),
-          ModifyShapeHelper.setPosition({
-            h: CmToDxa(5),
-          }),
-          ModifyColorHelper.solidFill({
-            type: 'srgbClr',
-            value: 'cccccc',
-          }),
-        ]);
-      },
-    },
-  ];
-  const getCallbacks = (slideNumber: number) => {
-    return callbacks.find((callback) => callback.slideNumber === slideNumber)
-      ?.callback;
-  };
-
-  // We can loop all slides an apply the callbacks if defined
-  mySlides.forEach((mySlide) => {
-    pres.addSlide('myTemplate', mySlide.number, getCallbacks(mySlide.number));
+  pres.addSlide('noCreationId', 1, async (slide) => {
+    const elements = await slide.getAllElements();
+    const textElements = await slide.getAllTextElementIds();
+    vd(elements);
   });
 
-  // This will result to an output presentation containing all slides of "SlideWithShapes.pptx"
   pres.write(`myOutputPresentation.pptx`).then((summary) => {
     console.log(summary);
   });

@@ -1,9 +1,17 @@
 import JSZip from 'jszip';
 import { Target } from '../types/types';
-import { ElementInfo, SlideInfo, TemplateSlideInfo } from '../types/xml-types';
+import {
+  ElementInfo,
+  SlideInfo,
+  TemplateSlideInfo,
+  XmlDocument,
+  XmlElement,
+} from '../types/xml-types';
 import { XmlHelper } from './xml-helper';
 import IArchive from '../interfaces/iarchive';
 import { XmlRelationshipHelper } from './xml-relationship-helper';
+import { XmlSlideHelper } from './xml-slide-helper';
+import { vd } from './general-helper';
 
 export class XmlTemplateHelper {
   archive: IArchive;
@@ -32,29 +40,40 @@ export class XmlTemplateHelper {
 
     const creationIds: SlideInfo[] = [];
     for (const slideRel of relationships) {
-      const slideXml = await XmlHelper.getXmlFromArchive(
-        archive,
-        'ppt/' + slideRel.file,
-      );
+      try {
+        const slideXml = await XmlHelper.getXmlFromArchive(
+          archive,
+          'ppt/' + slideRel.file,
+        );
+        if (!slideXml) {
+          console.warn(`slideXml is undefined for file ${slideRel.file}`);
+          continue;
+        }
 
-      const creationIdSlide = slideXml
-        .getElementsByTagName('p14:creationId')
-        .item(0)
-        .getAttribute('val');
+        const slideHelper = new XmlSlideHelper(slideXml);
+        const creationIdSlide = slideHelper.getSlideCreationId();
+        if (!creationIdSlide) {
+          console.warn(`No creationId found in ${slideRel.file}`);
+        }
 
-      const elementIds = this.elementCreationIds(slideXml, archive);
-      const slideInfo = await this.getSlideInfo(
-        slideXml,
-        archive,
-        slideRel.file,
-      );
+        const slideInfo = await this.getSlideInfo(
+          slideXml,
+          archive,
+          slideRel.file,
+        );
 
-      creationIds.push({
-        id: Number(creationIdSlide),
-        number: this.parseSlideRelFile(slideRel.file),
-        elements: elementIds,
-        info: slideInfo,
-      });
+        creationIds.push({
+          id: creationIdSlide,
+          number: this.parseSlideRelFile(slideRel.file),
+          elements: slideHelper.getAllElements(),
+          info: slideInfo,
+        });
+      } catch (err) {
+        console.error(
+          `An error occurred while processing ${slideRel.file}:`,
+          err,
+        );
+      }
     }
 
     return creationIds.sort((slideA, slideB) =>
@@ -67,7 +86,7 @@ export class XmlTemplateHelper {
   }
 
   async getSlideInfo(
-    slideXml,
+    slideXml: XmlDocument,
     archive,
     slideRelFile: string,
   ): Promise<TemplateSlideInfo> {
@@ -89,11 +108,12 @@ export class XmlTemplateHelper {
     };
   }
 
-  getNameFromSlideInfo(slideXml): string {
+  getNameFromSlideInfo(slideXml: XmlDocument): string {
     const slideTitle = slideXml.getElementsByTagName('p:ph');
 
     if (slideTitle.length && slideTitle[0].getAttribute('type') === 'title') {
-      const titleElement = slideTitle[0].parentNode.parentNode.parentNode;
+      const titleElement = slideTitle[0].parentNode.parentNode
+        .parentNode as XmlElement;
       const nameFragments = this.parseTitleElement(titleElement);
 
       if (nameFragments.length) {
@@ -131,7 +151,7 @@ export class XmlTemplateHelper {
     }
   }
 
-  parseTitleElement(titleElement): string[] {
+  parseTitleElement(titleElement: XmlElement): string[] {
     const nameFragments = [];
     const titleText = titleElement.getElementsByTagName('a:t');
 
@@ -168,73 +188,5 @@ export class XmlTemplateHelper {
     } catch (error) {
       throw new Error(`Error getting slide numbers: ${error.message}`);
     }
-  }
-  elementCreationIds(slideXml, archive): ElementInfo[] {
-    const slideElements = slideXml.getElementsByTagName('p:cNvPr');
-
-    const elementIds = <ElementInfo[]>[];
-    for (const item in slideElements) {
-      const slideElement = slideElements[item];
-      if (slideElement.getAttribute !== undefined) {
-        const creationIdElement =
-          slideElement.getElementsByTagName('a16:creationId');
-        if (creationIdElement.item(0)) {
-          elementIds.push(this.getElementInfo(slideElement, archive));
-        }
-      }
-    }
-    return elementIds;
-  }
-
-  getElementInfo(slideElement, archive): ElementInfo {
-    const elementName = slideElement.getAttribute('name');
-    const slideElementParent = slideElement.parentNode.parentNode;
-    let type = slideElementParent.tagName;
-    const creationId = slideElement
-      .getElementsByTagName('a16:creationId')
-      .item(0)
-      .getAttribute('id');
-
-    const mapUriType = {
-      'http://schemas.openxmlformats.org/drawingml/2006/table': 'table',
-      'http://schemas.openxmlformats.org/drawingml/2006/chart': 'chart',
-    };
-
-    type = type.replace('p:', '');
-    const position = {
-      x: 0,
-      y: 0,
-      cx: 0,
-      cy: 0,
-    };
-    let xFrmTag = 'a:xfrm';
-
-    switch (type) {
-      case 'graphicFrame':
-        const graphicData =
-          slideElementParent.getElementsByTagName('a:graphicData')[0];
-        const uri = graphicData.getAttribute('uri');
-        type = mapUriType[uri] ? mapUriType[uri] : type;
-        xFrmTag = 'p:xfrm';
-        break;
-    }
-
-    const xFrm = slideElementParent.getElementsByTagName(xFrmTag);
-    if (xFrm && xFrm.length) {
-      const Off = xFrm[0].getElementsByTagName('a:off');
-      const Ext = xFrm[0].getElementsByTagName('a:ext');
-
-      position.x = Number(Off[0].getAttribute('x'));
-      position.y = Number(Off[0].getAttribute('y'));
-      position.cx = Number(Ext[0].getAttribute('cx'));
-      position.cy = Number(Ext[0].getAttribute('cy'));
-    }
-
-    return {
-      name: elementName,
-      type: type,
-      id: creationId,
-      position: position,
-    };
   }
 }

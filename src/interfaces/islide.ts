@@ -6,6 +6,7 @@ import {
   SourceIdentifier,
 } from '../types/types';
 import IArchive from './iarchive';
+import { ElementInfo } from '../types/xml-types';
 
 export interface ISlide {
   sourceArchive: IArchive;
@@ -24,5 +25,6 @@ export interface ISlide {
   ): ISlide;
   removeElement(selector: FindElementSelector): ISlide;
   useSlideLayout(targetLayout?: number | string): ISlide;
+  getAllElements(filterTags?: string[]): Promise<ElementInfo[]>;
   getAllTextElementIds(): Promise<string[]>;
 }

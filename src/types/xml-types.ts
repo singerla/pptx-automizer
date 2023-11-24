@@ -54,9 +54,11 @@ export type TemplateSlideInfo = {
   name: string;
 };
 
+export type ElementType = 'sp' | 'chart' | 'table' | 'pic' | 'cxnSp';
+
 export type ElementInfo = {
   name: string;
-  type: string;
+  type: ElementType;
   id: string;
   position: {
     x: number;
@@ -64,6 +66,8 @@ export type ElementInfo = {
     cx: number;
     cy: number;
   };
+  hasTextBody: boolean;
+  getXmlElement: () => XmlElement;
 };
 
 export type ContentMapType = 'slideMaster' | 'slideLayout';
