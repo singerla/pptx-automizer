@@ -1,11 +1,10 @@
 import { FileHelper } from '../helper/file-helper';
-import { XmlHelper } from '../helper/xml-helper';
 import { ShapeTargetType, SourceIdentifier } from '../types/types';
 import { ISlide } from '../interfaces/islide';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
 import { PresTemplate } from '../interfaces/pres-template';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
-import { last, vd } from '../helper/general-helper';
+import { last } from '../helper/general-helper';
 import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import { IMaster } from '../interfaces/imaster';
 import HasShapes from './has-shapes';
@@ -111,7 +110,7 @@ export class Slide extends HasShapes implements ISlide {
 
   /**
    * Find another slide layout by name.
-   * @param targetLayoutId
+   * @param targetLayoutName
    */
   async useNamedSlideLayout(targetLayoutName: string): Promise<number> {
     const templateName = this.sourceTemplate.name;
@@ -144,7 +143,7 @@ export class Slide extends HasShapes implements ISlide {
 
   /**
    * Use another slide layout by index or detect original index.
-   * @param targetLayoutId
+   * @param targetLayoutIndex
    */
   async useIndexedSlideLayout(targetLayoutIndex?: number): Promise<number> {
     if (!targetLayoutIndex) {
