@@ -1,4 +1,48 @@
-import Automizer, { ChartData, modify } from './index';
+import Automizer from './index';
+
+let dataChartAreaLine = [
+  {
+    name: 'Actual Sales',
+    labels: [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ],
+    values: [
+      1500, 4600, 5156, 3167, 8510, 8009, 6006, 7855, 12102, 12789, 10123,
+      15121,
+    ],
+  },
+  {
+    name: 'Projected Sales',
+    labels: [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ],
+    values: [
+      1000, 2600, 3456, 4567, 5010, 6009, 7006, 8855, 9102, 10789, 11123, 12121,
+    ],
+  },
+];
 
 const run = async () => {
   const automizer = new Automizer({
@@ -10,8 +54,7 @@ const run = async () => {
   let pres = automizer
     .loadRoot(`RootTemplate.pptx`)
     .load(`SlideWithCharts.pptx`, 'charts')
-    .load(`EmptySlide.pptx`, 'emptySlide')
-    .load(`c478f233-b987-44fa-a134-4a404356bd7f.pptx`, 'chart');
+    .load(`EmptySlide.pptx`, 'emptySlide');
 
   // pres.addSlide('emptySlide', 1, async (slide) => {
   //   slide.generate((pptxGenJSSlide, objectName) => {
@@ -54,65 +97,52 @@ const run = async () => {
   // });
 
   pres.addSlide('emptySlide', 1, async (slide) => {
-    slide.addElement('chart', 3, '33174534-89bf-4326-8085-4b6938d36f7d');
-    // slide.addElement('charts', 2, 'ColumnChart');
+    slide.addElement('charts', 2, 'ColumnChart');
 
-    // slide.generate((pptxGenJSSlide, objectName, pptxGenJs) => {
-    //   let dataChartAreaLine = [
-    //     {
-    //       name: 'Actual Sales',
-    //       labels: [
-    //         'Jan',
-    //         'Feb',
-    //         'Mar',
-    //         'Apr',
-    //         'May',
-    //         'Jun',
-    //         'Jul',
-    //         'Aug',
-    //         'Sep',
-    //         'Oct',
-    //         'Nov',
-    //         'Dec',
-    //       ],
-    //       values: [
-    //         1500, 4600, 5156, 3167, 8510, 8009, 6006, 7855, 12102, 12789, 10123,
-    //         15121,
-    //       ],
-    //     },
-    //     {
-    //       name: 'Projected Sales',
-    //       labels: [
-    //         'Jan',
-    //         'Feb',
-    //         'Mar',
-    //         'Apr',
-    //         'May',
-    //         'Jun',
-    //         'Jul',
-    //         'Aug',
-    //         'Sep',
-    //         'Oct',
-    //         'Nov',
-    //         'Dec',
-    //       ],
-    //       values: [
-    //         1000, 2600, 3456, 4567, 5010, 6009, 7006, 8855, 9102, 10789, 11123,
-    //         12121,
-    //       ],
-    //     },
-    //   ];
+    slide.generate((pptxGenJSSlide, objectName, pptxGenJs) => {
+      pptxGenJSSlide.addChart('line', dataChartAreaLine, {
+        x: 1,
+        y: 1,
+        w: 8,
+        h: 4,
+        objectName,
+      });
+    });
     //
+    // slide.generate((pptxGenJSSlide, objectName, pptxGenJs) => {
     //   pptxGenJSSlide.addChart('line', dataChartAreaLine, {
-    //     x: 1,
+    //     x: 3,
     //     y: 1,
-    //     w: 8,
-    //     h: 4,
+    //     w: 6,
+    //     h: 2,
     //     objectName,
     //   });
-    // });
+    // }, 'MyLineChart');
   });
 
+  pres.addSlide('emptySlide', 1, async (slide) => {
+    slide.addElement('charts', 2, 'ColumnChart');
+
+    slide.generate((pptxGenJSSlide, objectName, pptxGenJs) => {
+      pptxGenJSSlide.addChart('line', dataChartAreaLine, {
+        x: 1,
+        y: 1,
+        w: 8,
+        h: 4,
+        objectName,
+      });
+    });
+    //
+    // slide.generate((pptxGenJSSlide, objectName, pptxGenJs) => {
+    //   pptxGenJSSlide.addChart('line', dataChartAreaLine, {
+    //     x: 3,
+    //     y: 1,
+    //     w: 6,
+    //     h: 2,
+    //     objectName,
+    //   });
+    // }, 'MyLineChart');
+  });
   pres.write(`myOutputPresentation.pptx`).then((summary) => {
     console.log(summary);
   });

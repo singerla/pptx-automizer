@@ -1,6 +1,8 @@
 # pptx-automizer: A Powerful .pptx Modifier for Node.js
 
-`pptx-automizer` is a Node.js-based PowerPoint (.pptx) generator that automates the manipulation of existing .pptx files. With `pptx-automizer`, you can import your library of .pptx templates, merge templates, and customize slide content. `pptx-automizer` will not write files from scratch, but edit and merge existing pptx files. You can style template slides within PowerPoint, and these templates will be seamlessly integrated into the output presentation. Most of the content can be modified by using callbacks with [xmldom](https://github.com/xmldom/xmldom).
+`pptx-automizer` is a Node.js-based PowerPoint (.pptx) generator that automates the manipulation of existing .pptx files. With `pptx-automizer`, you can import your library of .pptx templates, merge templates, and customize slide content. You can style template slides within PowerPoint, and these templates will be seamlessly integrated into the output presentation. Most of the content can be modified by using callbacks with [xmldom](https://github.com/xmldom/xmldom).
+
+If you require to create elements from scratch, `pptx-automizer` wraps around [PptxGenJS](https://github.com/gitbrent/PptxGenJS). Use the powerful syntax of `PptxGenJS` to add dynamic content to your existing .pptx template files.
 
 `pptx-automizer` is particularly well-suited for users who aim to manage their own library of .pptx template files, making it an ideal choice for those who work with intricate, well-designed customized layouts. With this tool, any existing slide or even a single element can serve as a data-driven template for generating output .pptx files.
 
@@ -561,6 +563,32 @@ pres.addSlide('charts', 2, (slide) => {
 });
 ```
 
+
+## Add elements with PptxGenJs
+
+If you require to add an element from scratch, you can use [PptxGenJS](https://github.com/gitbrent/PptxGenJS) by calling `slide.generate()`.
+
+```ts
+pres.addSlide('empty', 1, (slide) => {
+  // Use pptxgenjs to add text from scratch:
+  slide.generate((pptxGenJSSlide, objectName) => {
+    pptxGenJSSlide.addText('Test', {
+      x: 1,
+      y: 1,
+      color: '363636',
+      // if you did not set a custom object name, a random id 
+      // needs to be passed for objectName. 
+      objectName,
+    });
+  }, 'custom object name');
+});
+```
+
+Find out more about adding elements with `PptxGenJs`:
+
+- [Add generated charts](https://github.com/singerla/pptx-automizer/blob/main/__tests__/generate-pptx-genjs-charts.test.ts)
+- [Add arbitrary images](https://github.com/singerla/pptx-automizer/blob/main/__tests__/generate-pptx-genjs-image.test.ts)
+
 ## Remove elements from a slide
 
 You can as well remove elements from slides.
@@ -885,4 +913,4 @@ This project was inspired by:
 # Commercial Support
 
 If you need commercial support on complex .pptx automation, please take a look at [ensemblio.com](https://ensemblio.com).
-![ensemblio](https://ensemblio.com/ensemblio-lg.png)
+![ensemblio](https://ensembl.io/ensemblio-lg.png)

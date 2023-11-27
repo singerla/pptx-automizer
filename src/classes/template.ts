@@ -14,9 +14,8 @@ import { ArchiveParams, MediaFile } from '../types/types';
 import Automizer from '../automizer';
 import { IMaster } from '../interfaces/imaster';
 import { ILayout } from '../interfaces/ilayout';
-import PptxGenJS from 'pptxgenjs';
-import { randomUUID } from 'crypto';
-import fs from 'fs';
+import { IGenerator } from '../interfaces/igenerator';
+import GeneratePptxGenJs from '../helper/generate/generate-pptxgenjs';
 
 export class Template implements ITemplate {
   /**
@@ -69,8 +68,7 @@ export class Template implements ITemplate {
   mediaFiles: MediaFile[] = [];
 
   automizer: Automizer;
-  pptxGenJS: PptxGenJS;
-  pptxGenJSTmpFile: string;
+  generators: IGenerator[] = [];
 
   constructor(location: string, params: ArchiveParams) {
     this.location = location;
@@ -196,54 +194,6 @@ export class Template implements ITemplate {
     });
   }
 
-  async injectPptxGenJS(): Promise<void> {
-    this.createPptxGenJSInstance();
-    this.pptxGenJSTmpFile = randomUUID() + '.pptx';
-
-    let generatedSlidesCount = 0;
-    for (const slide of this.slides) {
-      const generate = slide.getGeneratedElements();
-      if (generate.length) {
-        generatedSlidesCount++;
-        const pgenSlide = this.appendPptxGenSlide();
-
-        generate.forEach((generateElement) => {
-          generateElement.objectName =
-            generateElement.objectName || randomUUID();
-          generateElement.tmpSlideNumber = generatedSlidesCount;
-          generateElement.callback(
-            pgenSlide,
-            generateElement.objectName,
-            this.pptxGenJS,
-          );
-
-          slide.addElement(
-            this.pptxGenJSTmpFile,
-            generatedSlidesCount,
-            generateElement.objectName,
-          );
-        });
-      }
-    }
-
-    if (generatedSlidesCount > 0) {
-      await this.pptxGenJS.writeFile({
-        fileName: this.automizer.templateDir + '/' + this.pptxGenJSTmpFile,
-      });
-      this.automizer.load(this.pptxGenJSTmpFile);
-    }
-  }
-
-  createPptxGenJSInstance(): void {
-    this.pptxGenJS = new PptxGenJS();
-  }
-  appendPptxGenSlide(): PptxGenJS.Slide {
-    return this.pptxGenJS.addSlide();
-  }
-  async cleanupPptxGenJS() {
-    fs.unlinkSync(this.automizer.templateDir + '/' + this.pptxGenJSTmpFile);
-  }
-
   async countExistingSlides(): Promise<void> {
     const xml = await this.getSlideIdList();
     const sldIdLst = xml.getElementsByTagName('p:sldIdLst');
@@ -287,5 +237,21 @@ export class Template implements ITemplate {
 
   count(name: string): number {
     return CountHelper.count(name, this.counter);
+  }
+
+  async runExternalGenerators() {
+    this.generators.push(
+      new GeneratePptxGenJs(this.automizer, this.slides).create(),
+    );
+
+    for (const generator of this.generators) {
+      await generator.generateSlides();
+    }
+  }
+
+  async cleanupExternalGenerators() {
+    for (const generator of this.generators) {
+      await generator.cleanup();
+    }
   }
 }
