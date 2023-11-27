@@ -186,17 +186,12 @@ export class XmlHelper {
 
   static parseRelationTarget(element: XmlElement, prefix?: string): Target {
     const type = element.getAttribute('Type');
-    const file = element
-      .getAttribute('Target')
-      .replace('/ppt/', '')
-      .replace('../', '');
+    const file = element.getAttribute('Target');
 
     const last = (arr: string[]): string => arr[arr.length - 1];
-
     const filename = last(file.split('/'));
-    const subtype = last(
-      prefix.replace('/ppt/', '').replace('../', '').split('/'),
-    );
+    const subtype = last(prefix.split('/'));
+
     const relType = last(type.split('/'));
     const rId = element.getAttribute('Id');
     const filenameExt = last(filename.split('.'));
@@ -233,10 +228,20 @@ export class XmlHelper {
     return target;
   }
 
-  static targetMatchesRelationship(relType, subtype, target, prefix) {
+  static targetMatchesRelationship(
+    relType: string,
+    subtype: string,
+    file: string,
+    prefix: string,
+  ) {
     if (relType === 'package') return true;
 
-    return relType === subtype && target.indexOf(prefix) === 0;
+    // pptgenjs uses absolute paths in "Target" attributes
+    if (file.indexOf('/ppt/') === 0) {
+      file = file.replace('/ppt/', '../');
+    }
+
+    return relType === subtype && file.indexOf(prefix) === 0;
   }
 
   static async getTargetsByRelationshipType(
@@ -244,7 +249,7 @@ export class XmlHelper {
     path: string,
     type: string,
   ): Promise<Target[]> {
-    const rels = XmlHelper.getRelationshipItems(
+    return await XmlHelper.getRelationshipItems(
       archive,
       path,
       (element: XmlElement, rels: Target[]) => {
@@ -258,7 +263,6 @@ export class XmlHelper {
         }
       },
     );
-    return rels;
   }
 
   static async getRelationshipItems(

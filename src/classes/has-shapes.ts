@@ -750,7 +750,6 @@ export default class HasShapes {
    */
   async copyRelatedContent(): Promise<void> {
     const charts = await Chart.getAllOnSlide(this.sourceArchive, this.relsPath);
-    vd(charts.length);
     for (const chart of charts) {
       await new Chart(
         {
