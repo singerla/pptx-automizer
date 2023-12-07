@@ -5,6 +5,7 @@ import {
   XmlElement,
 } from '../types/xml-types';
 import { XmlHelper } from './xml-helper';
+import { vd } from './general-helper';
 
 export const nsMain =
   'http://schemas.openxmlformats.org/presentationml/2006/main';
@@ -168,10 +169,9 @@ export class XmlSlideHelper {
   }
 
   static parseShapeCoordinates(slideElementParent: XmlElement) {
-    let xFrmTag = 'a:xfrm';
-    const xFrms = slideElementParent.getElementsByTagName(
-      xFrmTag,
-    ) as HTMLCollectionOf<XmlElement>;
+    const xFrmsA = slideElementParent.getElementsByTagName('a:xfrm');
+    const xFrmsP = slideElementParent.getElementsByTagName('p:xfrm');
+    const xFrms = xFrmsP.item(0) ? xFrmsP : xFrmsA;
 
     const position = {
       x: 0,
@@ -185,13 +185,13 @@ export class XmlSlideHelper {
     }
 
     const xFrm = xFrms.item(0);
-    const Off = xFrm.getElementsByTagName('a:off');
-    const Ext = xFrm.getElementsByTagName('a:ext');
+    const Off = xFrm.getElementsByTagName('a:off').item(0);
+    const Ext = xFrm.getElementsByTagName('a:ext').item(0);
 
-    position.x = XmlSlideHelper.parseCoordinate(Off[0], 'x');
-    position.y = XmlSlideHelper.parseCoordinate(Off[0], 'y');
-    position.cx = XmlSlideHelper.parseCoordinate(Ext[0], 'cx');
-    position.cy = XmlSlideHelper.parseCoordinate(Ext[0], 'cy');
+    position.x = XmlSlideHelper.parseCoordinate(Off, 'x');
+    position.y = XmlSlideHelper.parseCoordinate(Off, 'y');
+    position.cx = XmlSlideHelper.parseCoordinate(Ext, 'cx');
+    position.cy = XmlSlideHelper.parseCoordinate(Ext, 'cy');
 
     return position;
   }
