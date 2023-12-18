@@ -27,4 +27,5 @@ export interface ISlide {
   useSlideLayout(targetLayout?: number | string): ISlide;
   getAllElements(filterTags?: string[]): Promise<ElementInfo[]>;
   getAllTextElementIds(): Promise<string[]>;
+  getDimensions(): Promise<{ width: number; height: number }>;
 }

@@ -165,6 +165,14 @@ export default class HasShapes {
   }
 
   /**
+   *
+   */
+  async getDimensions(): Promise<{ width: number; height: number }> {
+    const xmlSlideHelper = await this.getSlideHelper();
+    return xmlSlideHelper.getDimensions();
+  }
+
+  /**
    * Asynchronously retrieves an instance of XmlSlideHelper for slide.
    * @returns {Promise<XmlSlideHelper>} An instance of XmlSlideHelper.
    */
@@ -175,8 +183,9 @@ export default class HasShapes {
         this.sourceTemplate.archive,
         this.sourcePath,
       );
+
       // Initialize the XmlSlideHelper
-      return new XmlSlideHelper(slideXml);
+      return new XmlSlideHelper(slideXml, this);
     } catch (error) {
       // Log the error message
       throw new Error(error.message);

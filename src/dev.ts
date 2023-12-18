@@ -13,9 +13,9 @@ const run = async () => {
     .load(`SlideWithCharts.pptx`, 'noCreationId');
 
   pres.addSlide('noCreationId', 1, async (slide) => {
-    const elements = await slide.getAllElements();
-    const textElements = await slide.getAllTextElementIds();
-    vd(elements);
+    // const elements = await slide.getAllElements();
+    // const textElements = await slide.getAllTextElementIds();
+    vd(await slide.getDimensions());
   });
 
   pres.write(`myOutputPresentation.pptx`).then((summary) => {
