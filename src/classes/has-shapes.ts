@@ -165,7 +165,10 @@ export default class HasShapes {
   }
 
   /**
+   * Asynchronously retrieves the dimensions of the slide.
+   * This function utilizes the XmlSlideHelper to get the slide dimensions.
    *
+   * @returns {Promise<{width: number, height: number}>} A promise that resolves to an object containing the width and height of the slide.
    */
   async getDimensions(): Promise<{ width: number; height: number }> {
     const xmlSlideHelper = await this.getSlideHelper();

@@ -208,11 +208,16 @@ export class XmlSlideHelper {
   };
 
   // Thanks to https://github.com/MP70/pptx-automizer/commit/d0e028c3d486376885e399b648a4c0ca6aea64a8
-  // (WIP)
+  /**
+   * Asynchronously retrieves the dimensions of a slide.
+   * Tries to find the dimensions from the slide XML, then from the layout, master, and presentation XMLs in order.
+   *
+   * @returns {Promise<{ width: number, height: number }>} The dimensions of the slide.
+   * @throws Error if unable to determine dimensions.
+   */
   async getDimensions(): Promise<{ width: number; height: number }> {
     try {
       // Function to extract dimensions from an XML element
-
       const extractDimensions = (
         xml: Document | null,
       ): { width: number; height: number } | null => {
@@ -220,8 +225,8 @@ export class XmlSlideHelper {
 
         const sldSz = xml.getElementsByTagName('p:sldSz')[0];
         if (sldSz) {
-          const width = XmlSlideHelper.parseCoordinate(sldSz, 'cx'); // Width in EMUs
-          const height = XmlSlideHelper.parseCoordinate(sldSz, 'cy'); // Height in EMUs
+          const width = XmlSlideHelper.parseCoordinate(sldSz, 'cx');
+          const height = XmlSlideHelper.parseCoordinate(sldSz, 'cy');
           return { width, height };
         }
         return null;
@@ -234,9 +239,6 @@ export class XmlSlideHelper {
         try {
           const xml = await this.getRelatedXml(path);
           const dimensions = extractDimensions(xml);
-          if (dimensions) {
-            console.log(`Dimensions extracted from: ${path}`);
-          }
           return dimensions;
         } catch (error) {
           console.warn(`Error while fetching XML from path ${path}: ${error}`);
