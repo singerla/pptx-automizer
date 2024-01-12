@@ -5,7 +5,7 @@ import {
   XmlElement,
 } from '../types/xml-types';
 import { XmlHelper } from './xml-helper';
-import { vd } from './general-helper';
+import HasShapes from '../classes/has-shapes';
 
 export const nsMain =
   'http://schemas.openxmlformats.org/presentationml/2006/main';
@@ -19,16 +19,19 @@ export const mapUriType = {
  */
 export class XmlSlideHelper {
   private slideXml: XmlDocument;
+  protected hasShapes: HasShapes;
 
   /**
    * Constructor for the XmlSlideHelper class.
    * @param {XmlDocument} slideXml - The slide XML document to be used by the helper.
+   * @param hasShapes
    */
-  constructor(slideXml: XmlDocument) {
+  constructor(slideXml: XmlDocument, hasShapes?: HasShapes) {
     if (!slideXml) {
       throw Error('Slide XML is not defined');
     }
     this.slideXml = slideXml;
+    this.hasShapes = hasShapes;
   }
 
   getSlideCreationId(): number | undefined {
@@ -200,6 +203,54 @@ export class XmlSlideHelper {
     element: XmlElement,
     attributeName: string,
   ): number => {
-    return Number(element.getAttribute(attributeName));
+    return parseInt(element.getAttribute(attributeName), 10);
+  };
+
+  /**
+   * Asynchronously retrieves the dimensions of a slide.
+   * Tries to find the dimensions from the slide XML, then from the layout, master, and presentation XMLs in order.
+   *
+   * @returns {Promise<{ width: number, height: number }>} The dimensions of the slide.
+   * @throws Error if unable to determine dimensions.
+   */
+  async getDimensions(): Promise<{ width: number; height: number }> {
+    try {
+      const dimensions = await this.getAndExtractDimensions(
+        'ppt/presentation.xml',
+      );
+      if (dimensions) return dimensions;
+    } catch (error) {
+      console.error(`Error while fetching slide dimensions: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Fetches an XML file from the given path and extracts the dimensions.
+   *
+   * @param {string} path - The path of the XML file.
+   * @returns {Promise<{ width: number; height: number } | null>} - A promise that resolves with an object containing the width and height, or `null` if there was an error.
+   */
+  getAndExtractDimensions = async (
+    path: string,
+  ): Promise<{ width: number; height: number } | null> => {
+    try {
+      const xml = await XmlHelper.getXmlFromArchive(
+        this.hasShapes.sourceTemplate.archive,
+        path,
+      );
+      if (!xml) return null;
+
+      const sldSz = xml.getElementsByTagName('p:sldSz')[0];
+      if (sldSz) {
+        const width = XmlSlideHelper.parseCoordinate(sldSz, 'cx');
+        const height = XmlSlideHelper.parseCoordinate(sldSz, 'cy');
+        return { width, height };
+      }
+      return null;
+    } catch (error) {
+      console.warn(`Error while fetching XML from path ${path}: ${error}`);
+      return null;
+    }
   };
 }
