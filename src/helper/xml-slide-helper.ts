@@ -5,7 +5,6 @@ import {
   XmlElement,
 } from '../types/xml-types';
 import { XmlHelper } from './xml-helper';
-import { XmlRelationshipHelper } from './xml-relationship-helper';
 import HasShapes from '../classes/has-shapes';
 
 export const nsMain =
@@ -207,7 +206,6 @@ export class XmlSlideHelper {
     return parseInt(element.getAttribute(attributeName), 10);
   };
 
-  // Thanks to https://github.com/MP70/pptx-automizer/commit/d0e028c3d486376885e399b648a4c0ca6aea64a8
   /**
    * Asynchronously retrieves the dimensions of a slide.
    * Tries to find the dimensions from the slide XML, then from the layout, master, and presentation XMLs in order.
@@ -217,76 +215,42 @@ export class XmlSlideHelper {
    */
   async getDimensions(): Promise<{ width: number; height: number }> {
     try {
-      // Function to extract dimensions from an XML element
-      const extractDimensions = (
-        xml: Document | null,
-      ): { width: number; height: number } | null => {
-        if (!xml) return null;
-
-        const sldSz = xml.getElementsByTagName('p:sldSz')[0];
-        if (sldSz) {
-          const width = XmlSlideHelper.parseCoordinate(sldSz, 'cx');
-          const height = XmlSlideHelper.parseCoordinate(sldSz, 'cy');
-          return { width, height };
-        }
-        return null;
-      };
-
-      // Function to safely get XML and extract dimensions
-      const getAndExtractDimensions = async (
-        path: string,
-      ): Promise<{ width: number; height: number } | null> => {
-        try {
-          const xml = await this.getRelatedXml(path);
-          const dimensions = extractDimensions(xml);
-          return dimensions;
-        } catch (error) {
-          console.warn(`Error while fetching XML from path ${path}: ${error}`);
-          return null;
-        }
-      };
-
-      // Sequence of attempts to fetch and extract dimensions
-      let dimensions = extractDimensions(this.slideXml);
-      if (dimensions) return dimensions;
-
-      const layoutNumber = await XmlRelationshipHelper.getSlideLayoutNumber(
-        this.hasShapes.sourceTemplate.archive,
-        this.hasShapes.sourceNumber,
-      );
-
-      dimensions = await getAndExtractDimensions(
-        `ppt/slideLayouts/slideLayout${layoutNumber}.xml`,
+      const dimensions = await this.getAndExtractDimensions(
+        'ppt/presentation.xml',
       );
       if (dimensions) return dimensions;
-
-      const masterNumber = await XmlRelationshipHelper.getSlideMasterNumber(
-        this.hasShapes.sourceTemplate.archive,
-        layoutNumber,
-      );
-
-      dimensions = await getAndExtractDimensions(
-        `ppt/slideMasters/slideMaster${masterNumber}.xml`,
-      );
-      if (dimensions) return dimensions;
-
-      dimensions = await getAndExtractDimensions('ppt/presentation.xml');
-      if (dimensions) return dimensions;
-
-      throw new Error('Slide size not specified at any level');
     } catch (error) {
       console.error(`Error while fetching slide dimensions: ${error}`);
       throw error;
     }
   }
 
-  async getRelatedXml(path: string): Promise<XmlDocument> {
-    const sourceArchive = this.hasShapes.sourceTemplate.archive;
+  /**
+   * Fetches an XML file from the given path and extracts the dimensions.
+   *
+   * @param {string} path - The path of the XML file.
+   * @returns {Promise<{ width: number; height: number } | null>} - A promise that resolves with an object containing the width and height, or `null` if there was an error.
+   */
+  getAndExtractDimensions = async (
+    path: string,
+  ): Promise<{ width: number; height: number } | null> => {
+    try {
+      const xml = await XmlHelper.getXmlFromArchive(
+        this.hasShapes.sourceTemplate.archive,
+        path,
+      );
+      if (!xml) return null;
 
-    if (!sourceArchive) {
-      throw new Error('Source archive is undefined');
+      const sldSz = xml.getElementsByTagName('p:sldSz')[0];
+      if (sldSz) {
+        const width = XmlSlideHelper.parseCoordinate(sldSz, 'cx');
+        const height = XmlSlideHelper.parseCoordinate(sldSz, 'cy');
+        return { width, height };
+      }
+      return null;
+    } catch (error) {
+      console.warn(`Error while fetching XML from path ${path}: ${error}`);
+      return null;
     }
-
-    return await XmlHelper.getXmlFromArchive(sourceArchive, path);
-  }
+  };
 }

@@ -27,5 +27,8 @@ export interface ISlide {
   useSlideLayout(targetLayout?: number | string): ISlide;
   getAllElements(filterTags?: string[]): Promise<ElementInfo[]>;
   getAllTextElementIds(): Promise<string[]>;
+  /**
+   * Asynchronously retrieves the dimensions of a slide.
+   */
   getDimensions(): Promise<{ width: number; height: number }>;
 }
