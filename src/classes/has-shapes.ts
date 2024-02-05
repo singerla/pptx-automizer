@@ -32,6 +32,7 @@ import { Image } from '../shapes/image';
 import { ElementType } from '../enums/element-type';
 import { GenericShape } from '../shapes/generic';
 import { XmlSlideHelper } from '../helper/xml-slide-helper';
+import { vd } from '../helper/general-helper';
 
 export default class HasShapes {
   /**
@@ -387,16 +388,26 @@ export default class HasShapes {
         ? this.getSlideNumber(template, importElement.slideNumber)
         : importElement.slideNumber;
 
-    let sourcePath = `ppt/slides/slide${slideNumber}.xml`;
-
+    let currentMode = 'slideToSlide';
     if (this.targetType === 'slideMaster') {
-      // It is possible to import shapes from loaded presentations,
-      // as well as to modify an existing shape on current slideMaster
-      sourcePath =
-        importElement.mode === 'append'
-          ? `ppt/slides/slide${slideNumber}.xml`
-          : `ppt/slideMasters/slideMaster${slideNumber}.xml`;
+      if (importElement.mode === 'append') {
+        currentMode = 'slideToMaster';
+      } else {
+        currentMode = 'onMaster';
+      }
     }
+
+    // It is possible to import shapes from loaded slides to slideMaster,
+    // as well as to modify an existing shape on current slideMaster
+    const sourcePath =
+      currentMode === 'onMaster'
+        ? `ppt/slideMasters/slideMaster${slideNumber}.xml`
+        : `ppt/slides/slide${slideNumber}.xml`;
+
+    const sourceRelPath =
+      currentMode === 'onMaster'
+        ? `ppt/slideMasters/_rels/slideMaster${slideNumber}.xml.rels`
+        : `ppt/slides/_rels/slide${slideNumber}.xml.rels`;
 
     const sourceArchive = await template.archive;
     const useCreationIds =
@@ -420,7 +431,7 @@ export default class HasShapes {
     const appendElementParams = await this.analyzeElement(
       sourceElement,
       sourceArchive,
-      slideNumber,
+      sourceRelPath,
     );
 
     return {
@@ -754,13 +765,13 @@ export default class HasShapes {
   async analyzeElement(
     sourceElement: XmlElement,
     sourceArchive: IArchive,
-    slideNumber: number,
+    relsPath: string,
   ): Promise<AnalyzedElementType> {
     const isChart = sourceElement.getElementsByTagName('c:chart');
     if (isChart.length) {
       const target = await XmlHelper.getTargetByRelId(
         sourceArchive,
-        slideNumber,
+        relsPath,
         sourceElement,
         'chart',
       );
@@ -775,7 +786,7 @@ export default class HasShapes {
     if (isChartEx.length) {
       const target = await XmlHelper.getTargetByRelId(
         sourceArchive,
-        slideNumber,
+        relsPath,
         sourceElement,
         'chartEx',
       );
@@ -792,7 +803,7 @@ export default class HasShapes {
         type: ElementType.Image,
         target: await XmlHelper.getTargetByRelId(
           sourceArchive,
-          slideNumber,
+          relsPath,
           sourceElement,
           'image',
         ),
