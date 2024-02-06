@@ -45,9 +45,9 @@ If you require commercial support for complex .pptx automation, you can explore 
   - [Import and modify slide Masters](#import-and-modify-slide-masters)
   - [Track status of automation process](#track-status-of-automation-process)
   - [More examples](#more-examples)
+  - [Troubleshooting](#troubleshooting)
   - [Testing](#testing)
 - [Special Thanks](#special-thanks)
-- [Commercial Support](#commercial-support)
 <!-- TOC -->
 
 # Requirements and Limitations
