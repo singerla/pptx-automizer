@@ -1,6 +1,7 @@
 # pptx-automizer: A Powerful .pptx Modifier for Node.js
 
 `pptx-automizer` is a Node.js-based PowerPoint (.pptx) generator that automates the manipulation of existing .pptx files. With `pptx-automizer`, you can import your library of .pptx templates, merge templates, and customize slide content. `pptx-automizer` will not write files from scratch, but edit and merge existing pptx files. You can style template slides within PowerPoint, and these templates will be seamlessly integrated into the output presentation. Most of the content can be modified by using callbacks with [xmldom](https://github.com/xmldom/xmldom).
+`pptx-automizer` is a Node.js-based PowerPoint (.pptx) generator that automates the manipulation of existing .pptx files. With `pptx-automizer`, you can import your library of .pptx templates, merge templates, and customize slide content. `pptx-automizer` will not write files from scratch, but edit and merge existing pptx files. You can style template slides within PowerPoint, and these templates will be seamlessly integrated into the output presentation. Most of the content can be modified by using callbacks with [xmldom](https://github.com/xmldom/xmldom).
 
 `pptx-automizer` is particularly well-suited for users who aim to manage their own library of .pptx template files, making it an ideal choice for those who work with intricate, well-designed customized layouts. With this tool, any existing slide or even a single element can serve as a data-driven template for generating output .pptx files.
 
@@ -11,40 +12,42 @@ Thanks to all contributors! You are always welcome to share code, tipps and idea
 If you require commercial support for complex .pptx automation, you can explore [ensemblio.com](https://ensemblio.com). Ensemblio is a web application that leverages `pptx-automizer` and `automizer-data` to provide an accessible and convenient solution for automating .pptx files. Engaging with Ensemblio is likely to enhance and further develop this library.
 
 ## Table of contents
+
 <!-- TOC -->
-* [Requirements and Limitations](#requirements-and-limitations)
-  * [Shape Types](#shape-types)
-  * [Chart Types](#chart-types)
-  * [Animations](#animations)
-  * [Slide Masters and -Layouts](#slide-masters-and--layouts)
-  * [Direct Manipulation of Elements](#direct-manipulation-of-elements)
-  * [PowerPoint Version](#powerpoint-version)
-* [Installation](#installation)
-  * [As a Cloned Repository](#as-a-cloned-repository)
-  * [As a Package](#as-a-package)
-* [Usage](#usage)
-  * [Basic Example](#basic-example)
-  * [How to Select Slides Shapes](#how-to-select-slides-shapes)
-    * [Select slide by number and shape by name](#select-slide-by-number-and-shape-by-name)
-    * [Select slides by creationId](#select-slides-by-creationid)
-  * [Find and Modify Shapes](#find-and-modify-shapes)
-  * [Modify Text](#modify-text)
-  * [Modify Images](#modify-images)
-  * [Modify Tables](#modify-tables)
-  * [Modify Charts](#modify-charts)
-  * [Modify Extended Charts](#modify-extended-charts)
-  * [Remove elements from a slide](#remove-elements-from-a-slide)
-* [Tipps and Tricks](#tipps-and-tricks)
-  * [Loop through the slides of a presentation](#loop-through-the-slides-of-a-presentation)
-  * [Quickly get all slide numbers of a template](#quickly-get-all-slide-numbers-of-a-template)
-  * [Find all text elements on a slide](#find-all-text-elements-on-a-slide)
-  * [Sort output slides](#sort-output-slides)
-  * [Import and modify slide Masters](#import-and-modify-slide-masters)
-  * [Track status of automation process](#track-status-of-automation-process)
-  * [More examples](#more-examples)
-  * [Testing](#testing)
-* [Special Thanks](#special-thanks)
-* [Commercial Support](#commercial-support)
+
+- [Requirements and Limitations](#requirements-and-limitations)
+  - [Shape Types](#shape-types)
+  - [Chart Types](#chart-types)
+  - [Animations](#animations)
+  - [Slide Masters and -Layouts](#slide-masters-and--layouts)
+  - [Direct Manipulation of Elements](#direct-manipulation-of-elements)
+  - [PowerPoint Version](#powerpoint-version)
+- [Installation](#installation)
+  - [As a Cloned Repository](#as-a-cloned-repository)
+  - [As a Package](#as-a-package)
+- [Usage](#usage)
+  - [Basic Example](#basic-example)
+  - [How to Select Slides Shapes](#how-to-select-slides-shapes)
+    - [Select slide by number and shape by name](#select-slide-by-number-and-shape-by-name)
+    - [Select slides by creationId](#select-slides-by-creationid)
+  - [Find and Modify Shapes](#find-and-modify-shapes)
+  - [Modify Text](#modify-text)
+  - [Modify Images](#modify-images)
+  - [Modify Tables](#modify-tables)
+  - [Modify Charts](#modify-charts)
+  - [Modify Extended Charts](#modify-extended-charts)
+  - [Remove elements from a slide](#remove-elements-from-a-slide)
+- [Tipps and Tricks](#tipps-and-tricks)
+  - [Loop through the slides of a presentation](#loop-through-the-slides-of-a-presentation)
+  - [Quickly get all slide numbers of a template](#quickly-get-all-slide-numbers-of-a-template)
+  - [Find all text elements on a slide](#find-all-text-elements-on-a-slide)
+  - [Sort output slides](#sort-output-slides)
+  - [Import and modify slide Masters](#import-and-modify-slide-masters)
+  - [Track status of automation process](#track-status-of-automation-process)
+  - [More examples](#more-examples)
+  - [Testing](#testing)
+- [Special Thanks](#special-thanks)
+- [Commercial Support](#commercial-support)
 <!-- TOC -->
 
 # Requirements and Limitations
@@ -475,6 +478,7 @@ Find more examples on image manipulation:
 
 - [Add external image](https://github.com/singerla/pptx-automizer/blob/main/__tests__/add-external-image.test.ts)
 - [Modify duotone color overlay for images](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-image-duotone.test.ts)
+- [Swap image source on a slide master](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-master-external-image.test.ts)
 
 ## Modify Tables
 
@@ -864,6 +868,16 @@ Take a look into [**tests**-directory](https://github.com/singerla/pptx-automize
 - [Update chart plot area coordinates](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-chart-plot-area.test.ts)
 - [Update chart legend](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-chart-legend.test.ts)
 
+## Troubleshooting
+If you encounter problems when opening a `.pptx`-file modified by this library, you might worry about PowerPoint not giving any details about the error. It can be hard to find the cause, but there are some things you can check:
+
+- **Broken relation**: There are still unsupported shape types and `pptx-automizer` wil not copy required relations of those. You can inflate `.pptx`-output and check `ppt/slides/_rels/slide[#].xml.rels`-files to find possible missing files.
+- **Unsupported media**: You can also take a look at the `ppt/media`-directory of an inflated `.pptx`-file. If you discover any unusual file formats, remove or replace the files by one of the [known types](https://github.com/singerla/pptx-automizer/blob/main/src/enums/content-type-map.ts).
+- **Broken animation**: Pay attention to modified/removed shapes which are part of an animation. In case of doubt, (temporarily) remove all animations from your template. (see [#78](https://github.com/singerla/pptx-automizer/issues/78))
+- **Proprietary/Binary contents** (e.g. ThinkCell): Walk through all slides, slideMasters and slideLayouts and seek for hidden Objects. Hit `ALT+F10` to toggle the sidebar.
+
+If none of these could help, please don't hesitate to [talk about it](https://github.com/singerla/pptx-automizer/issues/new). 
+
 ## Testing
 
 You can run all unit tests using these commands:
@@ -881,8 +895,3 @@ This project was inspired by:
 - [officegen](https://github.com/Ziv-Barber/officegen)
 - [node-pptx](https://github.com/heavysixer/node-pptx)
 - [docxtemplater](https://github.com/open-xml-templating/docxtemplater)
-
-# Commercial Support
-
-If you need commercial support on complex .pptx automation, please take a look at [ensemblio.com](https://ensemblio.com).
-![ensemblio](https://ensemblio.com/ensemblio-lg.png)
