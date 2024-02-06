@@ -1,6 +1,5 @@
 import Automizer from './index';
 import pptxgen from 'pptxgenjs';
-import Automizer from './index';
 
 let dataChartAreaLine = [
   {
@@ -81,7 +80,7 @@ const run = async () => {
   let pres = automizer
     .loadRoot(`RootTemplate.pptx`)
     .load(`presPptxGenTmp.pptx`, 'presPptxGenTmp')
-    .load(`SlideWithShapes.pptx`, 'shapes');
+    .load(`SlideWithShapes.pptx`, 'shapes')
     .load(`SlideWithCharts.pptx`, 'charts')
     .load(`EmptySlide.pptx`, 'emptySlide');
 
@@ -128,55 +127,56 @@ const run = async () => {
   pres.addSlide('shapes', 1, (slide) => {
     slide.addElement('presPptxGenTmp', 1, 'Text 1');
     slide.addElement('presPptxGenTmp', 1, 'Image 1');
-  pres.addSlide('emptySlide', 1, async (slide) => {
-    slide.addElement('charts', 2, 'ColumnChart');
+    pres.addSlide('emptySlide', 1, async (slide) => {
+      slide.addElement('charts', 2, 'ColumnChart');
 
-    slide.generate((pptxGenJSSlide, objectName, pptxGenJs) => {
-      pptxGenJSSlide.addChart('line', dataChartAreaLine, {
-        x: 1,
-        y: 1,
-        w: 8,
-        h: 4,
-        objectName,
+      slide.generate((pptxGenJSSlide, objectName, pptxGenJs) => {
+        pptxGenJSSlide.addChart('line', dataChartAreaLine, {
+          x: 1,
+          y: 1,
+          w: 8,
+          h: 4,
+          objectName,
+        });
       });
+      //
+      // slide.generate((pptxGenJSSlide, objectName, pptxGenJs) => {
+      //   pptxGenJSSlide.addChart('line', dataChartAreaLine, {
+      //     x: 3,
+      //     y: 1,
+      //     w: 6,
+      //     h: 2,
+      //     objectName,
+      //   });
+      // }, 'MyLineChart');
     });
-    //
-    // slide.generate((pptxGenJSSlide, objectName, pptxGenJs) => {
-    //   pptxGenJSSlide.addChart('line', dataChartAreaLine, {
-    //     x: 3,
-    //     y: 1,
-    //     w: 6,
-    //     h: 2,
-    //     objectName,
-    //   });
-    // }, 'MyLineChart');
-  });
 
-  pres.addSlide('emptySlide', 1, async (slide) => {
-    slide.addElement('charts', 2, 'ColumnChart');
+    pres.addSlide('emptySlide', 1, async (slide) => {
+      slide.addElement('charts', 2, 'ColumnChart');
 
-    slide.generate((pptxGenJSSlide, objectName, pptxGenJs) => {
-      pptxGenJSSlide.addChart('line', dataChartAreaLine, {
-        x: 1,
-        y: 1,
-        w: 8,
-        h: 4,
-        objectName,
+      slide.generate((pptxGenJSSlide, objectName, pptxGenJs) => {
+        pptxGenJSSlide.addChart('line', dataChartAreaLine, {
+          x: 1,
+          y: 1,
+          w: 8,
+          h: 4,
+          objectName,
+        });
       });
+      //
+      // slide.generate((pptxGenJSSlide, objectName, pptxGenJs) => {
+      //   pptxGenJSSlide.addChart('line', dataChartAreaLine, {
+      //     x: 3,
+      //     y: 1,
+      //     w: 6,
+      //     h: 2,
+      //     objectName,
+      //   });
+      // }, 'MyLineChart');
     });
-    //
-    // slide.generate((pptxGenJSSlide, objectName, pptxGenJs) => {
-    //   pptxGenJSSlide.addChart('line', dataChartAreaLine, {
-    //     x: 3,
-    //     y: 1,
-    //     w: 6,
-    //     h: 2,
-    //     objectName,
-    //   });
-    // }, 'MyLineChart');
-  });
-  pres.write(`myOutputPresentation.pptx`).then((summary) => {
-    console.log(summary);
+    pres.write(`myOutputPresentation.pptx`).then((summary) => {
+      console.log(summary);
+    });
   });
 };
 
