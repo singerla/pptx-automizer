@@ -1,7 +1,6 @@
 # pptx-automizer: A Powerful .pptx Modifier for Node.js
 
 `pptx-automizer` is a Node.js-based PowerPoint (.pptx) generator that automates the manipulation of existing .pptx files. With `pptx-automizer`, you can import your library of .pptx templates, merge templates, and customize slide content. `pptx-automizer` will not write files from scratch, but edit and merge existing pptx files. You can style template slides within PowerPoint, and these templates will be seamlessly integrated into the output presentation. Most of the content can be modified by using callbacks with [xmldom](https://github.com/xmldom/xmldom).
-`pptx-automizer` is a Node.js-based PowerPoint (.pptx) generator that automates the manipulation of existing .pptx files. With `pptx-automizer`, you can import your library of .pptx templates, merge templates, and customize slide content. `pptx-automizer` will not write files from scratch, but edit and merge existing pptx files. You can style template slides within PowerPoint, and these templates will be seamlessly integrated into the output presentation. Most of the content can be modified by using callbacks with [xmldom](https://github.com/xmldom/xmldom).
 
 `pptx-automizer` is particularly well-suited for users who aim to manage their own library of .pptx template files, making it an ideal choice for those who work with intricate, well-designed customized layouts. With this tool, any existing slide or even a single element can serve as a data-driven template for generating output .pptx files.
 
@@ -875,6 +874,9 @@ If you encounter problems when opening a `.pptx`-file modified by this library, 
 - **Unsupported media**: You can also take a look at the `ppt/media`-directory of an inflated `.pptx`-file. If you discover any unusual file formats, remove or replace the files by one of the [known types](https://github.com/singerla/pptx-automizer/blob/main/src/enums/content-type-map.ts).
 - **Broken animation**: Pay attention to modified/removed shapes which are part of an animation. In case of doubt, (temporarily) remove all animations from your template. (see [#78](https://github.com/singerla/pptx-automizer/issues/78))
 - **Proprietary/Binary contents** (e.g. ThinkCell): Walk through all slides, slideMasters and slideLayouts and seek for hidden Objects. Hit `ALT+F10` to toggle the sidebar.
+- **Chart styles not working**: If you try to change e.g. color or size of a chart data label, and it doesn't work as expected, try to remove all data labels and activate them again. If this does not help, try to give the first data label of a series a slightly different style (this creates a single data point).
+- **Replace Text not working**: Cut out your e.g. {CustomerName} tag from textbox to clipboard, paste it into a plaintext editor to remove all (visible and invisible) formatting. Copy & paste {CustomerName} back to the textbox. (see [#82](https://github.com/singerla/pptx-automizer/issues/82) and [#73](https://github.com/singerla/pptx-automizer/issues/73))
+
 
 If none of these could help, please don't hesitate to [talk about it](https://github.com/singerla/pptx-automizer/issues/new). 
 
