@@ -44,6 +44,7 @@ If you require commercial support for complex .pptx automation, you can explore 
   - [Import and modify slide Masters](#import-and-modify-slide-masters)
   - [Track status of automation process](#track-status-of-automation-process)
   - [More examples](#more-examples)
+  - [Create a new modifier](#create-a-new-modifier)
   - [Troubleshooting](#troubleshooting)
   - [Testing](#testing)
 - [Special Thanks](#special-thanks)
@@ -589,7 +590,7 @@ If you would like to modify elements in a single .pptx file, it is important to 
 
 This is how it works internally:
 
-- Load a root template to append slides to
+- Load a root template to append slides to it
 - (Probably) load root template again to modify slides
 - Load other templates
 - Append a loaded slide to (probably truncated) root template
@@ -621,7 +622,7 @@ const run = async () => {
     // Defining a "name" as second params makes it a little easier
     .load(`SlideWithShapes.pptx`, 'myTemplate');
 
-  // This is brandnew: get useful information about loaded templates:
+  // Get useful information about loaded templates:
   const myTemplates = await pres.getInfo();
   const mySlides = myTemplates.slidesByTemplate(`myTemplate`);
 
@@ -856,6 +857,55 @@ const automizer = new Automizer({
 });
 ```
 
+## Create a new modifier
+
+If the built-in modifiers of `pptx-automizer` are not sufficient to your task, you can access the target xml elements with [xmldom](https://github.com/xmldom/xmldom). A modifier is a wrapper for such an operation.
+
+Let's first take a look at a (simplified) existing modifier: `ModifyTextHelper.content('This is my text')`.
+
+```ts
+// "setTextContent" is a function that returns a function.
+// A "label" argument needs to be passed to "setTextContent".
+const setTextContent = function (label: number | string) {
+  // On setup, we can handle the argument.
+  const newTextContent = String(label);
+
+  // A new function is returned to apply the label at runtime.
+  return function (shape: XmlElement) {
+    // "shape" contains a modifiable xmldom object.
+    // You can use a selector to find the required 'a:t' element:
+    const textElement = shape.getElementsByTagName('a:t').item(0);
+
+    // You can now apply the "newTextContent".
+    if (textElement?.firstChild) {
+      // Refer to xmldom for available functions.
+      textElement.firstChild.textContent = newTextContent;
+    }
+    // It is possible to output the xml to console at any time.
+    // XmlHelper.dump(element);
+  };
+};
+```
+This function will construct an anonymous callback function on setup, while the callback function itself will be executed on runtime, when it's up to the target element on a slide.
+
+You can use the modifier e.g. on adding an element:
+
+```ts
+pres.addSlide('SlideWithShapes.pptx', 2, (slide) => {
+  // This will import the 'Drum' shape
+  slide.modifyElement('Cloud', [
+    // 1. Dump the original xml:
+    // Notice: don't call XmlHelper.dump, just pass it
+    XmlHelper.dump,
+    // 2. Apply modifier from the example above:
+    setTextContent('New text'),
+    XmlHelper.dump,
+  ]);
+});
+```
+
+We can wrap any xml modification by such a modifier. If you have a working example and you think it will be useful to others, you are very welcome to fork this repo and send a pull request or simply [post it](https://github.com/singerla/pptx-automizer/issues/new).
+
 ## More examples
 
 Take a look into [**tests**-directory](https://github.com/singerla/pptx-automizer/blob/main/__tests__) to see a lot of examples for several use cases, e.g.:
@@ -868,6 +918,7 @@ Take a look into [**tests**-directory](https://github.com/singerla/pptx-automize
 - [Update chart legend](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-chart-legend.test.ts)
 
 ## Troubleshooting
+
 If you encounter problems when opening a `.pptx`-file modified by this library, you might worry about PowerPoint not giving any details about the error. It can be hard to find the cause, but there are some things you can check:
 
 - **Broken relation**: There are still unsupported shape types and `pptx-automizer` wil not copy required relations of those. You can inflate `.pptx`-output and check `ppt/slides/_rels/slide[#].xml.rels`-files to find possible missing files.
