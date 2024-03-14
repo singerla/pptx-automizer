@@ -331,7 +331,7 @@ export class XmlHelper {
 
   static async getTargetByRelId(
     archive: IArchive,
-    slideNumber: number,
+    relsPath: string,
     element: XmlElement,
     type: string,
   ): Promise<Target> {
@@ -339,7 +339,6 @@ export class XmlHelper {
     const sourceRid = element
       .getElementsByTagName(params.relRootTag)[0]
       .getAttribute(params.relAttribute);
-    const relsPath = `ppt/slides/_rels/slide${slideNumber}.xml.rels`;
     const imageRels = await XmlHelper.getRelationshipTargetsByPrefix(
       archive,
       relsPath,

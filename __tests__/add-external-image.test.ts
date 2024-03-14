@@ -14,6 +14,7 @@ test('Load external media, add/modify image and set image target', async () => {
   const pres = automizer
     .loadRoot(`RootTemplate.pptx`)
     .loadMedia([`feather.png`, `test.png`])
+    .loadMedia(`test.png`, `${__dirname}/../__tests__/media`, 'pre_')
     .load(`SlideWithShapes.pptx`, 'shapes')
     .load(`SlideWithImages.pptx`, 'images');
 
@@ -29,7 +30,7 @@ test('Load external media, add/modify image and set image target', async () => {
 
   pres.addSlide('images', 1, (slide) => {
     slide.modifyElement('Grafik 5', [
-      ModifyImageHelper.setRelationTarget('test.png'),
+      ModifyImageHelper.setRelationTarget('pre_test.png'),
     ]);
   });
 

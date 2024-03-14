@@ -205,7 +205,11 @@ export default class Automizer implements IPresentationProps {
    * @param filename Filename or path to the media file.
    * @param dir Specify custom path for media instead of mediaDir from AutomizerParams.
    */
-  public loadMedia(filename: string | string[], dir?: string): this {
+  public loadMedia(
+    filename: string | string[],
+    dir?: string,
+    prefix?: string,
+  ): this {
     const files = GeneralHelper.arrayify(filename);
     if (!this.rootTemplate) {
       throw "Can't load media, you need to load a root template first";
@@ -226,6 +230,7 @@ export default class Automizer implements IPresentationProps {
         directory,
         filepath,
         extension,
+        prefix,
       });
     });
     return this;
@@ -482,8 +487,12 @@ export default class Automizer implements IPresentationProps {
    */
   public async writeMediaFiles(): Promise<void> {
     for (const file of this.rootTemplate.mediaFiles) {
-      const archiveFilename = 'ppt/media/' + file.file;
       const data = fs.readFileSync(file.filepath);
+      let archiveFilename = 'ppt/media/' + file.file;
+      if (file.prefix) {
+        archiveFilename = 'ppt/media/' + file.prefix + file.file;
+      }
+
       await this.rootTemplate.archive.write(archiveFilename, data);
       await XmlHelper.appendImageExtensionToContentType(
         this.rootTemplate.archive,

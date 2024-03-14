@@ -82,9 +82,10 @@ export class Image extends Shape implements IImage {
     this.applyImageCallbacks();
 
     if (this.hasSvgRelation()) {
+      const relsPath = `ppt/slides/_rels/slide${this.sourceSlideNumber}.xml.rels`;
       const target = await XmlHelper.getTargetByRelId(
         this.sourceArchive,
-        this.sourceSlideNumber,
+        relsPath,
         this.targetElement,
         'image:svg',
       );

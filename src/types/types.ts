@@ -154,6 +154,7 @@ export type MediaFile = {
   file: string;
   directory: string;
   filepath: string;
+  prefix?: string;
   extension: ContentTypeExtension;
 };
 export type TrackedFiles = Record<string, string[]>;

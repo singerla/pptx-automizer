@@ -11,40 +11,43 @@ Thanks to all contributors! You are always welcome to share code, tipps and idea
 If you require commercial support for complex .pptx automation, you can explore [ensemblio.com](https://ensemblio.com). Ensemblio is a web application that leverages `pptx-automizer` and `automizer-data` to provide an accessible and convenient solution for automating .pptx files. Engaging with Ensemblio is likely to enhance and further develop this library.
 
 ## Table of contents
+
 <!-- TOC -->
-* [Requirements and Limitations](#requirements-and-limitations)
-  * [Shape Types](#shape-types)
-  * [Chart Types](#chart-types)
-  * [Animations](#animations)
-  * [Slide Masters and -Layouts](#slide-masters-and--layouts)
-  * [Direct Manipulation of Elements](#direct-manipulation-of-elements)
-  * [PowerPoint Version](#powerpoint-version)
-* [Installation](#installation)
-  * [As a Cloned Repository](#as-a-cloned-repository)
-  * [As a Package](#as-a-package)
-* [Usage](#usage)
-  * [Basic Example](#basic-example)
-  * [How to Select Slides Shapes](#how-to-select-slides-shapes)
-    * [Select slide by number and shape by name](#select-slide-by-number-and-shape-by-name)
-    * [Select slides by creationId](#select-slides-by-creationid)
-  * [Find and Modify Shapes](#find-and-modify-shapes)
-  * [Modify Text](#modify-text)
-  * [Modify Images](#modify-images)
-  * [Modify Tables](#modify-tables)
-  * [Modify Charts](#modify-charts)
-  * [Modify Extended Charts](#modify-extended-charts)
-  * [Remove elements from a slide](#remove-elements-from-a-slide)
-* [Tipps and Tricks](#tipps-and-tricks)
-  * [Loop through the slides of a presentation](#loop-through-the-slides-of-a-presentation)
-  * [Quickly get all slide numbers of a template](#quickly-get-all-slide-numbers-of-a-template)
-  * [Find all text elements on a slide](#find-all-text-elements-on-a-slide)
-  * [Sort output slides](#sort-output-slides)
-  * [Import and modify slide Masters](#import-and-modify-slide-masters)
-  * [Track status of automation process](#track-status-of-automation-process)
-  * [More examples](#more-examples)
-  * [Testing](#testing)
-* [Special Thanks](#special-thanks)
-* [Commercial Support](#commercial-support)
+
+- [Requirements and Limitations](#requirements-and-limitations)
+  - [Shape Types](#shape-types)
+  - [Chart Types](#chart-types)
+  - [Animations](#animations)
+  - [Slide Masters and -Layouts](#slide-masters-and--layouts)
+  - [Direct Manipulation of Elements](#direct-manipulation-of-elements)
+  - [PowerPoint Version](#powerpoint-version)
+- [Installation](#installation)
+  - [As a Cloned Repository](#as-a-cloned-repository)
+  - [As a Package](#as-a-package)
+- [Usage](#usage)
+  - [Basic Example](#basic-example)
+  - [How to Select Slides Shapes](#how-to-select-slides-shapes)
+    - [Select slide by number and shape by name](#select-slide-by-number-and-shape-by-name)
+    - [Select slides by creationId](#select-slides-by-creationid)
+  - [Find and Modify Shapes](#find-and-modify-shapes)
+  - [Modify Text](#modify-text)
+  - [Modify Images](#modify-images)
+  - [Modify Tables](#modify-tables)
+  - [Modify Charts](#modify-charts)
+  - [Modify Extended Charts](#modify-extended-charts)
+  - [Remove elements from a slide](#remove-elements-from-a-slide)
+- [Tipps and Tricks](#tipps-and-tricks)
+  - [Loop through the slides of a presentation](#loop-through-the-slides-of-a-presentation)
+  - [Quickly get all slide numbers of a template](#quickly-get-all-slide-numbers-of-a-template)
+  - [Find all text elements on a slide](#find-all-text-elements-on-a-slide)
+  - [Sort output slides](#sort-output-slides)
+  - [Import and modify slide Masters](#import-and-modify-slide-masters)
+  - [Track status of automation process](#track-status-of-automation-process)
+  - [More examples](#more-examples)
+  - [Create a new modifier](#create-a-new-modifier)
+  - [Troubleshooting](#troubleshooting)
+  - [Testing](#testing)
+- [Special Thanks](#special-thanks)
 <!-- TOC -->
 
 # Requirements and Limitations
@@ -475,6 +478,7 @@ Find more examples on image manipulation:
 
 - [Add external image](https://github.com/singerla/pptx-automizer/blob/main/__tests__/add-external-image.test.ts)
 - [Modify duotone color overlay for images](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-image-duotone.test.ts)
+- [Swap image source on a slide master](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-master-external-image.test.ts)
 
 ## Modify Tables
 
@@ -586,7 +590,7 @@ If you would like to modify elements in a single .pptx file, it is important to 
 
 This is how it works internally:
 
-- Load a root template to append slides to
+- Load a root template to append slides to it
 - (Probably) load root template again to modify slides
 - Load other templates
 - Append a loaded slide to (probably truncated) root template
@@ -618,7 +622,7 @@ const run = async () => {
     // Defining a "name" as second params makes it a little easier
     .load(`SlideWithShapes.pptx`, 'myTemplate');
 
-  // This is brandnew: get useful information about loaded templates:
+  // Get useful information about loaded templates:
   const myTemplates = await pres.getInfo();
   const mySlides = myTemplates.slidesByTemplate(`myTemplate`);
 
@@ -853,6 +857,55 @@ const automizer = new Automizer({
 });
 ```
 
+## Create a new modifier
+
+If the built-in modifiers of `pptx-automizer` are not sufficient to your task, you can access the target xml elements with [xmldom](https://github.com/xmldom/xmldom). A modifier is a wrapper for such an operation.
+
+Let's first take a look at a (simplified) existing modifier: `ModifyTextHelper.content('This is my text')`.
+
+```ts
+// "setTextContent" is a function that returns a function.
+// A "label" argument needs to be passed to "setTextContent".
+const setTextContent = function (label: number | string) {
+  // On setup, we can handle the argument.
+  const newTextContent = String(label);
+
+  // A new function is returned to apply the label at runtime.
+  return function (shape: XmlElement) {
+    // "shape" contains a modifiable xmldom object.
+    // You can use a selector to find the required 'a:t' element:
+    const textElement = shape.getElementsByTagName('a:t').item(0);
+
+    // You can now apply the "newTextContent".
+    if (textElement?.firstChild) {
+      // Refer to xmldom for available functions.
+      textElement.firstChild.textContent = newTextContent;
+    }
+    // It is possible to output the xml to console at any time.
+    // XmlHelper.dump(element);
+  };
+};
+```
+This function will construct an anonymous callback function on setup, while the callback function itself will be executed on runtime, when it's up to the target element on a slide.
+
+You can use the modifier e.g. on adding an element:
+
+```ts
+pres.addSlide('SlideWithShapes.pptx', 2, (slide) => {
+  // This will import the 'Drum' shape
+  slide.modifyElement('Cloud', [
+    // 1. Dump the original xml:
+    // Notice: don't call XmlHelper.dump, just pass it
+    XmlHelper.dump,
+    // 2. Apply modifier from the example above:
+    setTextContent('New text'),
+    XmlHelper.dump,
+  ]);
+});
+```
+
+We can wrap any xml modification by such a modifier. If you have a working example and you think it will be useful to others, you are very welcome to fork this repo and send a pull request or simply [post it](https://github.com/singerla/pptx-automizer/issues/new).
+
 ## More examples
 
 Take a look into [**tests**-directory](https://github.com/singerla/pptx-automizer/blob/main/__tests__) to see a lot of examples for several use cases, e.g.:
@@ -863,6 +916,20 @@ Take a look into [**tests**-directory](https://github.com/singerla/pptx-automize
 - [Set table cell and border styles](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-existing-table.test.ts)
 - [Update chart plot area coordinates](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-chart-plot-area.test.ts)
 - [Update chart legend](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-chart-legend.test.ts)
+
+## Troubleshooting
+
+If you encounter problems when opening a `.pptx`-file modified by this library, you might worry about PowerPoint not giving any details about the error. It can be hard to find the cause, but there are some things you can check:
+
+- **Broken relation**: There are still unsupported shape types and `pptx-automizer` wil not copy required relations of those. You can inflate `.pptx`-output and check `ppt/slides/_rels/slide[#].xml.rels`-files to find possible missing files.
+- **Unsupported media**: You can also take a look at the `ppt/media`-directory of an inflated `.pptx`-file. If you discover any unusual file formats, remove or replace the files by one of the [known types](https://github.com/singerla/pptx-automizer/blob/main/src/enums/content-type-map.ts).
+- **Broken animation**: Pay attention to modified/removed shapes which are part of an animation. In case of doubt, (temporarily) remove all animations from your template. (see [#78](https://github.com/singerla/pptx-automizer/issues/78))
+- **Proprietary/Binary contents** (e.g. ThinkCell): Walk through all slides, slideMasters and slideLayouts and seek for hidden Objects. Hit `ALT+F10` to toggle the sidebar.
+- **Chart styles not working**: If you try to change e.g. color or size of a chart data label, and it doesn't work as expected, try to remove all data labels and activate them again. If this does not help, try to give the first data label of a series a slightly different style (this creates a single data point).
+- **Replace Text not working**: Cut out your e.g. {CustomerName} tag from textbox to clipboard, paste it into a plaintext editor to remove all (visible and invisible) formatting. Copy & paste {CustomerName} back to the textbox. (see [#82](https://github.com/singerla/pptx-automizer/issues/82) and [#73](https://github.com/singerla/pptx-automizer/issues/73))
+
+
+If none of these could help, please don't hesitate to [talk about it](https://github.com/singerla/pptx-automizer/issues/new). 
 
 ## Testing
 
@@ -881,8 +948,3 @@ This project was inspired by:
 - [officegen](https://github.com/Ziv-Barber/officegen)
 - [node-pptx](https://github.com/heavysixer/node-pptx)
 - [docxtemplater](https://github.com/open-xml-templating/docxtemplater)
-
-# Commercial Support
-
-If you need commercial support on complex .pptx automation, please take a look at [ensemblio.com](https://ensemblio.com).
-![ensemblio](https://ensemblio.com/ensemblio-lg.png)
