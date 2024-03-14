@@ -1,5 +1,5 @@
 import Automizer from './index';
-import { vd } from './helper/general-helper';
+import ModifyBackgroundHelper from './helper/modify-background-helper';
 
 const run = async () => {
   const automizer = new Automizer({
@@ -12,7 +12,16 @@ const run = async () => {
     .loadRoot(`RootTemplate.pptx`)
     .load(`SlideMasterBackgrounds.pptx`);
 
-  pres.addSlide(`SlideMasterBackgrounds.pptx`, 2, async (slide) => {
+  pres.addMaster(`SlideMasterBackgrounds.pptx`, 1, async (master) => {
+    master.modify(
+      ModifyBackgroundHelper.setSolidFill({
+        type: 'srgbClr',
+        value: 'aaccbb',
+      }),
+    );
+  });
+
+  pres.addSlide(`SlideMasterBackgrounds.pptx`, 3, async (slide) => {
     console.log('test');
   });
 
