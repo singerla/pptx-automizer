@@ -5,20 +5,18 @@ const run = async () => {
   const automizer = new Automizer({
     templateDir: `${__dirname}/../__tests__/pptx-templates`,
     outputDir: `${__dirname}/../__tests__/pptx-output`,
-    removeExistingSlides: true,
+    autoImportSlideMasters: true,
   });
 
   let pres = automizer
-    .loadRoot(`SlidesWithoutCreationIds.pptx`)
-    .load(`SlideWithCharts.pptx`, 'noCreationId');
+    .loadRoot(`RootTemplate.pptx`)
+    .load(`SlideMasterBackgrounds.pptx`);
 
-  pres.addSlide('noCreationId', 1, async (slide) => {
-    // const elements = await slide.getAllElements();
-    // const textElements = await slide.getAllTextElementIds();
-    vd(await slide.getDimensions());
+  pres.addSlide(`SlideMasterBackgrounds.pptx`, 2, async (slide) => {
+    console.log('test');
   });
 
-  pres.write(`myOutputPresentation.pptx`).then((summary) => {
+  pres.write(`SlideMasterBackgroundsOutput.pptx`).then((summary) => {
     console.log(summary);
   });
 };
