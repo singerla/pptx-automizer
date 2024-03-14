@@ -1,11 +1,14 @@
 import { FileHelper } from '../helper/file-helper';
-import { XmlHelper } from '../helper/xml-helper';
-import { ShapeTargetType, SourceIdentifier } from '../types/types';
+import {
+  ShapeTargetType,
+  SlideModificationCallback,
+  SourceIdentifier,
+} from '../types/types';
 import { ISlide } from '../interfaces/islide';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
 import { PresTemplate } from '../interfaces/pres-template';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
-import { last, vd } from '../helper/general-helper';
+import { last } from '../helper/general-helper';
 import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import { IMaster } from '../interfaces/imaster';
 import HasShapes from './has-shapes';
@@ -82,7 +85,7 @@ export class Slide extends HasShapes implements ISlide {
    * @param targetLayoutId
    */
   useSlideLayout(layoutId?: number | string): this {
-    this.relModifications.push(async (slideRelXml) => {
+    this.modifyRelations(async (slideRelXml) => {
       let targetLayoutId;
 
       if (typeof layoutId === 'string') {
@@ -105,7 +108,6 @@ export class Slide extends HasShapes implements ISlide {
         slideLayouts[0].updateTargetIndex(targetLayoutId as number);
       }
     });
-
     return this;
   }
 

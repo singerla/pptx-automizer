@@ -1,6 +1,11 @@
 import { FileHelper } from '../helper/file-helper';
 import { XmlHelper } from '../helper/xml-helper';
-import { ShapeTargetType, SourceIdentifier, Target } from '../types/types';
+import {
+  ShapeTargetType,
+  SlideModificationCallback,
+  SourceIdentifier,
+  Target,
+} from '../types/types';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
 import { PresTemplate } from '../interfaces/pres-template';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
@@ -68,6 +73,7 @@ export class Master extends HasShapes implements IMaster {
     }
 
     await this.applyModifications();
+    await this.applyRelModifications();
 
     const info = this.targetTemplate.automizer.params.showIntegrityInfo;
     const assert = this.targetTemplate.automizer.params.showIntegrityInfo;

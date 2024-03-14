@@ -12,6 +12,7 @@ export interface ISlide {
   sourceArchive: IArchive;
   sourceNumber: SourceIdentifier;
   modify(callback: SlideModificationCallback): void;
+  modifyRelations(callback: SlideModificationCallback): void;
   append(targetTemplate: RootPresTemplate): Promise<void>;
   addElement(
     presName: string,

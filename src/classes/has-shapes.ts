@@ -206,6 +206,15 @@ export default class HasShapes {
   }
 
   /**
+   * Push relations modifications list
+   * @internal
+   * @param callback
+   */
+  modifyRelations(callback: SlideModificationCallback): void {
+    this.relModifications.push(callback);
+  }
+
+  /**
    * Select and modify a single element on an added slide.
    * @param {string} selector - Element's name on the slide.
    * Should be a unique string defined on the "Selection"-pane within ppt.
@@ -839,7 +848,7 @@ export default class HasShapes {
   async applyRelModifications(): Promise<void> {
     await XmlHelper.modifyXmlInArchive(
       this.targetArchive,
-      `ppt/slides/_rels/slide${this.targetNumber}.xml.rels`,
+      `ppt/${this.targetType}s/_rels/${this.targetType}${this.targetNumber}.xml.rels`,
       this.relModifications,
     );
   }

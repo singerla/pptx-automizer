@@ -12,6 +12,7 @@ export interface IMaster {
   sourceNumber: number;
   key: string;
   modify(callback: SlideModificationCallback): void;
+  modifyRelations(callback: SlideModificationCallback): void;
   append(targetTemplate: RootPresTemplate): Promise<void>;
   addElement(
     presName: string,
