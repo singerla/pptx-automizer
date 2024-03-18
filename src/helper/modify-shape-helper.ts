@@ -1,10 +1,9 @@
 import { ReplaceText, ReplaceTextOptions } from '../types/modify-types';
 import { ShapeCoordinates } from '../types/shape-types';
-import { GeneralHelper, vd } from './general-helper';
+import { GeneralHelper } from './general-helper';
 import TextReplaceHelper from './text-replace-helper';
 import ModifyTextHelper from './modify-text-helper';
-import { HelperElement, XmlDocument, XmlElement } from '../types/xml-types';
-import { XmlHelper } from './xml-helper';
+import { XmlElement } from '../types/xml-types';
 
 const map = {
   x: { tag: 'a:off', attribute: 'x' },
