@@ -783,6 +783,10 @@ To specify another slideLayout for an added output slide, you need to count slid
 
 To add and modify shapes on a slide master, please take a look at [Add and modify shapes](https://github.com/singerla/pptx-automizer#add-and-modify-shapes).
 
+If you require to modify slide master backgrounds, please refer to 
+- [Modify master background color](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-master-background-color.test.ts).
+- [Modify master background image](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-master-background-image.test.ts).
+
 ```ts
 // Import another slide master and all its slide layouts.
 // Index 1 means, you want to import the first of all masters:
