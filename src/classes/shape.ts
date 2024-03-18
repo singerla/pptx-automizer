@@ -1,5 +1,5 @@
 import { XmlHelper } from '../helper/xml-helper';
-import { GeneralHelper } from '../helper/general-helper';
+import { GeneralHelper, vd } from '../helper/general-helper';
 import {
   ChartModificationCallback,
   ImportedElement,
@@ -174,12 +174,16 @@ export class Shape {
     );
   }
 
+  /*
+   * This will find all elements with a matching rId on a
+   * <p:cSld>, including related images at <p:bg> and <p:spTree>.
+   */
   async getElementsByRid(
     slideXml: XmlDocument,
     rId: string,
   ): Promise<XmlElement[]> {
     const sourceList = slideXml
-      .getElementsByTagName('p:spTree')[0]
+      .getElementsByTagName('p:cSld')[0]
       .getElementsByTagName(this.relRootTag);
 
     const sourceElements = XmlHelper.findByAttributeValue(

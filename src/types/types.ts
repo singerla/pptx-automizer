@@ -62,9 +62,11 @@ export type AutomizerParams = {
   presTemplates?: string[];
   useCreationIds?: boolean;
   /**
-   * If you have trouble with messed up slideMasters, and if you don't worry
-   * about the impact on performance, you can try this to always import all
-   * required files:
+   * Turn this to true if you always want to import all required slide masters.
+   * You don't need to adjust with slide.useSlideLayout, but it will have a
+   * negative impact on performance.
+   * It is highly recommended to activate autoImportSlideMasters in case your
+   * loaded templates have different sets of slideMasters & -layouts.
    */
   autoImportSlideMasters?: boolean;
   /**
