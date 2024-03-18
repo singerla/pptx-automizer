@@ -132,9 +132,13 @@ export class XmlRelationshipHelper {
   ) {
     for (const xmlTarget of this.xmlTargets) {
       const targetFile = xmlTarget.getAttribute('Target');
+      const targetMode = xmlTarget.getAttribute('TargetMode');
       const targetPath = targetFile.replace('../', 'ppt/');
 
-      if (this.archive.fileExists(targetPath) === false) {
+      if (
+        targetMode !== 'External' &&
+        this.archive.fileExists(targetPath) === false
+      ) {
         if (check) {
           console.error(
             'Related content from ' +
