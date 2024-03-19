@@ -246,14 +246,17 @@ export class ContentTracker {
 
           if (rId === addTarget.rId) {
             const target = element.getAttribute('Target');
+            const targetMode = element.getAttribute('TargetMode');
             const fileInfo = FileHelper.getFileInfo(target);
 
-            rels.push({
-              file: target,
-              filename: fileInfo.base,
-              rId: rId,
-              type: element.getAttribute('Type'),
-            });
+            if (targetMode !== 'External') {
+              rels.push({
+                file: target,
+                filename: fileInfo.base,
+                rId: rId,
+                type: element.getAttribute('Type'),
+              });
+            }
           }
         },
       );
