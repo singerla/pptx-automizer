@@ -13,7 +13,7 @@ test('modify chart title.', async () => {
 
   const result = await pres
     .addSlide('charts', 1, (slide) => {
-      slide.modifyElement('Scatter', [
+      slide.modifyElement('BarsStacked', [
         modify.setChartTitle('New Title'),
       ]);
     })
