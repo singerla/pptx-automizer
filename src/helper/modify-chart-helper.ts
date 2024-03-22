@@ -433,4 +433,17 @@ export default class ModifyChartHelper {
       // XmlHelper.dump(workbook.table)
       // XmlHelper.dump(workbook.sheet)
     };
+
+  /**
+   * Set the title of a chart.
+    @param newTitle
+   *
+   */
+    static setChartTitle =
+    (newTitle: string): ChartModificationCallback =>
+      (element: XmlElement, chart: XmlDocument): void => {
+        if (chart.getElementsByTagName('c:title')[0].getElementsByTagName('a:t')) {
+          chart.getElementsByTagName('c:title')[0].getElementsByTagName('a:t')[0].textContent = newTitle;
+        }
+      };
 }

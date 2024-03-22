@@ -72,6 +72,7 @@ const setPlotArea = ModifyChartHelper.setPlotArea;
 const setLegendPosition = ModifyChartHelper.setLegendPosition;
 const removeChartLegend = ModifyChartHelper.removeChartLegend;
 const minimizeChartLegend = ModifyChartHelper.minimizeChartLegend;
+const setChartTitle = ModifyChartHelper.setChartTitle;
 
 export type {
   ChartBubble,
@@ -131,6 +132,7 @@ export const modify = {
   setLegendPosition,
   removeChartLegend,
   minimizeChartLegend,
+  setChartTitle,
 };
 export { CmToDxa, DxaToCm };
 export type {
