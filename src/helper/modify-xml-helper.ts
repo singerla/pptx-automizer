@@ -59,6 +59,23 @@ export default class ModifyXmlHelper {
     }
   }
 
+  modifyAll(tags: ModificationTags, root?: XmlDocument | XmlElement): void {
+    root = root || this.root;
+
+    for (const tag in tags) {
+      const modifier = tags[tag] as Modification;
+
+      if (modifier.children) {
+        const elements = Array.from(root.getElementsByTagName(tag));
+        elements.forEach((element) => {
+          this.modifyAll(modifier.children, element as XmlElement);
+        });
+      } else {
+        this.modify({ [tag]: modifier }, root);
+      }
+    }
+  }
+
   assertElement(
     collection: HTMLCollectionOf<Element>,
     index: number,

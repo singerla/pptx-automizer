@@ -6,19 +6,19 @@ test('Load external media, modify image target on slide master', async () => {
   const automizer = new Automizer({
     templateDir: `${__dirname}/../__tests__/pptx-templates`,
     outputDir: `${__dirname}/../__tests__/pptx-output`,
-    mediaDir: `${__dirname}/../__tests__/images`,
+    mediaDir: `${__dirname}/../__tests__/media`,
     removeExistingSlides: true,
     cleanup: true,
   });
 
   const pres = automizer
     .loadRoot(`RootTemplateWithImages.pptx`)
-    .loadMedia([`test.jpg`])
+    .loadMedia([`test.png`])
     .load(`RootTemplateWithImages.pptx`, 'base');
 
   pres.addMaster('base', 1, (master) => {
     master.modifyElement('masterImagePNG', [
-      ModifyImageHelper.setRelationTarget('test.jpg'),
+      ModifyImageHelper.setRelationTarget('test.png'),
     ]);
   });
 
