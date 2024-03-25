@@ -41,6 +41,7 @@ import { IMaster } from './interfaces/imaster';
 import { ISlide } from './interfaces/islide';
 import ModifyImageHelper from './helper/modify-image-helper';
 import { CmToDxa, DxaToCm } from './helper/modify-helper';
+import { LabelPosition } from './enums/chart-type';
 
 const dump = ModifyHelper.dump;
 const dumpChart = ModifyHelper.dumpChart;
@@ -73,6 +74,7 @@ const setLegendPosition = ModifyChartHelper.setLegendPosition;
 const removeChartLegend = ModifyChartHelper.removeChartLegend;
 const minimizeChartLegend = ModifyChartHelper.minimizeChartLegend;
 const setChartTitle = ModifyChartHelper.setChartTitle;
+const setDataLabelAttributes = ModifyChartHelper.setDataLabelAttributes;
 
 export type {
   ChartBubble,
@@ -90,7 +92,7 @@ export type {
   Border,
   ShapeValueStyle,
   ShapeCoordinates,
-  ReplaceText,
+  ReplaceText
 };
 
 export {
@@ -103,6 +105,7 @@ export {
   ModifyTextHelper,
   ModifyColorHelper,
   ModifyImageHelper,
+  LabelPosition
 };
 
 export const modify = {
@@ -133,6 +136,7 @@ export const modify = {
   removeChartLegend,
   minimizeChartLegend,
   setChartTitle,
+  setDataLabelAttributes,
 };
 export { CmToDxa, DxaToCm };
 export type {

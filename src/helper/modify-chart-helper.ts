@@ -10,6 +10,7 @@ import {
   ChartCategory,
   ChartData,
   ChartElementCoordinateShares,
+  ChartDataLabelAttributes,
   ChartPoint,
   ChartSeries,
   ChartSlot,
@@ -445,5 +446,67 @@ export default class ModifyChartHelper {
         if (chart.getElementsByTagName('c:title')[0].getElementsByTagName('a:t')) {
           chart.getElementsByTagName('c:title')[0].getElementsByTagName('a:t')[0].textContent = newTitle;
         }
+      };
+
+  /**
+   * Specify a format for DataLabels
+   @param dataLabel
+   *
+   */
+  static setDataLabelAttributes =
+    (dataLabel: ChartDataLabelAttributes): ChartModificationCallback =>
+      (element: XmlElement, chart: XmlDocument): void => {
+        const modifyXmlHelper = new ModifyXmlHelper(chart);
+
+        modifyXmlHelper.modifyAll({
+          'c:ser': {
+            children: {
+              'c:dLbls': {
+                children: {
+                  'c:dLblPos': {
+                    modify: [
+                      ModifyXmlHelper.attribute('val', dataLabel.dLblPos),
+                    ],
+                  },
+                  'c:showLegendKey': {
+                    modify: [
+                      ModifyXmlHelper.booleanAttribute('val', dataLabel.showLegendKey),
+                    ],
+                  },
+                  'c:showVal': {
+                    modify: [
+                      ModifyXmlHelper.booleanAttribute('val', dataLabel.showVal),
+                    ],
+                  },
+                  'c:showCatName': {
+                    modify: [
+                      ModifyXmlHelper.booleanAttribute('val', dataLabel.showCatName),
+                    ],
+                  },
+                  'c:showSerName': {
+                    modify: [
+                      ModifyXmlHelper.booleanAttribute('val', dataLabel.showSerName),
+                    ],
+                  },
+                  'c:showPercent': {
+                    modify: [
+                      ModifyXmlHelper.booleanAttribute('val', dataLabel.showPercent),
+                    ],
+                  },
+                  'c:showBubbleSize': {
+                    modify: [
+                      ModifyXmlHelper.booleanAttribute('val', dataLabel.showBubbleSize),
+                    ],
+                  },
+                  'c:showLeaderLines': {
+                    modify: [
+                      ModifyXmlHelper.booleanAttribute('val', dataLabel.showLeaderLines),
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        });
       };
 }

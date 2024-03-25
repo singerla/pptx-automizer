@@ -1,5 +1,6 @@
 import { Color, ModificationTags } from './modify-types';
 import { ShapeCoordinates } from './shape-types';
+import { LabelPosition } from '../enums/chart-type';
 
 export type ChartPointValue = null | number;
 export type ChartValueStyle = {
@@ -83,6 +84,17 @@ export type ChartAxisRange = {
   minorUnit?: number;
   formatCode?: string;
   sourceLinked?: boolean;
+};
+
+export type ChartDataLabelAttributes = {
+  dLblPos?: LabelPosition;
+  showLegendKey?: boolean;
+  showVal?: boolean;
+  showCatName?: boolean;
+  showSerName?: boolean;
+  showPercent?: boolean;
+  showBubbleSize?: boolean;
+  showLeaderLines?: boolean;
 };
 // Elements inside a chart (e.g. a legend) require shares as coordinates.
 // E.g. "w: 0.5" means "half of chart width"

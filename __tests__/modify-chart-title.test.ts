@@ -19,5 +19,5 @@ test('modify chart title.', async () => {
     })
     .write(`modify-chart-title.test.pptx`);
 
-  expect(result.charts).toBe(1);
+  expect(result.charts).toBe(2);
 });
