@@ -12,6 +12,7 @@ export const nsMain =
 export const mapUriType = {
   'http://schemas.openxmlformats.org/drawingml/2006/table': 'table',
   'http://schemas.openxmlformats.org/drawingml/2006/chart': 'chart',
+  'http://schemas.microsoft.com/office/drawing/2014/chartex': 'chart',
 };
 
 /**
