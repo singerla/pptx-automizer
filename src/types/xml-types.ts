@@ -54,7 +54,7 @@ export type TemplateSlideInfo = {
   name: string;
 };
 
-export type ElementType = 'sp' | 'chart' | 'table' | 'pic' | 'cxnSp';
+export type ElementType = 'sp' | 'chart' | 'chartEx' | 'table' | 'pic' | 'cxnSp';
 
 export type ElementInfo = {
   name: string;

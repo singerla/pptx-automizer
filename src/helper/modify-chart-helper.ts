@@ -436,6 +436,36 @@ export default class ModifyChartHelper {
     };
 
   /**
+   * Set a waterfall Total column to last
+   * you may also optionally specify a different index.
+   @param TotalColumnIDX
+   *
+   */
+  static setWaterFallColumnTotalToLast = (TotalColumnIDX?: number): ChartModificationCallback =>
+    (element: XmlElement, chart: XmlDocument): void => {
+
+      const plotArea = chart.getElementsByTagName('cx:plotArea')[0];
+      const subTotals = plotArea?.getElementsByTagName('cx:layoutPr')[0]?.getElementsByTagName('cx:subtotals')[0];
+
+      if (subTotals) {
+        if (!TotalColumnIDX) {
+          const GetTotalPoints = chart.getElementsByTagName('cx:chartData')[0]?.getElementsByTagName('cx:data')[0]?.getElementsByTagName('cx:strDim')[0]?.getElementsByTagName('cx:lvl')[0]?.getAttribute('ptCount');
+          if (GetTotalPoints) {
+            TotalColumnIDX = Number(GetTotalPoints) - 1;
+          }
+        }
+        if (TotalColumnIDX !== undefined) {
+          const stIndexes = Array.from(subTotals.getElementsByTagName('cx:idx'));
+          stIndexes.forEach((sTValue, index) => {
+            ModifyXmlHelper.attribute('val', TotalColumnIDX.toString())(sTValue);
+            if (index > 0) {
+              subTotals.removeChild(sTValue);
+            }
+          });
+        }
+      }
+    };
+  /**
    * Set the title of a chart.
     @param newTitle
    *
@@ -443,7 +473,7 @@ export default class ModifyChartHelper {
     static setChartTitle =
     (newTitle: string): ChartModificationCallback =>
       (element: XmlElement, chart: XmlDocument): void => {
-        if (chart.getElementsByTagName('c:title')[0].getElementsByTagName('a:t')) {
+        if (chart.getElementsByTagName('c:title')[0].getElementsByTagName('a:t')[0]) {
           chart.getElementsByTagName('c:title')[0].getElementsByTagName('a:t')[0].textContent = newTitle;
         }
       };

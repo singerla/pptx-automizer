@@ -73,6 +73,7 @@ const setPlotArea = ModifyChartHelper.setPlotArea;
 const setLegendPosition = ModifyChartHelper.setLegendPosition;
 const removeChartLegend = ModifyChartHelper.removeChartLegend;
 const minimizeChartLegend = ModifyChartHelper.minimizeChartLegend;
+const setWaterFallColumnTotalToLast = ModifyChartHelper.setWaterFallColumnTotalToLast;
 const setChartTitle = ModifyChartHelper.setChartTitle;
 const setDataLabelAttributes = ModifyChartHelper.setDataLabelAttributes;
 
@@ -135,6 +136,7 @@ export const modify = {
   setLegendPosition,
   removeChartLegend,
   minimizeChartLegend,
+  setWaterFallColumnTotalToLast,
   setChartTitle,
   setDataLabelAttributes,
 };
