@@ -225,6 +225,14 @@ export class XmlHelper {
       } as Target;
     }
 
+    if (prefix && prefix.indexOf('../') === 0) {
+      // Try again with absolute path instead of relative
+      return XmlHelper.parseRelationTarget(
+        element,
+        prefix.replace('../', '/ppt/'),
+      );
+    }
+
     return target;
   }
 
@@ -339,12 +347,13 @@ export class XmlHelper {
     const sourceRid = element
       .getElementsByTagName(params.relRootTag)[0]
       .getAttribute(params.relAttribute);
-    const imageRels = await XmlHelper.getRelationshipTargetsByPrefix(
+
+    const shapeRels = await XmlHelper.getRelationshipTargetsByPrefix(
       archive,
       relsPath,
       params.prefix,
     );
-    const target = imageRels.find((rel) => rel.rId === sourceRid);
+    const target = shapeRels.find((rel) => rel.rId === sourceRid);
 
     return target;
   }
