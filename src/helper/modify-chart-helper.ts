@@ -1,16 +1,12 @@
 import { ModifyChart } from '../modify/modify-chart';
-import {
-  ChartModificationCallback,
-  ShapeModificationCallback,
-  Workbook,
-} from '../types/types';
+import { ChartModificationCallback, Workbook } from '../types/types';
 import {
   ChartAxisRange,
   ChartBubble,
   ChartCategory,
   ChartData,
-  ChartElementCoordinateShares,
   ChartDataLabelAttributes,
+  ChartElementCoordinateShares,
   ChartPoint,
   ChartSeries,
   ChartSlot,
@@ -18,7 +14,6 @@ import {
 import ModifyXmlHelper from './modify-xml-helper';
 import { XmlDocument, XmlElement } from '../types/xml-types';
 import { XmlHelper } from './xml-helper';
-import { vd } from './general-helper';
 
 export default class ModifyChartHelper {
   /**
@@ -441,23 +436,35 @@ export default class ModifyChartHelper {
    @param TotalColumnIDX
    *
    */
-  static setWaterFallColumnTotalToLast = (TotalColumnIDX?: number): ChartModificationCallback =>
+  static setWaterFallColumnTotalToLast =
+    (TotalColumnIDX?: number): ChartModificationCallback =>
     (element: XmlElement, chart: XmlDocument): void => {
-
       const plotArea = chart.getElementsByTagName('cx:plotArea')[0];
-      const subTotals = plotArea?.getElementsByTagName('cx:layoutPr')[0]?.getElementsByTagName('cx:subtotals')[0];
+      const subTotals = plotArea
+        ?.getElementsByTagName('cx:layoutPr')[0]
+        ?.getElementsByTagName('cx:subtotals')[0];
 
       if (subTotals) {
         if (!TotalColumnIDX) {
-          const GetTotalPoints = chart.getElementsByTagName('cx:chartData')[0]?.getElementsByTagName('cx:data')[0]?.getElementsByTagName('cx:strDim')[0]?.getElementsByTagName('cx:lvl')[0]?.getAttribute('ptCount');
+          const GetTotalPoints = chart
+            .getElementsByTagName('cx:chartData')[0]
+            ?.getElementsByTagName('cx:data')[0]
+            ?.getElementsByTagName('cx:strDim')[0]
+            ?.getElementsByTagName('cx:lvl')[0]
+            ?.getAttribute('ptCount');
           if (GetTotalPoints) {
             TotalColumnIDX = Number(GetTotalPoints) - 1;
           }
         }
         if (TotalColumnIDX !== undefined) {
-          const stIndexes = Array.from(subTotals.getElementsByTagName('cx:idx'));
+          const stIndexes = Array.from(
+            subTotals.getElementsByTagName('cx:idx'),
+          );
           stIndexes.forEach((sTValue, index) => {
-            ModifyXmlHelper.attribute('val', TotalColumnIDX.toString())(sTValue);
+            ModifyXmlHelper.attribute(
+              'val',
+              TotalColumnIDX.toString(),
+            )(sTValue);
             if (index > 0) {
               subTotals.removeChild(sTValue);
             }
@@ -465,18 +472,21 @@ export default class ModifyChartHelper {
         }
       }
     };
+
   /**
-   * Set the title of a chart.
+   * Set the title of a chart. This requires an already existing, manually edited chart title.
     @param newTitle
    *
    */
-    static setChartTitle =
+  static setChartTitle =
     (newTitle: string): ChartModificationCallback =>
-      (element: XmlElement, chart: XmlDocument): void => {
-        if (chart.getElementsByTagName('c:title')[0].getElementsByTagName('a:t')[0]) {
-          chart.getElementsByTagName('c:title')[0].getElementsByTagName('a:t')[0].textContent = newTitle;
-        }
-      };
+    (element: XmlElement, chart: XmlDocument): void => {
+      const chartTitle = chart.getElementsByTagName('c:title').item(0);
+      const chartTitleText = chartTitle?.getElementsByTagName('a:t').item(0);
+      if (chartTitleText) {
+        chartTitleText.textContent = newTitle;
+      }
+    };
 
   /**
    * Specify a format for DataLabels
@@ -485,58 +495,74 @@ export default class ModifyChartHelper {
    */
   static setDataLabelAttributes =
     (dataLabel: ChartDataLabelAttributes): ChartModificationCallback =>
-      (element: XmlElement, chart: XmlDocument): void => {
-        const modifyXmlHelper = new ModifyXmlHelper(chart);
+    (element: XmlElement, chart: XmlDocument): void => {
+      const modifyXmlHelper = new ModifyXmlHelper(chart);
 
-        modifyXmlHelper.modifyAll({
-          'c:ser': {
-            children: {
-              'c:dLbls': {
-                children: {
-                  'c:dLblPos': {
-                    modify: [
-                      ModifyXmlHelper.attribute('val', dataLabel.dLblPos),
-                    ],
-                  },
-                  'c:showLegendKey': {
-                    modify: [
-                      ModifyXmlHelper.booleanAttribute('val', dataLabel.showLegendKey),
-                    ],
-                  },
-                  'c:showVal': {
-                    modify: [
-                      ModifyXmlHelper.booleanAttribute('val', dataLabel.showVal),
-                    ],
-                  },
-                  'c:showCatName': {
-                    modify: [
-                      ModifyXmlHelper.booleanAttribute('val', dataLabel.showCatName),
-                    ],
-                  },
-                  'c:showSerName': {
-                    modify: [
-                      ModifyXmlHelper.booleanAttribute('val', dataLabel.showSerName),
-                    ],
-                  },
-                  'c:showPercent': {
-                    modify: [
-                      ModifyXmlHelper.booleanAttribute('val', dataLabel.showPercent),
-                    ],
-                  },
-                  'c:showBubbleSize': {
-                    modify: [
-                      ModifyXmlHelper.booleanAttribute('val', dataLabel.showBubbleSize),
-                    ],
-                  },
-                  'c:showLeaderLines': {
-                    modify: [
-                      ModifyXmlHelper.booleanAttribute('val', dataLabel.showLeaderLines),
-                    ],
-                  },
+      modifyXmlHelper.modifyAll({
+        'c:ser': {
+          children: {
+            'c:dLbls': {
+              children: {
+                'c:dLblPos': {
+                  modify: [ModifyXmlHelper.attribute('val', dataLabel.dLblPos)],
+                },
+                'c:showLegendKey': {
+                  modify: [
+                    ModifyXmlHelper.booleanAttribute(
+                      'val',
+                      dataLabel.showLegendKey,
+                    ),
+                  ],
+                },
+                'c:showVal': {
+                  modify: [
+                    ModifyXmlHelper.booleanAttribute('val', dataLabel.showVal),
+                  ],
+                },
+                'c:showCatName': {
+                  modify: [
+                    ModifyXmlHelper.booleanAttribute(
+                      'val',
+                      dataLabel.showCatName,
+                    ),
+                  ],
+                },
+                'c:showSerName': {
+                  modify: [
+                    ModifyXmlHelper.booleanAttribute(
+                      'val',
+                      dataLabel.showSerName,
+                    ),
+                  ],
+                },
+                'c:showPercent': {
+                  modify: [
+                    ModifyXmlHelper.booleanAttribute(
+                      'val',
+                      dataLabel.showPercent,
+                    ),
+                  ],
+                },
+                'c:showBubbleSize': {
+                  modify: [
+                    ModifyXmlHelper.booleanAttribute(
+                      'val',
+                      dataLabel.showBubbleSize,
+                    ),
+                  ],
+                },
+                'c:showLeaderLines': {
+                  modify: [
+                    ModifyXmlHelper.booleanAttribute(
+                      'val',
+                      dataLabel.showLeaderLines,
+                    ),
+                  ],
                 },
               },
             },
           },
-        });
-      };
+        },
+      });
+    };
 }
