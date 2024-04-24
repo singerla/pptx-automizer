@@ -20,7 +20,11 @@ export default class ModifyXmlHelper {
     for (const tag in tags) {
       const modifier = tags[tag] as Modification;
 
-      if (GeneralHelper.propertyExists(modifier, 'collection')) {
+      if (modifier.all) {
+        this.modifyAll(tag, modifier, root);
+      }
+
+      if (modifier.collection) {
         const modifies = GeneralHelper.arrayify(modifier.collection);
         const collection = root.getElementsByTagName(tag);
         Object.values(modifies).forEach((modifyXml) => modifyXml(collection));
@@ -43,37 +47,30 @@ export default class ModifyXmlHelper {
         if (isRequired === true) {
           // vd('Could not assert required tag: ' + tag + '@index:' + index);
         }
-        return;
-      }
+      } else {
+        if (modifier.modify) {
+          const modifies = GeneralHelper.arrayify(modifier.modify);
+          Object.values(modifies).forEach((modifyXml) =>
+            modifyXml(element as XmlElement),
+          );
+        }
 
-      if (GeneralHelper.propertyExists(modifier, 'modify')) {
-        const modifies = GeneralHelper.arrayify(modifier.modify);
-        Object.values(modifies).forEach((modifyXml) =>
-          modifyXml(element as XmlElement),
-        );
-      }
-
-      if (GeneralHelper.propertyExists(modifier, 'children')) {
-        this.modify(modifier.children, element as XmlElement);
+        if (modifier.children) {
+          this.modify(modifier.children, element as XmlElement);
+        }
       }
     }
   }
 
-  modifyAll(tags: ModificationTags, root?: XmlDocument | XmlElement): void {
-    root = root || this.root;
-
-    for (const tag in tags) {
-      const modifier = tags[tag] as Modification;
-
-      if (modifier.children) {
-        const elements = Array.from(root.getElementsByTagName(tag));
-        elements.forEach((element) => {
-          this.modifyAll(modifier.children, element as XmlElement);
-        });
-      } else {
-        this.modify({ [tag]: modifier }, root);
-      }
-    }
+  modifyAll(
+    tag: string,
+    modifier: Modification,
+    root: XmlDocument | XmlElement,
+  ): void {
+    const elements = Array.from(root.getElementsByTagName(tag));
+    elements.forEach((element) => {
+      this.modify(modifier.children, element as XmlElement);
+    });
   }
 
   assertElement(

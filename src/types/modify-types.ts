@@ -14,6 +14,7 @@ export type ModifyCollectionCallback = {
 export type Modification = {
   index?: number;
   last?: boolean;
+  all?: boolean;
   collection?: ModifyCollectionCallback;
   children?: ModificationTags;
   modify?: ModifyCallback | ModifyCallback[];

@@ -1,4 +1,4 @@
-import Automizer, {  LabelPosition, modify } from '../src/index';
+import Automizer, { LabelPosition, modify } from '../src/index';
 
 test('modify chart data label.', async () => {
   const automizer = new Automizer({
@@ -10,7 +10,6 @@ test('modify chart data label.', async () => {
     .loadRoot(`RootTemplate.pptx`)
     .load(`ChartBarsStackedLabels.pptx`, 'charts');
 
-
   const DataLabelAttributes = {
     dLblPos: LabelPosition.Top,
     showLegendKey: false,
@@ -19,8 +18,8 @@ test('modify chart data label.', async () => {
     showSerName: false,
     showPercent: false,
     showBubbleSize: false,
-    showLeaderLines: false
-  }
+    showLeaderLines: false,
+  };
 
   const result = await pres
     .addSlide('charts', 1, (slide) => {
@@ -28,7 +27,18 @@ test('modify chart data label.', async () => {
         modify.setDataLabelAttributes(DataLabelAttributes),
       ]);
     })
+    .addSlide('charts', 1, (slide) => {
+      slide.modifyElement('BarsStacked', [
+        modify.setDataLabelAttributes({
+          applyToSeries: 1,
+          dLblPos: LabelPosition.InsideBase,
+          showVal: true,
+          showSerName: true,
+          showPercent: true,
+        }),
+      ]);
+    })
     .write(`modify-chart-datalabels.test.pptx`);
 
-  expect(result.charts).toBe(2);
+  expect(result.charts).toBe(4);
 });

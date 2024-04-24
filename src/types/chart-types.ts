@@ -87,6 +87,7 @@ export type ChartAxisRange = {
 };
 
 export type ChartDataLabelAttributes = {
+  applyToSeries?: number;
   dLblPos?: LabelPosition;
   showLegendKey?: boolean;
   showVal?: boolean;

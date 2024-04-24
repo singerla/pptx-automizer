@@ -497,9 +497,17 @@ export default class ModifyChartHelper {
     (dataLabel: ChartDataLabelAttributes): ChartModificationCallback =>
     (element: XmlElement, chart: XmlDocument): void => {
       const modifyXmlHelper = new ModifyXmlHelper(chart);
+      const applyToSeries = dataLabel.applyToSeries
+        ? {
+            index: dataLabel.applyToSeries,
+          }
+        : {
+            all: true,
+          };
 
-      modifyXmlHelper.modifyAll({
+      modifyXmlHelper.modify({
         'c:ser': {
+          ...applyToSeries,
           children: {
             'c:dLbls': {
               children: {
