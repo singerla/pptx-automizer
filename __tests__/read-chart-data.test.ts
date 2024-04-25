@@ -1,6 +1,6 @@
-import Automizer, { LabelPosition, read } from '../src/index';
+import Automizer, { read } from '../src/index';
 
-test('modify chart data label.', async () => {
+test('read chart data from workbook', async () => {
   const automizer = new Automizer({
     templateDir: `${__dirname}/pptx-templates`,
     outputDir: `${__dirname}/pptx-output`,
