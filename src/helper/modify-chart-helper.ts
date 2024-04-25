@@ -224,6 +224,40 @@ export default class ModifyChartHelper {
     };
 
   /**
+   * Read chart workbook data
+   * See `__tests__/read-chart-data.test.js`
+   */
+  static readWorkbookData =
+    (data: any): ChartModificationCallback =>
+    (element: XmlElement, chart?: XmlDocument, workbook?: Workbook): void => {
+      const getSharedString = (index: number): string => {
+        return workbook.sharedStrings.getElementsByTagName('si').item(index)
+          ?.textContent;
+      };
+
+      const parseCell = (cell: XmlElement): string | number => {
+        const type = cell.getAttribute('t');
+        const cellValue = cell.getElementsByTagName('v').item(0).textContent;
+        if (type === 's') {
+          return getSharedString(Number(cellValue));
+        } else {
+          return Number(cellValue);
+        }
+      };
+
+      const rows = workbook.sheet.getElementsByTagName('row');
+      for (let r = 0; r < rows.length; r++) {
+        const row = rows.item(r);
+        const columns = row.getElementsByTagName('c');
+        const rowData = [];
+        for (let c = 0; c < columns.length; c++) {
+          rowData.push(parseCell(columns.item(c)));
+        }
+        data.push(rowData);
+      }
+    };
+
+  /**
    * Set range and format for chart axis.
    * Please notice: It will only work if the value to update is not set to
    * "Auto" in powerpoint. Only manually scaled min/max can be altered by this.

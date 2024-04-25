@@ -73,9 +73,11 @@ const setPlotArea = ModifyChartHelper.setPlotArea;
 const setLegendPosition = ModifyChartHelper.setLegendPosition;
 const removeChartLegend = ModifyChartHelper.removeChartLegend;
 const minimizeChartLegend = ModifyChartHelper.minimizeChartLegend;
-const setWaterFallColumnTotalToLast = ModifyChartHelper.setWaterFallColumnTotalToLast;
+const setWaterFallColumnTotalToLast =
+  ModifyChartHelper.setWaterFallColumnTotalToLast;
 const setChartTitle = ModifyChartHelper.setChartTitle;
 const setDataLabelAttributes = ModifyChartHelper.setDataLabelAttributes;
+const readWorkbookData = ModifyChartHelper.readWorkbookData;
 
 export type {
   ChartBubble,
@@ -93,7 +95,7 @@ export type {
   Border,
   ShapeValueStyle,
   ShapeCoordinates,
-  ReplaceText
+  ReplaceText,
 };
 
 export {
@@ -106,7 +108,7 @@ export {
   ModifyTextHelper,
   ModifyColorHelper,
   ModifyImageHelper,
-  LabelPosition
+  LabelPosition,
 };
 
 export const modify = {
@@ -139,6 +141,9 @@ export const modify = {
   setWaterFallColumnTotalToLast,
   setChartTitle,
   setDataLabelAttributes,
+};
+export const read = {
+  readWorkbookData,
 };
 export { CmToDxa, DxaToCm };
 export type {
