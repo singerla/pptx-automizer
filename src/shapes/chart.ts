@@ -235,6 +235,12 @@ export class Chart extends Shape implements IChart {
       this.wbEmbeddingsPath,
     );
 
+    if (!relationTargets[0]) {
+      throw new Error(
+        `Could not find a related worksheet pointing to ${this.wbEmbeddingsPath}@${targetRelFile}`,
+      );
+    }
+
     return relationTargets[0].filenameBase;
   }
 
