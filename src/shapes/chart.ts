@@ -30,6 +30,7 @@ export class Chart extends Shape implements IChart {
   relTypeChartColorStyle: string;
   relTypeChartStyle: string;
   relTypeChartImage: string;
+  relTypeChartThemeOverride: string;
   wbRelsPath: string;
   styleRelationFiles: {
     [key: string]: string[];
@@ -57,6 +58,8 @@ export class Chart extends Shape implements IChart {
       'http://schemas.microsoft.com/office/2011/relationships/chartStyle';
     this.relTypeChartImage =
       'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image';
+    this.relTypeChartThemeOverride =
+      'http://schemas.openxmlformats.org/officeDocument/2006/relationships/themeOverride';
     this.styleRelationFiles = {};
   }
 
@@ -240,6 +243,7 @@ export class Chart extends Shape implements IChart {
     await this.appendChartToContentType();
     await this.appendColorToContentType();
     await this.appendStyleToContentType();
+    await this.appendThemeOverrideToContentType();
   }
 
   async copyChartFiles(): Promise<void> {
@@ -292,6 +296,20 @@ export class Chart extends Shape implements IChart {
         );
       }
     }
+
+    if (this.styleRelationFiles.relTypeChartThemeOverride?.length) {
+      const sourceFile =
+        this.styleRelationFiles.relTypeChartThemeOverride[0].replace(
+          '../theme/',
+          '',
+        );
+      await FileHelper.zipCopy(
+        this.sourceArchive,
+        `ppt/theme/${sourceFile}`,
+        this.targetArchive,
+        `ppt/theme/themeOverride${this.targetNumber}.xml`,
+      );
+    }
   }
 
   async getChartStyles(): Promise<void> {
@@ -299,6 +317,7 @@ export class Chart extends Shape implements IChart {
       'relTypeChartStyle',
       'relTypeChartColorStyle',
       'relTypeChartImage',
+      'relTypeChartThemeOverride',
     ];
 
     for (const i in styleTypes) {
@@ -393,6 +412,14 @@ export class Chart extends Shape implements IChart {
               imageInfo,
             );
             break;
+          case this.relTypeChartThemeOverride:
+            this.updateTargetWorksheetRelation(
+              targetRelFile,
+              element,
+              'Target',
+              `../theme/themeOverride${this.targetNumber}.xml`,
+            );
+            break;
         }
         contentTracker.trackRelation(targetRelFile, {
           Id: element.getAttribute('Id'),
@@ -476,6 +503,15 @@ export class Chart extends Shape implements IChart {
       XmlHelper.createContentTypeChild(this.targetArchive, {
         PartName: `/ppt/charts/style${this.targetNumber}.xml`,
         ContentType: `application/vnd.ms-office.chartstyle+xml`,
+      }),
+    );
+  }
+
+  appendThemeOverrideToContentType(): Promise<XmlElement> {
+    return XmlHelper.append(
+      XmlHelper.createContentTypeChild(this.targetArchive, {
+        PartName: `/ppt/theme/themeOverride${this.targetNumber}.xml`,
+        ContentType: `application/vnd.openxmlformats-officedocument.themeOverride+xml`,
       }),
     );
   }
