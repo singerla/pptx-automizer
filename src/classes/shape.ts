@@ -51,8 +51,11 @@ export class Shape {
   hasCreationId: boolean;
   contentTypeMap: typeof ContentTypeMap;
   subtype: ElementSubtype;
+  shape: ImportedElement;
 
   constructor(shape: ImportedElement, targetType: ShapeTargetType) {
+    this.shape = shape;
+
     this.mode = shape.mode;
     this.name = shape.name;
     this.targetType = targetType;
@@ -88,6 +91,10 @@ export class Shape {
   }
 
   async setTargetElement(): Promise<void> {
+    if (!this.sourceElement) {
+      console.log(this.shape);
+      throw 'No source element for shape ' + this.name;
+    }
     this.targetElement = this.sourceElement.cloneNode(true) as XmlElement;
   }
 
