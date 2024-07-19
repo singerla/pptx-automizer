@@ -13,6 +13,8 @@ export default class ModifyColorHelper {
       if (!color || !color.type || element?.getElementsByTagName === undefined)
         return;
 
+      ModifyColorHelper.normalizeColorObject(color);
+
       const solidFills = element.getElementsByTagName('a:solidFill');
 
       if (!solidFills.length) {
@@ -49,4 +51,15 @@ export default class ModifyColorHelper {
         element.removeChild(hasNoFill);
       }
     };
+
+  static normalizeColorObject = (color: Color) => {
+    if (color.value.indexOf('#') === 0) {
+      color.value = color.value.replace('#', '');
+    }
+    if (color.value.toLowerCase().indexOf('rgb(') === 0) {
+      // TODO: convert RGB to HEX
+      color.value = 'cccccc';
+    }
+    return color;
+  };
 }
