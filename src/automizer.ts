@@ -1,6 +1,7 @@
 import { Slide } from './classes/slide';
 import {
   ArchiveParams,
+  AutomizerFile,
   AutomizerParams,
   AutomizerSummary,
   PresentationInfo,
@@ -86,23 +87,32 @@ export default class Automizer implements IPresentationProps {
     this.content = new ContentTracker();
 
     if (params.rootTemplate) {
-      const location = this.getLocation(params.rootTemplate, 'template');
+      let file = params.rootTemplate;
+      if (typeof file !== 'object') {
+        file = this.getLocation(file, 'template');
+      }
       this.rootTemplate = Template.import(
-        location,
+        file,
         this.archiveParams,
         this,
       ) as RootPresTemplate;
     }
 
     if (params.presTemplates) {
-      this.params.presTemplates.forEach((file) => {
-        const location = this.getLocation(file, 'template');
+      this.params.presTemplates.forEach((file, i) => {
+        let name: string;
+        if (typeof file !== 'object') {
+          name = file;
+          file = this.getLocation(file, 'template');
+        } else {
+          name = `${i}.pptx`;
+        }
         const archiveParams = {
           ...this.archiveParams,
-          name: file,
+          name,
         };
         const newTemplate = Template.import(
-          location,
+          file,
           archiveParams,
         ) as PresTemplate;
 
@@ -149,22 +159,29 @@ export default class Automizer implements IPresentationProps {
 
   /**
    * Load a pptx file and set it as root template.
-   * @param location - Filename or path to the template. Will be prefixed with 'templateDir'
+   * @param file - Filename, path to the template or Buffer containing the file.
+   * Filenames and paths will be prefixed with 'templateDir'
    * @returns Instance of Automizer
    */
-  public loadRoot(location: string): this {
-    return this.loadTemplate(location);
+  public loadRoot(file: AutomizerFile): this {
+    return this.loadTemplate(file);
   }
 
   /**
    * Load a template pptx file.
-   * @param location - Filename or path to the template. Will be prefixed with 'templateDir'
-   * @param name - Optional: A short name for the template. If skipped, the template will be named by its location.
+   * @param file - Filename, path to the template or Buffer containing the file.
+   * Filenames and paths will be prefixed with 'templateDir'
+   * @param name - Optional short name for a template loaded from a file. If skipped, the template will be named by its location.
+   * if the file is a Buffer the name is required.
    * @returns Instance of Automizer
    */
-  public load(location: string, name?: string): this {
-    name = name === undefined ? location : name;
-    return this.loadTemplate(location, name);
+  public load(file: AutomizerFile, name?: string): this {
+    if (!name && typeof file !== 'object') {
+      name = name === undefined ? file : name;
+    } else if (typeof file === 'object' && !name) {
+      throw new Error('Name is required when loading a template from a Buffer');
+    }
+    return this.loadTemplate(file, name);
   }
 
   /**
@@ -174,8 +191,10 @@ export default class Automizer implements IPresentationProps {
    * @param [name]
    * @returns template
    */
-  private loadTemplate(location: string, name?: string): this {
-    location = this.getLocation(location, 'template');
+  private loadTemplate(file: AutomizerFile, name?: string): this {
+    if (typeof file !== 'object') {
+      file = this.getLocation(file, 'template');
+    }
     const alreadyLoaded = this.templates.find(
       (template) => template.name === name,
     );
@@ -188,7 +207,7 @@ export default class Automizer implements IPresentationProps {
       name,
     };
 
-    const newTemplate = Template.import(location, importParams, this);
+    const newTemplate = Template.import(file, importParams, this);
 
     if (!this.isPresTemplate(newTemplate)) {
       this.rootTemplate = newTemplate;
