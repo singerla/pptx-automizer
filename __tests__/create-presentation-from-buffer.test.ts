@@ -1,4 +1,4 @@
-import fs from 'fs/promises';
+import * as fs from 'fs/promises';
 import Automizer from '../src/automizer';
 
 test('create presentation from buffer and add basic slide', async () => {

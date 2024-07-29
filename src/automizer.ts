@@ -571,7 +571,12 @@ export default class Automizer implements IPresentationProps {
         } else if (fs.existsSync(this.templateFallbackDir + location)) {
           return this.templateFallbackDir + location;
         } else {
-          vd('No file matches "' + location + '"');
+          if (typeof location === 'string') {
+            vd('No file matches "' + location + '"');
+          } else {
+            vd('Invalid filename');
+          }
+
           vd('@templateDir: ' + this.templateDir);
           vd('@templateFallbackDir: ' + this.templateFallbackDir);
         }
