@@ -26,6 +26,7 @@ If you require commercial support for complex .pptx automation, you can explore 
   - [As a Package](#as-a-package)
 - [Usage](#usage)
   - [Basic Example](#basic-example)
+  - [Load files from buffer/URL](#load-files-from-bufferurl)
   - [How to Select Slides Shapes](#how-to-select-slides-shapes)
     - [Select slide by number and shape by name](#select-slide-by-number-and-shape-by-name)
     - [Select slides by creationId](#select-slides-by-creationid)
@@ -224,6 +225,31 @@ stream.pipe(process.stdout);
 const finalJSZip = await pres.getJSZip();
 // Convert the output to whatever needed:
 const base64 = await finalJSZip.generateAsync({ type: 'base64' });
+```
+
+## Load files from buffer/URL
+
+It is possible to load `.pptx` files from buffer:
+
+```ts
+const rootTemplate = await fs.readFile(
+  `${__dirname}/pptx-templates/RootTemplate.pptx`,
+);
+const slideWithShapes = await fs.readFile(
+  `${__dirname}/pptx-templates/SlideWithShapes.pptx`,
+);
+
+// Additionally, you can fetch a template from url as well:
+const url =
+  'https://raw.githubusercontent.com/singerla/pptx-automizer/main/__tests__/pptx-templates/SlideWithShapes.pptx';
+const response = await fetch(url);
+const buffer = await response.arrayBuffer();
+const bytes = new Uint8Array(buffer);
+
+const pres = automizer
+  .loadRoot(rootTemplate)
+  .load(slideWithShapes, 'shapes')
+  .load(bytes, 'shapesFromUrl');
 ```
 
 ## How to Select Slides Shapes
@@ -783,7 +809,8 @@ To specify another slideLayout for an added output slide, you need to count slid
 
 To add and modify shapes on a slide master, please take a look at [Add and modify shapes](https://github.com/singerla/pptx-automizer#add-and-modify-shapes).
 
-If you require to modify slide master backgrounds, please refer to 
+If you require to modify slide master backgrounds, please refer to
+
 - [Modify master background color](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-master-background-color.test.ts).
 - [Modify master background image](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-master-background-image.test.ts).
 
@@ -890,6 +917,7 @@ const setTextContent = function (label: number | string) {
   };
 };
 ```
+
 This function will construct an anonymous callback function on setup, while the callback function itself will be executed on runtime, when it's up to the target element on a slide.
 
 You can use the modifier e.g. on adding an element:
@@ -931,10 +959,9 @@ If you encounter problems when opening a `.pptx`-file modified by this library, 
 - **Proprietary/Binary contents** (e.g. ThinkCell): Walk through all slides, slideMasters and slideLayouts and seek for hidden Objects. Hit `ALT+F10` to toggle the sidebar.
 - **Chart styles not working**: If you try to change e.g. color or size of a chart data label, and it doesn't work as expected, try to remove all data labels and activate them again. If this does not help, try to give the first data label of a series a slightly different style (this creates a single data point).
 - **Replace Text not working**: Cut out your e.g. {CustomerName} tag from textbox to clipboard, paste it into a plaintext editor to remove all (visible and invisible) formatting. Copy & paste {CustomerName} back to the textbox. (see [#82](https://github.com/singerla/pptx-automizer/issues/82) and [#73](https://github.com/singerla/pptx-automizer/issues/73))
-- **No related chart worksheet**: It might happen to PowerPoint to lose the worksheet relation for a chart. If a chart gets corrupted by this, you will see a normal chart on your slide, but get an error message if you try to open the datasheet. Please replace the corrupted chart by a working one. (see [#104](https://github.com/singerla/pptx-automizer/issues/104)) 
+- **No related chart worksheet**: It might happen to PowerPoint to lose the worksheet relation for a chart. If a chart gets corrupted by this, you will see a normal chart on your slide, but get an error message if you try to open the datasheet. Please replace the corrupted chart by a working one. (see [#104](https://github.com/singerla/pptx-automizer/issues/104))
 
-
-If none of these could help, please don't hesitate to [talk about it](https://github.com/singerla/pptx-automizer/issues/new). 
+If none of these could help, please don't hesitate to [talk about it](https://github.com/singerla/pptx-automizer/issues/new).
 
 ## Testing
 

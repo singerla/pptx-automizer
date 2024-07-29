@@ -10,7 +10,7 @@ import { ContentMap, SlideInfo } from '../types/xml-types';
 import { XmlHelper } from '../helper/xml-helper';
 import { ContentTracker } from '../helper/content-tracker';
 import IArchive from '../interfaces/iarchive';
-import { ArchiveParams, MediaFile } from '../types/types';
+import { ArchiveParams, AutomizerFile, MediaFile } from '../types/types';
 
 import Automizer from '../automizer';
 import { IMaster } from '../interfaces/imaster';
@@ -67,14 +67,14 @@ export class Template implements ITemplate {
   contentMap: ContentMap[] = [];
   mediaFiles: MediaFile[] = [];
 
-  constructor(location: string, params: ArchiveParams) {
-    this.location = location;
-    const archive = FileHelper.importArchive(location, params);
+  constructor(file: AutomizerFile, params: ArchiveParams) {
+    this.file = file;
+    const archive = FileHelper.importArchive(file, params);
     this.archive = archive;
   }
 
   static import(
-    location: string,
+    file: AutomizerFile,
     params: ArchiveParams,
     automizer?: Automizer,
   ): PresTemplate | RootPresTemplate {
@@ -82,11 +82,11 @@ export class Template implements ITemplate {
     if (params.name) {
       // New template will be a default template containing
       // importable slides and shapes.
-      newTemplate = new Template(location, params) as PresTemplate;
+      newTemplate = new Template(file, params) as PresTemplate;
       newTemplate.name = params.name;
     } else {
       // New template will be root template
-      newTemplate = new Template(location, params) as RootPresTemplate;
+      newTemplate = new Template(file, params) as RootPresTemplate;
       newTemplate.automizer = automizer;
       newTemplate.slides = [];
       newTemplate.masters = [];

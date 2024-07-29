@@ -1,7 +1,7 @@
 import Archive from './archive';
 import fs, { promises as fsp } from 'fs';
 import JSZip, { InputType } from 'jszip';
-import { AutomizerParams } from '../../types/types';
+import { AutomizerFile, AutomizerParams } from '../../types/types';
 import IArchive, { ArchivedFile } from '../../interfaces/iarchive';
 import { XmlDocument } from '../../types/xml-types';
 import path from 'path';
@@ -11,13 +11,16 @@ export default class ArchiveJszip extends Archive implements IArchive {
   archive: JSZip;
   file: Buffer;
 
-  constructor(filename) {
+  constructor(filename: AutomizerFile) {
     super(filename);
   }
 
   private async initialize() {
-    this.file = await fs.promises.readFile(this.filename);
-
+    if (typeof this.filename !== 'object') {
+      this.file = await fs.promises.readFile(this.filename);
+    } else {
+      this.file = this.filename;
+    }
     const zip = new JSZip();
     this.archive = await zip.loadAsync(this.file as unknown as InputType);
 

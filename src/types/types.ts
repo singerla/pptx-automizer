@@ -30,6 +30,8 @@ export type GetRelationshipsCallback = (
   rels: Target[],
 ) => void;
 
+export type AutomizerFile = string | Buffer | Uint8Array;
+
 export type AutomizerParams = {
   /**
    * Prefix for all template files. You can set a path here.
@@ -58,8 +60,13 @@ export type AutomizerParams = {
    * Zip compression level 0-9
    */
   compression?: number;
-  rootTemplate?: string;
-  presTemplates?: string[];
+  rootTemplate?: AutomizerFile;
+  /**
+   * Array of template files to be loaded on initialization.
+   * If files are Buffer or Uint8Array, they will be named 0.pptx, 1.pptx, ...
+   * according to their order in the array.
+   */
+  presTemplates?: AutomizerFile[];
   useCreationIds?: boolean;
   /**
    * Turn this to true if you always want to import all required slide masters.

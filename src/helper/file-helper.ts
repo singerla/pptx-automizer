@@ -1,7 +1,7 @@
 import fs from 'fs';
 import { promises as fsPromises } from 'fs';
 import path from 'path';
-import { FileInfo, ArchiveParams } from '../types/types';
+import { FileInfo, ArchiveParams, AutomizerFile } from '../types/types';
 import { contentTracker } from './content-tracker';
 import IArchive, {
   ArchivedFolderCallback,
@@ -13,16 +13,20 @@ import { vd } from './general-helper';
 import { ContentTypeExtension } from '../enums/content-type-map';
 
 export class FileHelper {
-  static importArchive(location: string, params: ArchiveParams): IArchive {
-    if (!fs.existsSync(location)) {
-      throw new Error('File not found: ' + location);
-    }
+  static importArchive(file: AutomizerFile, params: ArchiveParams): IArchive {
+    if (typeof file !== 'object') {
+      if (!fs.existsSync(file)) {
+        throw new Error('File not found: ' + file);
+      }
 
-    switch (params.mode) {
-      case 'jszip':
-        return new ArchiveJszip(location);
-      case 'fs':
-        return new ArchiveFs(location, params);
+      switch (params.mode) {
+        case 'jszip':
+          return new ArchiveJszip(file);
+        case 'fs':
+          return new ArchiveFs(file, params);
+      }
+    } else {
+      return new ArchiveJszip(file);
     }
   }
 
