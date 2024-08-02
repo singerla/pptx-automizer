@@ -27,7 +27,13 @@ export default class XmlElements {
     r.appendChild(this.textContent());
 
     const previousSibling = this.element.getElementsByTagName('a:pPr')[0];
-    XmlHelper.insertAfter(r, previousSibling);
+    if (previousSibling) {
+      XmlHelper.insertAfter(r, previousSibling);
+    } else {
+      // ToDo: Create a new parentNode
+      // <a:p>
+      //  <a:pPr algn="ctr"/>
+    }
 
     return this;
   }

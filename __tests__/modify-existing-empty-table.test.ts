@@ -1,6 +1,6 @@
 import Automizer, { modify } from '../src/index';
 
-test('create presentation, add and modify an existing table, create text elements.', async () => {
+test('Modify an existing table without content in any cell.', async () => {
   const automizer = new Automizer({
     templateDir: `${__dirname}/pptx-templates`,
     outputDir: `${__dirname}/pptx-output`,
@@ -20,12 +20,12 @@ test('create presentation, add and modify an existing table, create text element
 
   const result = await pres
     .addSlide('tables', 3, (slide) => {
-      slide.modifyElement('TableWithEmptyCells', [
+      slide.modifyElement('EmptyTable', [
         modify.setTable(data1),
         // modify.dump
       ]);
     })
-    .write(`modify-existing-table-create-text.test.pptx`);
+    .write(`modify-existing-empty-table.test.pptx`);
 
   // expect(result.tables).toBe(2); // tbd
 });
