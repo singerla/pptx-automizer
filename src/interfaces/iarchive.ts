@@ -1,5 +1,5 @@
 import ArchiveJszip from '../helper/archive/archive-jszip';
-import { AutomizerParams } from '../types/types';
+import { AutomizerFile, AutomizerParams } from '../types/types';
 import JSZip, { InputType } from 'jszip';
 import { XmlDocument } from '../types/xml-types';
 import ArchiveFs from '../helper/archive/archive-fs';
@@ -16,7 +16,7 @@ export type ArchivedFolderCallback = (file: ArchivedFile) => boolean;
 export type ArchiveInput = InputType;
 
 export default interface IArchive {
-  filename: string;
+  filename: AutomizerFile;
   read: (file: string, type) => Promise<string | Buffer>;
   write: (file: string, data: string | Buffer) => Promise<ArchiveType>;
   readXml: (file: string) => Promise<XmlDocument>;

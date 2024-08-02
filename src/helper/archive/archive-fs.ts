@@ -1,7 +1,11 @@
 import Archive from './archive';
 import fs, { promises as fsPromises } from 'fs';
 import JSZip, { InputType } from 'jszip';
-import { ArchiveParams, AutomizerParams } from '../../types/types';
+import {
+  ArchiveParams,
+  AutomizerFile,
+  AutomizerParams,
+} from '../../types/types';
 import IArchive, { ArchivedFile } from '../../interfaces/iarchive';
 import { XmlDocument } from '../../types/xml-types';
 import ArchiveJszip from './archive-jszip';
@@ -26,10 +30,11 @@ export default class ArchiveFs extends Archive implements IArchive {
   workDir: string;
   isActive: boolean;
   isRoot: boolean;
+  filename: string;
 
   constructor(filename: string, params: ArchiveParams) {
     super(filename);
-
+    this.filename = filename;
     this.params = params;
   }
 

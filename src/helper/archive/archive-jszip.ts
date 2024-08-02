@@ -19,7 +19,7 @@ export default class ArchiveJszip extends Archive implements IArchive {
     if (typeof this.filename !== 'object') {
       this.file = await fs.promises.readFile(this.filename);
     } else {
-      this.file = this.filename;
+      this.file = this.filename as Buffer;
     }
     const zip = new JSZip();
     this.archive = await zip.loadAsync(this.file as unknown as InputType);
@@ -56,9 +56,13 @@ export default class ArchiveJszip extends Archive implements IArchive {
     }
 
     if (!this.archive.files[file]) {
-      throw new Error(
-        'Could not find file ' + file + '@' + path.basename(this.filename),
-      );
+      if (typeof this.filename === 'string') {
+        throw new Error(
+          'Could not find file ' + file + '@' + path.basename(this.filename),
+        );
+      } else {
+        throw new Error('Could not find file ' + file);
+      }
     }
 
     return this.archive.files[file].async(type || 'string');

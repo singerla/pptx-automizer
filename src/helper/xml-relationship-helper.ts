@@ -140,12 +140,16 @@ export class XmlRelationshipHelper {
         this.archive.fileExists(targetPath) === false
       ) {
         if (check) {
-          console.error(
-            'Related content from ' +
-              sourceArchive.filename +
-              ' not found: ' +
-              targetFile,
-          );
+          if (typeof sourceArchive.filename === 'string') {
+            console.error(
+              'Related content from ' +
+                sourceArchive.filename +
+                ' not found: ' +
+                targetFile,
+            );
+          } else {
+            console.error('Related content not found: ' + targetFile);
+          }
         }
 
         if (assert) {
