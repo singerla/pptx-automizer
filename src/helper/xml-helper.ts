@@ -534,6 +534,11 @@ export class XmlHelper {
     toRemove.parentNode.removeChild(toRemove);
   }
 
+  static moveChild(childToMove: XmlElement, insertBefore?: XmlElement): void {
+    const parent = childToMove.parentNode;
+    parent.insertBefore(childToMove, insertBefore);
+  }
+
   static sortCollection(
     collection: HTMLCollectionOf<XmlElement>,
     order: number[],

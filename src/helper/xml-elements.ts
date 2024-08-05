@@ -1,4 +1,4 @@
-import { Border, Color } from '../types/modify-types';
+import { Color } from '../types/modify-types';
 import { XmlHelper } from './xml-helper';
 import { DOMParser } from '@xmldom/xmldom';
 import { dLblXml } from './xml/dLbl';
@@ -14,11 +14,16 @@ export default class XmlElements {
 
   document: XmlDocument;
   params: XmlElementParams;
+  defaultValues: Record<string, string>;
 
   constructor(element: XmlDocument | XmlElement, params?: XmlElementParams) {
     this.element = element;
     this.document = element.ownerDocument;
     this.params = params;
+    this.defaultValues = {
+      color: 'CCCCCC',
+      size: '1000',
+    };
   }
 
   text(): this {
@@ -26,23 +31,40 @@ export default class XmlElements {
     r.appendChild(this.textRangeProps());
     r.appendChild(this.textContent());
 
-    const previousSibling = this.element.getElementsByTagName('a:pPr')[0];
-    if (previousSibling) {
-      XmlHelper.insertAfter(r, previousSibling);
-    } else {
-      // ToDo: Create a new parentNode
-      // <a:p>
-      //  <a:pPr algn="ctr"/>
+    let paragraphProps = this.element.getElementsByTagName('a:pPr').item(0);
+
+    if (!paragraphProps) {
+      paragraphProps = this.paragraphProps();
     }
 
+    XmlHelper.insertAfter(r, paragraphProps);
+
     return this;
+  }
+
+  paragraphProps() {
+    const p = this.element.getElementsByTagName('a:p').item(0);
+    p.appendChild(this.document.createElement('a:pPr'));
+    const paragraphRangeProps = this.element
+      .getElementsByTagName('a:pPr')
+      .item(0);
+
+    const endParaRPr = this.element
+      .getElementsByTagName('a:endParaRPr')
+      .item(0);
+    XmlHelper.moveChild(endParaRPr);
+
+    return paragraphRangeProps;
   }
 
   textRangeProps() {
     const rPr = this.document.createElement('a:rPr');
     const endParaRPr = this.element.getElementsByTagName('a:endParaRPr')[0];
     rPr.setAttribute('lang', endParaRPr.getAttribute('lang'));
-    rPr.setAttribute('sz', endParaRPr.getAttribute('sz'));
+    rPr.setAttribute(
+      'sz',
+      endParaRPr.getAttribute('sz') || this.defaultValues.size,
+    );
 
     rPr.appendChild(this.line());
     rPr.appendChild(this.effectLst());
@@ -92,7 +114,10 @@ export default class XmlElements {
   }
 
   colorValue(colorType: XmlElement) {
-    colorType.setAttribute('val', this.params?.color?.value || 'cccccc');
+    colorType.setAttribute(
+      'val',
+      this.params?.color?.value || this.defaultValues.color,
+    );
   }
 
   dataPoint(): this {
@@ -165,6 +190,7 @@ export default class XmlElements {
     const firstChild = this.element.firstChild;
     this.element.insertBefore(ele.cloneNode(true), firstChild);
   }
+
   tableCellBorder(tag: 'a:lnL' | 'a:lnR' | 'a:lnT' | 'a:lnB') {
     const doc = new DOMParser().parseFromString(lnLRTB);
     const ele = doc.getElementsByTagName(tag)[0];
