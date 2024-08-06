@@ -18,6 +18,7 @@ import {
   ContentTypeExtension,
   ContentTypeMap,
 } from '../enums/content-type-map';
+import XmlElements from './xml-elements';
 
 export class XmlHelper {
   static async modifyXmlInArchive(
@@ -543,6 +544,12 @@ export class XmlHelper {
   static moveChild(childToMove: XmlElement, insertBefore?: XmlElement): void {
     const parent = childToMove.parentNode;
     parent.insertBefore(childToMove, insertBefore);
+  }
+
+  static appendClone(childToClone: XmlElement, parent: XmlElement): XmlElement {
+    const clone = childToClone.cloneNode(true) as XmlElement;
+    parent.appendChild(clone);
+    return clone;
   }
 
   static sortCollection(
