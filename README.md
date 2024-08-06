@@ -30,6 +30,7 @@ If you require commercial support for complex .pptx automation, you can explore 
   - [How to Select Slides And Shapes](#how-to-select-slides-and-shapes)
     - [Select slide by number and shape by name](#select-slide-by-number-and-shape-by-name)
     - [Select slides by creationId](#select-slides-by-creationid)
+  - [Get Shape Info](#get-shape-info)
   - [Find and Modify Shapes](#find-and-modify-shapes)
   - [Modify Text](#modify-text)
   - [Modify Images](#modify-images)
