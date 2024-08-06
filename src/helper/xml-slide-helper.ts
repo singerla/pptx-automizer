@@ -111,6 +111,7 @@ export class XmlSlideHelper {
       id: XmlSlideHelper.getElementCreationId(slideElement),
       type: XmlSlideHelper.getElementType(slideElement),
       position: XmlSlideHelper.parseShapeCoordinates(slideElement),
+      altText: XmlSlideHelper.getImageAltText(slideElement),
       hasTextBody: !!XmlSlideHelper.getTextBody(slideElement),
       getText: () => XmlSlideHelper.parseTextFragments(slideElement),
       getXmlElement: () => slideElement,
@@ -155,6 +156,13 @@ export class XmlSlideHelper {
 
   static getNonVisibleProperties(shapeNode: XmlElement): XmlElement {
     return shapeNode.getElementsByTagNameNS(nsMain, 'cNvPr').item(0);
+  }
+
+  static getImageAltText(slideElement: XmlElement) {
+    const cNvPr = XmlSlideHelper.getNonVisibleProperties(slideElement);
+    if (cNvPr) {
+      return cNvPr.getAttribute('descr');
+    }
   }
 
   static getElementName(slideElement: XmlElement) {
