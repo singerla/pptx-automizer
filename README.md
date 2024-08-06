@@ -393,7 +393,7 @@ pres
     // Or take a look at the shape's coordinates:  
     console.log(info.position);
 
-    // Dump element xml from previous slide:
+    // Dump element xml:
     XmlHelper.dump(info.getXmlElement())
   })
 ```
