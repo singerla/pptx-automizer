@@ -6,6 +6,7 @@ import {
 } from '../types/xml-types';
 import { XmlHelper } from './xml-helper';
 import HasShapes from '../classes/has-shapes';
+import { FindElementSelector } from '../types/types';
 
 export const nsMain =
   'http://schemas.openxmlformats.org/presentationml/2006/main';
@@ -50,6 +51,18 @@ export class XmlSlideHelper {
     }
 
     return Number(creationIdSlide);
+  }
+
+  /**
+   * Get an array of ElementInfo objects for all named elements on a slide.
+   * @param selector
+   */
+  async getElement(selector: string): Promise<ElementInfo> {
+    const shapeNode = XmlHelper.isElementCreationId(selector)
+      ? XmlHelper.findByCreationId(this.slideXml, selector)
+      : XmlHelper.findByName(this.slideXml, selector);
+
+    return XmlSlideHelper.getElementInfo(shapeNode);
   }
 
   /**
@@ -104,7 +117,7 @@ export class XmlSlideHelper {
   }
 
   /**
-   * Retreives a list of all named elements on a slide. Automation requires at least a name.
+   * Retrieves a list of all named elements on a slide. Automation requires at least a name.
    * @param filterTags Use an array of strings to filter the output array
    */
   getNamedElements(filterTags?: string[]): XmlElement[] {
