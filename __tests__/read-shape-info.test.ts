@@ -26,9 +26,13 @@ test('read and re-use shape info, e.g. shape coordinates', async () => {
   };
 
   pres
-    .addSlide('shapes', 2, (slide) => {
+    .addSlide('shapes', 2, async (slide) => {
       // Pick a shape and buffer the info object
-      info.set(slide.getElement('Cloud'));
+      info.set(slide.getElement('Star'));
+
+      // Read another shape and print its text fragments:
+      const eleInfo = await slide.getElement('Cloud');
+      console.log(eleInfo.getText());
     })
     .addSlide('charts', 1, async (slide) => {
       const eleInfo = await info.get();

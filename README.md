@@ -27,7 +27,7 @@ If you require commercial support for complex .pptx automation, you can explore 
 - [Usage](#usage)
   - [Basic Example](#basic-example)
   - [Load files from buffer/URL](#load-files-from-bufferurl)
-  - [How to Select Slides Shapes](#how-to-select-slides-shapes)
+  - [How to Select Slides And Shapes](#how-to-select-slides-and-shapes)
     - [Select slide by number and shape by name](#select-slide-by-number-and-shape-by-name)
     - [Select slides by creationId](#select-slides-by-creationid)
   - [Find and Modify Shapes](#find-and-modify-shapes)
@@ -252,7 +252,7 @@ const pres = automizer
   .load(bytes, 'shapesFromUrl');
 ```
 
-## How to Select Slides Shapes
+## How to Select Slides And Shapes
 
 `pptx-automizer` needs a selector to find the required shape on a template slide. While an imported .pptx file is identified by filename or custom label, there are different ways to address its slides and shapes.
 
@@ -378,9 +378,32 @@ If you decide to use the `creationId` method, you are safe to add, remove and re
 
 > Please note: PowerPoint is going to update a shape's `creationId` only in case the shape was copied & pasted on a slide with an already existing identical shape `creationId`. If you were copying a slide, each shape `creationId` will be copied, too. As a result, you have unique shape ids, but different slide `creationIds`. If you are now going to paste a shape an such a slide, a new creationId will be given to the pasted shape. As a result, slide ids are unique throughout a presentation, but shape ids are unique only on one slide.
 
+## Get Shape Info
+
+If you need to find out e.g. a shape's coordinates on a slide or if you quickly want to read the text body, you can run `slide.getElement('Cloud')`:
+
+```ts
+pres
+  .addSlide('shapes', 2, async (slide) => {
+    // Read a shape and print its text fragments:
+    const info = await slide.getElement('Cloud');
+    console.log(info.getText());
+    
+    // Or take a look at the shape's coordinates:  
+    console.log(info.position);
+
+    // Dump element xml from previous slide:
+    XmlHelper.dump(info.getXmlElement())
+  })
+```
+
+Find out how to cross-slide copy properties from one shape to another:
+- [Read shape info](https://github.com/singerla/pptx-automizer/blob/main/__tests__/read-shape-info.test.ts)
+
+
 ## Find and Modify Shapes
 
-There are basically to ways to access a target shape on a slide:
+There are basically two ways to access a target shape on a slide:
 
 - `slide.modifyElement(...)` requires an existing shape on the current slide,
 - `slide.addElement(...)` adds a shape from another slide to the current slide.
