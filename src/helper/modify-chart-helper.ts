@@ -258,6 +258,31 @@ export default class ModifyChartHelper {
     };
 
   /**
+   * Read chart info
+   * See `__tests__/read-chart-data.test.js`
+   */
+  static readChartInfo =
+    (info: any): ChartModificationCallback =>
+    (element: XmlElement, chart?: XmlDocument, workbook?: Workbook): void => {
+      const series = chart.getElementsByTagName('c:ser');
+      XmlHelper.modifyCollection(series, (tmpSeries: XmlElement, s: number) => {
+        const solidFill = tmpSeries.getElementsByTagName('a:solidFill').item(0);
+        if (!solidFill) {
+          return;
+        }
+
+        const schemeClr = solidFill.getElementsByTagName('a:schemeClr').item(0);
+        const srgbClr = solidFill.getElementsByTagName('a:srgbClr').item(0);
+        const colorElement = schemeClr ? schemeClr : srgbClr;
+        info.series.push({
+          seriesId: s,
+          colorType: colorElement.tagName,
+          colorValue: colorElement.getAttribute('val'),
+        });
+      });
+    };
+
+  /**
    * Set range and format for chart axis.
    * Please notice: It will only work if the value to update is not set to
    * "Auto" in powerpoint. Only manually scaled min/max can be altered by this.

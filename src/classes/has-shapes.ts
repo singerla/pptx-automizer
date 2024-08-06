@@ -166,6 +166,16 @@ export default class HasShapes {
   }
 
   /**
+   * Asynchronously retrieves one element from the slide.
+   * @params selector Use shape name or creationId to find the shape
+   * @returns {Promise<ElementInfo>} A promise that resolves an ElementInfo object.
+   */
+  async getElement(selector: string): Promise<ElementInfo> {
+    const xmlSlideHelper = await this.getSlideHelper();
+    return xmlSlideHelper.getElement(selector);
+  }
+
+  /**
    * Asynchronously retrieves the dimensions of the slide.
    * This function utilizes the XmlSlideHelper to get the slide dimensions.
    *

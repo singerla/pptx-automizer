@@ -358,6 +358,12 @@ export class XmlHelper {
     return target;
   }
 
+  // Determine whether a given string is a creationId or a shape name
+  // Example creationId: '{EFC74B4C-D832-409B-9CF4-73C1EFF132D8}'
+  static isElementCreationId(selector: string) {
+    return selector.indexOf('{') === 0 && selector.split('-').length === 5;
+  }
+
   static async findByElementCreationId(
     archive: IArchive,
     path: string,

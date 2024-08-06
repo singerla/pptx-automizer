@@ -78,6 +78,7 @@ const setWaterFallColumnTotalToLast =
 const setChartTitle = ModifyChartHelper.setChartTitle;
 const setDataLabelAttributes = ModifyChartHelper.setDataLabelAttributes;
 const readWorkbookData = ModifyChartHelper.readWorkbookData;
+const readChartInfo = ModifyChartHelper.readChartInfo;
 
 export type {
   ChartBubble,
@@ -144,6 +145,7 @@ export const modify = {
 };
 export const read = {
   readWorkbookData,
+  readChartInfo,
 };
 export { CmToDxa, DxaToCm };
 export type {

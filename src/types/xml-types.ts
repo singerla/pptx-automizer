@@ -54,7 +54,13 @@ export type TemplateSlideInfo = {
   name: string;
 };
 
-export type ElementType = 'sp' | 'chart' | 'chartEx' | 'table' | 'pic' | 'cxnSp';
+export type ElementType =
+  | 'sp'
+  | 'chart'
+  | 'chartEx'
+  | 'table'
+  | 'pic'
+  | 'cxnSp';
 
 export type ElementInfo = {
   name: string;
@@ -67,6 +73,7 @@ export type ElementInfo = {
     cy: number;
   };
   hasTextBody: boolean;
+  getText: () => string[];
   getXmlElement: () => XmlElement;
 };
 
