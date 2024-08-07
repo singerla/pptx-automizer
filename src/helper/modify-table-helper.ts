@@ -74,7 +74,8 @@ export default class ModifyTableHelper {
     (info?: TableInfo[]): ShapeModificationCallback =>
     (element: XmlElement): void => {
       if (Array.isArray(info)) {
-        info.push(...ModifyTableHelper.getTableInfo(element));
+        // const infoCells = ModifyTableHelper.getTableInfo(element);
+        // info.push(...infoCells);
       }
     };
 

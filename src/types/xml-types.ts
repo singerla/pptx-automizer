@@ -76,7 +76,7 @@ export type ElementInfo = {
   hasTextBody: boolean;
   getText: () => string[];
   getAltText: () => string;
-  getTableInfo: () => TableInfo[];
+  // getTableInfo: () => TableInfo[];
   getXmlElement: () => XmlElement;
 };
 

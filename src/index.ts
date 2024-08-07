@@ -1,6 +1,6 @@
 import Automizer from './automizer';
 
-import ModifyHelper from './helper/modify-helper';
+import ModifyHelper, { CmToDxa, DxaToCm } from './helper/modify-helper';
 import ModifyShapeHelper from './helper/modify-shape-helper';
 import ModifyTableHelper from './helper/modify-table-helper';
 import ModifyChartHelper from './helper/modify-chart-helper';
@@ -27,9 +27,9 @@ import {
 import {
   Border,
   Color,
+  ImageStyle,
   ReplaceText,
   TextStyle,
-  ImageStyle,
 } from './types/modify-types';
 import { ShapeCoordinates, ShapeValueStyle } from './types/shape-types';
 import { XmlHelper } from './helper/xml-helper';
@@ -40,7 +40,6 @@ import { ITemplate } from './interfaces/itemplate';
 import { IMaster } from './interfaces/imaster';
 import { ISlide } from './interfaces/islide';
 import ModifyImageHelper from './helper/modify-image-helper';
-import { CmToDxa, DxaToCm } from './helper/modify-helper';
 import { LabelPosition } from './enums/chart-type';
 
 const dump = ModifyHelper.dump;

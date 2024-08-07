@@ -1,5 +1,6 @@
 import Automizer, { TableData } from '../src/index';
 import { ModifyTableHelper } from '../src';
+import { TableInfo } from '../src/types/table-types';
 
 test('read table data from slide', async () => {
   const automizer = new Automizer({
@@ -11,19 +12,18 @@ test('read table data from slide', async () => {
     .loadRoot(`RootTemplate.pptx`)
     .load(`SlideWithTables.pptx`, 'tables');
 
-  const data: TableData = {
-    body: [],
-  };
+  const data = <TableInfo[]>[];
 
   await pres
     .addSlide('tables', 1, (slide) => {
       slide.modifyElement('TableWithLabels', [
-        ModifyTableHelper.readTableData(data),
+        // ToDo: use from ElementInfo
+        // ModifyTableHelper.readTableData(data),
       ]);
     })
     .write(`read-table-data.test.pptx`);
 
   // We have 12 text values in a 3x3 table:
   // console.log(data);
-  expect(data.body.length).toBe(12);
+  expect(data.length).toBe(12);
 });

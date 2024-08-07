@@ -115,11 +115,11 @@ export class XmlSlideHelper {
       position: XmlSlideHelper.parseShapeCoordinates(slideElement),
       hasTextBody: !!XmlSlideHelper.getTextBody(slideElement),
       getText: () => XmlSlideHelper.parseTextFragments(slideElement),
-      getTableInfo: () => {
-        const data = <TableInfo[]>[];
-        ModifyTableHelper.readTableData(data)(slideElement);
-        return data;
-      },
+      // getTableInfo: () => {
+      //   const data = <TableInfo[]>[];
+      //   ModifyTableHelper.readTableData(data)(slideElement);
+      //   return data;
+      // },
       getXmlElement: () => slideElement,
       getAltText: () => XmlSlideHelper.getImageAltText(slideElement),
     };
