@@ -113,7 +113,6 @@ export class XmlSlideHelper {
       id: XmlSlideHelper.getElementCreationId(slideElement),
       type: XmlSlideHelper.getElementType(slideElement),
       position: XmlSlideHelper.parseShapeCoordinates(slideElement),
-      altText: XmlSlideHelper.getImageAltText(slideElement),
       hasTextBody: !!XmlSlideHelper.getTextBody(slideElement),
       getText: () => XmlSlideHelper.parseTextFragments(slideElement),
       getTableInfo: () => {

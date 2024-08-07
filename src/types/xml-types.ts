@@ -73,7 +73,6 @@ export type ElementInfo = {
     cx: number;
     cy: number;
   };
-  altText: string;
   hasTextBody: boolean;
   getText: () => string[];
   getAltText: () => string;
