@@ -33,9 +33,9 @@ export default class ModifyTextHelper {
     };
 
   static content =
-    (label: number | string) =>
+    (label: number | string | undefined) =>
     (element: XmlElement): void => {
-      if (element.firstChild) {
+      if (label !== undefined && element.firstChild) {
         element.firstChild.textContent = String(label);
       }
     };

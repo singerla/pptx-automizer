@@ -221,4 +221,98 @@ export class ModifyTable {
         .getAttribute(orientation),
     );
   }
+
+  expandRows = (count: number, rowId: number) => {
+    const tplRow = this.xml.getElementsByTagName('a:tr').item(rowId);
+    for (let r = 1; r <= count; r++) {
+      const newRow = tplRow.cloneNode(true) as XmlElement;
+      XmlHelper.insertAfter(newRow, tplRow);
+      this.updateId(newRow, 'a16:rowId', r);
+    }
+  };
+
+  expandSpanColumns = (count: number, colId: number, gridSpan: number) => {
+    for (let cs = 1; cs <= count; cs++) {
+      const rows = this.xml.getElementsByTagName('a:tr');
+      for (let r = 0; r < rows.length; r++) {
+        const row = rows.item(r);
+        const columns = row.getElementsByTagName('a:tc');
+        const maxC = colId + gridSpan;
+        for (let c = colId; c < maxC; c++) {
+          const sourceCell = columns.item(c);
+          const insertAfter = columns.item(c + gridSpan - 1);
+          const clone = sourceCell.cloneNode(true) as XmlElement;
+          XmlHelper.insertAfter(clone, insertAfter);
+        }
+      }
+    }
+    this.expandGrid(count, colId, gridSpan);
+  };
+
+  expandColumns = (count: number, colId: number) => {
+    const rows = this.xml.getElementsByTagName('a:tr');
+    for (let r = 0; r < rows.length; r++) {
+      const row = rows.item(r);
+      const columns = row.getElementsByTagName('a:tc');
+      const sourceCell = columns.item(colId);
+      const newCell = this.getExpandCellClone(columns, sourceCell, colId);
+
+      XmlHelper.insertAfter(newCell, sourceCell);
+    }
+
+    this.expandGrid(count, colId, 1);
+  };
+
+  getExpandCellClone(
+    columns: HTMLCollectionOf<XmlElement>,
+    sourceCell: XmlElement,
+    colId: number,
+  ): XmlElement {
+    const gridSpan = sourceCell.getAttribute('gridSpan');
+    const hMerge = sourceCell.getAttribute('hMerge');
+
+    if (gridSpan) {
+      const incrementGridSpan = Number(gridSpan) + 1;
+      sourceCell.setAttribute('gridSpan', String(incrementGridSpan));
+      return columns.item(colId + 1).cloneNode(true) as XmlElement;
+    }
+
+    if (hMerge) {
+      for (let findCol = colId - 1; colId >= 0; colId--) {
+        const previousSibling = columns.item(findCol);
+        if (!previousSibling) {
+          break;
+        }
+        const hasSpan = previousSibling.getAttribute('gridSpan');
+        if (hasSpan) {
+          const incrementGridSpan = Number(hasSpan) + 1;
+          previousSibling.setAttribute('gridSpan', String(incrementGridSpan));
+          break;
+        }
+      }
+    }
+
+    return sourceCell.cloneNode(true) as XmlElement;
+  }
+
+  expandGrid = (count: number, colId: number, gridSpan: number) => {
+    const tblGrid = this.xml.getElementsByTagName('a:tblGrid').item(0);
+    for (let cs = 1; cs <= count; cs++) {
+      const maxC = colId + gridSpan;
+      for (let c = colId; c < maxC; c++) {
+        const sourceTblGridCol = tblGrid
+          .getElementsByTagName('a:gridCol')
+          .item(c);
+        const newCol = sourceTblGridCol.cloneNode(true) as XmlElement;
+        XmlHelper.insertAfter(newCol, sourceTblGridCol);
+        this.updateId(newCol, 'a16:colId', c * (cs + 1) * colId * 1000);
+      }
+    }
+  };
+
+  updateId = (element: XmlElement, tag: string, id: number) => {
+    const idElement = element.getElementsByTagName(tag).item(0);
+    const previousId = Number(idElement.getAttribute('val'));
+    idElement.setAttribute('val', String(previousId + id));
+  };
 }

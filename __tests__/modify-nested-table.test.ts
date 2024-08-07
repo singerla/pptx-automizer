@@ -1,5 +1,4 @@
-import Automizer, { XmlElement } from '../src/index';
-import { vd } from '../src/helper/general-helper';
+import Automizer, { modify, TableData } from '../src/index';
 
 test('read table data from slide', async () => {
   const automizer = new Automizer({
@@ -12,22 +11,121 @@ test('read table data from slide', async () => {
     .load(`NestedTables.pptx`, 'tables');
 
   await pres
-    .addSlide('tables', 2, async (slide) => {
-      const info = await slide.getElement('NestedTable2');
-      const data = info.getTableData().body;
+    .addSlide('tables', 3, async (slide) => {
+      const tableData: TableData = {
+        body: [
+          {
+            values: [
+              'top left',
+              'sub-1',
+              null,
+              null,
+              'sub-2',
+              null,
+              null,
+              'Last',
+            ],
+            styles: [
+              {
+                border: [
+                  {
+                    tag: 'lnB',
+                    weight: 35000,
+                    color: {
+                      type: 'srgbClr',
+                      value: 'aacc00',
+                    },
+                  },
+                ],
+              },
+              {
+                border: [
+                  {
+                    tag: 'lnB',
+                    weight: 8500,
+                    type: 'sysDot',
+                    color: {
+                      type: 'srgbClr',
+                      value: 'aacc00',
+                    },
+                  },
+                  {
+                    tag: 'lnR',
+                    weight: 8500,
+                    type: 'sysDot',
+                    color: {
+                      type: 'srgbClr',
+                      value: 'aacc00',
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+          { values: [undefined, 't1', 't2', 't3', 't3', 't3', 't3', ''] },
+          { values: ['label 0', 1, 2, 3, 3, 't3', 't3', 'l0'] },
+          { values: ['label 1', 123, 345, 4563, 4671, 't3', 't3', 'l1'] },
+          { values: ['label 2', 123, 345, 4562, 4672] },
+          { values: ['label 3', 123, 345, 4561, 4673, 't3', 't3', 'l3'] },
+          { values: ['', 'Foo', 'ter', 4564, 'foo2', 't3', 't3', ''] },
+        ],
+      };
 
-      slide.modifyElement('NestedTable2', (element: XmlElement) => {
-        data.forEach((tplCell) => {
-          vd(tplCell);
-          // Test
-        });
-        // XmlHelper.dump(element);
-      });
+      slide.modifyElement(
+        'NestedTable3',
+        modify.setTable(tableData, {
+          expand: [
+            {
+              mode: 'row',
+              tag: '{{each:row}}',
+              count: 3,
+            },
+            {
+              mode: 'column',
+              tag: '{{each:subSub2}}',
+              count: 1,
+            },
+            {
+              mode: 'column',
+              tag: '{{each:sub}}',
+              count: 1,
+            },
+          ],
+        }),
+      );
     })
-    .write(`read-table-data.test.pptx`);
+    .addSlide('tables', 4, async (slide) => {
+      const tableData: TableData = {
+        body: [
+          { values: ['top left', 123, 345, 'subsub3-1', 'subsub3-2', 'Last'] },
+          { values: [undefined, 't1', 't2', 't3', 't3', ''] },
+          { values: ['label 0', 1, 2, 3, 3, 'l0'] },
+          { values: ['label 1', 123, 345, 4563, 4671, 'l1'] },
+          { values: ['label 2', 123, 345, 4562, 4672] },
+          { values: ['label 3', 123, 345, 4561, 4673, 'l3'] },
+          { values: [undefined, 'Foo', 'ter', 4564, 4674, ''] },
+        ],
+      };
 
-  // We have 12 text values in a 3x3 table:
-  // console.log(data);
+      slide.modifyElement(
+        'NestedTable3',
+        modify.setTable(tableData, {
+          expand: [
+            {
+              mode: 'row',
+              tag: '{{each:row}}',
+              count: 3,
+            },
+            {
+              mode: 'column',
+              tag: '{{each:subSub3}}',
+              count: 1,
+            },
+          ],
+        }),
+      );
+    })
+    .write(`modify-nested-table.test.pptx`);
 
   // expect(data.length).toBe(12);
 });
