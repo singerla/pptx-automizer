@@ -7,6 +7,8 @@ import {
 import { XmlHelper } from './xml-helper';
 import HasShapes from '../classes/has-shapes';
 import { FindElementSelector } from '../types/types';
+import ModifyTableHelper from './modify-table-helper';
+import { TableData, TableInfo } from '../types/table-types';
 
 export const nsMain =
   'http://schemas.openxmlformats.org/presentationml/2006/main';
@@ -114,6 +116,11 @@ export class XmlSlideHelper {
       altText: XmlSlideHelper.getImageAltText(slideElement),
       hasTextBody: !!XmlSlideHelper.getTextBody(slideElement),
       getText: () => XmlSlideHelper.parseTextFragments(slideElement),
+      getTableInfo: () => {
+        const data = <TableInfo[]>[];
+        ModifyTableHelper.readTableData(data)(slideElement);
+        return data;
+      },
       getXmlElement: () => slideElement,
     };
   }

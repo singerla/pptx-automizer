@@ -1,4 +1,5 @@
 import IArchive from '../interfaces/iarchive';
+import { TableData, TableInfo } from './table-types';
 
 export type DefaultAttribute = {
   Extension: string;
@@ -75,6 +76,7 @@ export type ElementInfo = {
   altText: string;
   hasTextBody: boolean;
   getText: () => string[];
+  getTableInfo: () => TableInfo[];
   getXmlElement: () => XmlElement;
 };
 
