@@ -12,12 +12,7 @@ import { IPresentationProps } from './interfaces/ipresentation-props';
 import { PresTemplate } from './interfaces/pres-template';
 import { RootPresTemplate } from './interfaces/root-pres-template';
 import { Template } from './classes/template';
-import {
-  ModifyXmlCallback,
-  SlideInfo,
-  TemplateInfo,
-  XmlElement,
-} from './types/xml-types';
+import { ModifyXmlCallback, TemplateInfo } from './types/xml-types';
 import { GeneralHelper, vd } from './helper/general-helper';
 import { Master } from './classes/master';
 import path from 'path';

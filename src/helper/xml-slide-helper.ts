@@ -6,7 +6,7 @@ import {
 } from '../types/xml-types';
 import { XmlHelper } from './xml-helper';
 import HasShapes from '../classes/has-shapes';
-import { FindElementSelector } from '../types/types';
+import { FindElementSelector, ShapeModificationCallback } from '../types/types';
 import ModifyTableHelper from './modify-table-helper';
 import { TableData, TableInfo } from '../types/table-types';
 
@@ -114,13 +114,9 @@ export class XmlSlideHelper {
       type: XmlSlideHelper.getElementType(slideElement),
       position: XmlSlideHelper.parseShapeCoordinates(slideElement),
       hasTextBody: !!XmlSlideHelper.getTextBody(slideElement),
-      getText: () => XmlSlideHelper.parseTextFragments(slideElement),
-      // getTableInfo: () => {
-      //   const data = <TableInfo[]>[];
-      //   ModifyTableHelper.readTableData(data)(slideElement);
-      //   return data;
-      // },
       getXmlElement: () => slideElement,
+      getText: () => XmlSlideHelper.parseTextFragments(slideElement),
+      getTableInfo: () => XmlSlideHelper.readTableInfo(slideElement),
       getAltText: () => XmlSlideHelper.getImageAltText(slideElement),
     };
   }
@@ -292,5 +288,40 @@ export class XmlSlideHelper {
       console.warn(`Error while fetching XML from path ${path}: ${error}`);
       return null;
     }
+  };
+
+  static readTableInfo = (element: XmlElement): TableInfo[] => {
+    const info = <TableInfo[]>[];
+    const rows = element.getElementsByTagName('a:tr');
+    if (!rows) {
+      console.error("Can't find a table row.");
+      return info;
+    }
+
+    for (let r = 0; r < rows.length; r++) {
+      const row = rows.item(r);
+      const columns = row.getElementsByTagName('a:tc');
+      for (let c = 0; c < columns.length; c++) {
+        const cell = columns.item(c);
+        const gridSpan = cell.getAttribute('gridSpan');
+        const hMerge = cell.getAttribute('hMerge');
+        const texts = cell.getElementsByTagName('a:t');
+        const text: string[] = [];
+        for (let t = 0; t < texts.length; t++) {
+          text.push(texts.item(t).textContent);
+        }
+        info.push({
+          row: r,
+          column: c,
+          rowXml: row,
+          columnXml: cell,
+          text: text,
+          textContent: text.join(''),
+          gridSpan: Number(gridSpan),
+          hMerge: Number(hMerge),
+        });
+      }
+    }
+    return info;
   };
 }

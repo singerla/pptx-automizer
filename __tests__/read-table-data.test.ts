@@ -1,5 +1,4 @@
-import Automizer, { TableData } from '../src/index';
-import { ModifyTableHelper } from '../src';
+import Automizer from '../src/index';
 import { TableInfo } from '../src/types/table-types';
 
 test('read table data from slide', async () => {
@@ -12,18 +11,18 @@ test('read table data from slide', async () => {
     .loadRoot(`RootTemplate.pptx`)
     .load(`SlideWithTables.pptx`, 'tables');
 
-  const data = <TableInfo[]>[];
+  let data = <TableInfo[]>[];
 
   await pres
-    .addSlide('tables', 1, (slide) => {
-      slide.modifyElement('TableWithLabels', [
-        // ToDo: use from ElementInfo
-        // ModifyTableHelper.readTableData(data),
-      ]);
+    .addSlide('tables', 1, async (slide) => {
+      const tableInfo = await slide.getElement('TableWithLabels');
+
+      data = tableInfo.getTableInfo();
     })
     .write(`read-table-data.test.pptx`);
 
   // We have 12 text values in a 3x3 table:
-  // console.log(data);
+  console.log(data.map((data) => data.textContent));
+
   expect(data.length).toBe(12);
 });
