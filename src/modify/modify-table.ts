@@ -23,8 +23,8 @@ export class ModifyTable {
     this.setRows();
     this.setGridCols();
 
-    this.sliceRows();
-    this.sliceCols();
+    // this.sliceRows();
+    // this.sliceCols();
 
     return this;
   }
@@ -250,14 +250,16 @@ export class ModifyTable {
   };
 
   expandColumns = (count: number, colId: number) => {
-    const rows = this.xml.getElementsByTagName('a:tr');
-    for (let r = 0; r < rows.length; r++) {
-      const row = rows.item(r);
-      const columns = row.getElementsByTagName('a:tc');
-      const sourceCell = columns.item(colId);
-      const newCell = this.getExpandCellClone(columns, sourceCell, colId);
+    for (let cs = 1; cs <= count; cs++) {
+      const rows = this.xml.getElementsByTagName('a:tr');
+      for (let r = 0; r < rows.length; r++) {
+        const row = rows.item(r);
+        const columns = row.getElementsByTagName('a:tc');
+        const sourceCell = columns.item(colId);
 
-      XmlHelper.insertAfter(newCell, sourceCell);
+        const newCell = this.getExpandCellClone(columns, sourceCell, colId);
+        XmlHelper.insertAfter(newCell, sourceCell);
+      }
     }
 
     this.expandGrid(count, colId, 1);

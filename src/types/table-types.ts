@@ -23,11 +23,13 @@ export type ModifyTableParams = {
   adjustHeight?: boolean;
   setHeight?: number;
   setWidth?: number;
-  expand?: {
-    tag: string;
-    mode: 'row' | 'column';
-    count: number;
-  }[];
+  expand?: ModifyTableExpand[];
+};
+
+export type ModifyTableExpand = {
+  tag: string;
+  mode: 'row' | 'column';
+  count: number;
 };
 
 export type TableInfo = {
