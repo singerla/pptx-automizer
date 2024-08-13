@@ -2,6 +2,7 @@ import { Color, TextStyle } from '../types/modify-types';
 import ModifyColorHelper from './modify-color-helper';
 import ModifyXmlHelper from './modify-xml-helper';
 import { XmlElement } from '../types/xml-types';
+import { vd } from './general-helper';
 
 export default class ModifyTextHelper {
   /**

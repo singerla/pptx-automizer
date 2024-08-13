@@ -1,6 +1,11 @@
 import { XmlHelper } from '../helper/xml-helper';
 import ModifyXmlHelper from '../helper/modify-xml-helper';
-import { TableData, TableRow, TableRowStyle } from '../types/table-types';
+import {
+  ModifyTableParams,
+  TableData,
+  TableRow,
+  TableRowStyle,
+} from '../types/table-types';
 import { Border, Modification, ModificationTags } from '../types/modify-types';
 import ModifyTextHelper from '../helper/modify-text-helper';
 import { ModifyColorHelper } from '../index';
@@ -11,25 +16,38 @@ export class ModifyTable {
   data: TableData;
   table: ModifyXmlHelper;
   xml: XmlDocument | XmlElement;
+  maxCols: number = 0;
+  params: ModifyTableParams;
 
   constructor(table: XmlDocument | XmlElement, data?: TableData) {
     this.data = data;
 
     this.table = new ModifyXmlHelper(table);
     this.xml = table;
+
+    this.data.body.forEach((row) => {
+      this.maxCols =
+        row.values.length > this.maxCols ? row.values.length : this.maxCols;
+    });
   }
 
-  modify(): ModifyTable {
+  modify(params?: ModifyTableParams): ModifyTable {
+    this.params = params;
+
     this.setRows();
     this.setGridCols();
 
-    // this.sliceRows();
-    // this.sliceCols();
+    this.sliceRows();
+    this.sliceCols();
 
     return this;
   }
 
   setRows() {
+    const alreadyExpanded = this.params?.expand?.find(
+      (expand) => expand.mode === 'column',
+    );
+
     this.data.body.forEach((row: TableRow, r: number) => {
       row.values.forEach((cell: number | string, c: number) => {
         const rowStyles = row.styles && row.styles[c] ? row.styles[c] : {};
@@ -42,12 +60,29 @@ export class ModifyTable {
             modify: ModifyXmlHelper.attribute('val', r),
           },
         });
+
+        if (!alreadyExpanded) {
+          this.expandOtherMergedCellsInColumn(c, r);
+        }
       });
     });
   }
 
+  expandOtherMergedCellsInColumn(c: number, r: number) {
+    const rows = this.xml.getElementsByTagName('a:tr');
+    for (let rs = 0; rs < rows.length; rs++) {
+      // Skip current row
+      if (r !== rs) {
+        const row = rows.item(r);
+        const columns = row.getElementsByTagName('a:tc');
+        const sourceCell = columns.item(c);
+        this.expandGridSpan(sourceCell);
+      }
+    }
+  }
+
   setGridCols() {
-    this.data.body[0]?.values.forEach((cell, c: number) => {
+    for (let c = 0; c <= this.maxCols; c++) {
       this.table.modify({
         'a:gridCol': {
           index: c,
@@ -57,7 +92,7 @@ export class ModifyTable {
           modify: ModifyXmlHelper.attribute('val', c),
         },
       });
-    });
+    }
   }
 
   sliceRows() {
@@ -68,7 +103,7 @@ export class ModifyTable {
 
   sliceCols() {
     this.table.modify({
-      'a:tblGrid': this.slice('a:gridCol', this.data.body[0]?.values.length),
+      'a:tblGrid': this.slice('a:gridCol', this.maxCols),
     });
   }
 
@@ -86,6 +121,7 @@ export class ModifyTable {
       'a:tc': {
         index: index,
         children: children,
+        fromPrevious: true,
       },
     };
   };
@@ -270,31 +306,35 @@ export class ModifyTable {
     sourceCell: XmlElement,
     colId: number,
   ): XmlElement {
-    const gridSpan = sourceCell.getAttribute('gridSpan');
-    const hMerge = sourceCell.getAttribute('hMerge');
-
-    if (gridSpan) {
-      const incrementGridSpan = Number(gridSpan) + 1;
-      sourceCell.setAttribute('gridSpan', String(incrementGridSpan));
+    const hasGridSpan = this.expandGridSpan(sourceCell);
+    if (hasGridSpan) {
       return columns.item(colId + 1).cloneNode(true) as XmlElement;
     }
 
+    const hMerge = sourceCell.getAttribute('hMerge');
     if (hMerge) {
       for (let findCol = colId - 1; colId >= 0; colId--) {
         const previousSibling = columns.item(findCol);
         if (!previousSibling) {
           break;
         }
-        const hasSpan = previousSibling.getAttribute('gridSpan');
-        if (hasSpan) {
-          const incrementGridSpan = Number(hasSpan) + 1;
-          previousSibling.setAttribute('gridSpan', String(incrementGridSpan));
+        const siblingHasSpan = this.expandGridSpan(previousSibling);
+        if (siblingHasSpan) {
           break;
         }
       }
     }
 
     return sourceCell.cloneNode(true) as XmlElement;
+  }
+
+  expandGridSpan(sourceCell: XmlElement) {
+    const gridSpan = sourceCell.getAttribute('gridSpan');
+    if (gridSpan) {
+      const incrementGridSpan = Number(gridSpan) + 1;
+      sourceCell.setAttribute('gridSpan', String(incrementGridSpan));
+      return true;
+    }
   }
 
   expandGrid = (count: number, colId: number, gridSpan: number) => {

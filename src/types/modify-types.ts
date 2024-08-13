@@ -21,6 +21,7 @@ export type Modification = {
   create?: any;
   isRequired?: boolean;
   fromPrevious?: boolean;
+  fromIndex?: number;
   forceCreate?: boolean;
 };
 /**

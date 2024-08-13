@@ -33,7 +33,7 @@ export default class ModifyTableHelper {
         });
       }
 
-      modTable.modify();
+      modTable.modify(params);
 
       if (params?.setHeight) {
         modTable.setSize('cy', params.setHeight);
