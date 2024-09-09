@@ -1,6 +1,6 @@
 import Automizer, { modify, TableData } from '../src/index';
 
-test('read table data from slide', async () => {
+test('modify a nested table with tags', async () => {
   const automizer = new Automizer({
     templateDir: `${__dirname}/pptx-templates`,
     outputDir: `${__dirname}/pptx-output`,

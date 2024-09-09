@@ -25,7 +25,7 @@ export class ModifyTable {
     this.table = new ModifyXmlHelper(table);
     this.xml = table;
 
-    this.data.body.forEach((row) => {
+    this.data?.body.forEach((row) => {
       this.maxCols =
         row.values.length > this.maxCols ? row.values.length : this.maxCols;
     });
@@ -237,6 +237,56 @@ export class ModifyTable {
         },
       });
     });
+
+    return this;
+  }
+
+  updateColumnWidth(c: number, size: number) {
+    const tableWidth = this.getTableSize('cx');
+    const targetSize = Math.round(size);
+    let currentSize = 0;
+
+    this.table.modify({
+      'a:gridCol': {
+        index: c,
+        modify: [
+          (ele) => {
+            currentSize = Number(ele.getAttribute('w'));
+          },
+          ModifyXmlHelper.attribute('w', targetSize),
+        ],
+      },
+    });
+
+    const diff = currentSize - targetSize;
+    const targetWidth = tableWidth - diff;
+
+    this.setSize('cx', targetWidth);
+
+    return this;
+  }
+
+  updateRowHeight(r: number, size: number) {
+    const tableSize = this.getTableSize('cy');
+    const targetSize = Math.round(size);
+    let currentSize = 0;
+
+    this.table.modify({
+      'a:tr': {
+        index: r,
+        modify: [
+          (ele) => {
+            currentSize = Number(ele.getAttribute('h'));
+          },
+          ModifyXmlHelper.attribute('h', targetSize),
+        ],
+      },
+    });
+
+    const diff = currentSize - targetSize;
+    const targetTableSize = tableSize - diff;
+
+    this.setSize('cy', targetTableSize);
 
     return this;
   }

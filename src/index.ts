@@ -57,6 +57,8 @@ const setTableData = ModifyTableHelper.setTableData;
 const adjustHeight = ModifyTableHelper.adjustHeight;
 const adjustWidth = ModifyTableHelper.adjustWidth;
 const setTable = ModifyTableHelper.setTable;
+const updateColumnWidth = ModifyTableHelper.updateColumnWidth;
+const updateRowHeight = ModifyTableHelper.updateRowHeight;
 
 const setRelationTarget = ModifyImageHelper.setRelationTarget;
 const setDuotoneFill = ModifyImageHelper.setDuotoneFill;
@@ -124,6 +126,8 @@ export const modify = {
   setTableData,
   adjustHeight,
   adjustWidth,
+  updateColumnWidth,
+  updateRowHeight,
   setTable,
   setRelationTarget,
   setDuotoneFill,

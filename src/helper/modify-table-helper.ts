@@ -1,4 +1,4 @@
-import { ModifyTableParams, TableData, TableInfo } from '../types/table-types';
+import { ModifyTableParams, TableData } from '../types/table-types';
 import { ModifyTable } from '../modify/modify-table';
 import { XmlDocument, XmlElement } from '../types/xml-types';
 import { XmlSlideHelper } from './xml-slide-helper';
@@ -68,5 +68,18 @@ export default class ModifyTableHelper {
     (element: XmlDocument | XmlElement): void => {
       const modTable = new ModifyTable(element, data);
       modTable.adjustWidth();
+    };
+
+  static updateColumnWidth =
+    (index: number, size: number) =>
+    (element: XmlDocument | XmlElement): void => {
+      const modTable = new ModifyTable(element);
+      modTable.updateColumnWidth(index, size);
+    };
+  static updateRowHeight =
+    (index: number, size: number) =>
+    (element: XmlDocument | XmlElement): void => {
+      const modTable = new ModifyTable(element);
+      modTable.updateRowHeight(index, size);
     };
 }
