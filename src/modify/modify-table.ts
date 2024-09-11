@@ -137,6 +137,11 @@ export class ModifyTable {
       'a:tcPr': {
         ...this.setCellStyle(style),
       },
+      'a:r': {
+        collection: (collection: HTMLCollectionOf<Element>) => {
+          XmlHelper.sliceCollection(collection, 1);
+        },
+      },
     };
   };
 
