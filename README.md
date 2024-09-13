@@ -632,7 +632,30 @@ pres
   });
 ```
 
-# Tipps and Tricks
+## Add Bulleted List
+
+You can add a bulleted list to a shape.
+
+```ts
+// Remove existing charts, images or shapes from added slide.
+const bulletPoints = ['first line', 'second line', 'third line'];
+const indentedBulletPoints = ['first line', [ 'indent 1-1', 'indent 1-2', [ 'indent 2-1', 'indent 2-2', ] ], 'second line', 'third line'];
+
+  pres.addSlide('general', 2, (slide) => {
+      slide.modifyElement(
+              'replaceText', //shape selector
+              modify.setBulletList(bulletPoints),
+      );
+    })
+    .addSlide('general', 2, (slide) => {
+      slide.modifyElement(
+              'replaceText', //shape selector
+              modify.setBulletList(indentedBulletPoints),
+      );
+    });
+```
+
+# Tips and Tricks
 
 ## Loop through the slides of a presentation
 

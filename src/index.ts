@@ -49,6 +49,7 @@ const setAttribute = ModifyHelper.setAttribute;
 
 const setSolidFill = ModifyShapeHelper.setSolidFill;
 const setText = ModifyShapeHelper.setText;
+const setBulletList = ModifyShapeHelper.setBulletList;
 const replaceText = ModifyShapeHelper.replaceText;
 const setPosition = ModifyShapeHelper.setPosition;
 const updatePosition = ModifyShapeHelper.updatePosition;
@@ -118,6 +119,7 @@ export const modify = {
   setAttribute,
   setSolidFill,
   setText,
+  setBulletList,
   replaceText,
   setPosition,
   updatePosition,

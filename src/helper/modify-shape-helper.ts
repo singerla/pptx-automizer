@@ -41,6 +41,15 @@ export default class ModifyShapeHelper {
     };
 
   /**
+   * Set content to bulleted list of modified shape
+   */
+  static setBulletList =
+    (list) =>
+    (element: XmlElement): void => {
+      ModifyTextHelper.setBulletList(list)(element as XmlElement);
+    };
+
+  /**
    * Replace tagged text content within modified shape
    */
   static replaceText =

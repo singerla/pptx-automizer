@@ -32,6 +32,61 @@ export default class ModifyTextHelper {
       }
     };
 
+  static setBulletList =
+    (list) => (element: XmlElement): void => {
+      const namespaceURIs = {
+        'a': 'http://schemas.openxmlformats.org/drawingml/2006/main',
+        'p': 'http://schemas.openxmlformats.org/presentationml/2006/main'
+      };
+      const doc = element.ownerDocument;
+
+      let txBody = element.getElementsByTagName('p:txBody')[0];
+      if (!txBody) {
+        txBody = doc.createElementNS(namespaceURIs['p'], 'p:txBody');
+        element.appendChild(txBody);
+      } else {
+        while (txBody.firstChild) {
+          txBody.removeChild(txBody.firstChild);
+        }
+      }
+
+      const bodyPr = doc.createElementNS(namespaceURIs['a'], 'a:bodyPr');
+      txBody.appendChild(bodyPr);
+      const lstStyle = doc.createElementNS(namespaceURIs['a'], 'a:lstStyle');
+      txBody.appendChild(lstStyle);
+
+      const processList = (items, level) => {
+        items.forEach((item) => {
+          if (Array.isArray(item)) {
+            processList(item, level + 1);
+          } else {
+            const p = doc.createElementNS(namespaceURIs['a'], 'a:p');
+
+            const pPr = doc.createElementNS(namespaceURIs['a'], 'a:pPr');
+            if (level > 0) {
+              pPr.setAttribute('lvl', String(level));
+            }
+            p.appendChild(pPr);
+
+            const r = doc.createElementNS(namespaceURIs['a'], 'a:r');
+
+            const rPr = doc.createElementNS(namespaceURIs['a'], 'a:rPr');
+            r.appendChild(rPr);
+
+            const t = doc.createElementNS(namespaceURIs['a'], 'a:t');
+            const textNode = doc.createTextNode(String(item));
+            t.appendChild(textNode);
+
+            r.appendChild(t);
+            p.appendChild(r);
+            txBody.appendChild(p);
+          }
+        });
+      };
+
+      processList(list, 0);
+    };
+
   static content =
     (label: number | string) =>
     (element: XmlElement): void => {
@@ -41,7 +96,7 @@ export default class ModifyTextHelper {
     };
 
   /**
-   * Set text style insinde an <a:rPr> element
+   * Set text style inside an <a:rPr> element
    */
   static style =
     (style: TextStyle) =>
@@ -71,7 +126,7 @@ export default class ModifyTextHelper {
     };
 
   /**
-   * Set size of text insinde an <a:rPr> element
+   * Set size of text inside an <a:rPr> element
    */
   static setSize =
     (size: number) =>
