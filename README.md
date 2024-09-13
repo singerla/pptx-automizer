@@ -559,6 +559,39 @@ Find out more about formatting cells:
 - [Modify and style table cells](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-existing-table.test.ts)
 - [Insert data into table with empty cells](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-existing-table-create-text.test.ts)
 
+
+If you need to add rows or columns in a table with merged cells, you can add tags to your template table to expand it:
+```ts
+slide.modifyElement(
+  'NestedTable3',
+  modify.setTable(tableData, {
+    adjustHeight: false,
+    adjustWidth: false,
+    expand: [
+      {
+        // Find a cell containing '{{each:row}}' and
+        // clone it 3 times row-wise
+        mode: 'row',
+        tag: '{{each:row}}',
+        count: 3,
+      },
+      {
+        // Find a cell containing '{{each:sub}}' and
+        // clone it once column-wise. Merged cells will
+        // be cloned as well.
+        mode: 'column',
+        tag: '{{each:sub}}',
+        count: 1,
+      },
+    ],
+  }),
+);
+```
+
+Please find some examples in the tests:
+- [Expand a table with merged cells](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-nested-table.test.ts)
+
+
 ## Modify Charts
 
 All data and styles of a chart can be modified. Please note that if your template contains more data than your data object, Automizer will remove these extra nodes. Conversely, if you provide more data, new nodes will be cloned from the first existing one in the template.

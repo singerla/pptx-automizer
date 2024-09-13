@@ -2,6 +2,7 @@ import { Color, TextStyle } from '../types/modify-types';
 import ModifyColorHelper from './modify-color-helper';
 import ModifyXmlHelper from './modify-xml-helper';
 import { XmlElement } from '../types/xml-types';
+import { vd } from './general-helper';
 
 export default class ModifyTextHelper {
   /**
@@ -88,9 +89,9 @@ export default class ModifyTextHelper {
     };
 
   static content =
-    (label: number | string) =>
+    (label: number | string | undefined) =>
     (element: XmlElement): void => {
-      if (element.firstChild) {
+      if (label !== undefined && element.firstChild) {
         element.firstChild.textContent = String(label);
       }
     };

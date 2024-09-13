@@ -1,7 +1,6 @@
 import Automizer from '../src/index';
-import { ElementInfo } from '../src/types/xml-types';
 
-test('read alt text info', async () => {
+test('read alt text from image', async () => {
   const automizer = new Automizer({
     templateDir: `${__dirname}/pptx-templates`,
     outputDir: `${__dirname}/pptx-output`,
@@ -9,26 +8,14 @@ test('read alt text info', async () => {
 
   const pres = automizer
     .loadRoot(`RootTemplate.pptx`)
-    .load(`SlideWithImages.pptx`, 'images')
-    .load(`ChartBarsStacked.pptx`, 'charts');
+    .load(`SlideWithImages.pptx`, 'images');
 
-  // A simple helper to get/set ElementInfo
-  const info = {
-    element: <Promise<ElementInfo>>{},
-    set: (elementInfo: Promise<ElementInfo>) => {
-      info.element = elementInfo;
-    },
-    get: async (): Promise<ElementInfo> => {
-      return info.element;
-    },
-  };
-let altText = '';
-  pres
-    .addSlide('images', 1, async (slide) => {
-      // Read another shape and print its text fragments:
-      const eleInfo = await slide.getElement('Grafik 5');
-      altText = eleInfo.altText;
-    });
+  let altText = '';
+  pres.addSlide('images', 1, async (slide) => {
+    // Read alt text from an image:
+    const eleInfo = await slide.getElement('Grafik 5');
+    altText = eleInfo.getAltText();
+  });
 
   await pres.write(`read-alt-text.test.pptx`);
 
