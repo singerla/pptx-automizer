@@ -3,6 +3,7 @@ import ModifyColorHelper from './modify-color-helper';
 import ModifyXmlHelper from './modify-xml-helper';
 import { XmlElement } from '../types/xml-types';
 import { vd } from './general-helper';
+import XmlElements from './xml-elements';
 
 export default class ModifyTextHelper {
   /**
@@ -35,57 +36,8 @@ export default class ModifyTextHelper {
 
   static setBulletList =
     (list) => (element: XmlElement): void => {
-      const namespaceURIs = {
-        'a': 'http://schemas.openxmlformats.org/drawingml/2006/main',
-        'p': 'http://schemas.openxmlformats.org/presentationml/2006/main'
-      };
-      const doc = element.ownerDocument;
-
-      let txBody = element.getElementsByTagName('p:txBody')[0];
-      if (!txBody) {
-        txBody = doc.createElementNS(namespaceURIs['p'], 'p:txBody');
-        element.appendChild(txBody);
-      } else {
-        while (txBody.firstChild) {
-          txBody.removeChild(txBody.firstChild);
-        }
-      }
-
-      const bodyPr = doc.createElementNS(namespaceURIs['a'], 'a:bodyPr');
-      txBody.appendChild(bodyPr);
-      const lstStyle = doc.createElementNS(namespaceURIs['a'], 'a:lstStyle');
-      txBody.appendChild(lstStyle);
-
-      const processList = (items, level) => {
-        items.forEach((item) => {
-          if (Array.isArray(item)) {
-            processList(item, level + 1);
-          } else {
-            const p = doc.createElementNS(namespaceURIs['a'], 'a:p');
-
-            const pPr = doc.createElementNS(namespaceURIs['a'], 'a:pPr');
-            if (level > 0) {
-              pPr.setAttribute('lvl', String(level));
-            }
-            p.appendChild(pPr);
-
-            const r = doc.createElementNS(namespaceURIs['a'], 'a:r');
-
-            const rPr = doc.createElementNS(namespaceURIs['a'], 'a:rPr');
-            r.appendChild(rPr);
-
-            const t = doc.createElementNS(namespaceURIs['a'], 'a:t');
-            const textNode = doc.createTextNode(String(item));
-            t.appendChild(textNode);
-
-            r.appendChild(t);
-            p.appendChild(r);
-            txBody.appendChild(p);
-          }
-        });
-      };
-
-      processList(list, 0);
+      const xmlElements = new XmlElements(element);
+      xmlElements.addBulletList(list);
     };
 
   static content =
