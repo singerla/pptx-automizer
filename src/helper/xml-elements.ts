@@ -42,6 +42,66 @@ export default class XmlElements {
     return this;
   }
 
+  createTextBody(): XmlElement {
+    let txBody = this.element.getElementsByTagName('p:txBody')[0];
+    if (!txBody) {
+      txBody = this.document.createElement('p:txBody');
+      this.element.appendChild(txBody);
+    } else {
+      while (txBody.firstChild) {
+        txBody.removeChild(txBody.firstChild);
+      }
+    }
+    return txBody;
+  }
+
+  createBodyProperties(txBody: XmlElement): XmlElement {
+    const bodyPr = this.document.createElement('a:bodyPr');
+    txBody.appendChild(bodyPr);
+    return bodyPr;
+  }
+
+  addBulletList(list: []): void {
+    const txBody = this.createTextBody();
+    this.createBodyProperties(txBody);
+    this.processList(txBody, list, 0);
+  }
+
+  processList(txBody: XmlElement, items: [], level: number): void {
+    items.forEach((item) => {
+      if (Array.isArray(item)) {
+        this.processList(txBody, item, level + 1);
+      } else {
+        const p = this.createParagraph(level);
+        const r = this.createTextRun(String(item));
+        p.appendChild(r);
+        txBody.appendChild(p);
+      }
+    });
+  }
+
+  createParagraph(level: number): XmlElement {
+    const p = this.document.createElement('a:p');
+    const pPr = this.document.createElement('a:pPr');
+    if (level > 0) {
+      pPr.setAttribute('lvl', String(level));
+    }
+    p.appendChild(pPr);
+    return p;
+  }
+
+  createTextRun(text: string): XmlElement {
+    const r = this.document.createElement('a:r');
+    const rPr = this.document.createElement('a:rPr');
+    r.appendChild(rPr);
+
+    const t = this.document.createElement('a:t');
+    t.textContent = String(text);
+
+    r.appendChild(t);
+    return r;
+  }
+
   paragraphProps() {
     const p = this.element.getElementsByTagName('a:p').item(0);
     p.appendChild(this.document.createElement('a:pPr'));
