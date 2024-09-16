@@ -99,11 +99,9 @@ export default class XmlElements {
   }
 
   addBulletList(list: []): void {
-    XmlHelper.dump(this.element);
     const txBody = this.createTextBody();
     this.createBodyProperties(txBody);
     this.processList(txBody, list, 0);
-    XmlHelper.dump(this.element);
   }
 
   processList(txBody: XmlElement, items: [], level: number): void {
