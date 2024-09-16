@@ -55,47 +55,18 @@ export default class XmlElements {
     return txBody;
   }
 
-  // Method to create bodyPr element
   createBodyProperties(txBody: XmlElement): XmlElement {
     const bodyPr = this.document.createElement('a:bodyPr');
     txBody.appendChild(bodyPr);
     return bodyPr;
   }
 
-  // Method to create lstStyle element
-  createListStyle(txBody: XmlElement): XmlElement {
-    const lstStyle = this.document.createElement('a:lstStyle');
-
-    // Loop through levels (assuming 3 levels here)
-    for (let level = 1; level <= 3; level++) {
-      const lvlpPr = this.document.createElement(`a:lvl${level}pPr`);
-
-      // Set bullet font
-      const buFont = this.document.createElement('a:buFont');
-      buFont.setAttribute('typeface', 'Arial');
-      lvlpPr.appendChild(buFont);
-
-      // Set bullet character (you can use different characters for each level)
-      const buChar = this.document.createElement('a:buChar');
-      buChar.setAttribute('char', '•');
-      lvlpPr.appendChild(buChar);
-
-      lstStyle.appendChild(lvlpPr);
-    }
-
-    txBody.appendChild(lstStyle);
-    return lstStyle;
-  }
-
-  // Method to process the bullet list
   addBulletList(list: []): void {
     const txBody = this.createTextBody();
     this.createBodyProperties(txBody);
-    this.createListStyle(txBody);
     this.processList(txBody, list, 0);
   }
 
-  // Recursive method to create paragraphs and text runs for each list item
   processList(txBody: XmlElement, items: [], level: number): void {
     items.forEach((item) => {
       if (Array.isArray(item)) {
@@ -109,7 +80,6 @@ export default class XmlElements {
     });
   }
 
-  // Method to create a paragraph element
   createParagraph(level: number): XmlElement {
     const p = this.document.createElement('a:p');
     const pPr = this.document.createElement('a:pPr');
@@ -120,15 +90,13 @@ export default class XmlElements {
     return p;
   }
 
-  // Method to create a text run element
   createTextRun(text: string): XmlElement {
     const r = this.document.createElement('a:r');
     const rPr = this.document.createElement('a:rPr');
     r.appendChild(rPr);
 
     const t = this.document.createElement('a:t');
-    const textNode = this.document.createTextNode(text);
-    t.appendChild(textNode);
+    t.textContent = String(text);
 
     r.appendChild(t);
     return r;
