@@ -15,6 +15,8 @@ export default class XmlElements {
   document: XmlDocument;
   params: XmlElementParams;
   defaultValues: Record<string, string>;
+  paragraphTemplate: XmlElement;
+  runTemplate: XmlElement;
 
   constructor(element: XmlDocument | XmlElement, params?: XmlElementParams) {
     this.element = element;
@@ -47,9 +49,44 @@ export default class XmlElements {
     if (!txBody) {
       txBody = this.document.createElement('p:txBody');
       this.element.appendChild(txBody);
+
+      const bodyPr = this.document.createElement('a:bodyPr');
+      txBody.appendChild(bodyPr);
+
+      const lstStyle = this.document.createElement('a:lstStyle');
+      txBody.appendChild(lstStyle);
+
+      this.paragraphTemplate = this.document.createElement('a:p');
+      txBody.appendChild(this.paragraphTemplate);
+
+      this.runTemplate = this.document.createElement('a:r');
+      const rPr = this.document.createElement('a:rPr');
+      this.runTemplate.appendChild(rPr);
     } else {
-      while (txBody.firstChild) {
-        txBody.removeChild(txBody.firstChild);
+      let bodyPr = txBody.getElementsByTagName('a:bodyPr')[0];
+      if (!bodyPr) {
+        bodyPr = this.document.createElement('a:bodyPr');
+        txBody.insertBefore(bodyPr, txBody.firstChild);
+      }
+
+      let lstStyle = txBody.getElementsByTagName('a:lstStyle')[0];
+      if (!lstStyle) {
+        lstStyle = this.document.createElement('a:lstStyle');
+        txBody.insertBefore(lstStyle, bodyPr.nextSibling);
+      }
+
+      const paragraphs = txBody.getElementsByTagName('a:p');
+      this.paragraphTemplate = paragraphs[0];
+      XmlHelper.sliceCollection(paragraphs, 0);
+
+
+      const runs = this.paragraphTemplate.getElementsByTagName('a:r');
+      if (runs.length > 0) {
+        this.runTemplate = runs[0];
+      } else {
+        this.runTemplate = this.document.createElement('a:r');
+        const rPr = this.document.createElement('a:rPr');
+        this.runTemplate.appendChild(rPr);
       }
     }
     return txBody;
@@ -62,9 +99,11 @@ export default class XmlElements {
   }
 
   addBulletList(list: []): void {
+    XmlHelper.dump(this.element);
     const txBody = this.createTextBody();
     this.createBodyProperties(txBody);
     this.processList(txBody, list, 0);
+    XmlHelper.dump(this.element);
   }
 
   processList(txBody: XmlElement, items: [], level: number): void {
@@ -81,24 +120,39 @@ export default class XmlElements {
   }
 
   createParagraph(level: number): XmlElement {
-    const p = this.document.createElement('a:p');
-    const pPr = this.document.createElement('a:pPr');
-    if (level > 0) {
-      pPr.setAttribute('lvl', String(level));
+    const p = this.paragraphTemplate.cloneNode(true) as XmlElement;
+    const pPr = p.getElementsByTagName('a:pPr')[0];
+    if (pPr) {
+      if (level > 0) {
+        pPr.setAttribute('lvl', String(level));
+        pPr.removeAttribute('indent');
+        pPr.removeAttribute('marL');
+      } else {
+        pPr.removeAttribute('lvl');
+      }
+    } else {
+      const newPPr = this.document.createElement('a:pPr');
+      if (level > 0) {
+        newPPr.setAttribute('lvl', String(level));
+      }
+      p.insertBefore(newPPr, p.firstChild);
     }
-    p.appendChild(pPr);
+    const runs = p.getElementsByTagName('a:r');
+    XmlHelper.sliceCollection(runs, 0);
     return p;
   }
 
   createTextRun(text: string): XmlElement {
-    const r = this.document.createElement('a:r');
-    const rPr = this.document.createElement('a:rPr');
-    r.appendChild(rPr);
+    const r = this.runTemplate.cloneNode(true) as XmlElement;
+    const t = r.getElementsByTagName('a:t')[0];
+    if (t) {
+      t.textContent = text;
+    } else {
+      const newT = this.document.createElement('a:t');
+      newT.textContent = text;
+      r.appendChild(newT);
+    }
 
-    const t = this.document.createElement('a:t');
-    t.textContent = String(text);
-
-    r.appendChild(t);
     return r;
   }
 
