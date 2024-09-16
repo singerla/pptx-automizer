@@ -667,10 +667,9 @@ pres
 
 ## Add Bulleted List
 
-You can add a bulleted list to a shape.
+You can add a bulleted list to a shape. It is also possible to pass a list of nested arrays of strings.
 
 ```ts
-// Remove existing charts, images or shapes from added slide.
 const bulletPoints = ['first line', 'second line', 'third line'];
 const indentedBulletPoints = ['first line', [ 'indent 1-1', 'indent 1-2', [ 'indent 2-1', 'indent 2-2', ] ], 'second line', 'third line'];
 
@@ -1038,7 +1037,7 @@ If you encounter problems when opening a `.pptx`-file modified by this library, 
 - **Broken animation**: Pay attention to modified/removed shapes which are part of an animation. In case of doubt, (temporarily) remove all animations from your template. (see [#78](https://github.com/singerla/pptx-automizer/issues/78))
 - **Proprietary/Binary contents** (e.g. ThinkCell): Walk through all slides, slideMasters and slideLayouts and seek for hidden Objects. Hit `ALT+F10` to toggle the sidebar.
 - **Chart styles not working**: If you try to change e.g. color or size of a chart data label, and it doesn't work as expected, try to remove all data labels and activate them again. If this does not help, try to give the first data label of a series a slightly different style (this creates a single data point).
-- **Replace Text not working**: Cut out your e.g. {CustomerName} tag from textbox to clipboard, paste it into a plaintext editor to remove all (visible and invisible) formatting. Copy & paste {CustomerName} back to the textbox. (see [#82](https://github.com/singerla/pptx-automizer/issues/82) and [#73](https://github.com/singerla/pptx-automizer/issues/73))
+- **Replace Text not working**: Disable spell checking for the whole tag; If this doesn't help, cut out your e.g. {CustomerName} tag from textbox to clipboard, paste it into a plaintext editor to remove all (visible and invisible) formatting. Copy & paste {CustomerName} back to the textbox. (see [#82](https://github.com/singerla/pptx-automizer/issues/82) and [#73](https://github.com/singerla/pptx-automizer/issues/73))
 - **No related chart worksheet**: It might happen to PowerPoint to lose the worksheet relation for a chart. If a chart gets corrupted by this, you will see a normal chart on your slide, but get an error message if you try to open the datasheet. Please replace the corrupted chart by a working one. (see [#104](https://github.com/singerla/pptx-automizer/issues/104))
 
 If none of these could help, please don't hesitate to [talk about it](https://github.com/singerla/pptx-automizer/issues/new).
