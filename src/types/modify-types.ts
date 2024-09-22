@@ -69,3 +69,21 @@ export type ReplaceTextOptions = {
   openingTag: string;
   closingTag: string;
 };
+
+export type CreateTreeAttributes = {
+  [key: string]: string | number
+};
+
+export type CreateTreeNode = {
+  attributes?: CreateTreeAttributes;
+  children?: CreateTreeStructure;
+  clone?: boolean,
+  unique?: boolean,
+  remove?: boolean,
+  slot?: string | number;
+  [key: string]: any;
+};
+
+export type CreateTreeStructure = {
+  [tag: string]: CreateTreeNode;
+};

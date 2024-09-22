@@ -22,22 +22,22 @@ export default class ModifyChartHelper {
    */
   static setChartData =
     (data: ChartData): ChartModificationCallback =>
-    (element: XmlElement, chart?: XmlDocument, workbook?: Workbook): void => {
-      const slots = [] as ChartSlot[];
-      data.series.forEach((series: ChartSeries, s: number) => {
-        slots.push({
-          index: s,
-          series: series,
-          targetCol: s + 1,
-          type: 'defaultSeries',
+      (element: XmlElement, chart?: XmlDocument, workbook?: Workbook): void => {
+        const slots = [] as ChartSlot[];
+        data.series.forEach((series: ChartSeries, s: number) => {
+          slots.push({
+            index: s,
+            series: series,
+            targetCol: s + 1,
+            type: 'defaultSeries',
+          });
         });
-      });
 
-      new ModifyChart(chart, workbook, data, slots).modify();
+        new ModifyChart(chart, workbook, data, slots).modify();
 
-      // XmlHelper.dump(chart)
-      // XmlHelper.dump(workbook.table)
-    };
+        // XmlHelper.dump(chart)
+        // XmlHelper.dump(workbook.table)
+      };
 
   /**
    * Set chart data to modify vertical line charts.
@@ -45,32 +45,32 @@ export default class ModifyChartHelper {
    */
   static setChartVerticalLines =
     (data: ChartData): ChartModificationCallback =>
-    (element: XmlElement, chart?: XmlDocument, workbook?: Workbook): void => {
-      const slots = [] as ChartSlot[];
+      (element: XmlElement, chart?: XmlDocument, workbook?: Workbook): void => {
+        const slots = [] as ChartSlot[];
 
-      slots.push({
-        label: `Y-Values`,
-        mapData: (point: number, category: ChartCategory) => category.y,
-        targetCol: 1,
-      });
-
-      data.series.forEach((series: ChartSeries, s: number) => {
         slots.push({
-          index: s,
-          series: series,
-          targetCol: s + 2,
-          type: 'xySeries',
+          label: `Y-Values`,
+          mapData: (point: number, category: ChartCategory) => category.y,
+          targetCol: 1,
         });
-      });
 
-      new ModifyChart(chart, workbook, data, slots).modify();
+        data.series.forEach((series: ChartSeries, s: number) => {
+          slots.push({
+            index: s,
+            series: series,
+            targetCol: s + 2,
+            type: 'xySeries',
+          });
+        });
 
-      // ModifyChartHelper.setAxisRange({
-      //   axisIndex: 0,
-      //   min: 0,
-      //   max: data.categories.length,
-      // })(element, chart);
-    };
+        new ModifyChart(chart, workbook, data, slots).modify();
+
+        // ModifyChartHelper.setAxisRange({
+        //   axisIndex: 0,
+        //   min: 0,
+        //   max: data.categories.length,
+        // })(element, chart);
+      };
 
   /**
    * Set chart data to modify scatter charts.
@@ -78,35 +78,35 @@ export default class ModifyChartHelper {
    */
   static setChartScatter =
     (data: ChartData): ChartModificationCallback =>
-    (element: XmlElement, chart?: XmlDocument, workbook?: Workbook): void => {
-      const slots = [] as ChartSlot[];
+      (element: XmlElement, chart?: XmlDocument, workbook?: Workbook): void => {
+        const slots = [] as ChartSlot[];
 
-      data.series.forEach((series: ChartSeries, s: number) => {
-        const colId = s * 2;
-        slots.push({
-          index: s,
-          series: series,
-          targetCol: colId + 1,
-          type: 'customSeries',
-          tag: 'c:xVal',
-          mapData: (point: ChartPoint): number => point.x,
+        data.series.forEach((series: ChartSeries, s: number) => {
+          const colId = s * 2;
+          slots.push({
+            index: s,
+            series: series,
+            targetCol: colId + 1,
+            type: 'customSeries',
+            tag: 'c:xVal',
+            mapData: (point: ChartPoint): number => point.x,
+          });
+          slots.push({
+            label: `${series.label}-Y-Value`,
+            index: s,
+            series: series,
+            targetCol: colId + 2,
+            type: 'customSeries',
+            tag: 'c:yVal',
+            mapData: (point: ChartPoint): number => point.y,
+            isStrRef: false,
+          });
         });
-        slots.push({
-          label: `${series.label}-Y-Value`,
-          index: s,
-          series: series,
-          targetCol: colId + 2,
-          type: 'customSeries',
-          tag: 'c:yVal',
-          mapData: (point: ChartPoint): number => point.y,
-          isStrRef: false,
-        });
-      });
 
-      new ModifyChart(chart, workbook, data, slots).modify();
+        new ModifyChart(chart, workbook, data, slots).modify();
 
-      // XmlHelper.dump(chart)
-    };
+        // XmlHelper.dump(chart)
+      };
 
   /**
    * Set chart data to modify combo charts.
@@ -117,42 +117,42 @@ export default class ModifyChartHelper {
    */
   static setChartCombo =
     (data: ChartData): ChartModificationCallback =>
-    (element: XmlElement, chart?: XmlDocument, workbook?: Workbook): void => {
-      const slots = [] as ChartSlot[];
+      (element: XmlElement, chart?: XmlDocument, workbook?: Workbook): void => {
+        const slots = [] as ChartSlot[];
 
-      slots.push({
-        index: 0,
-        series: data.series[0],
-        targetCol: 1,
-        type: 'defaultSeries',
-      });
+        slots.push({
+          index: 0,
+          series: data.series[0],
+          targetCol: 1,
+          type: 'defaultSeries',
+        });
 
-      slots.push({
-        index: 1,
-        label: `Y-Values`,
-        mapData: (point: number, category: ChartCategory) => category.y,
-        targetCol: 2,
-      });
+        slots.push({
+          index: 1,
+          label: `Y-Values`,
+          mapData: (point: number, category: ChartCategory) => category.y,
+          targetCol: 2,
+        });
 
-      data.series.forEach((series: ChartSeries, s: number) => {
-        if (s > 0)
-          slots.push({
-            index: s,
-            series: series,
-            targetCol: s + 2,
-            targetYCol: 2,
-            type: 'xySeries',
-          });
-      });
+        data.series.forEach((series: ChartSeries, s: number) => {
+          if (s > 0)
+            slots.push({
+              index: s,
+              series: series,
+              targetCol: s + 2,
+              targetYCol: 2,
+              type: 'xySeries',
+            });
+        });
 
-      new ModifyChart(chart, workbook, data, slots).modify();
+        new ModifyChart(chart, workbook, data, slots).modify();
 
-      ModifyChartHelper.setAxisRange({
-        axisIndex: 1,
-        min: 0,
-        max: data.categories.length,
-      })(element, chart);
-    };
+        ModifyChartHelper.setAxisRange({
+          axisIndex: 1,
+          min: 0,
+          max: data.categories.length,
+        })(element, chart);
+      };
 
   /**
    * Set chart data to modify bubble charts.
@@ -160,45 +160,45 @@ export default class ModifyChartHelper {
    */
   static setChartBubbles =
     (data: ChartData): ChartModificationCallback =>
-    (element: XmlElement, chart?: XmlDocument, workbook?: Workbook): void => {
-      const slots = [] as ChartSlot[];
+      (element: XmlElement, chart?: XmlDocument, workbook?: Workbook): void => {
+        const slots = [] as ChartSlot[];
 
-      data.series.forEach((series: ChartSeries, s: number) => {
-        const colId = s * 3;
-        slots.push({
-          index: s,
-          series: series,
-          targetCol: colId + 1,
-          type: 'customSeries',
-          tag: 'c:xVal',
-          mapData: (point: ChartBubble): number => point.x,
+        data.series.forEach((series: ChartSeries, s: number) => {
+          const colId = s * 3;
+          slots.push({
+            index: s,
+            series: series,
+            targetCol: colId + 1,
+            type: 'customSeries',
+            tag: 'c:xVal',
+            mapData: (point: ChartBubble): number => point.x,
+          });
+          slots.push({
+            label: `${series.label}-Y-Value`,
+            index: s,
+            series: series,
+            targetCol: colId + 2,
+            type: 'customSeries',
+            tag: 'c:yVal',
+            mapData: (point: ChartBubble): number => point.y,
+            isStrRef: false,
+          });
+          slots.push({
+            label: `${series.label}-Size`,
+            index: s,
+            series: series,
+            targetCol: colId + 3,
+            type: 'customSeries',
+            tag: 'c:bubbleSize',
+            mapData: (point: ChartBubble): number => point.size,
+            isStrRef: false,
+          });
         });
-        slots.push({
-          label: `${series.label}-Y-Value`,
-          index: s,
-          series: series,
-          targetCol: colId + 2,
-          type: 'customSeries',
-          tag: 'c:yVal',
-          mapData: (point: ChartBubble): number => point.y,
-          isStrRef: false,
-        });
-        slots.push({
-          label: `${series.label}-Size`,
-          index: s,
-          series: series,
-          targetCol: colId + 3,
-          type: 'customSeries',
-          tag: 'c:bubbleSize',
-          mapData: (point: ChartBubble): number => point.size,
-          isStrRef: false,
-        });
-      });
 
-      new ModifyChart(chart, workbook, data, slots).modify();
+        new ModifyChart(chart, workbook, data, slots).modify();
 
-      // XmlHelper.dump(chart)
-    };
+        // XmlHelper.dump(chart)
+      };
 
   /**
    * Set chart data to modify extended chart types.
@@ -206,22 +206,22 @@ export default class ModifyChartHelper {
    */
   static setExtendedChartData =
     (data: ChartData): ChartModificationCallback =>
-    (element: XmlElement, chart?: XmlDocument, workbook?: Workbook): void => {
-      const slots = [] as ChartSlot[];
-      data.series.forEach((series: ChartSeries, s: number) => {
-        slots.push({
-          index: s,
-          series: series,
-          targetCol: s + 1,
-          type: 'extendedSeries',
+      (element: XmlElement, chart?: XmlDocument, workbook?: Workbook): void => {
+        const slots = [] as ChartSlot[];
+        data.series.forEach((series: ChartSeries, s: number) => {
+          slots.push({
+            index: s,
+            series: series,
+            targetCol: s + 1,
+            type: 'extendedSeries',
+          });
         });
-      });
 
-      new ModifyChart(chart, workbook, data, slots).modifyExtended();
+        new ModifyChart(chart, workbook, data, slots).modifyExtended();
 
-      // XmlHelper.dump(chart);
-      // XmlHelper.dump(workbook.table)
-    };
+        // XmlHelper.dump(chart);
+        // XmlHelper.dump(workbook.table)
+      };
 
   /**
    * Read chart workbook data
@@ -229,33 +229,33 @@ export default class ModifyChartHelper {
    */
   static readWorkbookData =
     (data: any): ChartModificationCallback =>
-    (element: XmlElement, chart?: XmlDocument, workbook?: Workbook): void => {
-      const getSharedString = (index: number): string => {
-        return workbook.sharedStrings.getElementsByTagName('si').item(index)
-          ?.textContent;
-      };
+      (element: XmlElement, chart?: XmlDocument, workbook?: Workbook): void => {
+        const getSharedString = (index: number): string => {
+          return workbook.sharedStrings.getElementsByTagName('si').item(index)
+            ?.textContent;
+        };
 
-      const parseCell = (cell: XmlElement): string | number => {
-        const type = cell.getAttribute('t');
-        const cellValue = cell.getElementsByTagName('v').item(0).textContent;
-        if (type === 's') {
-          return getSharedString(Number(cellValue));
-        } else {
-          return Number(cellValue);
+        const parseCell = (cell: XmlElement): string | number => {
+          const type = cell.getAttribute('t');
+          const cellValue = cell.getElementsByTagName('v').item(0).textContent;
+          if (type === 's') {
+            return getSharedString(Number(cellValue));
+          } else {
+            return Number(cellValue);
+          }
+        };
+
+        const rows = workbook.sheet.getElementsByTagName('row');
+        for (let r = 0; r < rows.length; r++) {
+          const row = rows.item(r);
+          const columns = row.getElementsByTagName('c');
+          const rowData = [];
+          for (let c = 0; c < columns.length; c++) {
+            rowData.push(parseCell(columns.item(c)));
+          }
+          data.push(rowData);
         }
       };
-
-      const rows = workbook.sheet.getElementsByTagName('row');
-      for (let r = 0; r < rows.length; r++) {
-        const row = rows.item(r);
-        const columns = row.getElementsByTagName('c');
-        const rowData = [];
-        for (let c = 0; c < columns.length; c++) {
-          rowData.push(parseCell(columns.item(c)));
-        }
-        data.push(rowData);
-      }
-    };
 
   /**
    * Read chart info
@@ -263,24 +263,24 @@ export default class ModifyChartHelper {
    */
   static readChartInfo =
     (info: any): ChartModificationCallback =>
-    (element: XmlElement, chart?: XmlDocument, workbook?: Workbook): void => {
-      const series = chart.getElementsByTagName('c:ser');
-      XmlHelper.modifyCollection(series, (tmpSeries: XmlElement, s: number) => {
-        const solidFill = tmpSeries.getElementsByTagName('a:solidFill').item(0);
-        if (!solidFill) {
-          return;
-        }
+      (element: XmlElement, chart?: XmlDocument, workbook?: Workbook): void => {
+        const series = chart.getElementsByTagName('c:ser');
+        XmlHelper.modifyCollection(series, (tmpSeries: XmlElement, s: number) => {
+          const solidFill = tmpSeries.getElementsByTagName('a:solidFill').item(0);
+          if (!solidFill) {
+            return;
+          }
 
-        const schemeClr = solidFill.getElementsByTagName('a:schemeClr').item(0);
-        const srgbClr = solidFill.getElementsByTagName('a:srgbClr').item(0);
-        const colorElement = schemeClr ? schemeClr : srgbClr;
-        info.series.push({
-          seriesId: s,
-          colorType: colorElement.tagName,
-          colorValue: colorElement.getAttribute('val'),
+          const schemeClr = solidFill.getElementsByTagName('a:schemeClr').item(0);
+          const srgbClr = solidFill.getElementsByTagName('a:srgbClr').item(0);
+          const colorElement = schemeClr ? schemeClr : srgbClr;
+          info.series.push({
+            seriesId: s,
+            colorType: colorElement.tagName,
+            colorValue: colorElement.getAttribute('val'),
+          });
         });
-      });
-    };
+      };
 
   /**
    * Set range and format for chart axis.
@@ -290,30 +290,30 @@ export default class ModifyChartHelper {
    */
   static setAxisRange =
     (range: ChartAxisRange): ChartModificationCallback =>
-    (element: XmlElement, chart: XmlDocument): void => {
-      const axis = chart.getElementsByTagName('c:valAx')[range.axisIndex || 0];
-      if (!axis) return;
+      (element: XmlElement, chart: XmlDocument): void => {
+        const axis = chart.getElementsByTagName('c:valAx')[range.axisIndex || 0];
+        if (!axis) return;
 
-      ModifyChartHelper.setAxisAttribute(axis, 'c:majorUnit', range.majorUnit);
-      ModifyChartHelper.setAxisAttribute(axis, 'c:minorUnit', range.minorUnit);
-      ModifyChartHelper.setAxisAttribute(
-        axis,
-        'c:numFmt',
-        range.formatCode,
-        'formatCode',
-      );
-      ModifyChartHelper.setAxisAttribute(
-        axis,
-        'c:numFmt',
-        range.sourceLinked,
-        'sourceLinked',
-      );
+        ModifyChartHelper.setAxisAttribute(axis, 'c:majorUnit', range.majorUnit);
+        ModifyChartHelper.setAxisAttribute(axis, 'c:minorUnit', range.minorUnit);
+        ModifyChartHelper.setAxisAttribute(
+          axis,
+          'c:numFmt',
+          range.formatCode,
+          'formatCode',
+        );
+        ModifyChartHelper.setAxisAttribute(
+          axis,
+          'c:numFmt',
+          range.sourceLinked,
+          'sourceLinked',
+        );
 
-      const scaling = axis.getElementsByTagName('c:scaling')[0];
+        const scaling = axis.getElementsByTagName('c:scaling')[0];
 
-      ModifyChartHelper.setAxisAttribute(scaling, 'c:min', range.min);
-      ModifyChartHelper.setAxisAttribute(scaling, 'c:max', range.max);
-    };
+        ModifyChartHelper.setAxisAttribute(scaling, 'c:min', range.min);
+        ModifyChartHelper.setAxisAttribute(scaling, 'c:max', range.max);
+      };
 
   static setAxisAttribute = (
     element: XmlElement,
@@ -340,14 +340,14 @@ export default class ModifyChartHelper {
    */
   static minimizeChartLegend =
     (): ChartModificationCallback =>
-    (element: XmlElement, chart: XmlDocument, workbook?: Workbook): void => {
-      this.setLegendPosition({
-        w: 0.0,
-        h: 0.0,
-        x: 0.0,
-        y: 0.0,
-      })(element, chart, workbook);
-    };
+      (element: XmlElement, chart: XmlDocument, workbook?: Workbook): void => {
+        this.setLegendPosition({
+          w: 0.0,
+          h: 0.0,
+          x: 0.0,
+          y: 0.0,
+        })(element, chart, workbook);
+      };
 
   /**
    * Completely remove a chart legend. Please notice: This will trigger
@@ -355,11 +355,11 @@ export default class ModifyChartHelper {
    */
   static removeChartLegend =
     (): ChartModificationCallback =>
-    (element: XmlElement, chart: XmlDocument): void => {
-      if (chart.getElementsByTagName('c:legend')) {
-        XmlHelper.remove(chart.getElementsByTagName('c:legend')[0]);
-      }
-    };
+      (element: XmlElement, chart: XmlDocument): void => {
+        if (chart.getElementsByTagName('c:legend')) {
+          XmlHelper.remove(chart.getElementsByTagName('c:legend')[0]);
+        }
+      };
 
   /**
    * Update the coordinates of a chart legend.
@@ -369,32 +369,32 @@ export default class ModifyChartHelper {
    */
   static setLegendPosition =
     (legendArea: ChartElementCoordinateShares): ChartModificationCallback =>
-    (element: XmlElement, chart: XmlDocument): void => {
-      const modifyXmlHelper = new ModifyXmlHelper(chart);
-      modifyXmlHelper.modify({
-        'c:legend': {
-          children: {
-            'c:manualLayout': {
-              children: {
-                'c:w': {
-                  modify: [ModifyXmlHelper.attribute('val', legendArea.w)],
-                },
-                'c:h': {
-                  modify: [ModifyXmlHelper.attribute('val', legendArea.h)],
-                },
-                'c:x': {
-                  modify: [ModifyXmlHelper.attribute('val', legendArea.x)],
-                },
-                'c:y': {
-                  modify: [ModifyXmlHelper.attribute('val', legendArea.y)],
+      (element: XmlElement, chart: XmlDocument): void => {
+        const modifyXmlHelper = new ModifyXmlHelper(chart);
+        modifyXmlHelper.modify({
+          'c:legend': {
+            children: {
+              'c:manualLayout': {
+                children: {
+                  'c:w': {
+                    modify: [ModifyXmlHelper.attribute('val', legendArea.w)],
+                  },
+                  'c:h': {
+                    modify: [ModifyXmlHelper.attribute('val', legendArea.h)],
+                  },
+                  'c:x': {
+                    modify: [ModifyXmlHelper.attribute('val', legendArea.x)],
+                  },
+                  'c:y': {
+                    modify: [ModifyXmlHelper.attribute('val', legendArea.y)],
+                  },
                 },
               },
             },
           },
-        },
-      });
-      // XmlHelper.dump(chart.getElementsByTagName('c:legendPos')[0]);
-    };
+        });
+        // XmlHelper.dump(chart.getElementsByTagName('c:legendPos')[0]);
+      };
 
   /**
    * Set the plot area coordinates of a chart.
@@ -415,79 +415,79 @@ export default class ModifyChartHelper {
    */
   static setPlotArea =
     (plotArea: ChartElementCoordinateShares): ChartModificationCallback =>
-    (element: XmlElement, chart?: XmlDocument): void => {
-      // Each chart has a separate chart xml file. It is required
-      // to alter everything that's "inside" the chart, e.g. data, legend,
-      // axis... and: plot area
+      (element: XmlElement, chart?: XmlDocument): void => {
+        // Each chart has a separate chart xml file. It is required
+        // to alter everything that's "inside" the chart, e.g. data, legend,
+        // axis... and: plot area
 
-      // ModifyXmlHelper class provides a lot of functions to access
-      // and edit xml elements.
-      const modifyXmlHelper = new ModifyXmlHelper(chart);
+        // ModifyXmlHelper class provides a lot of functions to access
+        // and edit xml elements.
+        const modifyXmlHelper = new ModifyXmlHelper(chart);
 
-      // We need to locate the required xml elements and target them
-      // with ModifyXmlHelper's help.
-      // We can therefore log the entire chart.xml to console:
-      // XmlHelper.dump(chart);
+        // We need to locate the required xml elements and target them
+        // with ModifyXmlHelper's help.
+        // We can therefore log the entire chart.xml to console:
+        // XmlHelper.dump(chart);
 
-      // There needs to be a 'c:manualLayout' element. This will only appear if
-      // a plot area was edited manually in ppt before. Recently fresh created
-      // charts will not have a manualLayout by default.
-      if (
-        !chart
-          .getElementsByTagName('c:plotArea')[0]
-          .getElementsByTagName('c:manualLayout')[0]
-      ) {
-        console.error("Can't update plot area. No c:manualLayout found.");
-        return;
-      }
+        // There needs to be a 'c:manualLayout' element. This will only appear if
+        // a plot area was edited manually in ppt before. Recently fresh created
+        // charts will not have a manualLayout by default.
+        if (
+          !chart
+            .getElementsByTagName('c:plotArea')[0]
+            .getElementsByTagName('c:manualLayout')[0]
+        ) {
+          console.error('Can\'t update plot area. No c:manualLayout found.');
+          return;
+        }
 
-      modifyXmlHelper.modify({
-        'c:plotArea': {
-          children: {
-            'c:manualLayout': {
-              children: {
-                'c:w': {
-                  // Finally, we attach ModifyCallbacks to all
-                  // matching elements
-                  modify: [
-                    ModifyXmlHelper.attribute('val', plotArea.w),
-                    // ...
-                  ],
-                },
-                'c:h': {
-                  modify: [ModifyXmlHelper.attribute('val', plotArea.h)],
-                },
-                'c:x': {
-                  modify: [ModifyXmlHelper.attribute('val', plotArea.x)],
-                },
-                'c:y': {
-                  modify: [ModifyXmlHelper.attribute('val', plotArea.y)],
+        modifyXmlHelper.modify({
+          'c:plotArea': {
+            children: {
+              'c:manualLayout': {
+                children: {
+                  'c:w': {
+                    // Finally, we attach ModifyCallbacks to all
+                    // matching elements
+                    modify: [
+                      ModifyXmlHelper.attribute('val', plotArea.w),
+                      // ...
+                    ],
+                  },
+                  'c:h': {
+                    modify: [ModifyXmlHelper.attribute('val', plotArea.h)],
+                  },
+                  'c:x': {
+                    modify: [ModifyXmlHelper.attribute('val', plotArea.x)],
+                  },
+                  'c:y': {
+                    modify: [ModifyXmlHelper.attribute('val', plotArea.y)],
+                  },
                 },
               },
             },
           },
-        },
-      });
+        });
 
-      // We can dump the target node and see if our modification
-      // took effect.
-      // XmlHelper.dump(
-      //   chart
-      //     .getElementsByTagName('c:plotArea')[0]
-      //     .getElementsByTagName('c:manualLayout')[0],
-      // );
+        // We can dump the target node and see if our modification
+        // took effect.
+        // XmlHelper.dump(
+        //   chart
+        //     .getElementsByTagName('c:plotArea')[0]
+        //     .getElementsByTagName('c:manualLayout')[0],
+        // );
 
-      // You can also take a look at element xml, which is a child node
-      // of current slide. It holds general shape properties, but no
-      // data or so.
-      // XmlHelper.dump(chart);
+        // You can also take a look at element xml, which is a child node
+        // of current slide. It holds general shape properties, but no
+        // data or so.
+        // XmlHelper.dump(chart);
 
-      // Rough ones might also want to look inside the linked workbook.
-      // It is located inside an extra xlsx file. We don't need this
-      // for now.
-      // XmlHelper.dump(workbook.table)
-      // XmlHelper.dump(workbook.sheet)
-    };
+        // Rough ones might also want to look inside the linked workbook.
+        // It is located inside an extra xlsx file. We don't need this
+        // for now.
+        // XmlHelper.dump(workbook.table)
+        // XmlHelper.dump(workbook.sheet)
+      };
 
   /**
    * Set a waterfall Total column to last
@@ -497,54 +497,121 @@ export default class ModifyChartHelper {
    */
   static setWaterFallColumnTotalToLast =
     (TotalColumnIDX?: number): ChartModificationCallback =>
-    (element: XmlElement, chart: XmlDocument): void => {
-      const plotArea = chart.getElementsByTagName('cx:plotArea')[0];
-      const subTotals = plotArea
-        ?.getElementsByTagName('cx:layoutPr')[0]
-        ?.getElementsByTagName('cx:subtotals')[0];
+      (element: XmlElement, chart: XmlDocument): void => {
+        const plotArea = chart.getElementsByTagName('cx:plotArea')[0];
+        const subTotals = plotArea
+          ?.getElementsByTagName('cx:layoutPr')[0]
+          ?.getElementsByTagName('cx:subtotals')[0];
 
-      if (subTotals) {
-        if (!TotalColumnIDX) {
-          const GetTotalPoints = chart
-            .getElementsByTagName('cx:chartData')[0]
-            ?.getElementsByTagName('cx:data')[0]
-            ?.getElementsByTagName('cx:strDim')[0]
-            ?.getElementsByTagName('cx:lvl')[0]
-            ?.getAttribute('ptCount');
-          if (GetTotalPoints) {
-            TotalColumnIDX = Number(GetTotalPoints) - 1;
+        if (subTotals) {
+          if (!TotalColumnIDX) {
+            const GetTotalPoints = chart
+              .getElementsByTagName('cx:chartData')[0]
+              ?.getElementsByTagName('cx:data')[0]
+              ?.getElementsByTagName('cx:strDim')[0]
+              ?.getElementsByTagName('cx:lvl')[0]
+              ?.getAttribute('ptCount');
+            if (GetTotalPoints) {
+              TotalColumnIDX = Number(GetTotalPoints) - 1;
+            }
+          }
+          if (TotalColumnIDX !== undefined) {
+            const stIndexes = Array.from(
+              subTotals.getElementsByTagName('cx:idx'),
+            );
+            stIndexes.forEach((sTValue, index) => {
+              ModifyXmlHelper.attribute(
+                'val',
+                TotalColumnIDX.toString(),
+              )(sTValue);
+              if (index > 0) {
+                subTotals.removeChild(sTValue);
+              }
+            });
           }
         }
-        if (TotalColumnIDX !== undefined) {
-          const stIndexes = Array.from(
-            subTotals.getElementsByTagName('cx:idx'),
-          );
-          stIndexes.forEach((sTValue, index) => {
-            ModifyXmlHelper.attribute(
-              'val',
-              TotalColumnIDX.toString(),
-            )(sTValue);
-            if (index > 0) {
-              subTotals.removeChild(sTValue);
-            }
-          });
-        }
-      }
+      };
+
+  /**
+   * Remove the title of a chart.
+   *
+   */
+  static removeChartTitle = (): ChartModificationCallback =>
+    (element: XmlElement, chart: XmlDocument): void => {
+      const modifyXmlHelper = new ModifyXmlHelper(chart);
+      modifyXmlHelper.createTree({
+        'c:chart': {
+          children: {
+            'c:title': {
+              remove: true,
+            },
+            'c:autoTitleDeleted': {
+              attributes: { 'val': '1' },
+            },
+          },
+        },
+      });
     };
 
   /**
-   * Set the title of a chart. This requires an already existing, manually edited chart title.
-    @param newTitle
+   }
+   * Set the title of a chart.
+   @param newTitle
    *
    */
-  static setChartTitle =
-    (newTitle: string): ChartModificationCallback =>
+  static setChartTitle = (newTitle: string): ChartModificationCallback =>
     (element: XmlElement, chart: XmlDocument): void => {
-      const chartTitle = chart.getElementsByTagName('c:title').item(0);
-      const chartTitleText = chartTitle?.getElementsByTagName('a:t').item(0);
-      if (chartTitleText) {
-        chartTitleText.textContent = newTitle;
-      }
+      const modifyXmlHelper = new ModifyXmlHelper(chart);
+      modifyXmlHelper.createTree({
+        'c:title': {
+          unique: true,
+          children: {
+            'c:tx': {
+              unique: true,
+              children: {
+                'c:rich': {
+                  unique: true,
+                  children: {
+                    'a:bodyPr': {
+                      attributes: {
+                        rot: '0',
+                        spcFirstLastPara: '1',
+                        vertOverflow: 'ellipsis',
+                        vert: 'horz',
+                        wrap: 'square',
+                        anchor: 'ctr',
+                        anchorCtr: '1',
+                      },
+                    },
+
+                    'a:lstStyle': { empty: true },
+                    'a:p': {
+                      clone: true,
+                      children: {
+                        'a:pPr': { clone: true },
+                        'a:r': {
+                          children: {
+                            'a:t': {
+                              slot: newTitle,
+                            },
+                          },
+                        },
+                        'a:endParaRPr': {
+                          unique: true,
+                          attributes: {
+                            lang: 'en-US',
+                            dirty: '0',
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
     };
 
   /**
@@ -554,82 +621,82 @@ export default class ModifyChartHelper {
    */
   static setDataLabelAttributes =
     (dataLabel: ChartDataLabelAttributes): ChartModificationCallback =>
-    (element: XmlElement, chart: XmlDocument): void => {
-      const modifyXmlHelper = new ModifyXmlHelper(chart);
-      const applyToSeries = dataLabel.applyToSeries
-        ? {
+      (element: XmlElement, chart: XmlDocument): void => {
+        const modifyXmlHelper = new ModifyXmlHelper(chart);
+        const applyToSeries = dataLabel.applyToSeries
+          ? {
             index: dataLabel.applyToSeries,
           }
-        : {
+          : {
             all: true,
           };
 
-      modifyXmlHelper.modify({
-        'c:ser': {
-          ...applyToSeries,
-          children: {
-            'c:dLbls': {
-              children: {
-                'c:dLblPos': {
-                  modify: [ModifyXmlHelper.attribute('val', dataLabel.dLblPos)],
-                },
-                'c:showLegendKey': {
-                  modify: [
-                    ModifyXmlHelper.booleanAttribute(
-                      'val',
-                      dataLabel.showLegendKey,
-                    ),
-                  ],
-                },
-                'c:showVal': {
-                  modify: [
-                    ModifyXmlHelper.booleanAttribute('val', dataLabel.showVal),
-                  ],
-                },
-                'c:showCatName': {
-                  modify: [
-                    ModifyXmlHelper.booleanAttribute(
-                      'val',
-                      dataLabel.showCatName,
-                    ),
-                  ],
-                },
-                'c:showSerName': {
-                  modify: [
-                    ModifyXmlHelper.booleanAttribute(
-                      'val',
-                      dataLabel.showSerName,
-                    ),
-                  ],
-                },
-                'c:showPercent': {
-                  modify: [
-                    ModifyXmlHelper.booleanAttribute(
-                      'val',
-                      dataLabel.showPercent,
-                    ),
-                  ],
-                },
-                'c:showBubbleSize': {
-                  modify: [
-                    ModifyXmlHelper.booleanAttribute(
-                      'val',
-                      dataLabel.showBubbleSize,
-                    ),
-                  ],
-                },
-                'c:showLeaderLines': {
-                  modify: [
-                    ModifyXmlHelper.booleanAttribute(
-                      'val',
-                      dataLabel.showLeaderLines,
-                    ),
-                  ],
+        modifyXmlHelper.modify({
+          'c:ser': {
+            ...applyToSeries,
+            children: {
+              'c:dLbls': {
+                children: {
+                  'c:dLblPos': {
+                    modify: [ModifyXmlHelper.attribute('val', dataLabel.dLblPos)],
+                  },
+                  'c:showLegendKey': {
+                    modify: [
+                      ModifyXmlHelper.booleanAttribute(
+                        'val',
+                        dataLabel.showLegendKey,
+                      ),
+                    ],
+                  },
+                  'c:showVal': {
+                    modify: [
+                      ModifyXmlHelper.booleanAttribute('val', dataLabel.showVal),
+                    ],
+                  },
+                  'c:showCatName': {
+                    modify: [
+                      ModifyXmlHelper.booleanAttribute(
+                        'val',
+                        dataLabel.showCatName,
+                      ),
+                    ],
+                  },
+                  'c:showSerName': {
+                    modify: [
+                      ModifyXmlHelper.booleanAttribute(
+                        'val',
+                        dataLabel.showSerName,
+                      ),
+                    ],
+                  },
+                  'c:showPercent': {
+                    modify: [
+                      ModifyXmlHelper.booleanAttribute(
+                        'val',
+                        dataLabel.showPercent,
+                      ),
+                    ],
+                  },
+                  'c:showBubbleSize': {
+                    modify: [
+                      ModifyXmlHelper.booleanAttribute(
+                        'val',
+                        dataLabel.showBubbleSize,
+                      ),
+                    ],
+                  },
+                  'c:showLeaderLines': {
+                    modify: [
+                      ModifyXmlHelper.booleanAttribute(
+                        'val',
+                        dataLabel.showLeaderLines,
+                      ),
+                    ],
+                  },
                 },
               },
             },
           },
-        },
-      });
-    };
+        });
+      };
 }

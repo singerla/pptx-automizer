@@ -77,6 +77,7 @@ const removeChartLegend = ModifyChartHelper.removeChartLegend;
 const minimizeChartLegend = ModifyChartHelper.minimizeChartLegend;
 const setWaterFallColumnTotalToLast =
   ModifyChartHelper.setWaterFallColumnTotalToLast;
+const removeChartTitle = ModifyChartHelper.removeChartTitle;
 const setChartTitle = ModifyChartHelper.setChartTitle;
 const setDataLabelAttributes = ModifyChartHelper.setDataLabelAttributes;
 const readWorkbookData = ModifyChartHelper.readWorkbookData;
@@ -145,6 +146,7 @@ export const modify = {
   removeChartLegend,
   minimizeChartLegend,
   setWaterFallColumnTotalToLast,
+  removeChartTitle,
   setChartTitle,
   setDataLabelAttributes,
 };
