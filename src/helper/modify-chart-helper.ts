@@ -563,44 +563,48 @@ export default class ModifyChartHelper {
     (element: XmlElement, chart: XmlDocument): void => {
       const modifyXmlHelper = new ModifyXmlHelper(chart);
       modifyXmlHelper.createTree({
-        'c:title': {
-          unique: true,
+        'c:chart': {
           children: {
-            'c:tx': {
+            'c:title': {
               unique: true,
               children: {
-                'c:rich': {
+                'c:tx': {
                   unique: true,
                   children: {
-                    'a:bodyPr': {
-                      attributes: {
-                        rot: '0',
-                        spcFirstLastPara: '1',
-                        vertOverflow: 'ellipsis',
-                        vert: 'horz',
-                        wrap: 'square',
-                        anchor: 'ctr',
-                        anchorCtr: '1',
-                      },
-                    },
-
-                    'a:lstStyle': { empty: true },
-                    'a:p': {
-                      clone: true,
+                    'c:rich': {
+                      unique: true,
                       children: {
-                        'a:pPr': { clone: true },
-                        'a:r': {
-                          children: {
-                            'a:t': {
-                              slot: newTitle,
-                            },
+                        'a:bodyPr': {
+                          attributes: {
+                            rot: '0',
+                            spcFirstLastPara: '1',
+                            vertOverflow: 'ellipsis',
+                            vert: 'horz',
+                            wrap: 'square',
+                            anchor: 'ctr',
+                            anchorCtr: '1',
                           },
                         },
-                        'a:endParaRPr': {
-                          unique: true,
-                          attributes: {
-                            lang: 'en-US',
-                            dirty: '0',
+
+                        'a:lstStyle': { empty: true },
+                        'a:p': {
+                          clone: true,
+                          children: {
+                            'a:pPr': { clone: true },
+                            'a:r': {
+                              children: {
+                                'a:t': {
+                                  slot: newTitle,
+                                },
+                              },
+                            },
+                            'a:endParaRPr': {
+                              unique: true,
+                              attributes: {
+                                lang: 'en-US',
+                                dirty: '0',
+                              },
+                            },
                           },
                         },
                       },
@@ -608,6 +612,9 @@ export default class ModifyChartHelper {
                   },
                 },
               },
+            },
+            'c:autoTitleDeleted': {
+              attributes: { 'val': '0' },
             },
           },
         },
