@@ -79,7 +79,6 @@ export default class XmlElements {
       this.paragraphTemplate = paragraphs[0];
       XmlHelper.sliceCollection(paragraphs, 0);
 
-
       const runs = this.paragraphTemplate.getElementsByTagName('a:r');
       if (runs.length > 0) {
         this.runTemplate = runs[0];
@@ -297,15 +296,15 @@ export default class XmlElements {
   }
 
   dataPointLabel() {
-    const doc = new DOMParser().parseFromString(dLblXml);
-    const ele = doc.getElementsByTagName('c:dLbl')[0];
+    const doc = new DOMParser().parseFromString(dLblXml, 'application/ xml');
+    const ele = doc.getElementsByTagName('c:dLbl')[0] as unknown as Node;
     const firstChild = this.element.firstChild;
     this.element.insertBefore(ele.cloneNode(true), firstChild);
   }
 
   tableCellBorder(tag: 'a:lnL' | 'a:lnR' | 'a:lnT' | 'a:lnB') {
-    const doc = new DOMParser().parseFromString(lnLRTB);
-    const ele = doc.getElementsByTagName(tag)[0];
+    const doc = new DOMParser().parseFromString(lnLRTB, 'application/ xml');
+    const ele = doc.getElementsByTagName(tag)[0] as unknown as Node;
     const firstChild = this.element.firstChild;
     this.element.insertBefore(ele.cloneNode(true), firstChild);
   }

@@ -1,4 +1,4 @@
-import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
+import { DOMParser, Node, XMLSerializer } from '@xmldom/xmldom';
 import { ArchivedFile, ArchiveType } from '../../interfaces/iarchive';
 import { XmlDocument } from '../../types/xml-types';
 import { AutomizerFile, AutomizerParams } from '../../types/types';
@@ -17,13 +17,15 @@ export default class Archive {
 
   parseXml(xmlString: string): XmlDocument {
     const dom = new DOMParser();
-    return dom.parseFromString(xmlString);
+    return dom.parseFromString(
+      xmlString,
+      'application/xml',
+    ) as unknown as XmlDocument;
   }
 
-  serializeXml(XmlDocument: XmlDocument) {
+  serializeXml(XmlDocument: XMLDocument | Node) {
     const s = new XMLSerializer();
-    const xmlBuffer = s.serializeToString(XmlDocument);
-    return xmlBuffer;
+    return s.serializeToString(<Node>XmlDocument);
   }
 
   async writeBuffer(archiveType: ArchiveType) {

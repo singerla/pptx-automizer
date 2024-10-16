@@ -97,7 +97,7 @@ export default class ModifyXmlHelper {
           sourceSibling = this.templates[tag];
         }
 
-        const newChild = sourceSibling.cloneNode(true);
+        const newChild = sourceSibling.cloneNode(true) as XmlElement;
 
         XmlHelper.insertAfter(newChild, lastSibling);
       }

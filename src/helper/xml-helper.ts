@@ -1,4 +1,4 @@
-import { XMLSerializer } from '@xmldom/xmldom';
+import { Node, XMLSerializer } from '@xmldom/xmldom';
 import {
   DefaultAttribute,
   HelperElement,
@@ -514,7 +514,10 @@ export class XmlHelper {
     return strings.getElementsByTagName('si').length - 1;
   }
 
-  static insertAfter(newNode: Node, referenceNode: XmlElement): Node {
+  static insertAfter(
+    newNode: XmlElement,
+    referenceNode: XmlElement,
+  ): XmlElement {
     return referenceNode.parentNode.insertBefore(
       newNode,
       referenceNode.nextSibling,
@@ -595,9 +598,9 @@ export class XmlHelper {
     }
   }
 
-  static dump(element: XmlDocument | XmlElement): void {
+  static dump(element: XMLDocument | Element | Node): void {
     const s = new XMLSerializer();
-    const xmlBuffer = s.serializeToString(element);
+    const xmlBuffer = s.serializeToString(<Node>element);
     const p = new XmlPrettyPrint(xmlBuffer);
     p.dump();
   }
