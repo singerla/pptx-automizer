@@ -13,6 +13,7 @@ import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import { IMaster } from '../interfaces/imaster';
 import HasShapes from './has-shapes';
 import { Master } from './master';
+import { ElementType } from '../enums/element-type';
 
 export class Slide extends HasShapes implements ISlide {
   targetType: ShapeTargetType = 'slide';
