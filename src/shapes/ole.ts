@@ -141,13 +141,14 @@ export class OLEObject extends Shape {
 		
 		const types = contentTypesXml.getElementsByTagName('Types')[0];
 		const fileExtension = this.getFileExtension(this.oleObjectPath);
+		const partName = `/ppt/embeddings/${this.createdRid}${fileExtension}`;
 		const existingOverride = Array.from(types.getElementsByTagName('Override')).find(
-			(override) => override.getAttribute('PartName').endsWith(fileExtension)
+			(override) => override.getAttribute('PartName') === partName
 		);
 
 		if (!existingOverride) {
 			const newOverride = contentTypesXml.createElement('Override');
-			newOverride.setAttribute('PartName', `/ppt/embeddings/${this.createdRid}${fileExtension}`);
+			newOverride.setAttribute('PartName', partName);
 			newOverride.setAttribute('ContentType', this.getContentType(fileExtension));
 			types.appendChild(newOverride);
 
