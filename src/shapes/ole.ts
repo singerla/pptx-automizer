@@ -2,7 +2,7 @@ import { FileHelper } from '../helper/file-helper';
 import { XmlHelper } from '../helper/xml-helper';
 import { Shape } from '../classes/shape';
 import { ImportedElement, ShapeTargetType, Target } from '../types/types';
-import { XmlElement } from '../types/xml-types';
+import { XmlElement, RelationshipAttribute } from '../types/xml-types';
 import IArchive from '../interfaces/iarchive';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { contentTracker } from '../helper/content-tracker';
@@ -55,6 +55,9 @@ export class OLEObject extends Shape {
 	): Promise<OLEObject> {
 		await this.prepare(targetTemplate, targetSlideNumber);
 		await this.removeFromSlideTree();
+		await this.removeOleObjectFile();
+		await this.removeFromContentTypes();
+		await this.removeFromSlideRels();
 
 		return this;
 	}
@@ -66,8 +69,6 @@ export class OLEObject extends Shape {
 	): Promise<void> {
 		await this.setTarget(targetTemplate, targetSlideNumber);
 
-		this.targetNumber = this.targetTemplate.incrementCounter('oleObjects');
-
 		const allOleObjects = oleObjects || await OLEObject.getAllOnSlide(this.sourceArchive, this.targetSlideRelFile);
 
 		const oleObject = allOleObjects.find(obj => obj.rId === this.sourceRid);
@@ -77,17 +78,17 @@ export class OLEObject extends Shape {
 
 		const sourceFilePath = `ppt/embeddings/${oleObject.file.split('/').pop()}`;
 
-		await this.copyFiles(sourceFilePath);
-		await this.appendTypes();
+		this.createdRid = await XmlHelper.getNextRelId(this.targetArchive, this.targetSlideRelFile);
+
+		await this.copyOleObjectFile(sourceFilePath);
+		await this.appendToContentTypes();
+		await this.updateSlideRels();
+		await this.updateSlideXml();
 	}
 
-	private async copyFiles(sourceFilePath: string): Promise<void> {
-		if (!this.createdRid) {
-			this.createdRid = await XmlHelper.getNextRelId(this.targetArchive, this.targetSlideRelFile);
-		}
-
+	private async copyOleObjectFile(sourceFilePath: string): Promise<void> {
 		const fileExtension = this.getFileExtension(sourceFilePath);
-		const targetFileName = `ppt/embeddings/${this.createdRid}${fileExtension}`;
+		const targetFileName = `ppt/embeddings/oleObject${this.createdRid}${fileExtension}`;
 
 		try {
 			await FileHelper.zipCopy(
@@ -102,46 +103,13 @@ export class OLEObject extends Shape {
 		}
 	}
 
-	private async appendTypes(): Promise<void> {
-		await this.appendOleObjectToContentType();
-	}
-
-	private async editTargetOleObjectRel(): Promise<void> {
-		const targetRelFile = this.targetSlideRelFile;
-		const relXml = await XmlHelper.getXmlFromArchive(this.targetArchive, targetRelFile);
-		const relations = relXml.getElementsByTagName('Relationship');
-
-		Array.from(relations).forEach((element) => {
-			const type = element.getAttribute('Type');
-			if (type === 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject') {
-				const fileExtension = this.getFileExtension(element.getAttribute('Target'));
-				this.updateTargetOleObjectRelation(
-					element,
-					'Target',
-					`../embeddings/${this.createdRid}${fileExtension}`,
-				);
-			}
-		});
-
-		XmlHelper.writeXmlToArchive(this.targetArchive, targetRelFile, relXml);
-	}
-
-	private updateTargetOleObjectRelation(element: Element, attribute: string, value: string): void {
-		element.setAttribute(attribute, value);
-		contentTracker.trackRelation(this.targetSlideRelFile, {
-			Id: element.getAttribute('Id') || '',
-			Target: value,
-			Type: element.getAttribute('Type') || '',
-		});
-	}
-
-	private async appendOleObjectToContentType(): Promise<void> {
+	private async appendToContentTypes(): Promise<void> {
 		const contentTypesPath = '[Content_Types].xml';
 		const contentTypesXml = await XmlHelper.getXmlFromArchive(this.targetArchive, contentTypesPath);
 		
 		const types = contentTypesXml.getElementsByTagName('Types')[0];
 		const fileExtension = this.getFileExtension(this.oleObjectPath);
-		const partName = `/ppt/embeddings/${this.createdRid}${fileExtension}`;
+		const partName = `/ppt/embeddings/oleObject${this.createdRid}${fileExtension}`;
 		const existingOverride = Array.from(types.getElementsByTagName('Override')).find(
 			(override) => override.getAttribute('PartName') === partName
 		);
@@ -152,8 +120,59 @@ export class OLEObject extends Shape {
 			newOverride.setAttribute('ContentType', this.getContentType(fileExtension));
 			types.appendChild(newOverride);
 
-			XmlHelper.writeXmlToArchive(this.targetArchive, contentTypesPath, contentTypesXml);
+			await XmlHelper.writeXmlToArchive(this.targetArchive, contentTypesPath, contentTypesXml);
 		}
+	}
+
+	private async updateSlideRels(): Promise<void> {
+		const targetRelFile = `ppt/${this.targetType}s/_rels/${this.targetType}${this.targetSlideNumber}.xml.rels`;
+		const relXml = await XmlHelper.getXmlFromArchive(this.targetArchive, targetRelFile);
+		const relationships = relXml.getElementsByTagName('Relationship');
+
+		const fileExtension = this.getFileExtension(this.oleObjectPath);
+		const newTarget = `../embeddings/oleObject${this.createdRid}${fileExtension}`;
+
+		// Update or create the relationship
+		let relationshipUpdated = false;
+		for (let i = 0; i < relationships.length; i++) {
+			if (relationships[i].getAttribute('Id') === this.sourceRid) {
+				relationships[i].setAttribute('Id', this.createdRid);
+				relationships[i].setAttribute('Target', newTarget);
+				relationshipUpdated = true;
+				break;
+			}
+		}
+
+		if (!relationshipUpdated) {
+			const newRel = relXml.createElement('Relationship');
+			newRel.setAttribute('Id', this.createdRid);
+			newRel.setAttribute('Type', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject');
+			newRel.setAttribute('Target', newTarget);
+			relXml.documentElement.appendChild(newRel);
+		}
+
+		await XmlHelper.writeXmlToArchive(this.targetArchive, targetRelFile, relXml);
+	}
+
+	private async updateSlideXml(): Promise<void> {
+		const slideXmlPath = `ppt/slides/slide${this.targetSlideNumber}.xml`;
+		const slideXml = await XmlHelper.getXmlFromArchive(this.targetArchive, slideXmlPath);
+		
+		const oleObjs = Array.from(slideXml.getElementsByTagName('p:oleObj'));
+		oleObjs.forEach((oleObj) => {
+			if (oleObj.getAttribute('r:id') === this.sourceRid) {
+				oleObj.setAttribute('r:id', this.createdRid);
+				const oleObjPr = oleObj.getElementsByTagName('p:oleObjPr')[0];
+				if (oleObjPr) {
+					const links = Array.from(oleObjPr.getElementsByTagName('a:link'));
+					links.forEach(link => {
+						link.setAttribute('r:id', this.createdRid);
+					});
+				}
+			}
+		});
+
+		await XmlHelper.writeXmlToArchive(this.targetArchive, slideXmlPath, slideXml);
 	}
 
 	private getContentType(fileExtension: string): string {
@@ -167,6 +186,44 @@ export class OLEObject extends Shape {
 			'.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
 		};
 		return contentTypes[fileExtension.toLowerCase()] || 'application/vnd.openxmlformats-officedocument.oleObject';
+	}
+
+	private async removeOleObjectFile(): Promise<void> {
+		const fileExtension = this.getFileExtension(this.oleObjectPath);
+		const fileName = `ppt/embeddings/oleObject${this.createdRid}${fileExtension}`;
+		await this.targetArchive.remove(fileName);
+	}
+
+	private async removeFromContentTypes(): Promise<void> {
+		const contentTypesPath = '[Content_Types].xml';
+		const contentTypesXml = await XmlHelper.getXmlFromArchive(this.targetArchive, contentTypesPath);
+		
+		const types = contentTypesXml.getElementsByTagName('Types')[0];
+		const fileExtension = this.getFileExtension(this.oleObjectPath);
+		const partName = `/ppt/embeddings/oleObject${this.createdRid}${fileExtension}`;
+		const overrideToRemove = Array.from(types.getElementsByTagName('Override')).find(
+			(override) => override.getAttribute('PartName') === partName
+		);
+
+		if (overrideToRemove) {
+			types.removeChild(overrideToRemove);
+			await XmlHelper.writeXmlToArchive(this.targetArchive, contentTypesPath, contentTypesXml);
+		}
+	}
+
+	private async removeFromSlideRels(): Promise<void> {
+		const targetRelFile = `ppt/${this.targetType}s/_rels/${this.targetType}${this.targetSlideNumber}.xml.rels`;
+		const relXml = await XmlHelper.getXmlFromArchive(this.targetArchive, targetRelFile);
+		const relationships = relXml.getElementsByTagName('Relationship');
+
+		for (let i = 0; i < relationships.length; i++) {
+			if (relationships[i].getAttribute('Id') === this.createdRid) {
+				relationships[i].parentNode.removeChild(relationships[i]);
+				break;
+			}
+		}
+
+		await XmlHelper.writeXmlToArchive(this.targetArchive, targetRelFile, relXml);
 	}
 
 	static async getAllOnSlide(
@@ -199,6 +256,5 @@ export class OLEObject extends Shape {
 		oleObjects: Target[]
 	): Promise<void> {
 		await this.prepare(targetTemplate, targetSlideNumber, oleObjects);
-		await this.editTargetOleObjectRel();
 	}
 }
