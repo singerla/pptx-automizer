@@ -166,9 +166,7 @@ export class XmlHelper {
   }
 
   static async getRelationshipTargetsByPrefix(
-    archive: IArchive,
-    path: string,
-    prefix: string | string[],
+archive: IArchive, path: string, prefix: string | string[]
   ): Promise<Target[]> {
     const prefixes = typeof prefix === 'string' ? [prefix] : prefix;
 

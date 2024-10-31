@@ -16,6 +16,7 @@ export const mapUriType = {
   'http://schemas.openxmlformats.org/drawingml/2006/table': 'table',
   'http://schemas.openxmlformats.org/drawingml/2006/chart': 'chart',
   'http://schemas.microsoft.com/office/drawing/2014/chartex': 'chartEx',
+  'http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject': 'oleObject',
 };
 
 /**
@@ -201,6 +202,9 @@ export class XmlSlideHelper {
           slideElementParent.getElementsByTagName('a:graphicData')[0];
         const uri = graphicData.getAttribute('uri');
         type = mapUriType[uri] ? mapUriType[uri] : type;
+        break;
+      case 'oleObj':
+        type = 'OLEObject';
         break;
     }
 

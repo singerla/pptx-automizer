@@ -33,6 +33,7 @@ import { ElementType } from '../enums/element-type';
 import { GenericShape } from '../shapes/generic';
 import { XmlSlideHelper } from '../helper/xml-slide-helper';
 import { vd } from '../helper/general-helper';
+import { OLEObject } from '../shapes/ole';
 
 export default class HasShapes {
   /**
@@ -113,7 +114,7 @@ export default class HasShapes {
    */
   unsupportedTags = [
     'p:custDataLst',
-    'p:oleObj',
+    // 'p:oleObj',
     // 'mc:AlternateContent',
     //'a14:imgProps',
   ];
@@ -122,7 +123,7 @@ export default class HasShapes {
    * @internal
    */
   unsupportedRelationTypes = [
-    'http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject',
+  //  'http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject',
     'http://schemas.openxmlformats.org/officeDocument/2006/relationships/vmlDrawing',
     'http://schemas.openxmlformats.org/officeDocument/2006/relationships/tags',
   ];
@@ -382,6 +383,13 @@ export default class HasShapes {
           break;
         case ElementType.Shape:
           await new GenericShape(info, this.targetType)[info.mode](
+            this.targetTemplate,
+            this.targetNumber,
+            this.targetType,
+          );
+          break;
+        case ElementType.OLEObject:
+          await new OLEObject(info, this.targetType, this.sourceArchive)[info.mode](
             this.targetTemplate,
             this.targetNumber,
             this.targetType,
@@ -746,7 +754,6 @@ export default class HasShapes {
    */
   async copyRelatedContent(): Promise<void> {
     const charts = await Chart.getAllOnSlide(this.sourceArchive, this.relsPath);
-
     for (const chart of charts) {
       await new Chart(
         {
@@ -755,12 +762,13 @@ export default class HasShapes {
           sourceArchive: this.sourceArchive,
           sourceSlideNumber: this.sourceNumber,
         },
-        this.targetType,
+        this.targetType
       ).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);
     }
 
     const images = await Image.getAllOnSlide(this.sourceArchive, this.relsPath);
     for (const image of images) {
+
       await new Image(
         {
           mode: 'append',
@@ -768,8 +776,22 @@ export default class HasShapes {
           sourceArchive: this.sourceArchive,
           sourceSlideNumber: this.sourceNumber,
         },
-        this.targetType,
+        this.targetType
       ).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);
+    }
+
+    const oleObjects = await OLEObject.getAllOnSlide(this.sourceArchive, this.relsPath);
+    for (const oleObject of oleObjects) {
+      await new OLEObject(
+        {
+          mode: 'append',
+          target: oleObject,
+          sourceArchive: this.sourceArchive,
+          sourceSlideNumber: this.sourceNumber,
+        },
+        this.targetType,
+        this.sourceArchive
+      ).modifyOnAddedSlide(this.targetTemplate, this.targetNumber, oleObjects);
     }
   }
 
@@ -826,6 +848,21 @@ export default class HasShapes {
           sourceElement,
           'image',
         ),
+      } as AnalyzedElementType;
+    }
+
+    const isOLEObject = sourceElement.getElementsByTagName('p:oleObj');
+    if (isOLEObject.length) {
+      const target = await XmlHelper.getTargetByRelId(
+        sourceArchive,
+        relsPath,
+        sourceElement,
+        'oleObject'
+      );
+
+      return {
+        type: ElementType.OLEObject,
+        target: target,
       } as AnalyzedElementType;
     }
 
