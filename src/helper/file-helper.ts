@@ -39,7 +39,7 @@ export class FileHelper {
     const files = await archive.folder(dir);
     for (const file of files) {
       if (cb(file)) {
-        await archive.remove(file.relativePath);
+        await archive.remove(file.name);
         removed.push(file.name);
       }
     }
