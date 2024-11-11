@@ -1,19 +1,14 @@
 import { FileHelper } from '../helper/file-helper';
-import {
-  ShapeTargetType,
-  SlideModificationCallback,
-  SourceIdentifier,
-} from '../types/types';
+import { ShapeTargetType, SourceIdentifier, SlideModificationCallback } from '../types/types';
 import { ISlide } from '../interfaces/islide';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
 import { PresTemplate } from '../interfaces/pres-template';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
-import { last } from '../helper/general-helper';
+import { last, vd } from '../helper/general-helper';
 import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import { IMaster } from '../interfaces/imaster';
 import HasShapes from './has-shapes';
 import { Master } from './master';
-import { ElementType } from '../enums/element-type';
 
 export class Slide extends HasShapes implements ISlide {
   targetType: ShapeTargetType = 'slide';
@@ -86,7 +81,7 @@ export class Slide extends HasShapes implements ISlide {
    * @param targetLayoutId
    */
   useSlideLayout(layoutId?: number | string): this {
-    this.modifyRelations(async (slideRelXml) => {
+    this.relModifications.push(async (slideRelXml) => {
       let targetLayoutId;
 
       if (typeof layoutId === 'string') {
@@ -109,12 +104,13 @@ export class Slide extends HasShapes implements ISlide {
         slideLayouts[0].updateTargetIndex(targetLayoutId as number);
       }
     });
+
     return this;
   }
 
   /**
    * Find another slide layout by name.
-   * @param targetLayoutId
+   * @param targetLayoutName
    */
   async useNamedSlideLayout(targetLayoutName: string): Promise<number> {
     const templateName = this.sourceTemplate.name;
@@ -147,7 +143,7 @@ export class Slide extends HasShapes implements ISlide {
 
   /**
    * Use another slide layout by index or detect original index.
-   * @param targetLayoutId
+   * @param targetLayoutIndex
    */
   async useIndexedSlideLayout(targetLayoutIndex?: number): Promise<number> {
     if (!targetLayoutIndex) {

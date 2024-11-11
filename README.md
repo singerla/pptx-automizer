@@ -2,6 +2,8 @@
 
 `pptx-automizer` is a Node.js-based PowerPoint (.pptx) generator that automates the manipulation of existing .pptx files. With `pptx-automizer`, you can import your library of .pptx templates, merge templates, and customize slide content. `pptx-automizer` will not write files from scratch, but edit and merge existing pptx files. You can style template slides within PowerPoint, and these templates will be seamlessly integrated into the output presentation. Most of the content can be modified by using callbacks with [xmldom](https://github.com/xmldom/xmldom).
 
+If you require to create elements from scratch, `pptx-automizer` wraps around [PptxGenJS](https://github.com/gitbrent/PptxGenJS). Use the powerful syntax of `PptxGenJS` to add dynamic content to your existing .pptx template files.
+
 `pptx-automizer` is particularly well-suited for users who aim to manage their own library of .pptx template files, making it an ideal choice for those who work with intricate, well-designed customized layouts. With this tool, any existing slide or even a single element can serve as a data-driven template for generating output .pptx files.
 
 This project is accompanied by [automizer-data](https://github.com/singerla/automizer-data). You can use `automizer-data` to import, browse and transform .xlsx- or .sav-data into perfectly fitting graph or table data.
@@ -26,11 +28,9 @@ If you require commercial support for complex .pptx automation, you can explore 
   - [As a Package](#as-a-package)
 - [Usage](#usage)
   - [Basic Example](#basic-example)
-  - [Load files from buffer/URL](#load-files-from-bufferurl)
-  - [How to Select Slides And Shapes](#how-to-select-slides-and-shapes)
+  - [How to Select Slides Shapes](#how-to-select-slides-shapes)
     - [Select slide by number and shape by name](#select-slide-by-number-and-shape-by-name)
     - [Select slides by creationId](#select-slides-by-creationid)
-  - [Get Shape Info](#get-shape-info)
   - [Find and Modify Shapes](#find-and-modify-shapes)
   - [Modify Text](#modify-text)
   - [Modify Images](#modify-images)
@@ -46,7 +46,6 @@ If you require commercial support for complex .pptx automation, you can explore 
   - [Import and modify slide Masters](#import-and-modify-slide-masters)
   - [Track status of automation process](#track-status-of-automation-process)
   - [More examples](#more-examples)
-  - [Create a new modifier](#create-a-new-modifier)
   - [Troubleshooting](#troubleshooting)
   - [Testing](#testing)
 - [Special Thanks](#special-thanks)
@@ -228,32 +227,7 @@ const finalJSZip = await pres.getJSZip();
 const base64 = await finalJSZip.generateAsync({ type: 'base64' });
 ```
 
-## Load files from buffer/URL
-
-It is possible to load `.pptx` files from buffer:
-
-```ts
-const rootTemplate = await fs.readFile(
-  `${__dirname}/pptx-templates/RootTemplate.pptx`,
-);
-const slideWithShapes = await fs.readFile(
-  `${__dirname}/pptx-templates/SlideWithShapes.pptx`,
-);
-
-// Additionally, you can fetch a template from url as well:
-const url =
-  'https://raw.githubusercontent.com/singerla/pptx-automizer/main/__tests__/pptx-templates/SlideWithShapes.pptx';
-const response = await fetch(url);
-const buffer = await response.arrayBuffer();
-const bytes = new Uint8Array(buffer);
-
-const pres = automizer
-  .loadRoot(rootTemplate)
-  .load(slideWithShapes, 'shapes')
-  .load(bytes, 'shapesFromUrl');
-```
-
-## How to Select Slides And Shapes
+## How to Select Slides Shapes
 
 `pptx-automizer` needs a selector to find the required shape on a template slide. While an imported .pptx file is identified by filename or custom label, there are different ways to address its slides and shapes.
 
@@ -379,32 +353,9 @@ If you decide to use the `creationId` method, you are safe to add, remove and re
 
 > Please note: PowerPoint is going to update a shape's `creationId` only in case the shape was copied & pasted on a slide with an already existing identical shape `creationId`. If you were copying a slide, each shape `creationId` will be copied, too. As a result, you have unique shape ids, but different slide `creationIds`. If you are now going to paste a shape an such a slide, a new creationId will be given to the pasted shape. As a result, slide ids are unique throughout a presentation, but shape ids are unique only on one slide.
 
-## Get Shape Info
-
-If you need to find out e.g. a shape's coordinates on a slide or if you quickly want to read the text body, you can run `slide.getElement('Cloud')`:
-
-```ts
-pres
-  .addSlide('shapes', 2, async (slide) => {
-    // Read a shape and print its text fragments:
-    const info = await slide.getElement('Cloud');
-    console.log(info.getText());
-    
-    // Or take a look at the shape's coordinates:  
-    console.log(info.position);
-
-    // Dump element xml:
-    XmlHelper.dump(info.getXmlElement())
-  })
-```
-
-Find out how to cross-slide copy properties from one shape to another:
-- [Read shape info](https://github.com/singerla/pptx-automizer/blob/main/__tests__/read-shape-info.test.ts)
-
-
 ## Find and Modify Shapes
 
-There are basically two ways to access a target shape on a slide:
+There are basically to ways to access a target shape on a slide:
 
 - `slide.modifyElement(...)` requires an existing shape on the current slide,
 - `slide.addElement(...)` adds a shape from another slide to the current slide.
@@ -559,39 +510,6 @@ Find out more about formatting cells:
 - [Modify and style table cells](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-existing-table.test.ts)
 - [Insert data into table with empty cells](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-existing-table-create-text.test.ts)
 
-
-If you need to add rows or columns in a table with merged cells, you can add tags to your template table to expand it:
-```ts
-slide.modifyElement(
-  'NestedTable3',
-  modify.setTable(tableData, {
-    adjustHeight: false,
-    adjustWidth: false,
-    expand: [
-      {
-        // Find a cell containing '{{each:row}}' and
-        // clone it 3 times row-wise
-        mode: 'row',
-        tag: '{{each:row}}',
-        count: 3,
-      },
-      {
-        // Find a cell containing '{{each:sub}}' and
-        // clone it once column-wise. Merged cells will
-        // be cloned as well.
-        mode: 'column',
-        tag: '{{each:sub}}',
-        count: 1,
-      },
-    ],
-  }),
-);
-```
-
-Please find some examples in the tests:
-- [Expand a table with merged cells](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-nested-table.test.ts)
-
-
 ## Modify Charts
 
 All data and styles of a chart can be modified. Please note that if your template contains more data than your data object, Automizer will remove these extra nodes. Conversely, if you provide more data, new nodes will be cloned from the first existing one in the template.
@@ -665,29 +583,7 @@ pres
   });
 ```
 
-## Add Bulleted List
-
-You can add a bulleted list to a shape. It is also possible to pass a list of nested arrays of strings.
-
-```ts
-const bulletPoints = ['first line', 'second line', 'third line'];
-const indentedBulletPoints = ['first line', [ 'indent 1-1', 'indent 1-2', [ 'indent 2-1', 'indent 2-2', ] ], 'second line', 'third line'];
-
-  pres.addSlide('general', 2, (slide) => {
-      slide.modifyElement(
-              'replaceText', //shape selector
-              modify.setBulletList(bulletPoints),
-      );
-    })
-    .addSlide('general', 2, (slide) => {
-      slide.modifyElement(
-              'replaceText', //shape selector
-              modify.setBulletList(indentedBulletPoints),
-      );
-    });
-```
-
-# Tips and Tricks
+# Tipps and Tricks
 
 ## Loop through the slides of a presentation
 
@@ -695,7 +591,7 @@ If you would like to modify elements in a single .pptx file, it is important to 
 
 This is how it works internally:
 
-- Load a root template to append slides to it
+- Load a root template to append slides to
 - (Probably) load root template again to modify slides
 - Load other templates
 - Append a loaded slide to (probably truncated) root template
@@ -727,7 +623,7 @@ const run = async () => {
     // Defining a "name" as second params makes it a little easier
     .load(`SlideWithShapes.pptx`, 'myTemplate');
 
-  // Get useful information about loaded templates:
+  // This is brandnew: get useful information about loaded templates:
   const myTemplates = await pres.getInfo();
   const mySlides = myTemplates.slidesByTemplate(`myTemplate`);
 
@@ -888,11 +784,6 @@ To specify another slideLayout for an added output slide, you need to count slid
 
 To add and modify shapes on a slide master, please take a look at [Add and modify shapes](https://github.com/singerla/pptx-automizer#add-and-modify-shapes).
 
-If you require to modify slide master backgrounds, please refer to
-
-- [Modify master background color](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-master-background-color.test.ts).
-- [Modify master background image](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-master-background-image.test.ts).
-
 ```ts
 // Import another slide master and all its slide layouts.
 // Index 1 means, you want to import the first of all masters:
@@ -967,56 +858,6 @@ const automizer = new Automizer({
 });
 ```
 
-## Create a new modifier
-
-If the built-in modifiers of `pptx-automizer` are not sufficient to your task, you can access the target xml elements with [xmldom](https://github.com/xmldom/xmldom). A modifier is a wrapper for such an operation.
-
-Let's first take a look at a (simplified) existing modifier: `ModifyTextHelper.content('This is my text')`.
-
-```ts
-// "setTextContent" is a function that returns a function.
-// A "label" argument needs to be passed to "setTextContent".
-const setTextContent = function (label: number | string) {
-  // On setup, we can handle the argument.
-  const newTextContent = String(label);
-
-  // A new function is returned to apply the label at runtime.
-  return function (shape: XmlElement) {
-    // "shape" contains a modifiable xmldom object.
-    // You can use a selector to find the required 'a:t' element:
-    const textElement = shape.getElementsByTagName('a:t').item(0);
-
-    // You can now apply the "newTextContent".
-    if (textElement?.firstChild) {
-      // Refer to xmldom for available functions.
-      textElement.firstChild.textContent = newTextContent;
-    }
-    // It is possible to output the xml to console at any time.
-    // XmlHelper.dump(element);
-  };
-};
-```
-
-This function will construct an anonymous callback function on setup, while the callback function itself will be executed on runtime, when it's up to the target element on a slide.
-
-You can use the modifier e.g. on adding an element:
-
-```ts
-pres.addSlide('SlideWithShapes.pptx', 2, (slide) => {
-  // This will import the 'Drum' shape
-  slide.modifyElement('Cloud', [
-    // 1. Dump the original xml:
-    // Notice: don't call XmlHelper.dump, just pass it
-    XmlHelper.dump,
-    // 2. Apply modifier from the example above:
-    setTextContent('New text'),
-    XmlHelper.dump,
-  ]);
-});
-```
-
-We can wrap any xml modification by such a modifier. If you have a working example and you think it will be useful to others, you are very welcome to fork this repo and send a pull request or simply [post it](https://github.com/singerla/pptx-automizer/issues/new).
-
 ## More examples
 
 Take a look into [**tests**-directory](https://github.com/singerla/pptx-automizer/blob/main/__tests__) to see a lot of examples for several use cases, e.g.:
@@ -1029,18 +870,14 @@ Take a look into [**tests**-directory](https://github.com/singerla/pptx-automize
 - [Update chart legend](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-chart-legend.test.ts)
 
 ## Troubleshooting
-
 If you encounter problems when opening a `.pptx`-file modified by this library, you might worry about PowerPoint not giving any details about the error. It can be hard to find the cause, but there are some things you can check:
 
 - **Broken relation**: There are still unsupported shape types and `pptx-automizer` wil not copy required relations of those. You can inflate `.pptx`-output and check `ppt/slides/_rels/slide[#].xml.rels`-files to find possible missing files.
 - **Unsupported media**: You can also take a look at the `ppt/media`-directory of an inflated `.pptx`-file. If you discover any unusual file formats, remove or replace the files by one of the [known types](https://github.com/singerla/pptx-automizer/blob/main/src/enums/content-type-map.ts).
 - **Broken animation**: Pay attention to modified/removed shapes which are part of an animation. In case of doubt, (temporarily) remove all animations from your template. (see [#78](https://github.com/singerla/pptx-automizer/issues/78))
 - **Proprietary/Binary contents** (e.g. ThinkCell): Walk through all slides, slideMasters and slideLayouts and seek for hidden Objects. Hit `ALT+F10` to toggle the sidebar.
-- **Chart styles not working**: If you try to change e.g. color or size of a chart data label, and it doesn't work as expected, try to remove all data labels and activate them again. If this does not help, try to give the first data label of a series a slightly different style (this creates a single data point).
-- **Replace Text not working**: Disable spell checking for the whole tag; If this doesn't help, cut out your e.g. {CustomerName} tag from textbox to clipboard, paste it into a plaintext editor to remove all (visible and invisible) formatting. Copy & paste {CustomerName} back to the textbox. (see [#82](https://github.com/singerla/pptx-automizer/issues/82) and [#73](https://github.com/singerla/pptx-automizer/issues/73))
-- **No related chart worksheet**: It might happen to PowerPoint to lose the worksheet relation for a chart. If a chart gets corrupted by this, you will see a normal chart on your slide, but get an error message if you try to open the datasheet. Please replace the corrupted chart by a working one. (see [#104](https://github.com/singerla/pptx-automizer/issues/104))
 
-If none of these could help, please don't hesitate to [talk about it](https://github.com/singerla/pptx-automizer/issues/new).
+If none of these could help, please don't hesitate to [talk about it](https://github.com/singerla/pptx-automizer/issues/new). 
 
 ## Testing
 

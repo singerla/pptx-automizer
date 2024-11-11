@@ -15,7 +15,8 @@ import { ArchiveParams, AutomizerFile, MediaFile } from '../types/types';
 import Automizer from '../automizer';
 import { IMaster } from '../interfaces/imaster';
 import { ILayout } from '../interfaces/ilayout';
-import { vd } from '../helper/general-helper';
+import { IGenerator } from '../interfaces/igenerator';
+import GeneratePptxGenJs from '../helper/generate/generate-pptxgenjs';
 
 export class Template implements ITemplate {
   /**
@@ -66,6 +67,9 @@ export class Template implements ITemplate {
 
   contentMap: ContentMap[] = [];
   mediaFiles: MediaFile[] = [];
+
+  automizer: Automizer;
+  generators: IGenerator[] = [];
 
   constructor(file: AutomizerFile, params: ArchiveParams) {
     this.file = file;
@@ -235,5 +239,21 @@ export class Template implements ITemplate {
 
   count(name: string): number {
     return CountHelper.count(name, this.counter);
+  }
+
+  async runExternalGenerators() {
+    this.generators.push(
+      new GeneratePptxGenJs(this.automizer, this.slides).create(),
+    );
+
+    for (const generator of this.generators) {
+      await generator.generateSlides();
+    }
+  }
+
+  async cleanupExternalGenerators() {
+    for (const generator of this.generators) {
+      await generator.cleanup();
+    }
   }
 }

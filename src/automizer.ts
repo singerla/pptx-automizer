@@ -487,9 +487,11 @@ export default class Automizer implements IPresentationProps {
     await this.rootTemplate.countExistingSlides();
     this.status.max = this.rootTemplate.slides.length;
 
+    await this.rootTemplate.runExternalGenerators();
     for (const slide of this.rootTemplate.slides) {
       await this.rootTemplate.appendSlide(slide);
     }
+    await this.rootTemplate.cleanupExternalGenerators();
 
     if (this.params.removeExistingSlides) {
       await this.rootTemplate.truncate();

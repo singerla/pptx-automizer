@@ -169,7 +169,6 @@ export class XmlHelper {
 archive: IArchive, path: string, prefix: string | string[]
   ): Promise<Target[]> {
     const prefixes = typeof prefix === 'string' ? [prefix] : prefix;
-
     return XmlHelper.getRelationshipItems(
       archive,
       path,
@@ -187,10 +186,11 @@ archive: IArchive, path: string, prefix: string | string[]
   static parseRelationTarget(element: XmlElement, prefix?: string): Target {
     const type = element.getAttribute('Type');
     const file = element.getAttribute('Target');
-    const last = (arr: string[]): string => arr[arr.length - 1];
 
+    const last = (arr: string[]): string => arr[arr.length - 1];
     const filename = last(file.split('/'));
     const subtype = last(prefix.split('/'));
+
     const relType = last(type.split('/'));
     const rId = element.getAttribute('Id');
     const filenameExt = last(filename.split('.'));
@@ -235,10 +235,20 @@ archive: IArchive, path: string, prefix: string | string[]
     return target;
   }
 
-  static targetMatchesRelationship(relType, subtype, target, prefix) {
+  static targetMatchesRelationship(
+    relType: string,
+    subtype: string,
+    file: string,
+    prefix: string,
+  ) {
     if (relType === 'package') return true;
 
-    return relType === subtype && target.indexOf(prefix) === 0;
+    // pptgenjs uses absolute paths in "Target" attributes
+    if (file.indexOf('/ppt/') === 0) {
+      file = file.replace('/ppt/', '../');
+    }
+
+    return relType === subtype && file.indexOf(prefix) === 0;
   }
 
   static async getTargetsByRelationshipType(
@@ -246,7 +256,7 @@ archive: IArchive, path: string, prefix: string | string[]
     path: string,
     type: string,
   ): Promise<Target[]> {
-    const rels = XmlHelper.getRelationshipItems(
+    return await XmlHelper.getRelationshipItems(
       archive,
       path,
       (element: XmlElement, rels: Target[]) => {
@@ -260,7 +270,6 @@ archive: IArchive, path: string, prefix: string | string[]
         }
       },
     );
-    return rels;
   }
 
   static async getRelationshipItems(
