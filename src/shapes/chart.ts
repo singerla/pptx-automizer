@@ -414,8 +414,8 @@ export class Chart extends Shape implements IChart {
             this.updateTargetWorksheetRelation(
               targetRelFile,
               element,
-              target,
-              imageInfo,
+              'Target',
+              imageInfo.rel,
             );
             break;
           case this.relTypeChartThemeOverride:
@@ -451,6 +451,7 @@ export class Chart extends Shape implements IChart {
     const extension = path
       .extname(file)
       .replace('.', '') as ContentTypeExtension;
+
     return {
       source: `ppt/media/${file}`,
       target: `ppt/media/${file}-chart-${this.targetNumber}.${extension}`,
