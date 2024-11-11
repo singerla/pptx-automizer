@@ -12,10 +12,10 @@ test('create presentation, replace tagged and untagged nested bulleted text.', a
 
   const pres = automizer
     .loadRoot(`RootTemplate.pptx`)
-    .load(`TextReplaceNestedBullets.pptx`);
+    .load(`TextReplaceBullets.pptx`);
 
   await pres
-    .addSlide('TestNestedBullets.pptx', 1, (slide) => {
+    .addSlide('TextReplaceBullets.pptx', 1, (slide) => {
       slide.modifyElement(
         '@AutomateBullets',
         modify.replaceText(
@@ -46,7 +46,7 @@ test('create presentation, replace tagged and untagged nested bulleted text.', a
         ),
       );
     })
-    .addSlide('TestNestedBullets.pptx', 2, (slide) => {
+    .addSlide('TextReplaceBullets.pptx', 2, (slide) => {
       slide.modifyElement(
         '@AutomateNestedBullets',
         modify.setBulletList([
