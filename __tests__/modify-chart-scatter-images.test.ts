@@ -5,6 +5,9 @@ test('create presentation, add and modify a scatter chart with embedded point im
   const automizer = new Automizer({
     templateDir: `${__dirname}/pptx-templates`,
     outputDir: `${__dirname}/pptx-output`,
+    // TODO: cleanup unused marker images
+    // (which need to be tracked first)
+    // cleanup: true,
   });
 
   const pres = automizer
