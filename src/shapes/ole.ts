@@ -34,30 +34,10 @@ export class OLEObject extends Shape {
       : '.bin';
   }
 
-  // NOTE: modify is not currently implemented
-  // async modify(
-  // 	targetTemplate: RootPresTemplate,
-  // 	targetSlideNumber: number,
-  // ): Promise<OLEObject> {
-  // 	await this.prepare(targetTemplate, targetSlideNumber);
-  // 	await this.replaceIntoSlideTree();
-  // 	await this.editTargetOleObjectRel();
+  // NOTE: modify() and append() won't be implemented.
 
-  // 	return this;
-  // }
-
-  // NOTE: append is not currently implemented
-  // async append(
-  // 	targetTemplate: RootPresTemplate,
-  // 	targetSlideNumber: number,
-  // ): Promise<OLEObject> {
-  // 	await this.prepare(targetTemplate, targetSlideNumber);
-  // 	await this.appendToSlideTree();
-
-  // 	return this;
-  // }
-
-  // TODO: remove is not currently properly implemented, suggest we delete the file from the archive as well as removing the relationship.
+  // TODO: remove is not currently properly implemented,
+  //  suggest we delete the file from the archive as well as removing the relationship.
   async remove(
     targetTemplate: RootPresTemplate,
     targetSlideNumber: number,
