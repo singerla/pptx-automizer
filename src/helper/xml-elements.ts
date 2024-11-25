@@ -296,14 +296,14 @@ export default class XmlElements {
   }
 
   dataPointLabel() {
-    const doc = new DOMParser().parseFromString(dLblXml, 'application/ xml');
+    const doc = new DOMParser().parseFromString(dLblXml, 'application/xml');
     const ele = doc.getElementsByTagName('c:dLbl')[0] as unknown as Node;
     const firstChild = this.element.firstChild;
     this.element.insertBefore(ele.cloneNode(true), firstChild);
   }
 
   tableCellBorder(tag: 'a:lnL' | 'a:lnR' | 'a:lnT' | 'a:lnB') {
-    const doc = new DOMParser().parseFromString(lnLRTB, 'application/ xml');
+    const doc = new DOMParser().parseFromString(lnLRTB, 'application/xml');
     const ele = doc.getElementsByTagName(tag)[0] as unknown as Node;
     const firstChild = this.element.firstChild;
     this.element.insertBefore(ele.cloneNode(true), firstChild);
