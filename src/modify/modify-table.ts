@@ -49,18 +49,18 @@ export class ModifyTable {
     );
 
     this.data.body.forEach((row: TableRow, r: number) => {
-      row.values.forEach((cell: number | string, c: number) => {
+      this.table.modify({
+        'a16:rowId': {
+          index: r,
+          modify: ModifyXmlHelper.attribute('val', r),
+        },
+      });
+
+      row.values.forEach((cell, c: number) => {
         const rowStyles = row.styles && row.styles[c] ? row.styles[c] : {};
         this.table.modify(
           this.row(r, this.column(c, this.cell(cell, rowStyles))),
         );
-        this.table.modify({
-          'a16:rowId': {
-            index: r,
-            modify: ModifyXmlHelper.attribute('val', r),
-          },
-        });
-
         if (!alreadyExpanded) {
           this.expandOtherMergedCellsInColumn(c, r);
         }
@@ -119,9 +119,13 @@ export class ModifyTable {
   column = (index: number, children: ModificationTags): ModificationTags => {
     return {
       'a:tc': {
-        index: index,
-        children: children,
-        fromPrevious: true,
+        children: {
+          'a:txBody': {
+            index: index,
+            children: children,
+            fromPrevious: true,
+          },
+        },
       },
     };
   };
