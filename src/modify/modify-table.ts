@@ -10,7 +10,7 @@ import { Border, Modification, ModificationTags } from '../types/modify-types';
 import ModifyTextHelper from '../helper/modify-text-helper';
 import { ModifyColorHelper } from '../index';
 import { XmlDocument, XmlElement } from '../types/xml-types';
-import { GeneralHelper, vd } from '../helper/general-helper';
+import { GeneralHelper } from '../helper/general-helper';
 
 export class ModifyTable {
   data: TableData;
@@ -109,6 +109,7 @@ export class ModifyTable {
   row = (index: number, children: ModificationTags): ModificationTags => {
     return {
       'a:tr': {
+        forceCreate: true,
         index: index,
         children: children,
       },
