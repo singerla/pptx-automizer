@@ -19,14 +19,12 @@ import path from 'path';
 import * as fs from 'fs';
 import { XmlHelper } from './helper/xml-helper';
 import ModifyPresentationHelper from './helper/modify-presentation-helper';
-import {
-  contentTracker as Tracker,
-  ContentTracker,
-} from './helper/content-tracker';
+import { contentTracker as Tracker, ContentTracker } from './helper/content-tracker';
 import JSZip from 'jszip';
 import { ISlide } from './interfaces/islide';
 import { IMaster } from './interfaces/imaster';
 import { ContentTypeExtension } from './enums/content-type-map';
+import slugify from 'slugify';
 
 /**
  * Automizer
@@ -502,14 +500,17 @@ export default class Automizer implements IPresentationProps {
    * Write all media files to archive.
    */
   public async writeMediaFiles(): Promise<void> {
+    const mediaDir = 'ppt/media/';
     for (const file of this.rootTemplate.mediaFiles) {
       const data = fs.readFileSync(file.filepath);
-      let archiveFilename = 'ppt/media/' + file.file;
+      let archiveFilename = file.file;
       if (file.prefix) {
-        archiveFilename = 'ppt/media/' + file.prefix + file.file;
+        archiveFilename = file.prefix + file.file;
       }
 
-      await this.rootTemplate.archive.write(archiveFilename, data);
+      archiveFilename = slugify(archiveFilename);
+
+      await this.rootTemplate.archive.write(mediaDir + archiveFilename, data);
       await XmlHelper.appendImageExtensionToContentType(
         this.rootTemplate.archive,
         file.extension,
