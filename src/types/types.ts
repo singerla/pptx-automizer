@@ -10,12 +10,15 @@ import {
 import IArchive, { ArchiveMode } from '../interfaces/iarchive';
 import { ContentTypeExtension } from '../enums/content-type-map';
 import PptxGenJS from 'pptxgenjs';
-import { ISlide } from '../interfaces/islide';
-import HasShapes from '../classes/has-shapes';
 
 export type ShapeTargetType = 'slide' | 'slideMaster' | 'slideLayout';
 export type SourceIdentifier = number | string;
 export type SlideModificationCallback = (document: XmlDocument) => void;
+export type SlidePlaceholder = {
+  xml: XmlElement;
+  type: string;
+  id?: number;
+};
 export type ModificationCallback =
   | ChartModificationCallback
   | ShapeModificationCallback;

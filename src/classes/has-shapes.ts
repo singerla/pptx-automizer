@@ -16,6 +16,7 @@ import {
   ShapeModificationCallback,
   ShapeTargetType,
   SlideModificationCallback,
+  SlidePlaceholder,
   SourceIdentifier,
   StatusTracker,
 } from '../types/types';
@@ -34,7 +35,6 @@ import { Image } from '../shapes/image';
 import { ElementType } from '../enums/element-type';
 import { GenericShape } from '../shapes/generic';
 import { XmlSlideHelper } from '../helper/xml-slide-helper';
-import { vd } from '../helper/general-helper';
 import { OLEObject } from '../shapes/ole';
 
 export default class HasShapes {
@@ -130,7 +130,7 @@ export default class HasShapes {
    * @internal
    */
   unsupportedRelationTypes = [
-  //  'http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject',
+    //  'http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject',
     'http://schemas.openxmlformats.org/officeDocument/2006/relationships/vmlDrawing',
     'http://schemas.openxmlformats.org/officeDocument/2006/relationships/tags',
   ];
@@ -412,11 +412,9 @@ export default class HasShapes {
           );
           break;
         case ElementType.OLEObject:
-          await new OLEObject(info, this.targetType, this.sourceArchive)[info.mode](
-            this.targetTemplate,
-            this.targetNumber,
-            this.targetType,
-          );
+          await new OLEObject(info, this.targetType, this.sourceArchive)[
+            info.mode
+          ](this.targetTemplate, this.targetNumber, this.targetType);
           break;
         default:
           break;
@@ -785,13 +783,12 @@ export default class HasShapes {
           sourceArchive: this.sourceArchive,
           sourceSlideNumber: this.sourceNumber,
         },
-        this.targetType
+        this.targetType,
       ).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);
     }
 
     const images = await Image.getAllOnSlide(this.sourceArchive, this.relsPath);
     for (const image of images) {
-
       await new Image(
         {
           mode: 'append',
@@ -799,11 +796,14 @@ export default class HasShapes {
           sourceArchive: this.sourceArchive,
           sourceSlideNumber: this.sourceNumber,
         },
-        this.targetType
+        this.targetType,
       ).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);
     }
 
-    const oleObjects = await OLEObject.getAllOnSlide(this.sourceArchive, this.relsPath);
+    const oleObjects = await OLEObject.getAllOnSlide(
+      this.sourceArchive,
+      this.relsPath,
+    );
     for (const oleObject of oleObjects) {
       await new OLEObject(
         {
@@ -813,7 +813,7 @@ export default class HasShapes {
           sourceSlideNumber: this.sourceNumber,
         },
         this.targetType,
-        this.sourceArchive
+        this.sourceArchive,
       ).modifyOnAddedSlide(this.targetTemplate, this.targetNumber, oleObjects);
     }
   }
@@ -881,7 +881,7 @@ export default class HasShapes {
         sourceArchive,
         relsPath,
         sourceElement,
-        'oleObject'
+        'oleObject',
       );
 
       return {
@@ -930,11 +930,19 @@ export default class HasShapes {
    * be processed by pptx-automizer at the moment.
    * @internal
    */
-  async cleanSlide(targetPath: string): Promise<void> {
+  async cleanSlide(
+    targetPath: string,
+    sourcePlaceholderTypes?: SlidePlaceholder[],
+  ): Promise<void> {
     const xml = await XmlHelper.getXmlFromArchive(
       this.targetArchive,
       targetPath,
     );
+
+    if (sourcePlaceholderTypes) {
+      this.removeDuplicatePlaceholders(xml, sourcePlaceholderTypes);
+      this.normalizePlaceholderShapes(xml, sourcePlaceholderTypes);
+    }
 
     this.unsupportedTags.forEach((tag) => {
       const drop = xml.getElementsByTagName(tag);
@@ -944,6 +952,66 @@ export default class HasShapes {
       }
     });
     XmlHelper.writeXmlToArchive(this.targetArchive, targetPath, xml);
+  }
+
+  /**
+   * If you insert a placeholder shape on a target slide with an empty
+   * placeholder of the same type, we need to remove the existing
+   * placeholder.
+   *
+   * @param xml
+   * @param sourcePlaceholderTypes
+   */
+  removeDuplicatePlaceholders(
+    xml: XmlDocument,
+    sourcePlaceholderTypes: SlidePlaceholder[],
+  ) {
+    const placeholders = xml.getElementsByTagName('p:ph');
+    const usedTypes = {};
+    XmlHelper.modifyCollection(placeholders, (placeholder: XmlElement) => {
+      const type = placeholder.getAttribute('type');
+      usedTypes[type] = usedTypes[type] || 0;
+      usedTypes[type]++;
+    });
+
+    for (const usedType in usedTypes) {
+      const count = usedTypes[usedType];
+      if (count > 1) {
+        // TODO: in case more than two placeholders are of a kind,
+        // this will likely remove more than intended. Should also match by id.
+        const removePlaceholders = sourcePlaceholderTypes.filter(
+          (sourcePlaceholder) => sourcePlaceholder.type === usedType,
+        );
+        removePlaceholders.forEach((removePlaceholder) => {
+          const removePlaceholderShape = removePlaceholder.xml.parentNode
+            .parentNode.parentNode as XmlElement;
+          XmlHelper.remove(removePlaceholderShape);
+        });
+      }
+    }
+  }
+
+  /**
+   * If a placeholder shape was inserted on a slide without a corresponding
+   * placeholder, powerPoint will usually smash the shape's formatting.
+   * This function removes the placeholder tag.
+   * @param xml
+   * @param sourcePlaceholderTypes
+   */
+  normalizePlaceholderShapes(
+    xml: XmlDocument,
+    sourcePlaceholderTypes: SlidePlaceholder[],
+  ) {
+    const placeholders = xml.getElementsByTagName('p:ph');
+    XmlHelper.modifyCollection(placeholders, (placeholder: XmlElement) => {
+      const usedType = placeholder.getAttribute('type');
+      const existingPlaceholder = sourcePlaceholderTypes.find(
+        (sourcePlaceholder) => sourcePlaceholder.type === usedType,
+      );
+      if (!existingPlaceholder) {
+        XmlHelper.remove(placeholder);
+      }
+    });
   }
 
   /**
@@ -961,5 +1029,22 @@ export default class HasShapes {
         );
       },
     });
+  }
+
+  async parsePlaceholders(): Promise<SlidePlaceholder[]> {
+    const xml = await XmlHelper.getXmlFromArchive(
+      this.targetArchive,
+      this.targetPath,
+    );
+    const placeholderTypes = [];
+    const placeholders = xml.getElementsByTagName('p:ph');
+    XmlHelper.modifyCollection(placeholders, (placeholder: XmlElement) => {
+      placeholderTypes.push({
+        type: placeholder.getAttribute('type'),
+        id: placeholder.getAttribute('id'),
+        xml: placeholder,
+      });
+    });
+    return placeholderTypes;
   }
 }
