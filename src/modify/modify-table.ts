@@ -60,7 +60,7 @@ export class ModifyTable {
             modify: ModifyXmlHelper.attribute('val', r),
           },
         });
-        if (!alreadyExpanded) {
+        if (this.params?.expand && !alreadyExpanded) {
           this.expandOtherMergedCellsInColumn(c, r);
         }
       });
