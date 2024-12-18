@@ -175,6 +175,10 @@ const automizer = new Automizer({
 
   // use a callback function to track pptx generation process.
   // statusTracker: myStatusTracker,
+  
+  // Use 1 to show warnings or 2 for detailed information
+  // 0 disables logging
+  verbosity: 1
 });
 
 // Now we can start and load a pptx template.

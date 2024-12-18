@@ -11,14 +11,13 @@ import {
 import { TargetByRelIdMap } from '../constants/constants';
 import { XmlPrettyPrint } from './xml-pretty-print';
 import { GetRelationshipsCallback, Target } from '../types/types';
-import { vd } from './general-helper';
+import { log } from './general-helper';
 import { contentTracker } from './content-tracker';
 import IArchive from '../interfaces/iarchive';
 import {
   ContentTypeExtension,
   ContentTypeMap,
 } from '../enums/content-type-map';
-import XmlElements from './xml-elements';
 
 export class XmlHelper {
   static async modifyXmlInArchive(
@@ -166,7 +165,9 @@ export class XmlHelper {
   }
 
   static async getRelationshipTargetsByPrefix(
-archive: IArchive, path: string, prefix: string | string[]
+    archive: IArchive,
+    path: string,
+    prefix: string | string[],
   ): Promise<Target[]> {
     const prefixes = typeof prefix === 'string' ? [prefix] : prefix;
     return XmlHelper.getRelationshipItems(
@@ -573,7 +574,7 @@ archive: IArchive, path: string, prefix: string | string[]
     const parent = collection[0].parentNode;
     order.forEach((index, i) => {
       if (!collection[index]) {
-        vd('sortCollection index not found' + index);
+        log('sortCollection index not found' + index, 1);
         return;
       }
 

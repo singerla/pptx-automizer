@@ -1,20 +1,16 @@
 import { FileHelper } from '../helper/file-helper';
 import { XmlHelper } from '../helper/xml-helper';
-import {
-  ShapeTargetType,
-  SlideModificationCallback,
-  SourceIdentifier,
-  Target,
-} from '../types/types';
+import { ShapeTargetType, SourceIdentifier, Target } from '../types/types';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
 import { PresTemplate } from '../interfaces/pres-template';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
-import { HelperElement, XmlElement } from '../types/xml-types';
+import { XmlElement } from '../types/xml-types';
 import IArchive from '../interfaces/iarchive';
 import { IMaster } from '../interfaces/imaster';
 import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import HasShapes from './has-shapes';
 import { Layout } from './layout';
+import { log } from '../helper/general-helper';
 
 export class Master extends HasShapes implements IMaster {
   targetType: ShapeTargetType = 'slideMaster';
@@ -60,7 +56,7 @@ export class Master extends HasShapes implements IMaster {
     this.targetRelsPath = `ppt/slideMasters/_rels/slideMaster${this.targetNumber}.xml.rels`;
     this.sourceArchive = await this.sourceTemplate.archive;
 
-    console.log('Importing slideMaster ' + this.targetNumber);
+    log('Importing slideMaster ' + this.targetNumber, 2);
 
     await this.copySlideMasterFiles();
     await this.copyRelatedLayouts();

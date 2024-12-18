@@ -13,7 +13,7 @@ import { PresTemplate } from './interfaces/pres-template';
 import { RootPresTemplate } from './interfaces/root-pres-template';
 import { Template } from './classes/template';
 import { ModifyXmlCallback, TemplateInfo } from './types/xml-types';
-import { GeneralHelper, vd } from './helper/general-helper';
+import { GeneralHelper, log, Logger } from './helper/general-helper';
 import { Master } from './classes/master';
 import path from 'path';
 import * as fs from 'fs';
@@ -112,11 +112,15 @@ export default class Automizer implements IPresentationProps {
         this.templates.push(newTemplate);
       });
     }
+
+    if (params.verbosity) {
+      Logger.verbosity = params.verbosity;
+    }
   }
 
   setStatusTracker(statusTracker: StatusTracker['next']): void {
     const defaultStatusTracker = (status: StatusTracker) => {
-      console.log(status.info + ' (' + status.share + '%)');
+      log(status.info + ' (' + status.share + '%)', 2);
     };
 
     this.status = {
@@ -570,13 +574,13 @@ export default class Automizer implements IPresentationProps {
           return this.templateFallbackDir + location;
         } else {
           if (typeof location === 'string') {
-            vd('No file matches "' + location + '"');
+            log('No file matches "' + location + '"', 0);
           } else {
-            vd('Invalid filename');
+            log('Invalid filename', 0);
           }
 
-          vd('@templateDir: ' + this.templateDir);
-          vd('@templateFallbackDir: ' + this.templateFallbackDir);
+          log('@templateDir: ' + this.templateDir, 2);
+          log('@templateFallbackDir: ' + this.templateFallbackDir, 2);
         }
         break;
       case 'output':

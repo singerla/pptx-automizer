@@ -10,6 +10,7 @@ import {
 import IArchive, { ArchiveMode } from '../interfaces/iarchive';
 import { ContentTypeExtension } from '../enums/content-type-map';
 import PptxGenJS from 'pptxgenjs';
+import { Logger } from '../helper/general-helper';
 
 export type ShapeTargetType = 'slide' | 'slideMaster' | 'slideLayout';
 export type SourceIdentifier = number | string;
@@ -109,6 +110,13 @@ export type AutomizerParams = {
    * You can e.g. attach a custom callback to a progress bar.
    */
   statusTracker?: StatusTracker['next'];
+  /**
+   * Set logging verbosity.
+   * 0: no logging at all
+   * 1: show warnings
+   * 2: show info (e.g. on import & append)
+   */
+  verbosity?: Logger['verbosity'];
 };
 export type StatusTracker = {
   current: number;
