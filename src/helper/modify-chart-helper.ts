@@ -5,10 +5,10 @@ import {
   ChartBubble,
   ChartCategory,
   ChartData,
-  ChartDataLabelAttributes,
   ChartElementCoordinateShares,
   ChartPoint,
   ChartSeries,
+  ChartSeriesDataLabelAttributes,
   ChartSlot,
 } from '../types/chart-types';
 import ModifyXmlHelper from './modify-xml-helper';
@@ -554,16 +554,17 @@ export default class ModifyChartHelper {
    *
    */
   static setDataLabelAttributes =
-    (dataLabel: ChartDataLabelAttributes): ChartModificationCallback =>
+    (dataLabel: ChartSeriesDataLabelAttributes): ChartModificationCallback =>
     (element: XmlElement, chart: XmlDocument): void => {
       const modifyXmlHelper = new ModifyXmlHelper(chart);
-      const applyToSeries = dataLabel.applyToSeries
-        ? {
-            index: dataLabel.applyToSeries,
-          }
-        : {
-            all: true,
-          };
+      const applyToSeries =
+        typeof dataLabel.applyToSeries === 'number'
+          ? {
+              index: dataLabel.applyToSeries,
+            }
+          : {
+              all: true,
+            };
 
       modifyXmlHelper.modify({
         'c:ser': {
@@ -635,7 +636,5 @@ export default class ModifyChartHelper {
           },
         },
       });
-
-      XmlHelper.dump(chart.getElementsByTagName('c:dLbls').item(0));
     };
 }

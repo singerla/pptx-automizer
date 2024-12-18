@@ -1,4 +1,5 @@
 import Automizer, { LabelPosition, modify } from '../src/index';
+import { ChartSeriesDataLabelAttributes } from '../src/types/chart-types';
 
 test('modify chart data label.', async () => {
   const automizer = new Automizer({
@@ -11,7 +12,7 @@ test('modify chart data label.', async () => {
     .load(`ChartBarsStackedLabels.pptx`, 'charts')
     .load(`ChartLinesVertical.pptx`, 'chartLines');
 
-  const DataLabelAttributes = {
+  const DataLabelAttributes: ChartSeriesDataLabelAttributes = {
     dLblPos: LabelPosition.Top,
     showLegendKey: false,
     showVal: false,

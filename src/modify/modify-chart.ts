@@ -21,6 +21,7 @@ import ModifyXmlHelper from '../helper/modify-xml-helper';
 import ModifyTextHelper from '../helper/modify-text-helper';
 import ModifyColorHelper from '../helper/modify-color-helper';
 import { XmlDocument } from '../types/xml-types';
+import { modify } from '../index';
 
 export class ModifyChart {
   data: ChartData;
@@ -233,6 +234,14 @@ export class ModifyChart {
       this.chart.modify(
         this.series(s, this.seriesDataLabel(s, series.style?.label)),
       );
+
+      if (series.style?.label) {
+        // Apply chart for all label props helper if required
+        modify.setDataLabelAttributes({
+          applyToSeries: s,
+          ...series.style?.label,
+        })(null, this.chart.root as XmlDocument);
+      }
 
       this.data.categories.forEach((category, c) => {
         this.chart.modify(

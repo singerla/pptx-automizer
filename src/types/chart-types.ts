@@ -17,7 +17,7 @@ export type ChartValueStyle = {
     color?: Color;
     isBold?: boolean;
     size?: number;
-  };
+  } & ChartDataLabelAttributes;
   gradient?: {
     color: Color;
     index: number;
@@ -86,8 +86,11 @@ export type ChartAxisRange = {
   sourceLinked?: boolean;
 };
 
-export type ChartDataLabelAttributes = {
+export type ChartSeriesDataLabelAttributes = {
   applyToSeries?: number;
+} & ChartDataLabelAttributes;
+
+export type ChartDataLabelAttributes = {
   dLblPos?: LabelPosition;
   showLegendKey?: boolean;
   showVal?: boolean;
