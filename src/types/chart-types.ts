@@ -96,6 +96,7 @@ export type ChartDataLabelAttributes = {
   showPercent?: boolean;
   showBubbleSize?: boolean;
   showLeaderLines?: boolean;
+  solidFill?: Color;
 };
 // Elements inside a chart (e.g. a legend) require shares as coordinates.
 // E.g. "w: 0.5" means "half of chart width"

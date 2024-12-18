@@ -14,6 +14,7 @@ import {
 import ModifyXmlHelper from './modify-xml-helper';
 import { XmlDocument, XmlElement } from '../types/xml-types';
 import { XmlHelper } from './xml-helper';
+import ModifyColorHelper from './modify-color-helper';
 
 export default class ModifyChartHelper {
   /**
@@ -534,7 +535,7 @@ export default class ModifyChartHelper {
 
   /**
    * Set the title of a chart. This requires an already existing, manually edited chart title.
-    @param newTitle
+   @param newTitle
    *
    */
   static setChartTitle =
@@ -570,6 +571,9 @@ export default class ModifyChartHelper {
           children: {
             'c:dLbls': {
               children: {
+                'c:spPr': {
+                  modify: [ModifyColorHelper.solidFill(dataLabel.solidFill)],
+                },
                 'c:dLblPos': {
                   modify: [ModifyXmlHelper.attribute('val', dataLabel.dLblPos)],
                 },
@@ -631,5 +635,7 @@ export default class ModifyChartHelper {
           },
         },
       });
+
+      XmlHelper.dump(chart.getElementsByTagName('c:dLbls').item(0));
     };
 }
