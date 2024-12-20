@@ -106,6 +106,10 @@ export type AutomizerParams = {
    */
   cleanup?: boolean;
   /**
+   * Remove all unused shape placeholders from slide.
+   */
+  cleanupPlaceholders?: boolean;
+  /**
    * statusTracker will be triggered on each appended slide.
    * You can e.g. attach a custom callback to a progress bar.
    */

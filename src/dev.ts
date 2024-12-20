@@ -8,6 +8,7 @@ const run = async () => {
     templateDir,
     outputDir,
     autoImportSlideMasters: true,
+    cleanupPlaceholders: true,
   });
 
   let pres = automizer

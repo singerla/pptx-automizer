@@ -548,8 +548,19 @@ export class XmlHelper {
     }
   }
 
+  static getClosestParent(tag: string, element: XmlElement): XmlElement {
+    if (element.parentNode) {
+      if (element.parentNode.nodeName === tag) {
+        return element.parentNode as XmlElement;
+      }
+      return XmlHelper.getClosestParent(tag, element.parentNode as XmlElement);
+    }
+  }
+
   static remove(toRemove: XmlElement): void {
-    toRemove.parentNode.removeChild(toRemove);
+    if (toRemove?.parentNode) {
+      toRemove.parentNode.removeChild(toRemove);
+    }
   }
 
   static moveChild(childToMove: XmlElement, insertBefore?: XmlElement): void {

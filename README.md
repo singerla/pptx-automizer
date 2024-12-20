@@ -178,7 +178,10 @@ const automizer = new Automizer({
   
   // Use 1 to show warnings or 2 for detailed information
   // 0 disables logging
-  verbosity: 1
+  verbosity: 1,
+
+  // Remove all unused placeholders to prevent unwanted overlays:
+  cleanupPlaceholders: false
 });
 
 // Now we can start and load a pptx template.

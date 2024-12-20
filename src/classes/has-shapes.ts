@@ -137,7 +137,12 @@ export default class HasShapes {
   targetType: ShapeTargetType;
   params: AutomizerParams;
 
-  constructor(params) {
+  cleanupPlaceholders: boolean = false;
+
+  constructor(params: {
+    presentation: IPresentationProps;
+    template: PresTemplate;
+  }) {
     this.sourceTemplate = params.template;
 
     this.modifications = [];
@@ -147,6 +152,8 @@ export default class HasShapes {
 
     this.status = params.presentation.status;
     this.content = params.presentation.content;
+
+    this.cleanupPlaceholders = params.presentation.params.cleanupPlaceholders;
   }
 
   /**
@@ -939,7 +946,7 @@ export default class HasShapes {
       targetPath,
     );
 
-    if (sourcePlaceholderTypes) {
+    if (this.cleanupPlaceholders && sourcePlaceholderTypes) {
       this.removeDuplicatePlaceholders(xml, sourcePlaceholderTypes);
       this.normalizePlaceholderShapes(xml, sourcePlaceholderTypes);
     }
@@ -983,9 +990,14 @@ export default class HasShapes {
           (sourcePlaceholder) => sourcePlaceholder.type === usedType,
         );
         removePlaceholders.forEach((removePlaceholder) => {
-          const removePlaceholderShape = removePlaceholder.xml.parentNode
-            .parentNode.parentNode as XmlElement;
-          XmlHelper.remove(removePlaceholderShape);
+          const parentShapeTag = 'p:sp';
+          const parentShape = XmlHelper.getClosestParent(
+            parentShapeTag,
+            removePlaceholder.xml,
+          );
+          if (parentShape) {
+            XmlHelper.remove(parentShape);
+          }
         });
       }
     }
