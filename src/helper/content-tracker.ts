@@ -35,6 +35,10 @@ export class ContentTracker {
 
   relationTags = contentTrack();
 
+  deleted: TrackedFiles = {
+    'ppt/slideMasters': [],
+  };
+
   constructor() {}
 
   reset(): void {
@@ -289,6 +293,10 @@ export class ContentTracker {
   filterRelations(section: string, target: string): TrackedRelationInfo[] {
     const relations = this.relations[section];
     return relations.filter((rel) => rel.attributes.Target === target);
+  }
+
+  deletedFile(section: string, file: any) {
+    this.deleted[section].push(file);
   }
 }
 

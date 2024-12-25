@@ -7,24 +7,34 @@ import {
   PresentationInfo,
   SourceIdentifier,
   StatusTracker,
+  Target,
 } from './types/types';
 import { IPresentationProps } from './interfaces/ipresentation-props';
 import { PresTemplate } from './interfaces/pres-template';
 import { RootPresTemplate } from './interfaces/root-pres-template';
 import { Template } from './classes/template';
-import { ModifyXmlCallback, TemplateInfo } from './types/xml-types';
-import { GeneralHelper, log, Logger } from './helper/general-helper';
+import {
+  ModifyXmlCallback,
+  TemplateInfo,
+  XmlDocument,
+} from './types/xml-types';
+import { GeneralHelper, log, Logger, vd } from './helper/general-helper';
 import { Master } from './classes/master';
 import path from 'path';
 import * as fs from 'fs';
 import { XmlHelper } from './helper/xml-helper';
 import ModifyPresentationHelper from './helper/modify-presentation-helper';
-import { contentTracker as Tracker, ContentTracker } from './helper/content-tracker';
+import {
+  contentTracker as Tracker,
+  ContentTracker,
+} from './helper/content-tracker';
 import JSZip from 'jszip';
 import { ISlide } from './interfaces/islide';
 import { IMaster } from './interfaces/imaster';
 import { ContentTypeExtension } from './enums/content-type-map';
 import slugify from 'slugify';
+import { XmlRelationshipHelper } from './helper/xml-relationship-helper';
+import { FileHelper } from './helper/file-helper';
 
 /**
  * Automizer
@@ -389,6 +399,10 @@ export default class Automizer implements IPresentationProps {
     return this;
   }
 
+  public removeMasters(length: number, from: number) {
+    this.modify(ModifyPresentationHelper.removeSlideMaster(length, from, this));
+  }
+
   /**
    * Searches this.templates to find template by given name.
    * @internal
@@ -463,10 +477,13 @@ export default class Automizer implements IPresentationProps {
   }
 
   async finalizePresentation() {
+    const currentMasterId =
+      await ModifyPresentationHelper.getFirstSlideMasterId(this);
+
     await this.writeMasterSlides();
     await this.writeSlides();
     await this.writeMediaFiles();
-    await this.normalizePresentation();
+    await this.normalizePresentation(currentMasterId);
     await this.applyModifyPresentationCallbacks();
 
     // TODO: refactor content tracker, move this to root template
@@ -531,6 +548,7 @@ export default class Automizer implements IPresentationProps {
       this.rootTemplate.archive,
       `ppt/presentation.xml`,
       this.modifyPresentation,
+      this,
     );
   }
 
@@ -541,9 +559,11 @@ export default class Automizer implements IPresentationProps {
    * TODO: Use every imported image only once
    * TODO: Check for lost relations
    */
-  async normalizePresentation(): Promise<void> {
+  async normalizePresentation(currentMasterId: number): Promise<void> {
     this.modify(ModifyPresentationHelper.normalizeSlideIds);
-    this.modify(ModifyPresentationHelper.normalizeSlideMasterIds);
+    this.modify(
+      ModifyPresentationHelper.normalizeSlideMasterIds(currentMasterId),
+    );
 
     if (this.params.cleanup) {
       if (this.params.removeExistingSlides) {

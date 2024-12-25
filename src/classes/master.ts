@@ -72,7 +72,7 @@ export class Master extends HasShapes implements IMaster {
     await this.applyRelModifications();
 
     const info = this.targetTemplate.automizer.params.showIntegrityInfo;
-    const assert = this.targetTemplate.automizer.params.showIntegrityInfo;
+    const assert = this.targetTemplate.automizer.params.assertRelatedContents;
     await this.checkIntegrity(info, assert);
 
     await this.cleanSlide(this.targetPath);

@@ -18,19 +18,21 @@ import {
   ContentTypeExtension,
   ContentTypeMap,
 } from '../enums/content-type-map';
+import Automizer from '../automizer';
 
 export class XmlHelper {
   static async modifyXmlInArchive(
     archive: IArchive,
     file: string,
     callbacks: ModifyXmlCallback[],
+    parent?: Automizer,
   ): Promise<void> {
     const fileProxy = await archive;
     const xml = await XmlHelper.getXmlFromArchive(fileProxy, file);
 
     let i = 0;
     for (const callback of callbacks) {
-      await callback(xml, i++, fileProxy);
+      await callback(xml, i++, fileProxy, parent);
     }
 
     XmlHelper.writeXmlToArchive(await archive, file, xml);

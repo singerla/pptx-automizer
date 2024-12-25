@@ -3,7 +3,10 @@ import { contentTracker as Tracker } from './content-tracker';
 import { FileHelper } from './file-helper';
 import IArchive from '../interfaces/iarchive';
 import { XmlDocument, XmlElement } from '../types/xml-types';
-import { vd } from './general-helper';
+import { log, vd } from './general-helper';
+import { XmlRelationshipHelper } from './xml-relationship-helper';
+import { Target } from '../types/types';
+import Automizer from '../automizer';
 
 export default class ModifyPresentationHelper {
   /**
@@ -50,37 +53,66 @@ export default class ModifyPresentationHelper {
    * PowerPoint will complain on any p:sldLayoutId-id lower than its
    * corresponding slideMaster-id. omg.
    */
-  static normalizeSlideMasterIds = async (
-    xml: XmlDocument,
-    i: number,
-    archive: IArchive,
-  ) => {
-    const slides = ModifyPresentationHelper.getSlideMastersCollection(xml);
-    let currentId;
-    await XmlHelper.modifyCollectionAsync(
-      slides,
-      async (slide: XmlElement, i) => {
-        const masterId = i + 1;
-        if (i === 0) {
-          currentId = Number(slide.getAttribute('id'));
-        }
+  static normalizeSlideMasterIds =
+    (currentId: number) =>
+    async (
+      presXml: XmlDocument,
+      i: number,
+      archive: IArchive,
+      pres: Automizer,
+    ) => {
+      const slides =
+        ModifyPresentationHelper.getSlideMastersCollection(presXml);
 
-        slide.setAttribute('id', String(currentId));
-        currentId++;
+      const deletedIds = pres.content.deleted['ppt/slideMasters'].map(
+        (deleted: any) => deleted.targetMasterId,
+      );
 
-        const slideMasterXml = await XmlHelper.getXmlFromArchive(
-          archive,
-          `ppt/slideMasters/slideMaster${masterId}.xml`,
-        );
+      await XmlHelper.modifyCollectionAsync(
+        slides,
+        async (slide: XmlElement, i) => {
+          const masterId = i + 1;
+          if (deletedIds.includes(masterId)) {
+            return;
+          }
 
-        const slideLayouts =
-          slideMasterXml.getElementsByTagName('p:sldLayoutId');
-        XmlHelper.modifyCollection(slideLayouts, (slideLayout: XmlElement) => {
-          slideLayout.setAttribute('id', String(currentId));
+          const slideMasterXml = await XmlHelper.getXmlFromArchive(
+            archive,
+            `ppt/slideMasters/slideMaster${masterId}.xml`,
+          );
+
+          slide.setAttribute('id', String(currentId));
           currentId++;
-        });
-      },
+
+          const slideLayouts =
+            slideMasterXml.getElementsByTagName('p:sldLayoutId');
+
+          XmlHelper.modifyCollection(
+            slideLayouts,
+            (slideLayout: XmlElement) => {
+              slideLayout.setAttribute('id', String(currentId));
+              currentId++;
+            },
+          );
+        },
+      );
+
+      deletedIds.forEach((deletedId) => {
+        const existingMasters = presXml.getElementsByTagName('p:sldMasterId');
+        XmlHelper.sliceCollection(existingMasters, 1, deletedId - 1);
+      });
+
+      XmlHelper.dump(slides.item(0));
+    };
+
+  static getFirstSlideMasterId = async (pres: Automizer) => {
+    const presXml = await XmlHelper.getXmlFromArchive(
+      pres.rootTemplate.archive,
+      'ppt/presentation.xml',
     );
+    const slides = ModifyPresentationHelper.getSlideMastersCollection(presXml);
+    const first = slides.item(0);
+    return Number(first.getAttribute('id'));
   };
 
   /**
@@ -154,4 +186,77 @@ export default class ModifyPresentationHelper {
       );
     });
   }
+
+  static removeSlideMaster =
+    (length: number, from: number, pres: Automizer) =>
+    async (presXml: XmlDocument) => {
+      for (let i = 0; i < length; i += 1) {
+        const targetMasterId = from + i + 1;
+        const masterToRemove = `slideMaster${targetMasterId}.xml`;
+
+        const layouts = (await new XmlRelationshipHelper().initialize(
+          pres.rootTemplate.archive,
+          `${masterToRemove}.rels`,
+          `ppt/slideMasters/_rels`,
+          '../slideLayouts/slideLayout',
+        )) as Target[];
+
+        const layoutFiles = layouts.map(
+          (f) => f.file, // path.resolve(`ppt/presentation.xml/${f.file}`),
+        );
+
+        const removedLayouts = await FileHelper.removeFromDirectory(
+          pres.rootTemplate.archive,
+          'ppt/slideLayouts/',
+          (file) => {
+            return !layoutFiles.includes(file.relativePath);
+          },
+        );
+
+        const themes = (await new XmlRelationshipHelper().initialize(
+          pres.rootTemplate.archive,
+          `${masterToRemove}.rels`,
+          `ppt/slideMasters/_rels`,
+          '../theme/theme',
+        )) as Target[];
+
+        const themesFiles = themes.map(
+          (f) => f.file, // path.resolve(`ppt/presentation.xml/${f.file}`),
+        );
+
+        // const removedThemes = await FileHelper.removeFromDirectory(
+        //   pres.rootTemplate.archive,
+        //   'ppt/theme/',
+        //   (file) => {
+        //     return !themesFiles.includes(file.relativePath);
+        //   },
+        // );
+
+        const removedMasters = await FileHelper.removeFromDirectory(
+          pres.rootTemplate.archive,
+          'ppt/slideMasters/',
+          (file) => {
+            return file.relativePath === masterToRemove;
+          },
+        );
+
+        const removedMasterRels = await FileHelper.removeFromDirectory(
+          pres.rootTemplate.archive,
+          'ppt/slideMasters/_rels',
+          (file) => {
+            return file.relativePath === `${masterToRemove}.rels`;
+          },
+        );
+
+        log('removed Layouts:' + removedLayouts.length, 2);
+        // log('removed Themes:' + removedThemes.length, 2);
+        log('removed Masters:' + removedMasters.length, 2);
+        log('removed MasterRels:' + removedMasterRels.length, 2);
+
+        pres.content.deletedFile('ppt/slideMasters', {
+          masterToRemove,
+          targetMasterId: targetMasterId,
+        });
+      }
+    };
 }

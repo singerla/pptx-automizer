@@ -1,5 +1,6 @@
 import IArchive from '../interfaces/iarchive';
 import { TableData, TableInfo } from './table-types';
+import Automizer from '../automizer';
 
 export type DefaultAttribute = {
   Extension: string;
@@ -94,4 +95,5 @@ export type ModifyXmlCallback = (
   xml: XmlDocument | XmlElement,
   index?: number,
   archive?: IArchive,
+  automizer?: Automizer,
 ) => void;
