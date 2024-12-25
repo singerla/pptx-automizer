@@ -281,6 +281,9 @@ export default class ModifyChartHelper {
           colorValue: colorElement.getAttribute('val'),
         });
       });
+
+      const chartTagName = series.item(0).parentNode.nodeName;
+      info.chartType = chartTagName?.split(':')[1];
     };
 
   /**
