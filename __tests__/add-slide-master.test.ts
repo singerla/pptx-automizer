@@ -1,9 +1,5 @@
 import Automizer from '../src/automizer';
-import { ModifyTextHelper, XmlDocument, XmlHelper } from '../src';
-import { XmlRelationshipHelper } from '../src/helper/xml-relationship-helper';
-import { FileHelper } from '../src/helper/file-helper';
-import { Target } from '../src/types/types';
-import { vd } from '../src/helper/general-helper';
+import { ModifyTextHelper } from '../src';
 
 test('Append and modify slideMastes and use slideLayouts', async () => {
   const automizer = new Automizer({
