@@ -258,7 +258,5 @@ export default class ModifyPresentationHelper {
           targetMasterId: targetMasterId,
         });
       }
-
-      pres.templates.splice(from, length);
     };
 }
