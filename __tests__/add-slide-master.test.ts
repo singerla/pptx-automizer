@@ -12,7 +12,7 @@ test('Append and modify slideMastes and use slideLayouts', async () => {
     verbosity: 1,
   });
 
-  const pres = automizer
+  const pres = await automizer
     .loadRoot(`EmptyTemplate.pptx`)
     .load(`SlideWithNotes.pptx`, 'notes')
     .load('SlidesWithAdditionalMaster.pptx')
@@ -52,11 +52,9 @@ test('Append and modify slideMastes and use slideLayouts', async () => {
       // You need to pass the index of the desired layout after all
       // related layouts of all imported masters have been added to rootTemplate.
       slide.useSlideLayout(26);
-    });
+    })
+    .removeMasters(1, 0)
+    .write(`add-slide-master.test.pptx`);
 
-  pres.removeMasters(1, 0);
-
-  await pres.write(`add-slide-master.test.pptx`);
-
-  // expect(pres.masters).toBe(3);
+  expect(pres.masters).toBe(3);
 });

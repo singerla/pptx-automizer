@@ -399,8 +399,9 @@ export default class Automizer implements IPresentationProps {
     return this;
   }
 
-  public removeMasters(length: number, from: number) {
+  public removeMasters(length: number, from: number): this {
     this.modify(ModifyPresentationHelper.removeSlideMaster(length, from, this));
+    return this;
   }
 
   /**
