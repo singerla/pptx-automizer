@@ -236,7 +236,7 @@ export class ModifyChart {
       );
 
       if (series.style?.label) {
-        // Apply chart for all label props helper if required
+        // Apply style for all label props helper if required
         modify.setDataLabelAttributes({
           applyToSeries: s,
           ...series.style?.label,
@@ -434,6 +434,7 @@ export class ModifyChart {
         children: {
           'c:dLbl': {
             index: index,
+            fromIndex: 0,
             children: {
               'c:idx': {
                 modify: ModifyXmlHelper.attribute('val', String(idx)),
@@ -447,12 +448,31 @@ export class ModifyChart {
                   },
                 },
               },
+              'a:fld': {
+                modify: modifyFld,
+                children: {
+                  'a:rPr': {
+                    modify: [
+                      ModifyColorHelper.solidFill(labelStyle?.color),
+                      ModifyTextHelper.style(labelStyle),
+                    ],
+                  },
+                  'a:defRPr': {
+                    isRequired: false,
+                    modify: [
+                      ModifyColorHelper.solidFill(labelStyle?.color),
+                      ModifyTextHelper.style(labelStyle),
+                    ],
+                  },
+                },
+              },
             },
           },
         },
       },
     };
   };
+
   seriesId = (series: number): ModificationTags => {
     return {
       'c:idx': {

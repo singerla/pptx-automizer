@@ -574,70 +574,61 @@ export default class ModifyChartHelper {
           ...applyToSeries,
           children: {
             'c:dLbls': {
-              children: {
-                'c:spPr': {
-                  modify: [ModifyColorHelper.solidFill(dataLabel.solidFill)],
-                },
-                'c:dLblPos': {
-                  modify: [ModifyXmlHelper.attribute('val', dataLabel.dLblPos)],
-                },
-                'c:showLegendKey': {
-                  modify: [
-                    ModifyXmlHelper.booleanAttribute(
-                      'val',
-                      dataLabel.showLegendKey,
-                    ),
-                  ],
-                },
-                'c:showVal': {
-                  modify: [
-                    ModifyXmlHelper.booleanAttribute('val', dataLabel.showVal),
-                  ],
-                },
-                'c:showCatName': {
-                  modify: [
-                    ModifyXmlHelper.booleanAttribute(
-                      'val',
-                      dataLabel.showCatName,
-                    ),
-                  ],
-                },
-                'c:showSerName': {
-                  modify: [
-                    ModifyXmlHelper.booleanAttribute(
-                      'val',
-                      dataLabel.showSerName,
-                    ),
-                  ],
-                },
-                'c:showPercent': {
-                  modify: [
-                    ModifyXmlHelper.booleanAttribute(
-                      'val',
-                      dataLabel.showPercent,
-                    ),
-                  ],
-                },
-                'c:showBubbleSize': {
-                  modify: [
-                    ModifyXmlHelper.booleanAttribute(
-                      'val',
-                      dataLabel.showBubbleSize,
-                    ),
-                  ],
-                },
-                'c:showLeaderLines': {
-                  modify: [
-                    ModifyXmlHelper.booleanAttribute(
-                      'val',
-                      dataLabel.showLeaderLines,
-                    ),
-                  ],
-                },
-              },
+              children:
+                ModifyChartHelper.setDataPointLabelAttributes(dataLabel),
             },
           },
         },
       });
     };
+
+  static setDataPointLabelAttributes = (
+    dataLabel: ChartSeriesDataLabelAttributes,
+  ) => {
+    return {
+      'c:spPr': {
+        modify: [ModifyColorHelper.solidFill(dataLabel.solidFill)],
+      },
+      'c:dLblPos': {
+        modify: [ModifyXmlHelper.attribute('val', dataLabel.dLblPos)],
+      },
+      'c:showLegendKey': {
+        modify: [
+          ModifyXmlHelper.booleanAttribute('val', dataLabel.showLegendKey),
+        ],
+      },
+      'c:showVal': {
+        modify: [ModifyXmlHelper.booleanAttribute('val', dataLabel.showVal)],
+      },
+      'c:showCatName': {
+        modify: [
+          ModifyXmlHelper.booleanAttribute('val', dataLabel.showCatName),
+        ],
+      },
+      'c:showSerName': {
+        modify: [
+          ModifyXmlHelper.booleanAttribute('val', dataLabel.showSerName),
+        ],
+      },
+      'c:showPercent': {
+        modify: [
+          ModifyXmlHelper.booleanAttribute('val', dataLabel.showPercent),
+        ],
+      },
+      'c:showBubbleSize': {
+        modify: [
+          ModifyXmlHelper.booleanAttribute('val', dataLabel.showBubbleSize),
+        ],
+      },
+      'c:showLeaderLines': {
+        modify: [
+          ModifyXmlHelper.booleanAttribute('val', dataLabel.showLeaderLines),
+        ],
+      },
+    };
+  };
 }
+
+/*
+
+ */
