@@ -47,44 +47,74 @@ export default class GeneratePptxGenJs implements IGenerator {
     slide: ISlide,
   ) {
     generate.forEach((generateElement) => {
-      generateElement.objectName = generateElement.objectName || randomUUID();
       generateElement.tmpSlideNumber = this.countSlides;
+
+      const addedObjects = <string[]>[];
+
       generateElement.callback(
-        this.supportedSlideItems(pgenSlide, generateElement.objectName),
+        this.supportedSlideItems(pgenSlide, generateElement, addedObjects),
         this.generator,
       );
-      slide.addElement(
-        this.tmpFile,
-        this.countSlides,
-        generateElement.objectName,
-      );
+
+      addedObjects.forEach((addedObjectName) => {
+        slide.addElement(this.tmpFile, this.countSlides, addedObjectName);
+      });
     });
   }
 
   supportedSlideItems = (
     pgenSlide: PptxGenJS.Slide,
-    objectName: string,
+    generateElement: GenerateElements,
+    addedObjects: string[],
   ): SupportedPptxGenJSSlide => {
     return {
       addChart: (type, data, options) => {
+        const objectName = this.generateObjectName(
+          generateElement,
+          addedObjects,
+        );
         pgenSlide.addChart(type, data, this.getOptions(options, objectName));
       },
       addImage: (options) => {
+        const objectName = this.generateObjectName(
+          generateElement,
+          addedObjects,
+        );
         pgenSlide.addImage(this.getOptions(options, objectName));
       },
       addShape: (shapeName, options?) => {
+        const objectName = this.generateObjectName(
+          generateElement,
+          addedObjects,
+        );
         pgenSlide.addShape(shapeName, this.getOptions(options, objectName));
       },
       addTable: (tableRows, options?) => {
+        const objectName = this.generateObjectName(
+          generateElement,
+          addedObjects,
+        );
         pgenSlide.addTable(tableRows, this.getOptions(options, objectName));
       },
       addText: (text, options?) => {
+        const objectName = this.generateObjectName(
+          generateElement,
+          addedObjects,
+        );
         pgenSlide.addText(text, this.getOptions(options, objectName));
       },
     };
   };
 
-  getOptions = (options, objectName) => {
+  generateObjectName(generateElement, addedObjects: string[]): string {
+    const objectName =
+      (generateElement.objectName ? generateElement.objectName + '-' : '') +
+      randomUUID();
+    addedObjects.push(objectName);
+    return objectName;
+  }
+
+  getOptions = (options, objectName: string) => {
     options = options || {};
     return {
       ...options,

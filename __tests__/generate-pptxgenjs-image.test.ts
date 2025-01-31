@@ -19,10 +19,15 @@ test('insert an image with pptxgenjs on a template slide', async () => {
         x: 1,
         y: 2,
       });
+      pptxGenJSSlide.addImage({
+        path: `${__dirname}/images/test.svg`,
+        x: 1,
+        y: 2,
+      });
     });
   });
 
   const result = await pres.write(`generate-pptxgenjs-image.test.pptx`);
 
-  expect(result.images).toBe(1);
+  expect(result.images).toBe(3);
 });
