@@ -11,7 +11,7 @@
   "private": false,
   "scripts": {
     "build": "tsc",
-    "dev": "nodemon -e ts --exec 'ts-node' src/dev.ts",
+    "dev": "nodemon -e ts --exec ts-node src/dev.ts",
     "test": "npx jest",
     "test-coverage": "npx jest --coverage",
     "lint": "eslint '*/**/*.{js,ts,tsx}' --fix",
@@ -51,7 +51,7 @@
     "nodemon": "^2.0.20",
     "prettier": "^2.8.3",
     "ts-jest": "^29.0.5",
-    "ts-node": "^10.9.1",
+    "ts-node": "^10.9.2",
     "typedoc": "^0.23.24",
     "typescript": "^4.9.4"
   },

@@ -1,9 +1,5 @@
 import Automizer from '../src/automizer';
-import { ModifyTextHelper, XmlDocument, XmlHelper } from '../src';
-import { XmlRelationshipHelper } from '../src/helper/xml-relationship-helper';
-import { FileHelper } from '../src/helper/file-helper';
-import { Target } from '../src/types/types';
-import { vd } from '../src/helper/general-helper';
+import { ModifyTextHelper } from '../src';
 
 test('Append and modify slideMastes and use slideLayouts', async () => {
   const automizer = new Automizer({
@@ -12,7 +8,7 @@ test('Append and modify slideMastes and use slideLayouts', async () => {
     verbosity: 1,
   });
 
-  const pres = automizer
+  const pres = await automizer
     .loadRoot(`EmptyTemplate.pptx`)
     .load(`SlideWithNotes.pptx`, 'notes')
     .load('SlidesWithAdditionalMaster.pptx')
@@ -52,11 +48,9 @@ test('Append and modify slideMastes and use slideLayouts', async () => {
       // You need to pass the index of the desired layout after all
       // related layouts of all imported masters have been added to rootTemplate.
       slide.useSlideLayout(26);
-    });
+    })
+    .removeMasters(1, 0)
+    .write(`add-slide-master.test.pptx`);
 
-  pres.removeMasters(1, 0);
-
-  await pres.write(`add-slide-master.test.pptx`);
-
-  // expect(pres.masters).toBe(3);
+  expect(pres.masters).toBe(3);
 });
