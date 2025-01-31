@@ -22,6 +22,8 @@ import ModifyTextHelper from '../helper/modify-text-helper';
 import ModifyColorHelper from '../helper/modify-color-helper';
 import { XmlDocument } from '../types/xml-types';
 import { modify } from '../index';
+import ModifyChartHelper from '../helper/modify-chart-helper';
+import { vd } from '../helper/general-helper';
 
 export class ModifyChart {
   data: ChartData;
@@ -449,7 +451,6 @@ export class ModifyChart {
                 },
               },
               'a:fld': {
-                modify: modifyFld,
                 children: {
                   'a:rPr': {
                     modify: [
