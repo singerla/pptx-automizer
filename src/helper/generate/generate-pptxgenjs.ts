@@ -3,9 +3,8 @@ import PptxGenJS from 'pptxgenjs';
 import fs from 'fs';
 import { ISlide } from '../../interfaces/islide';
 import Automizer from '../../automizer';
-import { GenerateElements } from '../../types/types';
+import { GenerateElements, SupportedPptxGenJSSlide } from '../../types/types';
 import { IGenerator } from '../../interfaces/igenerator';
-import { vd } from '../general-helper';
 
 export default class GeneratePptxGenJs implements IGenerator {
   tmpFile: string;
@@ -51,8 +50,7 @@ export default class GeneratePptxGenJs implements IGenerator {
       generateElement.objectName = generateElement.objectName || randomUUID();
       generateElement.tmpSlideNumber = this.countSlides;
       generateElement.callback(
-        pgenSlide,
-        generateElement.objectName,
+        this.supportedSlideItems(pgenSlide, generateElement.objectName),
         this.generator,
       );
       slide.addElement(
@@ -62,6 +60,37 @@ export default class GeneratePptxGenJs implements IGenerator {
       );
     });
   }
+
+  supportedSlideItems = (
+    pgenSlide: PptxGenJS.Slide,
+    objectName: string,
+  ): SupportedPptxGenJSSlide => {
+    return {
+      addChart: (type, data, options) => {
+        pgenSlide.addChart(type, data, this.getOptions(options, objectName));
+      },
+      addImage: (options) => {
+        pgenSlide.addImage(this.getOptions(options, objectName));
+      },
+      addShape: (shapeName, options?) => {
+        pgenSlide.addShape(shapeName, this.getOptions(options, objectName));
+      },
+      addTable: (tableRows, options?) => {
+        pgenSlide.addTable(tableRows, this.getOptions(options, objectName));
+      },
+      addText: (text, options?) => {
+        pgenSlide.addText(text, this.getOptions(options, objectName));
+      },
+    };
+  };
+
+  getOptions = (options, objectName) => {
+    options = options || {};
+    return {
+      ...options,
+      objectName,
+    };
+  };
 
   appendPptxGenSlide(): PptxGenJS.Slide {
     return this.generator.addSlide();

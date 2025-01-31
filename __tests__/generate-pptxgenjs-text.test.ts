@@ -13,12 +13,13 @@ test('insert a textbox with pptxgenjs on a template slide', async () => {
 
   pres.addSlide('empty', 1, (slide) => {
     // Use pptxgenjs to add text from scratch:
-    slide.generate((pptxGenJSSlide, objectName) => {
+    slide.generate((pptxGenJSSlide) => {
       pptxGenJSSlide.addText('Test', {
         x: 1,
         y: 1,
+        h: 5,
+        w: 10,
         color: '363636',
-        objectName,
       });
     }, 'custom object name');
   });

@@ -27,13 +27,12 @@ test('generate a chart with pptxgenjs and add it to a template slide', async () 
 
   pres.addSlide('empty', 1, (slide) => {
     // Use pptxgenjs to add generated contents from scratch:
-    slide.generate((pSlide, objectName, pptxGenJs) => {
+    slide.generate((pSlide, pptxGenJs) => {
       pSlide.addChart(pptxGenJs.ChartType.line, dataChartAreaLine, {
         x: 1,
         y: 1,
         w: 8,
         h: 4,
-        objectName,
       });
     });
   });

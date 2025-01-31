@@ -13,12 +13,11 @@ test('insert an image with pptxgenjs on a template slide', async () => {
 
   pres.addSlide('empty', 1, (slide) => {
     // Use pptxgenjs to add image from file:
-    slide.generate((pptxGenJSSlide, objectName) => {
+    slide.generate((pptxGenJSSlide) => {
       pptxGenJSSlide.addImage({
         path: `${__dirname}/media/test.png`,
         x: 1,
         y: 2,
-        objectName,
       });
     });
   });
