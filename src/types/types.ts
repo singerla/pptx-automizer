@@ -236,7 +236,7 @@ export interface SupportedPptxGenJSSlide {
    * @type {Function}
    */
   addChart(
-    type: PptxGenJS.CHART_NAME | PptxGenJS['IChartMulti'][],
+    type: PptxGenJS.CHART_NAME | PptxGenJS.IChartMulti[],
     data: any[],
     options?: PptxGenJS.IChartOpts,
   ): void;
