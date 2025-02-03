@@ -238,7 +238,7 @@ export type ImportElement = {
 export type GenerateOnSlideCallback = (
   pptxGenJSSlide: IPptxGenJSSlide,
   pptxGenJS: PptxGenJS,
-) => Promise<void>;
+) => Promise<void> | void;
 export type GenerateElements = {
   objectName?: string;
   tmpSlideNumber?: number;
