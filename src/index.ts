@@ -39,6 +39,7 @@ import ModifyColorHelper from './helper/modify-color-helper';
 import { ITemplate } from './interfaces/itemplate';
 import { IMaster } from './interfaces/imaster';
 import { ISlide } from './interfaces/islide';
+import { IPptxGenJSSlide } from './interfaces/ipptxgenjs-slide';
 import ModifyImageHelper from './helper/modify-image-helper';
 import { LabelPosition } from './enums/chart-type';
 
@@ -162,5 +163,5 @@ export type {
   XmlElement,
   XmlDocument,
 };
-export { ITemplate, IMaster, ISlide };
+export { ITemplate, IMaster, ISlide, IPptxGenJSSlide };
 export default Automizer;

@@ -1,11 +1,16 @@
 import { randomUUID } from 'crypto';
 import PptxGenJS from 'pptxgenjs';
-import fs from 'fs';
 import { ISlide } from '../../interfaces/islide';
 import Automizer from '../../automizer';
-import { GenerateElements, SupportedPptxGenJSSlide } from '../../types/types';
+import { GenerateElements } from '../../types/types';
 import { IGenerator } from '../../interfaces/igenerator';
+import { IPptxGenJSSlide } from '../../interfaces/ipptxgenjs-slide';
+import { vd } from '../general-helper';
 
+/**
+ * Using pptxGenJs on an automizer ISlide will create a temporary pptx template
+ * and auto-import the generated shapes to the right place on the output slides.
+ */
 export default class GeneratePptxGenJs implements IGenerator {
   tmpFile: string;
   slides: ISlide[];
@@ -16,11 +21,17 @@ export default class GeneratePptxGenJs implements IGenerator {
   constructor(automizer: Automizer, slides: ISlide[]) {
     this.automizer = automizer;
     this.slides = slides;
+    this.create();
   }
 
-  create(): this {
-    this.generator = new PptxGenJS();
-    return this;
+  create() {
+    if (this.automizer.params.pptxGenJs) {
+      // Use a customized pptxGenJs instance
+      this.generator = this.automizer.params.pptxGenJs;
+    } else {
+      // Or the installed version
+      this.generator = new PptxGenJS();
+    }
   }
 
   async generateSlides(): Promise<void> {
@@ -29,7 +40,8 @@ export default class GeneratePptxGenJs implements IGenerator {
       const generate = slide.getGeneratedElements();
       if (generate.length) {
         this.countSlides++;
-        this.addElements(generate, this.appendPptxGenSlide(), slide);
+        await this.generateElements(generate, this.appendPptxGenSlide());
+        this.addElements(generate, slide);
       }
     }
 
@@ -41,72 +53,79 @@ export default class GeneratePptxGenJs implements IGenerator {
     }
   }
 
-  addElements(
+  async generateElements(
     generate: GenerateElements[],
     pgenSlide: PptxGenJS.Slide,
-    slide: ISlide,
-  ) {
-    generate.forEach((generateElement) => {
+  ): Promise<void> {
+    for (const generateElement of generate) {
       generateElement.tmpSlideNumber = this.countSlides;
-
       const addedObjects = <string[]>[];
-
-      generateElement.callback(
-        this.supportedSlideItems(pgenSlide, generateElement, addedObjects),
+      await generateElement.callback(
+        this.addSlideItems(pgenSlide, generateElement, addedObjects),
         this.generator,
       );
+      generateElement.addedObjects = [...addedObjects];
+    }
+  }
 
-      addedObjects.forEach((addedObjectName) => {
+  addElements(generate: GenerateElements[], slide: ISlide) {
+    generate.forEach((generateElement) => {
+      generateElement.addedObjects.forEach((addedObjectName) => {
         slide.addElement(this.tmpFile, this.countSlides, addedObjectName);
       });
     });
   }
 
-  supportedSlideItems = (
+  /**
+   * This is a wrapper around supported pptxGenJS slide item types.
+   * It is required to create a unique objectName and find the generated
+   * shapes by object name later.
+   *
+   * @param pgenSlide
+   * @param generateElement
+   * @param addedObjects
+   */
+  addSlideItems = (
     pgenSlide: PptxGenJS.Slide,
     generateElement: GenerateElements,
     addedObjects: string[],
-  ): SupportedPptxGenJSSlide => {
+  ): IPptxGenJSSlide => {
+    const getObjectName = () => {
+      return this.generateObjectName(generateElement, addedObjects);
+    };
     return {
       addChart: (type, data, options) => {
-        const objectName = this.generateObjectName(
-          generateElement,
-          addedObjects,
+        pgenSlide.addChart(
+          type,
+          data,
+          this.getOptions(options, getObjectName()),
         );
-        pgenSlide.addChart(type, data, this.getOptions(options, objectName));
       },
       addImage: (options) => {
-        const objectName = this.generateObjectName(
-          generateElement,
-          addedObjects,
-        );
-        pgenSlide.addImage(this.getOptions(options, objectName));
+        pgenSlide.addImage(this.getOptions(options, getObjectName()));
       },
       addShape: (shapeName, options?) => {
-        const objectName = this.generateObjectName(
-          generateElement,
-          addedObjects,
+        pgenSlide.addShape(
+          shapeName,
+          this.getOptions(options, getObjectName()),
         );
-        pgenSlide.addShape(shapeName, this.getOptions(options, objectName));
       },
       addTable: (tableRows, options?) => {
-        const objectName = this.generateObjectName(
-          generateElement,
-          addedObjects,
+        pgenSlide.addTable(
+          tableRows,
+          this.getOptions(options, getObjectName()),
         );
-        pgenSlide.addTable(tableRows, this.getOptions(options, objectName));
       },
       addText: (text, options?) => {
-        const objectName = this.generateObjectName(
-          generateElement,
-          addedObjects,
-        );
-        pgenSlide.addText(text, this.getOptions(options, objectName));
+        pgenSlide.addText(text, this.getOptions(options, getObjectName()));
       },
     };
   };
 
-  generateObjectName(generateElement, addedObjects: string[]): string {
+  generateObjectName(
+    generateElement: GenerateElements,
+    addedObjects: string[],
+  ): string {
     const objectName =
       (generateElement.objectName ? generateElement.objectName + '-' : '') +
       randomUUID();

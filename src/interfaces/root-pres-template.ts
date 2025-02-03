@@ -21,15 +21,25 @@ export interface RootPresTemplate extends ITemplate {
   ) => void;
   getMappedContent: (type: string, key: string, sourceId: number) => any;
   getNamedMappedContent: (type: string, name: string) => any;
+
   count(name: string): number;
+
   incrementCounter(name: string): number;
+
   appendSlide(slide: ISlide): Promise<void>;
+
   appendMasterSlide(slideMaster: IMaster): Promise<void>;
+
   appendLayout(slideLayout: ILayout): Promise<void>;
-  runExternalGenerators?(): Promise<void>;
-  cleanupExternalGenerators?(): Promise<void>;
+
+  runExternalGenerator?(): Promise<void>;
+
+  cleanupExternalGenerator?(): Promise<void>;
+
   countExistingSlides(): Promise<void>;
+
   truncate(): Promise<void>;
+
   content?: ContentTracker;
   automizer?: Automizer;
 }

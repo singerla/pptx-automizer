@@ -11,6 +11,7 @@ import IArchive, { ArchiveMode } from '../interfaces/iarchive';
 import { ContentTypeExtension } from '../enums/content-type-map';
 import PptxGenJS from 'pptxgenjs';
 import { Logger } from '../helper/general-helper';
+import { IPptxGenJSSlide } from '../interfaces/ipptxgenjs-slide';
 
 export type ShapeTargetType = 'slide' | 'slideMaster' | 'slideLayout';
 export type SourceIdentifier = number | string;
@@ -60,14 +61,23 @@ export type AutomizerParams = {
    */
   mediaDir?: string;
   /**
-   * Absolute path to cache directory.
+   * Use 'fs' if you want to extract all archive contents to disc.
+   * ArchiveParams.mode defaults to 'jszip'.
    */
   archiveType?: ArchiveParams;
   /**
    * Zip compression level 0-9
    */
   compression?: number;
+  /**
+   * Pass an AutomizerFile directly and skip loadRoot().
+   */
   rootTemplate?: AutomizerFile;
+  /**
+   * If you require another version of pptxGenJs, you can e.g. use your
+   * customized library.
+   */
+  pptxGenJs?: PptxGenJS;
   /**
    * Array of template files to be loaded on initialization.
    * If files are Buffer or Uint8Array, they will be named 0.pptx, 1.pptx, ...
@@ -225,71 +235,15 @@ export type ImportElement = {
   callback?: ShapeModificationCallback | ShapeModificationCallback[];
   info?: any;
 };
-
-export interface SupportedPptxGenJSSlide {
-  /**
-   * Add chart to Slide
-   * @param {CHART_NAME|IChartMulti[]} type - chart type
-   * @param {object[]} data - data object
-   * @param {IChartOpts} options - chart options
-   * @return {Slide} this Slide
-   * @type {Function}
-   */
-  addChart(
-    type: PptxGenJS.CHART_NAME | PptxGenJS.IChartMulti[],
-    data: any[],
-    options?: PptxGenJS.IChartOpts,
-  ): void;
-
-  /**
-   * Add image to Slide
-   * @param {ImageProps} options - image options
-   * @return {Slide} this Slide
-   */
-  addImage(options: PptxGenJS.ImageProps): void;
-
-  /**
-   * Add shape to Slide
-   * @param {SHAPE_NAME} shapeName - shape name
-   * @param {ShapeProps} options - shape options
-   * @return {Slide} this Slide
-   */
-  addShape(
-    shapeName: PptxGenJS.SHAPE_NAME,
-    options?: PptxGenJS.ShapeProps,
-  ): void;
-
-  /**
-   * Add table to Slide
-   * @param {TableRow[]} tableRows - table rows
-   * @param {TableProps} options - table options
-   * @return {Slide} this Slide
-   */
-  addTable(
-    tableRows: PptxGenJS.TableRow[],
-    options?: PptxGenJS.TableProps,
-  ): void;
-
-  /**
-   * Add text to Slide
-   * @param {string|TextProps[]} text - text string or complex object
-   * @param {TextPropsOptions} options - text options
-   * @return {Slide} this Slide
-   */
-  addText(
-    text: string | PptxGenJS.TextProps[],
-    options?: PptxGenJS.TextPropsOptions,
-  ): void;
-}
-
 export type GenerateOnSlideCallback = (
-  pptxGenJSSlide: SupportedPptxGenJSSlide,
+  pptxGenJSSlide: IPptxGenJSSlide,
   pptxGenJS: PptxGenJS,
-) => void;
+) => Promise<void>;
 export type GenerateElements = {
   objectName?: string;
   tmpSlideNumber?: number;
   callback?: GenerateOnSlideCallback;
+  addedObjects?: string[];
 };
 export type FindElementSelector =
   | string

@@ -19,12 +19,16 @@ import path from 'path';
 import * as fs from 'fs';
 import { XmlHelper } from './helper/xml-helper';
 import ModifyPresentationHelper from './helper/modify-presentation-helper';
-import { contentTracker as Tracker, ContentTracker } from './helper/content-tracker';
+import {
+  contentTracker as Tracker,
+  ContentTracker,
+} from './helper/content-tracker';
 import JSZip from 'jszip';
 import { ISlide } from './interfaces/islide';
 import { IMaster } from './interfaces/imaster';
 import { ContentTypeExtension } from './enums/content-type-map';
 import slugify from 'slugify';
+import PptxGenJS from 'pptxgenjs';
 
 /**
  * Automizer
@@ -489,11 +493,11 @@ export default class Automizer implements IPresentationProps {
     await this.rootTemplate.countExistingSlides();
     this.status.max = this.rootTemplate.slides.length;
 
-    await this.rootTemplate.runExternalGenerators();
+    await this.rootTemplate.runExternalGenerator();
     for (const slide of this.rootTemplate.slides) {
       await this.rootTemplate.appendSlide(slide);
     }
-    await this.rootTemplate.cleanupExternalGenerators();
+    await this.rootTemplate.cleanupExternalGenerator();
 
     if (this.params.removeExistingSlides) {
       await this.rootTemplate.truncate();

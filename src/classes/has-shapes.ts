@@ -265,9 +265,6 @@ export default class HasShapes {
     return this;
   }
 
-  /**
-   *
-   */
   generate(generate: GenerateOnSlideCallback, objectName?: string): this {
     this.generateElements.push({
       objectName,
