@@ -5,7 +5,7 @@ import Automizer from '../../automizer';
 import { GenerateElements } from '../../types/types';
 import { IGenerator } from '../../interfaces/igenerator';
 import { IPptxGenJSSlide } from '../../interfaces/ipptxgenjs-slide';
-import { vd } from '../general-helper';
+import fs from 'fs';
 
 /**
  * Using pptxGenJs on an automizer ISlide will create a temporary pptx template
