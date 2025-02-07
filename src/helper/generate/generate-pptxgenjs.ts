@@ -6,6 +6,7 @@ import { GenerateElements } from '../../types/types';
 import { IGenerator } from '../../interfaces/igenerator';
 import { IPptxGenJSSlide } from '../../interfaces/ipptxgenjs-slide';
 import fs from 'fs';
+import { vd } from '../general-helper';
 
 /**
  * Using pptxGenJs on an automizer ISlide will create a temporary pptx template
@@ -36,11 +37,14 @@ export default class GeneratePptxGenJs implements IGenerator {
 
   async generateSlides(): Promise<void> {
     this.tmpFile = randomUUID() + '.pptx';
+    const pgenSlide = this.appendPptxGenSlide();
+
     for (const slide of this.slides) {
       const generate = slide.getGeneratedElements();
+
       if (generate.length) {
         this.countSlides++;
-        await this.generateElements(generate, this.appendPptxGenSlide());
+        await this.generateElements(generate, pgenSlide);
         this.addElements(generate, slide);
       }
     }
@@ -55,10 +59,10 @@ export default class GeneratePptxGenJs implements IGenerator {
 
   async generateElements(
     generate: GenerateElements[],
-    pgenSlide: PptxGenJS.Slide,
+    pgenSlide,
   ): Promise<void> {
     for (const generateElement of generate) {
-      generateElement.tmpSlideNumber = this.countSlides;
+      generateElement.tmpSlideNumber = 1;
       const addedObjects = <string[]>[];
       await generateElement.callback(
         this.addSlideItems(pgenSlide, generateElement, addedObjects),
@@ -71,7 +75,7 @@ export default class GeneratePptxGenJs implements IGenerator {
   addElements(generate: GenerateElements[], slide: ISlide) {
     generate.forEach((generateElement) => {
       generateElement.addedObjects.forEach((addedObjectName) => {
-        slide.addElement(this.tmpFile, this.countSlides, addedObjectName);
+        slide.addElement(this.tmpFile, 1, addedObjectName);
       });
     });
   }
