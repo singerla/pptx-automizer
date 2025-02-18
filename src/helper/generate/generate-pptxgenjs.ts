@@ -2,11 +2,10 @@ import { randomUUID } from 'crypto';
 import PptxGenJS from 'pptxgenjs';
 import { ISlide } from '../../interfaces/islide';
 import Automizer from '../../automizer';
-import { GenerateElements } from '../../types/types';
+import { AutomizerFile, GenerateElements } from '../../types/types';
 import { IGenerator } from '../../interfaces/igenerator';
 import { IPptxGenJSSlide } from '../../interfaces/ipptxgenjs-slide';
 import fs from 'fs';
-import { vd } from '../general-helper';
 
 /**
  * Using pptxGenJs on an automizer ISlide will create a temporary pptx template
@@ -37,32 +36,41 @@ export default class GeneratePptxGenJs implements IGenerator {
 
   async generateSlides(): Promise<void> {
     this.tmpFile = randomUUID() + '.pptx';
-    const pgenSlide = this.appendPptxGenSlide();
 
     for (const slide of this.slides) {
       const generate = slide.getGeneratedElements();
 
       if (generate.length) {
         this.countSlides++;
-        await this.generateElements(generate, pgenSlide);
+        const pgenSlide = this.appendPptxGenSlide();
+        await this.generateElements(generate, pgenSlide, this.countSlides);
+      }
+    }
+
+    for (const slide of this.slides) {
+      const generate = slide.getGeneratedElements();
+      if (generate.length) {
         this.addElements(generate, slide);
       }
     }
 
     if (this.countSlides > 0) {
-      await this.generator.writeFile({
-        fileName: this.automizer.templateDir + '/' + this.tmpFile,
-      });
-      this.automizer.load(this.tmpFile);
+      const data = (await this.generator.stream()) as AutomizerFile;
+      this.automizer.load(data, this.tmpFile);
+
+      // await this.generator.writeFile({
+      //   fileName: this.automizer.templateDir + '/' + this.tmpFile,
+      // });
     }
   }
 
   async generateElements(
     generate: GenerateElements[],
     pgenSlide,
+    tmpSlideNumber,
   ): Promise<void> {
     for (const generateElement of generate) {
-      generateElement.tmpSlideNumber = 1;
+      generateElement.tmpSlideNumber = tmpSlideNumber;
       const addedObjects = <string[]>[];
       await generateElement.callback(
         this.addSlideItems(pgenSlide, generateElement, addedObjects),
@@ -75,7 +83,11 @@ export default class GeneratePptxGenJs implements IGenerator {
   addElements(generate: GenerateElements[], slide: ISlide) {
     generate.forEach((generateElement) => {
       generateElement.addedObjects.forEach((addedObjectName) => {
-        slide.addElement(this.tmpFile, 1, addedObjectName);
+        slide.addElement(
+          this.tmpFile,
+          generateElement.tmpSlideNumber,
+          addedObjectName,
+        );
       });
     });
   }
@@ -150,8 +162,8 @@ export default class GeneratePptxGenJs implements IGenerator {
   }
 
   async cleanup() {
-    if (this.countSlides > 0) {
-      fs.unlinkSync(this.automizer.templateDir + '/' + this.tmpFile);
-    }
+    // if (this.countSlides > 0) {
+    //   fs.unlinkSync(this.automizer.templateDir + '/' + this.tmpFile);
+    // }
   }
 }
