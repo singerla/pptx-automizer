@@ -36,6 +36,7 @@ import { ElementType } from '../enums/element-type';
 import { GenericShape } from '../shapes/generic';
 import { XmlSlideHelper } from '../helper/xml-slide-helper';
 import { OLEObject } from '../shapes/ole';
+import { Hyperlink } from '../shapes/hyperlink';
 
 export default class HasShapes {
   /**
@@ -420,6 +421,21 @@ export default class HasShapes {
             info.mode
           ](this.targetTemplate, this.targetNumber, this.targetType);
           break;
+        case ElementType.Hyperlink:
+          // For hyperlinks, we need to handle them differently
+          if (info.target) {
+            await new Hyperlink(
+              info, 
+              this.targetType, 
+              this.sourceArchive,
+              info.target.isExternal ? 'external' : 'internal',
+              info.target.file
+            )[info.mode](
+              this.targetTemplate, 
+              this.targetNumber
+            );
+          }
+          break;
         default:
           break;
       }
@@ -787,7 +803,7 @@ export default class HasShapes {
           sourceArchive: this.sourceArchive,
           sourceSlideNumber: this.sourceNumber,
         },
-        this.targetType,
+        this.targetType
       ).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);
     }
 
@@ -800,14 +816,11 @@ export default class HasShapes {
           sourceArchive: this.sourceArchive,
           sourceSlideNumber: this.sourceNumber,
         },
-        this.targetType,
+        this.targetType
       ).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);
     }
 
-    const oleObjects = await OLEObject.getAllOnSlide(
-      this.sourceArchive,
-      this.relsPath,
-    );
+    const oleObjects = await OLEObject.getAllOnSlide(this.sourceArchive, this.relsPath);
     for (const oleObject of oleObjects) {
       await new OLEObject(
         {
@@ -817,8 +830,32 @@ export default class HasShapes {
           sourceSlideNumber: this.sourceNumber,
         },
         this.targetType,
-        this.sourceArchive,
+        this.sourceArchive
       ).modifyOnAddedSlide(this.targetTemplate, this.targetNumber, oleObjects);
+    }
+
+    // Copy hyperlinks
+    const hyperlinks = await Hyperlink.getAllOnSlide(this.sourceArchive, this.relsPath);
+    for (const hyperlink of hyperlinks) {
+      // Create a new hyperlink with the correct target information
+      const hyperlinkInstance = new Hyperlink(
+        {
+          mode: 'append',
+          target: hyperlink,
+          sourceArchive: this.sourceArchive,
+          sourceSlideNumber: this.sourceNumber,
+        },
+        this.targetType,
+        this.sourceArchive,
+        hyperlink.isExternal ? 'external' : 'internal',
+        hyperlink.file
+      );
+      
+      // Ensure the target property is properly set
+      hyperlinkInstance.target = hyperlink;
+      
+      // Process the hyperlink
+      await hyperlinkInstance.modifyOnAddedSlide(this.targetTemplate, this.targetNumber, hyperlinks);
     }
   }
 
@@ -894,9 +931,51 @@ export default class HasShapes {
       } as AnalyzedElementType;
     }
 
+    // Check for hyperlinks in text runs
+    const hasHyperlink = this.findHyperlinkInElement(sourceElement);
+    if (hasHyperlink) {
+      try {
+        const target = await XmlHelper.getTargetByRelId(
+          sourceArchive,
+          relsPath,
+          sourceElement,
+          'hyperlink',
+        );
+
+        return {
+          type: ElementType.Hyperlink,
+          target: target,
+          element: sourceElement,
+        } as AnalyzedElementType;
+      } catch (error) {
+        console.warn('Error finding hyperlink target:', error);
+      }
+    }
+
     return {
       type: ElementType.Shape,
     } as AnalyzedElementType;
+  }
+
+  // Helper method to find hyperlinks in an element
+  private findHyperlinkInElement(element: XmlElement): boolean {
+    // Check for direct hyperlinks
+    const directHyperlinks = element.getElementsByTagName('a:hlinkClick');
+    if (directHyperlinks.length > 0) {
+      return true;
+    }
+
+    // Check for hyperlinks in text runs
+    const textRuns = element.getElementsByTagName('a:r');
+    for (let i = 0; i < textRuns.length; i++) {
+      const run = textRuns[i];
+      const rPr = run.getElementsByTagName('a:rPr')[0];
+      if (rPr && rPr.getElementsByTagName('a:hlinkClick').length > 0) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**

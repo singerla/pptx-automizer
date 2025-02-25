@@ -353,18 +353,49 @@ export class XmlHelper {
     type: string,
   ): Promise<Target> {
     const params = TargetByRelIdMap[type];
-    const sourceRid = element
-      .getElementsByTagName(params.relRootTag)[0]
-      .getAttribute(params.relAttribute);
+    
+    // For elements that need to search all instances (like hyperlinks)
+    if (params.findAll) {
+      // Find all hyperlink elements
+      const hyperlinks = element.getElementsByTagName(params.relRootTag);
+      if (hyperlinks.length > 0) {
+        // Use the first hyperlink found
+        const sourceRid = hyperlinks[0].getAttribute(params.relAttribute);
+        
+        // Get all relationships
+        const allRels = await XmlHelper.getRelationshipItems(
+          archive,
+          relsPath,
+          (element: XmlElement, rels: Target[]) => {
+            rels.push({
+              rId: element.getAttribute('Id'),
+              type: element.getAttribute('Type'),
+              file: element.getAttribute('Target'),
+              filename: element.getAttribute('Target'),
+              element: element,
+              isExternal: element.getAttribute('TargetMode') === 'External',
+            } as Target);
+          }
+        );
+        
+        // Find the matching relationship
+        const target = allRels.find((rel) => rel.rId === sourceRid);
+        return target;
+      }
+    } else {
+      // Standard behavior for other element types
+      const sourceRid = element
+        .getElementsByTagName(params.relRootTag)[0]
+        .getAttribute(params.relAttribute);
 
-    const shapeRels = await XmlHelper.getRelationshipTargetsByPrefix(
-      archive,
-      relsPath,
-      params.prefix,
-    );
-    const target = shapeRels.find((rel) => rel.rId === sourceRid);
-
-    return target;
+      const shapeRels = await XmlHelper.getRelationshipTargetsByPrefix(
+        archive,
+        relsPath,
+        params.prefix,
+      );
+      const target = shapeRels.find((rel) => rel.rId === sourceRid);
+      return target;
+    }
   }
 
   // Determine whether a given string is a creationId or a shape name
