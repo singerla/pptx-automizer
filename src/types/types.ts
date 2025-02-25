@@ -172,6 +172,7 @@ export type Target = {
   subtype?: ElementSubtype;
   filenameExt?: ContentTypeExtension;
   filenameBase?: string;
+  isExternal?: boolean;
   getCreatedContent?: () => TrackedRelationInfo;
   getRelatedContent?: () => Promise<Target>;
   getTargetValue?: () => string;
@@ -210,7 +211,8 @@ export type TrackedRelation = {
     | 'slide'
     | 'chart'
     | 'externalData'
-    | 'slideLayout';
+    | 'slideLayout'
+    | 'hyperlink';
   targets?: Target[];
 };
 export type TrackedRelationTag = {
@@ -281,6 +283,7 @@ export type TargetByRelIdMapParam = {
   relAttribute: string;
   prefix: string;
   expression?: RegExp;
+  findAll?: boolean;
 };
 export type Workbook = {
   archive: IArchive;

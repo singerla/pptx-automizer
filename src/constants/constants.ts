@@ -25,6 +25,17 @@ export const TargetByRelIdMap = {
     relAttribute: 'r:embed',
     prefix: '../media/image',
   } as TargetByRelIdMapParam,
+  hyperlink: {
+    relRootTag: 'a:hlinkClick',
+    relAttribute: 'r:id',
+    prefix: '',
+    findAll: true,
+  } as TargetByRelIdMapParam,
+  oleObject: {
+    relRootTag: 'p:oleObj',
+    relAttribute: 'r:id',
+    prefix: '../embeddings/oleObject',
+  } as TargetByRelIdMapParam,
 };
 
 export const imagesTrack: () => TrackedRelation[] = () => [
@@ -39,6 +50,15 @@ export const imagesTrack: () => TrackedRelation[] = () => [
     tag: 'asvg:svgBlip',
     role: 'image',
     attribute: 'r:embed',
+  },
+];
+
+export const hyperlinksTrack: () => TrackedRelation[] = () => [
+  {
+    type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink',
+    tag: 'a:hlinkClick',
+    role: 'hyperlink',
+    attribute: 'r:id',
   },
 ];
 
@@ -76,6 +96,7 @@ export const contentTrack = (): TrackedRelationTag[] => {
           tag: null,
         },
         ...imagesTrack(),
+        ...hyperlinksTrack(),
       ],
     },
     {
@@ -101,6 +122,7 @@ export const contentTrack = (): TrackedRelationTag[] => {
           role: 'slideLayout',
         },
         ...imagesTrack(),
+        ...hyperlinksTrack(),
       ],
     },
     {
@@ -114,6 +136,7 @@ export const contentTrack = (): TrackedRelationTag[] => {
           tag: null,
         },
         ...imagesTrack(),
+        ...hyperlinksTrack(),
       ],
     },
   ];

@@ -17,6 +17,7 @@ export const mapUriType = {
   'http://schemas.openxmlformats.org/drawingml/2006/chart': 'chart',
   'http://schemas.microsoft.com/office/drawing/2014/chartex': 'chartEx',
   'http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject': 'oleObject',
+  'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink': 'hyperlink',
 };
 
 /**
@@ -206,6 +207,12 @@ export class XmlSlideHelper {
       case 'oleObj':
         type = 'OLEObject';
         break;
+    }
+
+    // Check for hyperlinks
+    const hasHyperlink = slideElementParent.getElementsByTagName('a:hlinkClick');
+    if (hasHyperlink.length > 0) {
+      type = 'Hyperlink';
     }
 
     return type as ElementType;
