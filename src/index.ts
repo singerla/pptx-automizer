@@ -4,6 +4,7 @@ import ModifyHelper, { CmToDxa, DxaToCm } from './helper/modify-helper';
 import ModifyShapeHelper from './helper/modify-shape-helper';
 import ModifyTableHelper from './helper/modify-table-helper';
 import ModifyChartHelper from './helper/modify-chart-helper';
+import ModifyHyperlinkHelper from './helper/modify-hyperlink-helper';
 import { TemplateInfo, XmlDocument, XmlElement } from './types/xml-types';
 import {
   AutomizerParams,
@@ -83,6 +84,10 @@ const setDataLabelAttributes = ModifyChartHelper.setDataLabelAttributes;
 const readWorkbookData = ModifyChartHelper.readWorkbookData;
 const readChartInfo = ModifyChartHelper.readChartInfo;
 
+const setHyperlinkTarget = ModifyHyperlinkHelper.setHyperlinkTarget;
+const addHyperlink = ModifyHyperlinkHelper.addHyperlink;
+const removeHyperlink = ModifyHyperlinkHelper.removeHyperlink;
+
 export type {
   ChartBubble,
   ChartCategory,
@@ -148,12 +153,18 @@ export const modify = {
   setWaterFallColumnTotalToLast,
   setChartTitle,
   setDataLabelAttributes,
+  setHyperlinkTarget,
+  addHyperlink,
+  removeHyperlink,
 };
+
 export const read = {
   readWorkbookData,
   readChartInfo,
 };
+
 export { CmToDxa, DxaToCm };
+
 export type {
   AutomizerParams,
   AutomizerSummary,
@@ -163,5 +174,6 @@ export type {
   XmlElement,
   XmlDocument,
 };
+
 export { ITemplate, IMaster, ISlide, IPptxGenJSSlide };
 export default Automizer;
