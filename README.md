@@ -38,6 +38,12 @@ If you require commercial support for complex .pptx automation, you can explore 
   - [Modify Charts](#modify-charts)
   - [Modify Extended Charts](#modify-extended-charts)
   - [Remove elements from a slide](#remove-elements-from-a-slide)
+  - [🔗 Hyperlink Management](#🔗-hyperlink-management)
+  - [Hyperlink Helper Functions](#hyperlink-helper-functions)
+  - [Adding Hyperlinks](#adding-hyperlinks)
+  - [Editing Hyperlinks](#editing-hyperlinks)
+  - [Removing Hyperlinks](#removing-hyperlinks)
+
 - [Tipps and Tricks](#tipps-and-tricks)
   - [Loop through the slides of a presentation](#loop-through-the-slides-of-a-presentation)
   - [Quickly get all slide numbers of a template](#quickly-get-all-slide-numbers-of-a-template)
@@ -49,6 +55,7 @@ If you require commercial support for complex .pptx automation, you can explore 
   - [Troubleshooting](#troubleshooting)
   - [Testing](#testing)
 - [Special Thanks](#special-thanks)
+
 <!-- TOC -->
 
 # Requirements and Limitations
@@ -589,6 +596,55 @@ pres
     slide.addElement('images', 2, 'imageJPG');
   });
 ```
+
+## 🔗 Hyperlink Management
+
+PowerPoint presentations often use hyperlinks to connect to external websites or internal slides. The PPTX Automizer provides simple and powerful functions to manage hyperlinks in your presentations.
+
+### Hyperlink Helper Functions
+
+Three core functions are available for all your hyperlink needs:
+
+| Function | Description |
+|----------|-------------|
+| `addHyperlink` | Add a new hyperlink to an element |
+| `setHyperlinkTarget` | Modify the target URL of existing hyperlinks |
+| `removeHyperlink` | Remove all hyperlinks from an element |
+
+### Adding Hyperlinks
+
+```typescript
+// Add an external hyperlink to an element named "MyShape"
+slide.modifyElement('MyShape', (element, relation) => {
+  modify.addHyperlink('https://example.com', true)(element, relation);
+});
+
+// Add an internal hyperlink to slide 3
+slide.modifyElement('JumpButton', (element, relation) => {
+  modify.addHyperlink('slide3.xml', false)(element, relation);
+});
+```
+
+### Editing Hyperlinks
+
+```typescript
+// Change the target of existing hyperlinks in an element
+slide.modifyElement('ExistingLink', (element, relation) => {
+  modify.setHyperlinkTarget('https://new-url.com')(element, relation);
+});
+```
+
+### Removing Hyperlinks
+
+```typescript
+// Remove all hyperlinks from an element
+slide.modifyElement('LinkToRemove', (element, relation) => {
+  modify.removeHyperlink()(element, relation);
+});
+```
+
+### Copy Existing Hyperlinks
+### Copy Slides Should Maintain Any Existing Hyperlinks
 
 # Tipps and Tricks
 
