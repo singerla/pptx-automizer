@@ -120,35 +120,54 @@ export class Hyperlink extends Shape {
 
   // Add a method to update the hyperlink in the slide XML
   private async updateHyperlinkInSlide(): Promise<void> {
-    if (!this.targetElement) {
-      return;
-    }
-
     // Get the slide XML
     const slideXml = await XmlHelper.getXmlFromArchive(
       this.targetArchive,
       this.targetSlideFile,
     );
 
-    // Find all text runs in the element
-    const runs = this.targetElement.getElementsByTagName('a:r');
-    
-    for (let i = 0; i < runs.length; i++) {
-      const run = runs[i];
-      const rPr = run.getElementsByTagName('a:rPr')[0];
+    // When copying a full slide with hyperlinks, we may not have a targetElement
+    // but we still need to update hyperlinks in the slide XML
+    if (this.sourceRid && this.createdRid) {
+      // Find all a:hlinkClick elements in the entire slide
+      const allHyperlinkElements = slideXml.getElementsByTagName('a:hlinkClick');
       
-      if (rPr) {
-        // Find hyperlink elements
-        const hlinkClicks = rPr.getElementsByTagName('a:hlinkClick');
+      for (let i = 0; i < allHyperlinkElements.length; i++) {
+        const hlinkClick = allHyperlinkElements[i];
         
-        for (let j = 0; j < hlinkClicks.length; j++) {
-          const hlinkClick = hlinkClicks[j];
-          
-          // Update the r:id attribute to use the created relationship ID
+        // Check if this element references our source relationship ID
+        if (hlinkClick.getAttribute('r:id') === this.sourceRid) {
+          // Update to use the new relationship ID
           hlinkClick.setAttribute('r:id', this.createdRid);
           
           // Ensure the xmlns:r attribute is set
           hlinkClick.setAttribute('xmlns:r', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships');
+        }
+      }
+    }
+    
+    // For element-specific hyperlinks (when targetElement is set)
+    if (this.targetElement) {
+      // Find all text runs in the element
+      const runs = this.targetElement.getElementsByTagName('a:r');
+      
+      for (let i = 0; i < runs.length; i++) {
+        const run = runs[i];
+        const rPr = run.getElementsByTagName('a:rPr')[0];
+        
+        if (rPr) {
+          // Find hyperlink elements
+          const hlinkClicks = rPr.getElementsByTagName('a:hlinkClick');
+          
+          for (let j = 0; j < hlinkClicks.length; j++) {
+            const hlinkClick = hlinkClicks[j];
+            
+            // Update the r:id attribute to use the created relationship ID
+            hlinkClick.setAttribute('r:id', this.createdRid);
+            
+            // Ensure the xmlns:r attribute is set
+            hlinkClick.setAttribute('xmlns:r', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships');
+          }
         }
       }
     }
@@ -265,34 +284,48 @@ export class Hyperlink extends Shape {
     const relationships = relXml.getElementsByTagName('Relationship');
     let relationshipUpdated = false;
     
-    for (let i = 0; i < relationships.length; i++) {
-      const relationship = relationships[i];
-      if (relationship.getAttribute('Id') === this.sourceRid) {
-        // Update the existing relationship
-        relationship.setAttribute('Id', this.createdRid);
-        relationship.setAttribute('Target', this.getRelationshipTarget());
-        relationship.setAttribute('Type', this.getRelationshipType());
-        
-        if (this.hyperlinkType === 'external') {
-          relationship.setAttribute('TargetMode', 'External');
-        } else if (relationship.hasAttribute('TargetMode')) {
-          relationship.removeAttribute('TargetMode');
+    // First, check if we need to update an existing relationship
+    if (this.sourceRid) {
+      for (let i = 0; i < relationships.length; i++) {
+        const relationship = relationships[i];
+        if (relationship.getAttribute('Id') === this.sourceRid) {
+          // Update the existing relationship
+          relationship.setAttribute('Id', this.createdRid);
+          
+          // Set the relationship type
+          relationship.setAttribute('Type', this.getRelationshipType());
+          
+          // For external links, preserve the original target URL and ensure TargetMode is External
+          if (this.hyperlinkType === 'external') {
+            relationship.setAttribute('Target', this.hyperlinkTarget);
+            relationship.setAttribute('TargetMode', 'External');
+          } else {
+            // For internal links, set the target appropriately
+            relationship.setAttribute('Target', this.getRelationshipTarget());
+            if (relationship.hasAttribute('TargetMode')) {
+              relationship.removeAttribute('TargetMode');
+            }
+          }
+          
+          relationshipUpdated = true;
+          break;
         }
-        
-        relationshipUpdated = true;
-        break;
       }
     }
     
-    // If the relationship wasn't found, create a new one
+    // If the relationship wasn't found or updated, create a new one
     if (!relationshipUpdated) {
       const newRel = relXml.createElement('Relationship');
       newRel.setAttribute('Id', this.createdRid);
       newRel.setAttribute('Type', this.getRelationshipType());
-      newRel.setAttribute('Target', this.getRelationshipTarget());
       
       if (this.hyperlinkType === 'external') {
+        // For external links, use the original URL and set TargetMode
+        newRel.setAttribute('Target', this.hyperlinkTarget);
         newRel.setAttribute('TargetMode', 'External');
+      } else {
+        // For internal links
+        newRel.setAttribute('Target', this.getRelationshipTarget());
       }
       
       relXml.documentElement.appendChild(newRel);
@@ -308,7 +341,7 @@ export class Hyperlink extends Shape {
     // Track the relationship for content integrity
     contentTracker.trackRelation(targetRelFile, {
       Id: this.createdRid,
-      Target: this.getRelationshipTarget(),
+      Target: this.hyperlinkType === 'external' ? this.hyperlinkTarget : this.getRelationshipTarget(),
       Type: this.getRelationshipType(),
     });
     
