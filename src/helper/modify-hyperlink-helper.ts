@@ -49,12 +49,11 @@ export default class ModifyHyperlinkHelper {
   /**
    * Add a hyperlink to an element
    * 
-   * @param target The target URL for the hyperlink
-   * @param isExternal Whether the hyperlink is external (true) or internal (false)
+   * @param target The target URL for external links, or slide number for internal links
    * @returns A callback function that adds a hyperlink
    */
   static addHyperlink = 
-    (target: string, isExternal: boolean = true): ShapeModificationCallback =>
+    (target: string | number): ShapeModificationCallback =>
     (element: XmlElement, relation?: XmlElement): void => {
       if (!element || !relation) {
         console.log('AddHyperlink: Missing element or relation');
@@ -87,15 +86,24 @@ export default class ModifyHyperlinkHelper {
         }
         
         newRelId = `rId${maxId + 1}`;
-        console.log(`Adding hyperlink with new rel ID: ${newRelId}, target: ${target}`);
         
+        // Determine if this is an internal slide link
+        const isInternalLink = typeof target === 'number' || 
+          (typeof target === 'string' && /^\d+$/.test(target));
+
         // Create the relationship
         const newRel = relation.ownerDocument.createElement('Relationship');
         newRel.setAttribute('Id', newRelId);
-        newRel.setAttribute('Type', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink');
-        newRel.setAttribute('Target', target);
         
-        if (isExternal) {
+        if (isInternalLink) {
+          // For internal slide links
+          const slideNumber = typeof target === 'number' ? target : parseInt(target, 10);
+          newRel.setAttribute('Type', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide');
+          newRel.setAttribute('Target', `../slides/slide${slideNumber}.xml`);
+        } else {
+          // For external links
+          newRel.setAttribute('Type', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink');
+          newRel.setAttribute('Target', target.toString());
           newRel.setAttribute('TargetMode', 'External');
         }
         
@@ -107,8 +115,8 @@ export default class ModifyHyperlinkHelper {
         try {
           contentTracker.trackRelation(relation.ownerDocument.documentURI || '', {
             Id: newRelId,
-            Target: target,
-            Type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink',
+            Target: newRel.getAttribute('Target') || '',
+            Type: newRel.getAttribute('Type') || '',
           });
           console.log('Tracked the relationship in content tracker');
         } catch (e) {
@@ -141,6 +149,11 @@ export default class ModifyHyperlinkHelper {
             // Add hyperlink element
             const hlinkClick = element.ownerDocument.createElement('a:hlinkClick');
             hlinkClick.setAttribute('r:id', newRelId);
+            if (isInternalLink) {
+              hlinkClick.setAttribute('action', 'ppaction://hlinksldjump');
+              hlinkClick.setAttribute('xmlns:a', 'http://schemas.openxmlformats.org/drawingml/2006/main');
+              hlinkClick.setAttribute('xmlns:p14', 'http://schemas.microsoft.com/office/powerpoint/2010/main');
+            }
             hlinkClick.setAttribute('xmlns:r', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships');
             rPr.appendChild(hlinkClick);
             console.log(`Added hyperlink to text run ${i+1}`);
@@ -159,6 +172,11 @@ export default class ModifyHyperlinkHelper {
             const rPr = element.ownerDocument.createElement('a:rPr');
             const hlinkClick = element.ownerDocument.createElement('a:hlinkClick');
             hlinkClick.setAttribute('r:id', newRelId);
+            if (isInternalLink) {
+              hlinkClick.setAttribute('action', 'ppaction://hlinksldjump');
+              hlinkClick.setAttribute('xmlns:a', 'http://schemas.openxmlformats.org/drawingml/2006/main');
+              hlinkClick.setAttribute('xmlns:p14', 'http://schemas.microsoft.com/office/powerpoint/2010/main');
+            }
             hlinkClick.setAttribute('xmlns:r', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships');
             
             rPr.appendChild(hlinkClick);
@@ -198,6 +216,11 @@ export default class ModifyHyperlinkHelper {
               const t = element.ownerDocument.createElement('a:t');
               
               hlinkClick.setAttribute('r:id', newRelId);
+              if (isInternalLink) {
+                hlinkClick.setAttribute('action', 'ppaction://hlinksldjump');
+                hlinkClick.setAttribute('xmlns:a', 'http://schemas.openxmlformats.org/drawingml/2006/main');
+                hlinkClick.setAttribute('xmlns:p14', 'http://schemas.microsoft.com/office/powerpoint/2010/main');
+              }
               hlinkClick.setAttribute('xmlns:r', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships');
               t.textContent = 'Hyperlink';
               

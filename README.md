@@ -611,17 +611,20 @@ Three core functions are available for all your hyperlink needs:
 
 ### Adding Hyperlinks
 
-```typescript
-// Add an external hyperlink to an element named "MyShape"
-slide.modifyElement('MyShape', (element, relation) => {
-  modify.addHyperlink('https://example.com', true)(element, relation);
-});
+You can add hyperlinks to text elements using the `addHyperlink` helper function. The function accepts either a URL string for external links or a slide number for internal slide links:
 
-// Add an internal hyperlink to slide 3
-slide.modifyElement('JumpButton', (element, relation) => {
-  modify.addHyperlink('slide3.xml', false)(element, relation);
+```ts
+// Add an external hyperlink
+slide.modifyElement('TextShape', modify.addHyperlink('https://example.com'));
+
+
+// Add an internal slide link (to slide 3)
+slide.modifyElement('TextShape', (element, relation) => {
+  modify.addHyperlink(3)(element, relation);
 });
 ```
+
+The `addHyperlink` function will automatically detect whether the target is an external URL or an internal slide number and set up the appropriate relationship type and attributes.
 
 # Tipps and Tricks
 
