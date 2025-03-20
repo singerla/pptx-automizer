@@ -267,6 +267,7 @@ export type ImportedElement = {
   target?: AnalyzedElementType['target'];
   type?: AnalyzedElementType['type'];
   sourceElement?: XmlElement;
+  sourceRid?: string;
 };
 export type AnalyzedElementType = {
   type: ElementType;
