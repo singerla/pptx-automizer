@@ -7,20 +7,18 @@ const run = async () => {
   const automizer = new Automizer({
     templateDir,
     outputDir,
-    autoImportSlideMasters: true,
-    cleanupPlaceholders: true,
   });
 
   let pres = automizer
     .loadRoot(`RootTemplate.pptx`)
-    .load(`EmptySlidePlaceholders.pptx`, 'placeholder')
-    .load(`EmptySlide.pptx`, 'emptySlide');
+    .load(`EmptySlide.pptx`, 'emptySlide')
+    .load(`SlideWithMedia.pptx`, 'media');
 
   pres.addSlide('emptySlide', 1, (slide) => {
-    slide.addElement('placeholder', 1, 'Titel 4');
+    slide.addElement('media', 1, 'audio');
   });
 
-  pres.write(`myOutputPresentation.pptx`).then((summary) => {
+  pres.write(`testMedia.pptx`).then((summary) => {
     console.log(summary);
   });
 };

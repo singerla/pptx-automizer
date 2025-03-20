@@ -13,6 +13,7 @@ import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { ElementType } from '../enums/element-type';
 import IArchive from '../interfaces/iarchive';
 import { ContentTypeExtension } from '../enums/content-type-map';
+import { TargetByRelIdMap } from '../constants/constants';
 
 export class Image extends Shape implements IImage {
   extension: ContentTypeExtension;
@@ -26,9 +27,19 @@ export class Image extends Shape implements IImage {
     this.extension = FileHelper.getFileExtension(this.sourceFile);
     this.relAttribute = 'r:embed';
 
-    switch (this.extension) {
-      case 'svg':
-        this.relRootTag = 'asvg:svgBlip';
+    switch (shape.sourceMode) {
+      case 'image:svg':
+        this.relRootTag = TargetByRelIdMap['image:svg'].relRootTag;
+        this.relParent = (element: XmlElement) =>
+          element.parentNode as XmlElement;
+        break;
+      case 'image:media':
+        this.relRootTag = TargetByRelIdMap['image:media'].relRootTag;
+        this.relParent = (element: XmlElement) =>
+          element.parentNode as XmlElement;
+        break;
+      case 'image:audioFile':
+        this.relRootTag = TargetByRelIdMap['image:audioFile'].relRootTag;
         this.relParent = (element: XmlElement) =>
           element.parentNode as XmlElement;
         break;
@@ -80,6 +91,40 @@ export class Image extends Shape implements IImage {
     this.targetElement = targetElement;
     await this.updateTargetElementRelId();
 
+    XmlHelper.dump(targetElement);
+
+    return this;
+  }
+
+  async modifyMediaRelation(
+    targetTemplate: RootPresTemplate,
+    targetSlideNumber: number,
+    targetElement: XmlElement,
+  ): Promise<Image> {
+    await this.prepare(targetTemplate, targetSlideNumber);
+
+    this.targetElement = targetElement;
+    this.targetElement
+      .getElementsByTagName(this.relRootTag)
+      .item(0)
+      .setAttribute(this.relAttribute, this.createdRid);
+
+    return this;
+  }
+
+  async modifyAudioRelation(
+    targetTemplate: RootPresTemplate,
+    targetSlideNumber: number,
+    targetElement: XmlElement,
+  ): Promise<Image> {
+    await this.prepare(targetTemplate, targetSlideNumber);
+
+    this.targetElement = targetElement;
+    this.targetElement
+      .getElementsByTagName(this.relRootTag)
+      .item(0)
+      .setAttribute(this.relAttribute, this.createdRid);
+
     return this;
   }
 
@@ -110,6 +155,51 @@ export class Image extends Shape implements IImage {
         {
           mode: 'append',
           target,
+          sourceArchive: this.sourceArchive,
+          sourceSlideNumber: this.sourceSlideNumber,
+          type: ElementType.Image,
+        },
+        this.targetType,
+      ).modifySvgRelation(
+        targetTemplate,
+        targetSlideNumber,
+        this.targetElement,
+      );
+    }
+
+    if (this.hasAudioRelation()) {
+      const relsPath = `ppt/slides/_rels/slide${this.sourceSlideNumber}.xml.rels`;
+      const mediaTarget = await XmlHelper.getTargetByRelId(
+        this.sourceArchive,
+        relsPath,
+        this.targetElement,
+        'image:media',
+      );
+      await new Image(
+        {
+          mode: 'append',
+          target: mediaTarget,
+          sourceArchive: this.sourceArchive,
+          sourceSlideNumber: this.sourceSlideNumber,
+          type: ElementType.Image,
+        },
+        this.targetType,
+      ).modifySvgRelation(
+        targetTemplate,
+        targetSlideNumber,
+        this.targetElement,
+      );
+
+      const audioTarget = await XmlHelper.getTargetByRelId(
+        this.sourceArchive,
+        relsPath,
+        this.targetElement,
+        'image:audioFile',
+      );
+      await new Image(
+        {
+          mode: 'append',
+          target: audioTarget,
           sourceArchive: this.sourceArchive,
           sourceSlideNumber: this.sourceSlideNumber,
           type: ElementType.Image,
@@ -205,6 +295,10 @@ export class Image extends Shape implements IImage {
 
   hasSvgBlipRelation(): boolean {
     return this.targetElement.getElementsByTagName('asvg:svgBlip').length > 0;
+  }
+
+  hasAudioRelation(): boolean {
+    return this.targetElement.getElementsByTagName('a:audioFile').length > 0;
   }
 
   static async getAllOnSlide(

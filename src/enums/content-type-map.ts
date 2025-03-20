@@ -4,6 +4,7 @@ export enum ContentTypeMap {
   png = 'image/png',
   gif = 'image/gif',
   svg = 'image/svg+xml',
+  mp3 = 'audio/mp3',
   m4v = 'video/mp4',
   mp4 = 'video/mp4',
   emf = 'image/x-emf',

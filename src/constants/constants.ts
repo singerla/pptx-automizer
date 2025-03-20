@@ -25,6 +25,18 @@ export const TargetByRelIdMap = {
     relAttribute: 'r:embed',
     prefix: '../media/image',
   } as TargetByRelIdMapParam,
+  'image:media': {
+    relRootTag: 'p14:media',
+    relAttribute: 'r:embed',
+    prefix: '../media/media',
+    findAll: true,
+  } as TargetByRelIdMapParam,
+  'image:audioFile': {
+    relRootTag: 'a:audioFile',
+    relAttribute: 'r:link',
+    prefix: '../media/media',
+    findAll: true,
+  } as TargetByRelIdMapParam,
   hyperlink: {
     relRootTag: 'a:hlinkClick',
     relAttribute: 'r:id',

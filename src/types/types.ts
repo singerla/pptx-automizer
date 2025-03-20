@@ -268,6 +268,7 @@ export type ImportedElement = {
   type?: AnalyzedElementType['type'];
   sourceElement?: XmlElement;
   sourceRid?: string;
+  sourceMode?: 'image:svg' | 'image:media' | 'image:audioFile';
 };
 export type AnalyzedElementType = {
   type: ElementType;

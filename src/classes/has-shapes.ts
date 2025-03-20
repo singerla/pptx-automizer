@@ -37,6 +37,8 @@ import { GenericShape } from '../shapes/generic';
 import { XmlSlideHelper } from '../helper/xml-slide-helper';
 import { OLEObject } from '../shapes/ole';
 import { Hyperlink } from '../shapes/hyperlink';
+import { Media } from '../shapes/media';
+import { vd } from '../helper/general-helper';
 
 export default class HasShapes {
   /**
@@ -425,15 +427,12 @@ export default class HasShapes {
           // For hyperlinks, we need to handle them differently
           if (info.target) {
             await new Hyperlink(
-              info, 
-              this.targetType, 
+              info,
+              this.targetType,
               this.sourceArchive,
               info.target.isExternal ? 'external' : 'internal',
-              info.target.file
-            )[info.mode](
-              this.targetTemplate, 
-              this.targetNumber
-            );
+              info.target.file,
+            )[info.mode](this.targetTemplate, this.targetNumber);
           }
           break;
         default:
@@ -803,7 +802,7 @@ export default class HasShapes {
           sourceArchive: this.sourceArchive,
           sourceSlideNumber: this.sourceNumber,
         },
-        this.targetType
+        this.targetType,
       ).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);
     }
 
@@ -816,11 +815,14 @@ export default class HasShapes {
           sourceArchive: this.sourceArchive,
           sourceSlideNumber: this.sourceNumber,
         },
-        this.targetType
+        this.targetType,
       ).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);
     }
 
-    const oleObjects = await OLEObject.getAllOnSlide(this.sourceArchive, this.relsPath);
+    const oleObjects = await OLEObject.getAllOnSlide(
+      this.sourceArchive,
+      this.relsPath,
+    );
     for (const oleObject of oleObjects) {
       await new OLEObject(
         {
@@ -830,12 +832,15 @@ export default class HasShapes {
           sourceSlideNumber: this.sourceNumber,
         },
         this.targetType,
-        this.sourceArchive
+        this.sourceArchive,
       ).modifyOnAddedSlide(this.targetTemplate, this.targetNumber, oleObjects);
     }
 
     // Copy hyperlinks
-    const hyperlinks = await Hyperlink.getAllOnSlide(this.sourceArchive, this.relsPath);
+    const hyperlinks = await Hyperlink.getAllOnSlide(
+      this.sourceArchive,
+      this.relsPath,
+    );
     for (const hyperlink of hyperlinks) {
       // Create a new hyperlink with the correct target information
       const hyperlinkInstance = new Hyperlink(
@@ -849,14 +854,18 @@ export default class HasShapes {
         this.targetType,
         this.sourceArchive,
         hyperlink.isExternal ? 'external' : 'internal',
-        hyperlink.file
+        hyperlink.file,
       );
-      
+
       // Ensure the target property is properly set
       hyperlinkInstance.target = hyperlink;
-      
+
       // Process the hyperlink
-      await hyperlinkInstance.modifyOnAddedSlide(this.targetTemplate, this.targetNumber, hyperlinks);
+      await hyperlinkInstance.modifyOnAddedSlide(
+        this.targetTemplate,
+        this.targetNumber,
+        hyperlinks,
+      );
     }
   }
 
