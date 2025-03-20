@@ -14,6 +14,7 @@ import { ElementType } from '../enums/element-type';
 import IArchive from '../interfaces/iarchive';
 import { ContentTypeExtension } from '../enums/content-type-map';
 import { TargetByRelIdMap } from '../constants/constants';
+import { vd } from '../helper/general-helper';
 
 export class Image extends Shape implements IImage {
   extension: ContentTypeExtension;
@@ -81,53 +82,6 @@ export class Image extends Shape implements IImage {
     return this;
   }
 
-  async modifySvgRelation(
-    targetTemplate: RootPresTemplate,
-    targetSlideNumber: number,
-    targetElement: XmlElement,
-  ): Promise<Image> {
-    await this.prepare(targetTemplate, targetSlideNumber);
-
-    this.targetElement = targetElement;
-    await this.updateTargetElementRelId();
-
-    XmlHelper.dump(targetElement);
-
-    return this;
-  }
-
-  async modifyMediaRelation(
-    targetTemplate: RootPresTemplate,
-    targetSlideNumber: number,
-    targetElement: XmlElement,
-  ): Promise<Image> {
-    await this.prepare(targetTemplate, targetSlideNumber);
-
-    this.targetElement = targetElement;
-    this.targetElement
-      .getElementsByTagName(this.relRootTag)
-      .item(0)
-      .setAttribute(this.relAttribute, this.createdRid);
-
-    return this;
-  }
-
-  async modifyAudioRelation(
-    targetTemplate: RootPresTemplate,
-    targetSlideNumber: number,
-    targetElement: XmlElement,
-  ): Promise<Image> {
-    await this.prepare(targetTemplate, targetSlideNumber);
-
-    this.targetElement = targetElement;
-    this.targetElement
-      .getElementsByTagName(this.relRootTag)
-      .item(0)
-      .setAttribute(this.relAttribute, this.createdRid);
-
-    return this;
-  }
-
   async append(
     targetTemplate: RootPresTemplate,
     targetSlideNumber: number,
@@ -160,7 +114,7 @@ export class Image extends Shape implements IImage {
           type: ElementType.Image,
         },
         this.targetType,
-      ).modifySvgRelation(
+      ).modifyMediaRelation(
         targetTemplate,
         targetSlideNumber,
         this.targetElement,
@@ -182,9 +136,10 @@ export class Image extends Shape implements IImage {
           sourceArchive: this.sourceArchive,
           sourceSlideNumber: this.sourceSlideNumber,
           type: ElementType.Image,
+          sourceMode: 'image:media',
         },
         this.targetType,
-      ).modifySvgRelation(
+      ).modifyMediaRelation(
         targetTemplate,
         targetSlideNumber,
         this.targetElement,
@@ -203,14 +158,28 @@ export class Image extends Shape implements IImage {
           sourceArchive: this.sourceArchive,
           sourceSlideNumber: this.sourceSlideNumber,
           type: ElementType.Image,
+          sourceMode: 'image:audioFile',
         },
         this.targetType,
-      ).modifySvgRelation(
+      ).modifyMediaRelation(
         targetTemplate,
         targetSlideNumber,
         this.targetElement,
       );
     }
+
+    return this;
+  }
+
+  async modifyMediaRelation(
+    targetTemplate: RootPresTemplate,
+    targetSlideNumber: number,
+    targetElement: XmlElement,
+  ): Promise<Image> {
+    await this.prepare(targetTemplate, targetSlideNumber);
+
+    this.targetElement = targetElement;
+    await this.updateTargetElementRelId();
 
     return this;
   }
