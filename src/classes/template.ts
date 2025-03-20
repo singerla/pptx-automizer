@@ -69,7 +69,7 @@ export class Template implements ITemplate {
   mediaFiles: MediaFile[] = [];
 
   automizer: Automizer;
-  generators: IGenerator[] = [];
+  generator: IGenerator;
 
   constructor(file: AutomizerFile, params: ArchiveParams) {
     this.file = file;
@@ -241,19 +241,12 @@ export class Template implements ITemplate {
     return CountHelper.count(name, this.counter);
   }
 
-  async runExternalGenerators() {
-    this.generators.push(
-      new GeneratePptxGenJs(this.automizer, this.slides).create(),
-    );
-
-    for (const generator of this.generators) {
-      await generator.generateSlides();
-    }
+  async runExternalGenerator() {
+    this.generator = new GeneratePptxGenJs(this.automizer, this.slides);
+    await this.generator.generateSlides();
   }
 
-  async cleanupExternalGenerators() {
-    for (const generator of this.generators) {
-      await generator.cleanup();
-    }
+  async cleanupExternalGenerator() {
+    await this.generator.cleanup();
   }
 }

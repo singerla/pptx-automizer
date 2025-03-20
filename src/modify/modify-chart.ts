@@ -21,6 +21,9 @@ import ModifyXmlHelper from '../helper/modify-xml-helper';
 import ModifyTextHelper from '../helper/modify-text-helper';
 import ModifyColorHelper from '../helper/modify-color-helper';
 import { XmlDocument } from '../types/xml-types';
+import { modify } from '../index';
+import ModifyChartHelper from '../helper/modify-chart-helper';
+import { vd } from '../helper/general-helper';
 
 export class ModifyChart {
   data: ChartData;
@@ -234,6 +237,14 @@ export class ModifyChart {
         this.series(s, this.seriesDataLabel(s, series.style?.label)),
       );
 
+      if (series.style?.label) {
+        // Apply style for all label props helper if required
+        modify.setDataLabelAttributes({
+          applyToSeries: s,
+          ...series.style?.label,
+        })(null, this.chart.root as XmlDocument);
+      }
+
       this.data.categories.forEach((category, c) => {
         this.chart.modify(
           this.series(s, this.seriesDataLabelsRange(c, category.label)),
@@ -425,6 +436,7 @@ export class ModifyChart {
         children: {
           'c:dLbl': {
             index: index,
+            fromIndex: 0,
             children: {
               'c:idx': {
                 modify: ModifyXmlHelper.attribute('val', String(idx)),
@@ -438,12 +450,30 @@ export class ModifyChart {
                   },
                 },
               },
+              'a:fld': {
+                children: {
+                  'a:rPr': {
+                    modify: [
+                      ModifyColorHelper.solidFill(labelStyle?.color),
+                      ModifyTextHelper.style(labelStyle),
+                    ],
+                  },
+                  'a:defRPr': {
+                    isRequired: false,
+                    modify: [
+                      ModifyColorHelper.solidFill(labelStyle?.color),
+                      ModifyTextHelper.style(labelStyle),
+                    ],
+                  },
+                },
+              },
             },
           },
         },
       },
     };
   };
+
   seriesId = (series: number): ModificationTags => {
     return {
       'c:idx': {

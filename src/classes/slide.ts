@@ -1,10 +1,10 @@
 import { FileHelper } from '../helper/file-helper';
-import { ShapeTargetType, SourceIdentifier, SlideModificationCallback } from '../types/types';
+import { ShapeTargetType, SourceIdentifier } from '../types/types';
 import { ISlide } from '../interfaces/islide';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
 import { PresTemplate } from '../interfaces/pres-template';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
-import { last, vd } from '../helper/general-helper';
+import { last } from '../helper/general-helper';
 import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import { IMaster } from '../interfaces/imaster';
 import HasShapes from './has-shapes';
@@ -60,6 +60,8 @@ export class Slide extends HasShapes implements ISlide {
       );
     }
 
+    const placeholderTypes = await this.parsePlaceholders();
+
     if (this.importElements.length) {
       await this.importedSelectedElements();
     }
@@ -71,7 +73,7 @@ export class Slide extends HasShapes implements ISlide {
     const assert = this.targetTemplate.automizer.params.showIntegrityInfo;
     await this.checkIntegrity(info, assert);
 
-    await this.cleanSlide(this.targetPath);
+    await this.cleanSlide(this.targetPath, placeholderTypes);
 
     this.status.increment();
   }

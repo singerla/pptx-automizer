@@ -13,7 +13,7 @@ import { PresTemplate } from './interfaces/pres-template';
 import { RootPresTemplate } from './interfaces/root-pres-template';
 import { Template } from './classes/template';
 import { ModifyXmlCallback, TemplateInfo } from './types/xml-types';
-import { GeneralHelper, vd } from './helper/general-helper';
+import { GeneralHelper, log, Logger } from './helper/general-helper';
 import { Master } from './classes/master';
 import path from 'path';
 import * as fs from 'fs';
@@ -27,6 +27,8 @@ import JSZip from 'jszip';
 import { ISlide } from './interfaces/islide';
 import { IMaster } from './interfaces/imaster';
 import { ContentTypeExtension } from './enums/content-type-map';
+import slugify from 'slugify';
+import PptxGenJS from 'pptxgenjs';
 
 /**
  * Automizer
@@ -114,11 +116,15 @@ export default class Automizer implements IPresentationProps {
         this.templates.push(newTemplate);
       });
     }
+
+    if (params.verbosity) {
+      Logger.verbosity = params.verbosity;
+    }
   }
 
   setStatusTracker(statusTracker: StatusTracker['next']): void {
     const defaultStatusTracker = (status: StatusTracker) => {
-      console.log(status.info + ' (' + status.share + '%)');
+      log(status.info + ' (' + status.share + '%)', 2);
     };
 
     this.status = {
@@ -487,11 +493,11 @@ export default class Automizer implements IPresentationProps {
     await this.rootTemplate.countExistingSlides();
     this.status.max = this.rootTemplate.slides.length;
 
-    await this.rootTemplate.runExternalGenerators();
+    await this.rootTemplate.runExternalGenerator();
     for (const slide of this.rootTemplate.slides) {
       await this.rootTemplate.appendSlide(slide);
     }
-    await this.rootTemplate.cleanupExternalGenerators();
+    await this.rootTemplate.cleanupExternalGenerator();
 
     if (this.params.removeExistingSlides) {
       await this.rootTemplate.truncate();
@@ -502,14 +508,17 @@ export default class Automizer implements IPresentationProps {
    * Write all media files to archive.
    */
   public async writeMediaFiles(): Promise<void> {
+    const mediaDir = 'ppt/media/';
     for (const file of this.rootTemplate.mediaFiles) {
       const data = fs.readFileSync(file.filepath);
-      let archiveFilename = 'ppt/media/' + file.file;
+      let archiveFilename = file.file;
       if (file.prefix) {
-        archiveFilename = 'ppt/media/' + file.prefix + file.file;
+        archiveFilename = file.prefix + file.file;
       }
 
-      await this.rootTemplate.archive.write(archiveFilename, data);
+      archiveFilename = slugify(archiveFilename);
+
+      await this.rootTemplate.archive.write(mediaDir + archiveFilename, data);
       await XmlHelper.appendImageExtensionToContentType(
         this.rootTemplate.archive,
         file.extension,
@@ -569,13 +578,13 @@ export default class Automizer implements IPresentationProps {
           return this.templateFallbackDir + location;
         } else {
           if (typeof location === 'string') {
-            vd('No file matches "' + location + '"');
+            log('No file matches "' + location + '"', 0);
           } else {
-            vd('Invalid filename');
+            log('Invalid filename', 0);
           }
 
-          vd('@templateDir: ' + this.templateDir);
-          vd('@templateFallbackDir: ' + this.templateFallbackDir);
+          log('@templateDir: ' + this.templateDir, 2);
+          log('@templateFallbackDir: ' + this.templateFallbackDir, 2);
         }
         break;
       case 'output':

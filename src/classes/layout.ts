@@ -4,15 +4,10 @@ import { ShapeTargetType, SourceIdentifier, Target } from '../types/types';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
 import { PresTemplate } from '../interfaces/pres-template';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
-import { HelperElement } from '../types/xml-types';
-import IArchive from '../interfaces/iarchive';
-import { IMaster } from '../interfaces/imaster';
 import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import HasShapes from './has-shapes';
 import { ILayout } from '../interfaces/ilayout';
-import { Chart } from '../shapes/chart';
-import { Image } from '../shapes/image';
-import { vd } from '../helper/general-helper';
+import { log } from '../helper/general-helper';
 
 export class Layout extends HasShapes implements ILayout {
   targetType: ShapeTargetType = 'slideLayout';
@@ -48,7 +43,7 @@ export class Layout extends HasShapes implements ILayout {
     this.targetRelsPath = `ppt/slideLayouts/_rels/slideLayout${this.targetNumber}.xml.rels`;
     this.sourceArchive = await this.sourceTemplate.archive;
 
-    console.log('Importing slideLayout ' + this.targetNumber);
+    log('Importing slideLayout ' + this.targetNumber, 2);
 
     await this.copySlideLayoutFiles();
     await this.copyRelatedContent();

@@ -1,7 +1,6 @@
 import { XmlElement } from '../types/xml-types';
 import { ImageStyle } from '../types/modify-types';
-import { XmlHelper } from './xml-helper';
-import { vd } from './general-helper';
+import slugify from 'slugify';
 
 export default class ModifyImageHelper {
   /**
@@ -11,7 +10,7 @@ export default class ModifyImageHelper {
    */
   static setRelationTarget = (filename: string) => {
     return (element: XmlElement, arg1: XmlElement): void => {
-      arg1.setAttribute('Target', '../media/' + filename);
+      arg1.setAttribute('Target', '../media/' + slugify(filename));
     };
   };
 

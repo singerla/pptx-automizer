@@ -5,6 +5,7 @@ test('Append and modify slideMastes and use slideLayouts', async () => {
   const automizer = new Automizer({
     templateDir: `${__dirname}/pptx-templates`,
     outputDir: `${__dirname}/pptx-output`,
+    verbosity: 2,
   });
 
   const pres = await automizer

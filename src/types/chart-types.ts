@@ -17,7 +17,7 @@ export type ChartValueStyle = {
     color?: Color;
     isBold?: boolean;
     size?: number;
-  };
+  } & ChartDataLabelAttributes;
   gradient?: {
     color: Color;
     index: number;
@@ -86,8 +86,11 @@ export type ChartAxisRange = {
   sourceLinked?: boolean;
 };
 
-export type ChartDataLabelAttributes = {
+export type ChartSeriesDataLabelAttributes = {
   applyToSeries?: number;
+} & ChartDataLabelAttributes;
+
+export type ChartDataLabelAttributes = {
   dLblPos?: LabelPosition;
   showLegendKey?: boolean;
   showVal?: boolean;
@@ -96,6 +99,7 @@ export type ChartDataLabelAttributes = {
   showPercent?: boolean;
   showBubbleSize?: boolean;
   showLeaderLines?: boolean;
+  solidFill?: Color;
 };
 // Elements inside a chart (e.g. a legend) require shares as coordinates.
 // E.g. "w: 0.5" means "half of chart width"

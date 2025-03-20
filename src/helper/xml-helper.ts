@@ -11,14 +11,13 @@ import {
 import { TargetByRelIdMap } from '../constants/constants';
 import { XmlPrettyPrint } from './xml-pretty-print';
 import { GetRelationshipsCallback, Target } from '../types/types';
-import { vd } from './general-helper';
+import { log } from './general-helper';
 import { contentTracker } from './content-tracker';
 import IArchive from '../interfaces/iarchive';
 import {
   ContentTypeExtension,
   ContentTypeMap,
 } from '../enums/content-type-map';
-import XmlElements from './xml-elements';
 
 export class XmlHelper {
   static async modifyXmlInArchive(
@@ -166,7 +165,9 @@ export class XmlHelper {
   }
 
   static async getRelationshipTargetsByPrefix(
-archive: IArchive, path: string, prefix: string | string[]
+    archive: IArchive,
+    path: string,
+    prefix: string | string[],
   ): Promise<Target[]> {
     const prefixes = typeof prefix === 'string' ? [prefix] : prefix;
     return XmlHelper.getRelationshipItems(
@@ -352,18 +353,49 @@ archive: IArchive, path: string, prefix: string | string[]
     type: string,
   ): Promise<Target> {
     const params = TargetByRelIdMap[type];
-    const sourceRid = element
-      .getElementsByTagName(params.relRootTag)[0]
-      .getAttribute(params.relAttribute);
+    
+    // For elements that need to search all instances (like hyperlinks)
+    if (params.findAll) {
+      // Find all hyperlink elements
+      const hyperlinks = element.getElementsByTagName(params.relRootTag);
+      if (hyperlinks.length > 0) {
+        // Use the first hyperlink found
+        const sourceRid = hyperlinks[0].getAttribute(params.relAttribute);
+        
+        // Get all relationships
+        const allRels = await XmlHelper.getRelationshipItems(
+          archive,
+          relsPath,
+          (element: XmlElement, rels: Target[]) => {
+            rels.push({
+              rId: element.getAttribute('Id'),
+              type: element.getAttribute('Type'),
+              file: element.getAttribute('Target'),
+              filename: element.getAttribute('Target'),
+              element: element,
+              isExternal: element.getAttribute('TargetMode') === 'External',
+            } as Target);
+          }
+        );
+        
+        // Find the matching relationship
+        const target = allRels.find((rel) => rel.rId === sourceRid);
+        return target;
+      }
+    } else {
+      // Standard behavior for other element types
+      const sourceRid = element
+        .getElementsByTagName(params.relRootTag)[0]
+        .getAttribute(params.relAttribute);
 
-    const shapeRels = await XmlHelper.getRelationshipTargetsByPrefix(
-      archive,
-      relsPath,
-      params.prefix,
-    );
-    const target = shapeRels.find((rel) => rel.rId === sourceRid);
-
-    return target;
+      const shapeRels = await XmlHelper.getRelationshipTargetsByPrefix(
+        archive,
+        relsPath,
+        params.prefix,
+      );
+      const target = shapeRels.find((rel) => rel.rId === sourceRid);
+      return target;
+    }
   }
 
   // Determine whether a given string is a creationId or a shape name
@@ -547,8 +579,19 @@ archive: IArchive, path: string, prefix: string | string[]
     }
   }
 
+  static getClosestParent(tag: string, element: XmlElement): XmlElement {
+    if (element.parentNode) {
+      if (element.parentNode.nodeName === tag) {
+        return element.parentNode as XmlElement;
+      }
+      return XmlHelper.getClosestParent(tag, element.parentNode as XmlElement);
+    }
+  }
+
   static remove(toRemove: XmlElement): void {
-    toRemove.parentNode.removeChild(toRemove);
+    if (toRemove?.parentNode) {
+      toRemove.parentNode.removeChild(toRemove);
+    }
   }
 
   static moveChild(childToMove: XmlElement, insertBefore?: XmlElement): void {
@@ -573,7 +616,7 @@ archive: IArchive, path: string, prefix: string | string[]
     const parent = collection[0].parentNode;
     order.forEach((index, i) => {
       if (!collection[index]) {
-        vd('sortCollection index not found' + index);
+        log('sortCollection index not found' + index, 1);
         return;
       }
 

@@ -5,15 +5,16 @@ import {
   ChartBubble,
   ChartCategory,
   ChartData,
-  ChartDataLabelAttributes,
   ChartElementCoordinateShares,
   ChartPoint,
   ChartSeries,
+  ChartSeriesDataLabelAttributes,
   ChartSlot,
 } from '../types/chart-types';
 import ModifyXmlHelper from './modify-xml-helper';
 import { XmlDocument, XmlElement } from '../types/xml-types';
 import { XmlHelper } from './xml-helper';
+import ModifyColorHelper from './modify-color-helper';
 
 export default class ModifyChartHelper {
   /**
@@ -280,6 +281,9 @@ export default class ModifyChartHelper {
           colorValue: colorElement.getAttribute('val'),
         });
       });
+
+      const chartTagName = series.item(0).parentNode.nodeName;
+      info.chartType = chartTagName?.split(':')[1];
     };
 
   /**
@@ -534,7 +538,7 @@ export default class ModifyChartHelper {
 
   /**
    * Set the title of a chart. This requires an already existing, manually edited chart title.
-    @param newTitle
+   @param newTitle
    *
    */
   static setChartTitle =
@@ -553,83 +557,78 @@ export default class ModifyChartHelper {
    *
    */
   static setDataLabelAttributes =
-    (dataLabel: ChartDataLabelAttributes): ChartModificationCallback =>
+    (dataLabel: ChartSeriesDataLabelAttributes): ChartModificationCallback =>
     (element: XmlElement, chart: XmlDocument): void => {
       const modifyXmlHelper = new ModifyXmlHelper(chart);
-      const applyToSeries = dataLabel.applyToSeries
-        ? {
-            index: dataLabel.applyToSeries,
-          }
-        : {
-            all: true,
-          };
+      const applyToSeries =
+        typeof dataLabel.applyToSeries === 'number'
+          ? {
+              index: dataLabel.applyToSeries,
+            }
+          : {
+              all: true,
+            };
 
       modifyXmlHelper.modify({
         'c:ser': {
           ...applyToSeries,
           children: {
             'c:dLbls': {
-              children: {
-                'c:dLblPos': {
-                  modify: [ModifyXmlHelper.attribute('val', dataLabel.dLblPos)],
-                },
-                'c:showLegendKey': {
-                  modify: [
-                    ModifyXmlHelper.booleanAttribute(
-                      'val',
-                      dataLabel.showLegendKey,
-                    ),
-                  ],
-                },
-                'c:showVal': {
-                  modify: [
-                    ModifyXmlHelper.booleanAttribute('val', dataLabel.showVal),
-                  ],
-                },
-                'c:showCatName': {
-                  modify: [
-                    ModifyXmlHelper.booleanAttribute(
-                      'val',
-                      dataLabel.showCatName,
-                    ),
-                  ],
-                },
-                'c:showSerName': {
-                  modify: [
-                    ModifyXmlHelper.booleanAttribute(
-                      'val',
-                      dataLabel.showSerName,
-                    ),
-                  ],
-                },
-                'c:showPercent': {
-                  modify: [
-                    ModifyXmlHelper.booleanAttribute(
-                      'val',
-                      dataLabel.showPercent,
-                    ),
-                  ],
-                },
-                'c:showBubbleSize': {
-                  modify: [
-                    ModifyXmlHelper.booleanAttribute(
-                      'val',
-                      dataLabel.showBubbleSize,
-                    ),
-                  ],
-                },
-                'c:showLeaderLines': {
-                  modify: [
-                    ModifyXmlHelper.booleanAttribute(
-                      'val',
-                      dataLabel.showLeaderLines,
-                    ),
-                  ],
-                },
-              },
+              children:
+                ModifyChartHelper.setDataPointLabelAttributes(dataLabel),
             },
           },
         },
       });
     };
+
+  static setDataPointLabelAttributes = (
+    dataLabel: ChartSeriesDataLabelAttributes,
+  ) => {
+    return {
+      'c:spPr': {
+        modify: [ModifyColorHelper.solidFill(dataLabel.solidFill)],
+      },
+      'c:dLblPos': {
+        modify: [ModifyXmlHelper.attribute('val', dataLabel.dLblPos)],
+      },
+      'c:showLegendKey': {
+        modify: [
+          ModifyXmlHelper.booleanAttribute('val', dataLabel.showLegendKey),
+        ],
+      },
+      'c:showVal': {
+        modify: [ModifyXmlHelper.booleanAttribute('val', dataLabel.showVal)],
+      },
+      'c:showCatName': {
+        modify: [
+          ModifyXmlHelper.booleanAttribute('val', dataLabel.showCatName),
+        ],
+      },
+      'c:showSerName': {
+        modify: [
+          ModifyXmlHelper.booleanAttribute('val', dataLabel.showSerName),
+        ],
+      },
+      'c:showPercent': {
+        modify: [
+          ModifyXmlHelper.booleanAttribute('val', dataLabel.showPercent),
+        ],
+      },
+      'c:showBubbleSize': {
+        modify: [
+          ModifyXmlHelper.booleanAttribute('val', dataLabel.showBubbleSize),
+        ],
+      },
+      'c:showLeaderLines': {
+        modify: [
+          ModifyXmlHelper.booleanAttribute('val', dataLabel.showLeaderLines),
+        ],
+      },
+    };
+  };
 }
+
+/*
+
+ */

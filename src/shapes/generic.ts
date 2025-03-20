@@ -6,6 +6,7 @@ import {
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { Shape } from '../classes/shape';
 import { XmlElement } from '../types/xml-types';
+import { XmlHelper } from '../helper/xml-helper';
 
 export class GenericShape extends Shape {
   sourceElement: XmlElement;
@@ -49,6 +50,15 @@ export class GenericShape extends Shape {
   ): Promise<void> {
     await this.setTarget(targetTemplate, targetSlideNumber);
     await this.setTargetElement();
-    this.applyCallbacks(this.callbacks, this.targetElement);
+    
+    // Get the slide relations XML to pass to callbacks
+    const slideRelXml = await XmlHelper.getXmlFromArchive(
+      this.targetArchive,
+      this.targetSlideRelFile
+    );
+    
+    // Pass both the element and the relation to applyCallbacks
+    // Use the documentElement property to get the root element of the XML document
+    this.applyCallbacks(this.callbacks, this.targetElement, slideRelXml.documentElement as XmlElement);
   }
 }

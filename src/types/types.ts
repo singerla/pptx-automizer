@@ -10,12 +10,17 @@ import {
 import IArchive, { ArchiveMode } from '../interfaces/iarchive';
 import { ContentTypeExtension } from '../enums/content-type-map';
 import PptxGenJS from 'pptxgenjs';
-import { ISlide } from '../interfaces/islide';
-import HasShapes from '../classes/has-shapes';
+import { Logger } from '../helper/general-helper';
+import { IPptxGenJSSlide } from '../interfaces/ipptxgenjs-slide';
 
 export type ShapeTargetType = 'slide' | 'slideMaster' | 'slideLayout';
 export type SourceIdentifier = number | string;
 export type SlideModificationCallback = (document: XmlDocument) => void;
+export type SlidePlaceholder = {
+  xml: XmlElement;
+  type: string;
+  id?: number;
+};
 export type ModificationCallback =
   | ChartModificationCallback
   | ShapeModificationCallback;
@@ -56,14 +61,23 @@ export type AutomizerParams = {
    */
   mediaDir?: string;
   /**
-   * Absolute path to cache directory.
+   * Use 'fs' if you want to extract all archive contents to disc.
+   * ArchiveParams.mode defaults to 'jszip'.
    */
   archiveType?: ArchiveParams;
   /**
    * Zip compression level 0-9
    */
   compression?: number;
+  /**
+   * Pass an AutomizerFile directly and skip loadRoot().
+   */
   rootTemplate?: AutomizerFile;
+  /**
+   * If you require another version of pptxGenJs, you can e.g. use your
+   * customized library.
+   */
+  pptxGenJs?: PptxGenJS;
   /**
    * Array of template files to be loaded on initialization.
    * If files are Buffer or Uint8Array, they will be named 0.pptx, 1.pptx, ...
@@ -102,10 +116,21 @@ export type AutomizerParams = {
    */
   cleanup?: boolean;
   /**
+   * Remove all unused shape placeholders from slide.
+   */
+  cleanupPlaceholders?: boolean;
+  /**
    * statusTracker will be triggered on each appended slide.
    * You can e.g. attach a custom callback to a progress bar.
    */
   statusTracker?: StatusTracker['next'];
+  /**
+   * Set logging verbosity.
+   * 0: no logging at all
+   * 1: show warnings
+   * 2: show info (e.g. on import & append)
+   */
+  verbosity?: Logger['verbosity'];
 };
 export type StatusTracker = {
   current: number;
@@ -147,6 +172,7 @@ export type Target = {
   subtype?: ElementSubtype;
   filenameExt?: ContentTypeExtension;
   filenameBase?: string;
+  isExternal?: boolean;
   getCreatedContent?: () => TrackedRelationInfo;
   getRelatedContent?: () => Promise<Target>;
   getTargetValue?: () => string;
@@ -185,7 +211,8 @@ export type TrackedRelation = {
     | 'slide'
     | 'chart'
     | 'externalData'
-    | 'slideLayout';
+    | 'slideLayout'
+    | 'hyperlink';
   targets?: Target[];
 };
 export type TrackedRelationTag = {
@@ -211,14 +238,14 @@ export type ImportElement = {
   info?: any;
 };
 export type GenerateOnSlideCallback = (
-  pptxGenJSSlide: PptxGenJS.Slide,
-  objectName: string,
+  pptxGenJSSlide: IPptxGenJSSlide,
   pptxGenJS: PptxGenJS,
-) => void;
+) => Promise<void> | void;
 export type GenerateElements = {
   objectName?: string;
   tmpSlideNumber?: number;
   callback?: GenerateOnSlideCallback;
+  addedObjects?: string[];
 };
 export type FindElementSelector =
   | string
@@ -240,6 +267,7 @@ export type ImportedElement = {
   target?: AnalyzedElementType['target'];
   type?: AnalyzedElementType['type'];
   sourceElement?: XmlElement;
+  sourceRid?: string;
 };
 export type AnalyzedElementType = {
   type: ElementType;
@@ -256,6 +284,7 @@ export type TargetByRelIdMapParam = {
   relAttribute: string;
   prefix: string;
   expression?: RegExp;
+  findAll?: boolean;
 };
 export type Workbook = {
   archive: IArchive;
