@@ -10,12 +10,13 @@ import { ContentMap, SlideInfo } from '../types/xml-types';
 import { XmlHelper } from '../helper/xml-helper';
 import { ContentTracker } from '../helper/content-tracker';
 import IArchive from '../interfaces/iarchive';
-import { ArchiveParams, MediaFile } from '../types/types';
+import { ArchiveParams, AutomizerFile, MediaFile } from '../types/types';
 
 import Automizer from '../automizer';
 import { IMaster } from '../interfaces/imaster';
 import { ILayout } from '../interfaces/ilayout';
-import { vd } from '../helper/general-helper';
+import { IGenerator } from '../interfaces/igenerator';
+import GeneratePptxGenJs from '../helper/generate/generate-pptxgenjs';
 
 export class Template implements ITemplate {
   /**
@@ -67,14 +68,17 @@ export class Template implements ITemplate {
   contentMap: ContentMap[] = [];
   mediaFiles: MediaFile[] = [];
 
-  constructor(location: string, params: ArchiveParams) {
-    this.location = location;
-    const archive = FileHelper.importArchive(location, params);
+  automizer: Automizer;
+  generator: IGenerator;
+
+  constructor(file: AutomizerFile, params: ArchiveParams) {
+    this.file = file;
+    const archive = FileHelper.importArchive(file, params);
     this.archive = archive;
   }
 
   static import(
-    location: string,
+    file: AutomizerFile,
     params: ArchiveParams,
     automizer?: Automizer,
   ): PresTemplate | RootPresTemplate {
@@ -82,11 +86,11 @@ export class Template implements ITemplate {
     if (params.name) {
       // New template will be a default template containing
       // importable slides and shapes.
-      newTemplate = new Template(location, params) as PresTemplate;
+      newTemplate = new Template(file, params) as PresTemplate;
       newTemplate.name = params.name;
     } else {
       // New template will be root template
-      newTemplate = new Template(location, params) as RootPresTemplate;
+      newTemplate = new Template(file, params) as RootPresTemplate;
       newTemplate.automizer = automizer;
       newTemplate.slides = [];
       newTemplate.masters = [];
@@ -97,6 +101,7 @@ export class Template implements ITemplate {
         new CountHelper('masters', newTemplate),
         new CountHelper('layouts', newTemplate),
         new CountHelper('themes', newTemplate),
+        new CountHelper('oleObjects', newTemplate),
       ];
       // TODO: refactor content tracker, let root template have an instance
       // newTemplate.content = new ContentTracker();
@@ -234,5 +239,14 @@ export class Template implements ITemplate {
 
   count(name: string): number {
     return CountHelper.count(name, this.counter);
+  }
+
+  async runExternalGenerator() {
+    this.generator = new GeneratePptxGenJs(this.automizer, this.slides);
+    await this.generator.generateSlides();
+  }
+
+  async cleanupExternalGenerator() {
+    await this.generator.cleanup();
   }
 }

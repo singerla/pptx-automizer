@@ -1,6 +1,7 @@
 import { Slide } from './classes/slide';
 import {
   ArchiveParams,
+  AutomizerFile,
   AutomizerParams,
   AutomizerSummary,
   PresentationInfo,
@@ -11,13 +12,8 @@ import { IPresentationProps } from './interfaces/ipresentation-props';
 import { PresTemplate } from './interfaces/pres-template';
 import { RootPresTemplate } from './interfaces/root-pres-template';
 import { Template } from './classes/template';
-import {
-  ModifyXmlCallback,
-  SlideInfo,
-  TemplateInfo,
-  XmlElement,
-} from './types/xml-types';
-import { GeneralHelper, vd } from './helper/general-helper';
+import { ModifyXmlCallback, TemplateInfo } from './types/xml-types';
+import { GeneralHelper, log, Logger } from './helper/general-helper';
 import { Master } from './classes/master';
 import path from 'path';
 import * as fs from 'fs';
@@ -31,6 +27,8 @@ import JSZip from 'jszip';
 import { ISlide } from './interfaces/islide';
 import { IMaster } from './interfaces/imaster';
 import { ContentTypeExtension } from './enums/content-type-map';
+import slugify from 'slugify';
+import PptxGenJS from 'pptxgenjs';
 
 /**
  * Automizer
@@ -86,34 +84,47 @@ export default class Automizer implements IPresentationProps {
     this.content = new ContentTracker();
 
     if (params.rootTemplate) {
-      const location = this.getLocation(params.rootTemplate, 'template');
+      let file = params.rootTemplate;
+      if (typeof file !== 'object') {
+        file = this.getLocation(file, 'template');
+      }
       this.rootTemplate = Template.import(
-        location,
+        file,
         this.archiveParams,
         this,
       ) as RootPresTemplate;
     }
 
     if (params.presTemplates) {
-      this.params.presTemplates.forEach((file) => {
-        const location = this.getLocation(file, 'template');
+      this.params.presTemplates.forEach((file, i) => {
+        let name: string;
+        if (typeof file !== 'object') {
+          name = file;
+          file = this.getLocation(file, 'template');
+        } else {
+          name = `${i}.pptx`;
+        }
         const archiveParams = {
           ...this.archiveParams,
-          name: file,
+          name,
         };
         const newTemplate = Template.import(
-          location,
+          file,
           archiveParams,
         ) as PresTemplate;
 
         this.templates.push(newTemplate);
       });
     }
+
+    if (params.verbosity) {
+      Logger.verbosity = params.verbosity;
+    }
   }
 
   setStatusTracker(statusTracker: StatusTracker['next']): void {
     const defaultStatusTracker = (status: StatusTracker) => {
-      console.log(status.info + ' (' + status.share + '%)');
+      log(status.info + ' (' + status.share + '%)', 2);
     };
 
     this.status = {
@@ -149,22 +160,29 @@ export default class Automizer implements IPresentationProps {
 
   /**
    * Load a pptx file and set it as root template.
-   * @param location - Filename or path to the template. Will be prefixed with 'templateDir'
+   * @param file - Filename, path to the template or Buffer containing the file.
+   * Filenames and paths will be prefixed with 'templateDir'
    * @returns Instance of Automizer
    */
-  public loadRoot(location: string): this {
-    return this.loadTemplate(location);
+  public loadRoot(file: AutomizerFile): this {
+    return this.loadTemplate(file);
   }
 
   /**
    * Load a template pptx file.
-   * @param location - Filename or path to the template. Will be prefixed with 'templateDir'
-   * @param name - Optional: A short name for the template. If skipped, the template will be named by its location.
+   * @param file - Filename, path to the template or Buffer containing the file.
+   * Filenames and paths will be prefixed with 'templateDir'
+   * @param name - Optional short name for a template loaded from a file. If skipped, the template will be named by its location.
+   * if the file is a Buffer the name is required.
    * @returns Instance of Automizer
    */
-  public load(location: string, name?: string): this {
-    name = name === undefined ? location : name;
-    return this.loadTemplate(location, name);
+  public load(file: AutomizerFile, name?: string): this {
+    if (!name && typeof file !== 'object') {
+      name = name === undefined ? file : name;
+    } else if (typeof file === 'object' && !name) {
+      throw new Error('Name is required when loading a template from a Buffer');
+    }
+    return this.loadTemplate(file, name);
   }
 
   /**
@@ -174,8 +192,10 @@ export default class Automizer implements IPresentationProps {
    * @param [name]
    * @returns template
    */
-  private loadTemplate(location: string, name?: string): this {
-    location = this.getLocation(location, 'template');
+  private loadTemplate(file: AutomizerFile, name?: string): this {
+    if (typeof file !== 'object') {
+      file = this.getLocation(file, 'template');
+    }
     const alreadyLoaded = this.templates.find(
       (template) => template.name === name,
     );
@@ -188,7 +208,7 @@ export default class Automizer implements IPresentationProps {
       name,
     };
 
-    const newTemplate = Template.import(location, importParams, this);
+    const newTemplate = Template.import(file, importParams, this);
 
     if (!this.isPresTemplate(newTemplate)) {
       this.rootTemplate = newTemplate;
@@ -473,9 +493,11 @@ export default class Automizer implements IPresentationProps {
     await this.rootTemplate.countExistingSlides();
     this.status.max = this.rootTemplate.slides.length;
 
+    await this.rootTemplate.runExternalGenerator();
     for (const slide of this.rootTemplate.slides) {
       await this.rootTemplate.appendSlide(slide);
     }
+    await this.rootTemplate.cleanupExternalGenerator();
 
     if (this.params.removeExistingSlides) {
       await this.rootTemplate.truncate();
@@ -486,14 +508,17 @@ export default class Automizer implements IPresentationProps {
    * Write all media files to archive.
    */
   public async writeMediaFiles(): Promise<void> {
+    const mediaDir = 'ppt/media/';
     for (const file of this.rootTemplate.mediaFiles) {
       const data = fs.readFileSync(file.filepath);
-      let archiveFilename = 'ppt/media/' + file.file;
+      let archiveFilename = file.file;
       if (file.prefix) {
-        archiveFilename = 'ppt/media/' + file.prefix + file.file;
+        archiveFilename = file.prefix + file.file;
       }
 
-      await this.rootTemplate.archive.write(archiveFilename, data);
+      archiveFilename = slugify(archiveFilename);
+
+      await this.rootTemplate.archive.write(mediaDir + archiveFilename, data);
       await XmlHelper.appendImageExtensionToContentType(
         this.rootTemplate.archive,
         file.extension,
@@ -552,9 +577,14 @@ export default class Automizer implements IPresentationProps {
         } else if (fs.existsSync(this.templateFallbackDir + location)) {
           return this.templateFallbackDir + location;
         } else {
-          vd('No file matches "' + location + '"');
-          vd('@templateDir: ' + this.templateDir);
-          vd('@templateFallbackDir: ' + this.templateFallbackDir);
+          if (typeof location === 'string') {
+            log('No file matches "' + location + '"', 0);
+          } else {
+            log('Invalid filename', 0);
+          }
+
+          log('@templateDir: ' + this.templateDir, 2);
+          log('@templateFallbackDir: ' + this.templateFallbackDir, 2);
         }
         break;
       case 'output':

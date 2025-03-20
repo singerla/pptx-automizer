@@ -1,9 +1,5 @@
 import { FileHelper } from '../helper/file-helper';
-import {
-  ShapeTargetType,
-  SlideModificationCallback,
-  SourceIdentifier,
-} from '../types/types';
+import { ShapeTargetType, SourceIdentifier } from '../types/types';
 import { ISlide } from '../interfaces/islide';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
 import { PresTemplate } from '../interfaces/pres-template';
@@ -64,6 +60,8 @@ export class Slide extends HasShapes implements ISlide {
       );
     }
 
+    const placeholderTypes = await this.parsePlaceholders();
+
     if (this.importElements.length) {
       await this.importedSelectedElements();
     }
@@ -75,7 +73,7 @@ export class Slide extends HasShapes implements ISlide {
     const assert = this.targetTemplate.automizer.params.showIntegrityInfo;
     await this.checkIntegrity(info, assert);
 
-    await this.cleanSlide(this.targetPath);
+    await this.cleanSlide(this.targetPath, placeholderTypes);
 
     this.status.increment();
   }
@@ -85,7 +83,7 @@ export class Slide extends HasShapes implements ISlide {
    * @param targetLayoutId
    */
   useSlideLayout(layoutId?: number | string): this {
-    this.modifyRelations(async (slideRelXml) => {
+    this.relModifications.push(async (slideRelXml) => {
       let targetLayoutId;
 
       if (typeof layoutId === 'string') {
@@ -108,12 +106,13 @@ export class Slide extends HasShapes implements ISlide {
         slideLayouts[0].updateTargetIndex(targetLayoutId as number);
       }
     });
+
     return this;
   }
 
   /**
    * Find another slide layout by name.
-   * @param targetLayoutId
+   * @param targetLayoutName
    */
   async useNamedSlideLayout(targetLayoutName: string): Promise<number> {
     const templateName = this.sourceTemplate.name;
@@ -146,7 +145,7 @@ export class Slide extends HasShapes implements ISlide {
 
   /**
    * Use another slide layout by index or detect original index.
-   * @param targetLayoutId
+   * @param targetLayoutIndex
    */
   async useIndexedSlideLayout(targetLayoutIndex?: number): Promise<number> {
     if (!targetLayoutIndex) {

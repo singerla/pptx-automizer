@@ -7,7 +7,7 @@ import { XmlDocument, XmlElement } from '../types/xml-types';
 
 export default class ModifyXmlHelper {
   root: XmlDocument | XmlElement;
-  templates: { [key: string]: Node };
+  templates: { [key: string]: XmlElement };
 
   constructor(root: XmlDocument | XmlElement) {
     this.root = root;
@@ -84,21 +84,30 @@ export default class ModifyXmlHelper {
       if (collection[collection.length - 1] === undefined) {
         this.createElement(parent, tag);
       } else {
-        const previousSibling = collection[collection.length - 1];
+        const lastSibling = collection[collection.length - 1];
 
-        const newChild =
-          this.templates[tag] && !modifier.fromPrevious
-            ? this.templates[tag].cloneNode(true)
-            : previousSibling.cloneNode(true);
+        let sourceSibling = lastSibling;
+        if (modifier.fromIndex && collection.item(modifier.fromIndex)) {
+          sourceSibling = collection.item(modifier.fromIndex);
+        } else if (modifier.fromPrevious && collection.item(index - 1)) {
+          sourceSibling = collection.item(index - 1);
+        }
 
-        XmlHelper.insertAfter(newChild, previousSibling);
+        if ((!sourceSibling || modifier.forceCreate) && this.templates[tag]) {
+          sourceSibling = this.templates[tag];
+        }
+
+        const newChild = sourceSibling.cloneNode(true) as XmlElement;
+
+        XmlHelper.insertAfter(newChild, lastSibling);
       }
     }
 
     const element = parent.getElementsByTagName(tag)[index];
 
     if (element) {
-      this.templates[tag] = this.templates[tag] || element.cloneNode(true);
+      this.templates[tag] =
+        this.templates[tag] || (element.cloneNode(true) as XmlElement);
       return element;
     }
 

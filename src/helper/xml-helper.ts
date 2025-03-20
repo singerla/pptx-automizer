@@ -1,4 +1,4 @@
-import { XMLSerializer } from '@xmldom/xmldom';
+import { Node, XMLSerializer } from '@xmldom/xmldom';
 import {
   DefaultAttribute,
   HelperElement,
@@ -11,7 +11,7 @@ import {
 import { TargetByRelIdMap } from '../constants/constants';
 import { XmlPrettyPrint } from './xml-pretty-print';
 import { GetRelationshipsCallback, Target } from '../types/types';
-import { vd } from './general-helper';
+import { log } from './general-helper';
 import { contentTracker } from './content-tracker';
 import IArchive from '../interfaces/iarchive';
 import {
@@ -170,7 +170,6 @@ export class XmlHelper {
     prefix: string | string[],
   ): Promise<Target[]> {
     const prefixes = typeof prefix === 'string' ? [prefix] : prefix;
-
     return XmlHelper.getRelationshipItems(
       archive,
       path,
@@ -188,10 +187,11 @@ export class XmlHelper {
   static parseRelationTarget(element: XmlElement, prefix?: string): Target {
     const type = element.getAttribute('Type');
     const file = element.getAttribute('Target');
-    const last = (arr: string[]): string => arr[arr.length - 1];
 
+    const last = (arr: string[]): string => arr[arr.length - 1];
     const filename = last(file.split('/'));
     const subtype = last(prefix.split('/'));
+
     const relType = last(type.split('/'));
     const rId = element.getAttribute('Id');
     const filenameExt = last(filename.split('.'));
@@ -236,10 +236,20 @@ export class XmlHelper {
     return target;
   }
 
-  static targetMatchesRelationship(relType, subtype, target, prefix) {
+  static targetMatchesRelationship(
+    relType: string,
+    subtype: string,
+    file: string,
+    prefix: string,
+  ) {
     if (relType === 'package') return true;
 
-    return relType === subtype && target.indexOf(prefix) === 0;
+    // pptgenjs uses absolute paths in "Target" attributes
+    if (file.indexOf('/ppt/') === 0) {
+      file = file.replace('/ppt/', '../');
+    }
+
+    return relType === subtype && file.indexOf(prefix) === 0;
   }
 
   static async getTargetsByRelationshipType(
@@ -247,7 +257,7 @@ export class XmlHelper {
     path: string,
     type: string,
   ): Promise<Target[]> {
-    const rels = XmlHelper.getRelationshipItems(
+    return await XmlHelper.getRelationshipItems(
       archive,
       path,
       (element: XmlElement, rels: Target[]) => {
@@ -261,7 +271,6 @@ export class XmlHelper {
         }
       },
     );
-    return rels;
   }
 
   static async getRelationshipItems(
@@ -344,18 +353,55 @@ export class XmlHelper {
     type: string,
   ): Promise<Target> {
     const params = TargetByRelIdMap[type];
-    const sourceRid = element
-      .getElementsByTagName(params.relRootTag)[0]
-      .getAttribute(params.relAttribute);
+    
+    // For elements that need to search all instances (like hyperlinks)
+    if (params.findAll) {
+      // Find all hyperlink elements
+      const hyperlinks = element.getElementsByTagName(params.relRootTag);
+      if (hyperlinks.length > 0) {
+        // Use the first hyperlink found
+        const sourceRid = hyperlinks[0].getAttribute(params.relAttribute);
+        
+        // Get all relationships
+        const allRels = await XmlHelper.getRelationshipItems(
+          archive,
+          relsPath,
+          (element: XmlElement, rels: Target[]) => {
+            rels.push({
+              rId: element.getAttribute('Id'),
+              type: element.getAttribute('Type'),
+              file: element.getAttribute('Target'),
+              filename: element.getAttribute('Target'),
+              element: element,
+              isExternal: element.getAttribute('TargetMode') === 'External',
+            } as Target);
+          }
+        );
+        
+        // Find the matching relationship
+        const target = allRels.find((rel) => rel.rId === sourceRid);
+        return target;
+      }
+    } else {
+      // Standard behavior for other element types
+      const sourceRid = element
+        .getElementsByTagName(params.relRootTag)[0]
+        .getAttribute(params.relAttribute);
 
-    const shapeRels = await XmlHelper.getRelationshipTargetsByPrefix(
-      archive,
-      relsPath,
-      params.prefix,
-    );
-    const target = shapeRels.find((rel) => rel.rId === sourceRid);
+      const shapeRels = await XmlHelper.getRelationshipTargetsByPrefix(
+        archive,
+        relsPath,
+        params.prefix,
+      );
+      const target = shapeRels.find((rel) => rel.rId === sourceRid);
+      return target;
+    }
+  }
 
-    return target;
+  // Determine whether a given string is a creationId or a shape name
+  // Example creationId: '{EFC74B4C-D832-409B-9CF4-73C1EFF132D8}'
+  static isElementCreationId(selector: string) {
+    return selector.indexOf('{') === 0 && selector.split('-').length === 5;
   }
 
   static async findByElementCreationId(
@@ -507,7 +553,10 @@ export class XmlHelper {
     return strings.getElementsByTagName('si').length - 1;
   }
 
-  static insertAfter(newNode: Node, referenceNode: XmlElement): Node {
+  static insertAfter(
+    newNode: XmlElement,
+    referenceNode: XmlElement,
+  ): XmlElement {
     return referenceNode.parentNode.insertBefore(
       newNode,
       referenceNode.nextSibling,
@@ -530,8 +579,30 @@ export class XmlHelper {
     }
   }
 
+  static getClosestParent(tag: string, element: XmlElement): XmlElement {
+    if (element.parentNode) {
+      if (element.parentNode.nodeName === tag) {
+        return element.parentNode as XmlElement;
+      }
+      return XmlHelper.getClosestParent(tag, element.parentNode as XmlElement);
+    }
+  }
+
   static remove(toRemove: XmlElement): void {
-    toRemove.parentNode.removeChild(toRemove);
+    if (toRemove?.parentNode) {
+      toRemove.parentNode.removeChild(toRemove);
+    }
+  }
+
+  static moveChild(childToMove: XmlElement, insertBefore?: XmlElement): void {
+    const parent = childToMove.parentNode;
+    parent.insertBefore(childToMove, insertBefore);
+  }
+
+  static appendClone(childToClone: XmlElement, parent: XmlElement): XmlElement {
+    const clone = childToClone.cloneNode(true) as XmlElement;
+    parent.appendChild(clone);
+    return clone;
   }
 
   static sortCollection(
@@ -545,7 +616,7 @@ export class XmlHelper {
     const parent = collection[0].parentNode;
     order.forEach((index, i) => {
       if (!collection[index]) {
-        vd('sortCollection index not found' + index);
+        log('sortCollection index not found' + index, 1);
         return;
       }
 
@@ -577,9 +648,9 @@ export class XmlHelper {
     }
   }
 
-  static dump(element: XmlDocument | XmlElement): void {
+  static dump(element: XMLDocument | Element | Node): void {
     const s = new XMLSerializer();
-    const xmlBuffer = s.serializeToString(element);
+    const xmlBuffer = s.serializeToString(<Node>element);
     const p = new XmlPrettyPrint(xmlBuffer);
     p.dump();
   }

@@ -1,4 +1,5 @@
 import IArchive from '../interfaces/iarchive';
+import { TableData, TableInfo } from './table-types';
 
 export type DefaultAttribute = {
   Extension: string;
@@ -54,7 +55,13 @@ export type TemplateSlideInfo = {
   name: string;
 };
 
-export type ElementType = 'sp' | 'chart' | 'chartEx' | 'table' | 'pic' | 'cxnSp';
+export type ElementType =
+  | 'sp'
+  | 'chart'
+  | 'chartEx'
+  | 'table'
+  | 'pic'
+  | 'cxnSp';
 
 export type ElementInfo = {
   name: string;
@@ -67,6 +74,9 @@ export type ElementInfo = {
     cy: number;
   };
   hasTextBody: boolean;
+  getText: () => string[];
+  getAltText: () => string;
+  getTableInfo: () => TableInfo[];
   getXmlElement: () => XmlElement;
 };
 

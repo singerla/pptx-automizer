@@ -7,7 +7,7 @@
     "sourceMap": true,
     "outDir": "dist",
     "baseUrl": "/",
-    "lib": ["es2020"],
+    "lib": ["es2020", "dom"],
     "declaration": true,
     "declarationDir": "./dist",
     "types": ["jest", "node"]

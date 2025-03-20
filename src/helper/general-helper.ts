@@ -26,3 +26,42 @@ export const vd = (v: any, keys?: boolean): void => {
 };
 
 export const last = <T>(arr: T[]): T => arr[arr.length - 1];
+
+export interface Logger {
+  verbosity: 0 | 1 | 2;
+  target: 'console' | 'file';
+  log: (
+    message: string,
+    verbosity: Logger['verbosity'],
+    showStack?: boolean,
+    target?: Logger['target'],
+  ) => void;
+}
+
+export const Logger = <Logger>{
+  verbosity: 1,
+  target: 'console',
+  log: (message, verbosity, showStack?, target?) => {
+    if (verbosity > Logger.verbosity) {
+      return;
+    }
+    target = target || Logger.target;
+    if (target === 'console') {
+      if (showStack) {
+        vd(message);
+      } else {
+        console.log(message);
+      }
+    } else {
+      // TODO: append message to a logfile
+    }
+  },
+};
+
+export const log = (message: string, verbosity: Logger['verbosity']) => {
+  Logger.log(message, verbosity);
+};
+
+export const logDebug = (message: string, verbosity: Logger['verbosity']) => {
+  Logger.log(message, verbosity, true);
+};

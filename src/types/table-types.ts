@@ -1,4 +1,5 @@
 import { Color, Border, TextStyle } from './modify-types';
+import { XmlElement } from './xml-types';
 
 export type TableRow = {
   label?: string;
@@ -18,8 +19,26 @@ export type TableData = {
 };
 
 export type ModifyTableParams = {
-  adjustWidth: boolean;
-  adjustHeight: boolean;
+  adjustWidth?: boolean;
+  adjustHeight?: boolean;
   setHeight?: number;
   setWidth?: number;
+  expand?: ModifyTableExpand[];
+};
+
+export type ModifyTableExpand = {
+  tag: string;
+  mode: 'row' | 'column';
+  count: number;
+};
+
+export type TableInfo = {
+  row: number;
+  column: number;
+  rowXml: XmlElement;
+  columnXml: XmlElement;
+  text: string[];
+  textContent: string;
+  gridSpan: number;
+  hMerge: number;
 };

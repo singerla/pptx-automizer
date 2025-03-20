@@ -139,14 +139,20 @@ export class XmlRelationshipHelper {
         targetMode !== 'External' &&
         this.archive.fileExists(targetPath) === false
       ) {
-        if (check) {
-          console.error(
-            'Related content from ' +
-              sourceArchive.filename +
-              ' not found: ' +
-              targetFile,
-          );
-        }
+        // ToDo: There are falsy errors on files that have already been
+        //       copied with another target name.
+        // if (check) {
+        //   if (typeof sourceArchive.filename === 'string') {
+        //     console.error(
+        //       'Related content from ' +
+        //         sourceArchive.filename +
+        //         ' not found: ' +
+        //         targetFile,
+        //     );
+        //   } else {
+        //     console.error('Related content not found: ' + targetFile);
+        //   }
+        // }
 
         if (assert) {
           const target = XmlRelationshipHelper.parseRelationTarget(xmlTarget);

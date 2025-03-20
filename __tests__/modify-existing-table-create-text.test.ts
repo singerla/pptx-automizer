@@ -12,8 +12,6 @@ test('create presentation, add and modify an existing table, create text element
       { label: 'item test r2', values: ['test2', 12, 18, 15, 12] },
       { label: 'item test r3', values: ['test3', 14, 12, 11, 14] },
     ],
-
-
   };
 
   const pres = automizer

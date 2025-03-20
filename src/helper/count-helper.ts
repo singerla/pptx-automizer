@@ -4,6 +4,7 @@ import { ICounter } from '../interfaces/icounter';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { XmlHelper } from './xml-helper';
 import { XmlElement } from '../types/xml-types';
+import { FileHelper } from './file-helper';
 
 export class CountHelper implements ICounter {
   template: RootPresTemplate;
@@ -62,6 +63,9 @@ export class CountHelper implements ICounter {
         return CountHelper.countCharts(presentation);
       case 'images':
         return CountHelper.countImages(presentation);
+        case 'oleObjects':  
+        return CountHelper.countOleObjects(presentation);  
+  
     }
 
     throw new Error(`No way to count ${this.name}.`);
@@ -133,6 +137,24 @@ export class CountHelper implements ICounter {
             `application/vnd.openxmlformats-officedocument.drawingml.chart+xml`,
       ).length;
   }
+
+  private static async countOleObjects(presentation: IArchive): Promise<number> {
+    const contentTypesXml = await XmlHelper.getXmlFromArchive(
+      presentation,
+      '[Content_Types].xml',
+    );
+    const overrides = contentTypesXml.getElementsByTagName('Override');
+  
+    return Object.keys(overrides)
+      .map((key) => overrides[key] as XmlElement)
+      .filter(
+        (o) =>
+          o.getAttribute &&
+          o.getAttribute('ContentType') ===
+            `application/vnd.openxmlformats-officedocument.oleObject`
+      ).length;
+  }
+  
 
   private static async countImages(presentation: IArchive): Promise<number> {
     const mediaFiles = await presentation.folder('ppt/media');

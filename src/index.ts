@@ -1,11 +1,13 @@
 import Automizer from './automizer';
 
-import ModifyHelper from './helper/modify-helper';
+import ModifyHelper, { CmToDxa, DxaToCm } from './helper/modify-helper';
 import ModifyShapeHelper from './helper/modify-shape-helper';
 import ModifyTableHelper from './helper/modify-table-helper';
 import ModifyChartHelper from './helper/modify-chart-helper';
+import ModifyHyperlinkHelper from './helper/modify-hyperlink-helper';
 import { TemplateInfo, XmlDocument, XmlElement } from './types/xml-types';
 import {
+  AutomizerFile,
   AutomizerParams,
   AutomizerSummary,
   ShapeModificationCallback,
@@ -27,9 +29,9 @@ import {
 import {
   Border,
   Color,
+  ImageStyle,
   ReplaceText,
   TextStyle,
-  ImageStyle,
 } from './types/modify-types';
 import { ShapeCoordinates, ShapeValueStyle } from './types/shape-types';
 import { XmlHelper } from './helper/xml-helper';
@@ -39,8 +41,8 @@ import ModifyColorHelper from './helper/modify-color-helper';
 import { ITemplate } from './interfaces/itemplate';
 import { IMaster } from './interfaces/imaster';
 import { ISlide } from './interfaces/islide';
+import { IPptxGenJSSlide } from './interfaces/ipptxgenjs-slide';
 import ModifyImageHelper from './helper/modify-image-helper';
-import { CmToDxa, DxaToCm } from './helper/modify-helper';
 import { LabelPosition } from './enums/chart-type';
 
 const dump = ModifyHelper.dump;
@@ -49,6 +51,7 @@ const setAttribute = ModifyHelper.setAttribute;
 
 const setSolidFill = ModifyShapeHelper.setSolidFill;
 const setText = ModifyShapeHelper.setText;
+const setBulletList = ModifyShapeHelper.setBulletList;
 const replaceText = ModifyShapeHelper.replaceText;
 const setPosition = ModifyShapeHelper.setPosition;
 const updatePosition = ModifyShapeHelper.updatePosition;
@@ -58,6 +61,8 @@ const setTableData = ModifyTableHelper.setTableData;
 const adjustHeight = ModifyTableHelper.adjustHeight;
 const adjustWidth = ModifyTableHelper.adjustWidth;
 const setTable = ModifyTableHelper.setTable;
+const updateColumnWidth = ModifyTableHelper.updateColumnWidth;
+const updateRowHeight = ModifyTableHelper.updateRowHeight;
 
 const setRelationTarget = ModifyImageHelper.setRelationTarget;
 const setDuotoneFill = ModifyImageHelper.setDuotoneFill;
@@ -78,6 +83,11 @@ const setWaterFallColumnTotalToLast =
 const setChartTitle = ModifyChartHelper.setChartTitle;
 const setDataLabelAttributes = ModifyChartHelper.setDataLabelAttributes;
 const readWorkbookData = ModifyChartHelper.readWorkbookData;
+const readChartInfo = ModifyChartHelper.readChartInfo;
+
+const setHyperlinkTarget = ModifyHyperlinkHelper.setHyperlinkTarget;
+const addHyperlink = ModifyHyperlinkHelper.addHyperlink;
+const removeHyperlink = ModifyHyperlinkHelper.removeHyperlink;
 
 export type {
   ChartBubble,
@@ -117,6 +127,7 @@ export const modify = {
   setAttribute,
   setSolidFill,
   setText,
+  setBulletList,
   replaceText,
   setPosition,
   updatePosition,
@@ -124,6 +135,8 @@ export const modify = {
   setTableData,
   adjustHeight,
   adjustWidth,
+  updateColumnWidth,
+  updateRowHeight,
   setTable,
   setRelationTarget,
   setDuotoneFill,
@@ -141,12 +154,20 @@ export const modify = {
   setWaterFallColumnTotalToLast,
   setChartTitle,
   setDataLabelAttributes,
+  setHyperlinkTarget,
+  addHyperlink,
+  removeHyperlink,
 };
+
 export const read = {
   readWorkbookData,
+  readChartInfo,
 };
+
 export { CmToDxa, DxaToCm };
+
 export type {
+  AutomizerFile,
   AutomizerParams,
   AutomizerSummary,
   TemplateInfo,
@@ -155,5 +176,6 @@ export type {
   XmlElement,
   XmlDocument,
 };
-export { ITemplate, IMaster, ISlide };
+
+export { ITemplate, IMaster, ISlide, IPptxGenJSSlide };
 export default Automizer;

@@ -59,12 +59,26 @@ export class Image extends Shape implements IImage {
     targetSlideNumber: number,
   ): Promise<Image> {
     await this.prepare(targetTemplate, targetSlideNumber);
+
     await this.setTargetElement();
     await this.updateTargetElementRelId();
 
     this.applyImageCallbacks();
 
     await this.replaceIntoSlideTree();
+
+    return this;
+  }
+
+  async modifySvgRelation(
+    targetTemplate: RootPresTemplate,
+    targetSlideNumber: number,
+    targetElement: XmlElement,
+  ): Promise<Image> {
+    await this.prepare(targetTemplate, targetSlideNumber);
+
+    this.targetElement = targetElement;
+    await this.updateTargetElementRelId();
 
     return this;
   }
@@ -81,7 +95,10 @@ export class Image extends Shape implements IImage {
 
     this.applyImageCallbacks();
 
-    if (this.hasSvgRelation()) {
+    /*
+     * SVG images require a corresponding PNG image.
+     */
+    if (this.hasSvgBlipRelation()) {
       const relsPath = `ppt/slides/_rels/slide${this.sourceSlideNumber}.xml.rels`;
       const target = await XmlHelper.getTargetByRelId(
         this.sourceArchive,
@@ -98,7 +115,11 @@ export class Image extends Shape implements IImage {
           type: ElementType.Image,
         },
         this.targetType,
-      ).modify(targetTemplate, targetSlideNumber);
+      ).modifySvgRelation(
+        targetTemplate,
+        targetSlideNumber,
+        this.targetElement,
+      );
     }
 
     return this;
@@ -182,7 +203,7 @@ export class Image extends Shape implements IImage {
     );
   }
 
-  hasSvgRelation(): boolean {
+  hasSvgBlipRelation(): boolean {
     return this.targetElement.getElementsByTagName('asvg:svgBlip').length > 0;
   }
 

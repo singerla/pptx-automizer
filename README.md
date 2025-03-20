@@ -1,6 +1,8 @@
 # pptx-automizer: A Powerful .pptx Modifier for Node.js
 
-`pptx-automizer` is a Node.js-based PowerPoint (.pptx) generator that automates the manipulation of existing .pptx files. With `pptx-automizer`, you can import your library of .pptx templates, merge templates, and customize slide content. `pptx-automizer` will not write files from scratch, but edit and merge existing pptx files. You can style template slides within PowerPoint, and these templates will be seamlessly integrated into the output presentation. Most of the content can be modified by using callbacks with [xmldom](https://github.com/xmldom/xmldom).
+`pptx-automizer` is a Node.js-based PowerPoint (.pptx) generator that automates the manipulation of existing .pptx files. With `pptx-automizer`, you can import your library of .pptx templates, merge templates, and customize slide content. `pptx-automizer` will edit and merge existing pptx files. You can style template slides within PowerPoint, and these templates will be seamlessly integrated into the output presentation. Most of the content can be modified by using callbacks with [xmldom](https://github.com/xmldom/xmldom).
+
+If you require to create elements from scratch, `pptx-automizer` wraps around [PptxGenJS](https://github.com/gitbrent/PptxGenJS). Use the powerful syntax of `PptxGenJS` to add dynamic content to your existing .pptx template files. See an example on [how to add a chart from scratch](https://github.com/singerla/pptx-automizer/blob/main/__tests__/generate-pptxgenjs-charts.test.ts).
 
 `pptx-automizer` is particularly well-suited for users who aim to manage their own library of .pptx template files, making it an ideal choice for those who work with intricate, well-designed customized layouts. With this tool, any existing slide or even a single element can serve as a data-driven template for generating output .pptx files.
 
@@ -36,6 +38,11 @@ If you require commercial support for complex .pptx automation, you can explore 
   - [Modify Charts](#modify-charts)
   - [Modify Extended Charts](#modify-extended-charts)
   - [Remove elements from a slide](#remove-elements-from-a-slide)
+  - [🔗 Hyperlink Management](#🔗-hyperlink-management)
+  - [Hyperlink Helper Functions](#hyperlink-helper-functions)
+  - [Adding Hyperlinks](#adding-hyperlinks)
+
+
 - [Tipps and Tricks](#tipps-and-tricks)
   - [Loop through the slides of a presentation](#loop-through-the-slides-of-a-presentation)
   - [Quickly get all slide numbers of a template](#quickly-get-all-slide-numbers-of-a-template)
@@ -44,10 +51,10 @@ If you require commercial support for complex .pptx automation, you can explore 
   - [Import and modify slide Masters](#import-and-modify-slide-masters)
   - [Track status of automation process](#track-status-of-automation-process)
   - [More examples](#more-examples)
-  - [Create a new modifier](#create-a-new-modifier)
   - [Troubleshooting](#troubleshooting)
   - [Testing](#testing)
 - [Special Thanks](#special-thanks)
+
 <!-- TOC -->
 
 # Requirements and Limitations
@@ -174,6 +181,13 @@ const automizer = new Automizer({
 
   // use a callback function to track pptx generation process.
   // statusTracker: myStatusTracker,
+  
+  // Use 1 to show warnings or 2 for detailed information
+  // 0 disables logging
+  verbosity: 1,
+
+  // Remove all unused placeholders to prevent unwanted overlays:
+  cleanupPlaceholders: false
 });
 
 // Now we can start and load a pptx template.
@@ -582,6 +596,36 @@ pres
   });
 ```
 
+## 🔗 Hyperlink Management
+
+PowerPoint presentations often use hyperlinks to connect to external websites or internal slides. The PPTX Automizer provides simple and powerful functions to manage hyperlinks in your presentations.
+
+### Hyperlink Helper Functions
+
+Three core functions are available for all your hyperlink needs:
+
+| Function | Description |
+|----------|-------------|
+| `addHyperlink` | Add a new hyperlink to an element |
+
+
+### Adding Hyperlinks
+
+You can add hyperlinks to text elements using the `addHyperlink` helper function. The function accepts either a URL string for external links or a slide number for internal slide links:
+
+```ts
+// Add an external hyperlink
+slide.modifyElement('TextShape', modify.addHyperlink('https://example.com'));
+
+
+// Add an internal slide link (to slide 3)
+slide.modifyElement('TextShape', (element, relation) => {
+  modify.addHyperlink(3)(element, relation);
+});
+```
+
+The `addHyperlink` function will automatically detect whether the target is an external URL or an internal slide number and set up the appropriate relationship type and attributes.
+
 # Tipps and Tricks
 
 ## Loop through the slides of a presentation
@@ -590,7 +634,7 @@ If you would like to modify elements in a single .pptx file, it is important to 
 
 This is how it works internally:
 
-- Load a root template to append slides to it
+- Load a root template to append slides to
 - (Probably) load root template again to modify slides
 - Load other templates
 - Append a loaded slide to (probably truncated) root template
@@ -622,7 +666,7 @@ const run = async () => {
     // Defining a "name" as second params makes it a little easier
     .load(`SlideWithShapes.pptx`, 'myTemplate');
 
-  // Get useful information about loaded templates:
+  // This is brandnew: get useful information about loaded templates:
   const myTemplates = await pres.getInfo();
   const mySlides = myTemplates.slidesByTemplate(`myTemplate`);
 
@@ -783,10 +827,6 @@ To specify another slideLayout for an added output slide, you need to count slid
 
 To add and modify shapes on a slide master, please take a look at [Add and modify shapes](https://github.com/singerla/pptx-automizer#add-and-modify-shapes).
 
-If you require to modify slide master backgrounds, please refer to 
-- [Modify master background color](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-master-background-color.test.ts).
-- [Modify master background image](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-master-background-image.test.ts).
-
 ```ts
 // Import another slide master and all its slide layouts.
 // Index 1 means, you want to import the first of all masters:
@@ -861,55 +901,6 @@ const automizer = new Automizer({
 });
 ```
 
-## Create a new modifier
-
-If the built-in modifiers of `pptx-automizer` are not sufficient to your task, you can access the target xml elements with [xmldom](https://github.com/xmldom/xmldom). A modifier is a wrapper for such an operation.
-
-Let's first take a look at a (simplified) existing modifier: `ModifyTextHelper.content('This is my text')`.
-
-```ts
-// "setTextContent" is a function that returns a function.
-// A "label" argument needs to be passed to "setTextContent".
-const setTextContent = function (label: number | string) {
-  // On setup, we can handle the argument.
-  const newTextContent = String(label);
-
-  // A new function is returned to apply the label at runtime.
-  return function (shape: XmlElement) {
-    // "shape" contains a modifiable xmldom object.
-    // You can use a selector to find the required 'a:t' element:
-    const textElement = shape.getElementsByTagName('a:t').item(0);
-
-    // You can now apply the "newTextContent".
-    if (textElement?.firstChild) {
-      // Refer to xmldom for available functions.
-      textElement.firstChild.textContent = newTextContent;
-    }
-    // It is possible to output the xml to console at any time.
-    // XmlHelper.dump(element);
-  };
-};
-```
-This function will construct an anonymous callback function on setup, while the callback function itself will be executed on runtime, when it's up to the target element on a slide.
-
-You can use the modifier e.g. on adding an element:
-
-```ts
-pres.addSlide('SlideWithShapes.pptx', 2, (slide) => {
-  // This will import the 'Drum' shape
-  slide.modifyElement('Cloud', [
-    // 1. Dump the original xml:
-    // Notice: don't call XmlHelper.dump, just pass it
-    XmlHelper.dump,
-    // 2. Apply modifier from the example above:
-    setTextContent('New text'),
-    XmlHelper.dump,
-  ]);
-});
-```
-
-We can wrap any xml modification by such a modifier. If you have a working example and you think it will be useful to others, you are very welcome to fork this repo and send a pull request or simply [post it](https://github.com/singerla/pptx-automizer/issues/new).
-
 ## More examples
 
 Take a look into [**tests**-directory](https://github.com/singerla/pptx-automizer/blob/main/__tests__) to see a lot of examples for several use cases, e.g.:
@@ -922,17 +913,13 @@ Take a look into [**tests**-directory](https://github.com/singerla/pptx-automize
 - [Update chart legend](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-chart-legend.test.ts)
 
 ## Troubleshooting
-
 If you encounter problems when opening a `.pptx`-file modified by this library, you might worry about PowerPoint not giving any details about the error. It can be hard to find the cause, but there are some things you can check:
 
 - **Broken relation**: There are still unsupported shape types and `pptx-automizer` wil not copy required relations of those. You can inflate `.pptx`-output and check `ppt/slides/_rels/slide[#].xml.rels`-files to find possible missing files.
 - **Unsupported media**: You can also take a look at the `ppt/media`-directory of an inflated `.pptx`-file. If you discover any unusual file formats, remove or replace the files by one of the [known types](https://github.com/singerla/pptx-automizer/blob/main/src/enums/content-type-map.ts).
 - **Broken animation**: Pay attention to modified/removed shapes which are part of an animation. In case of doubt, (temporarily) remove all animations from your template. (see [#78](https://github.com/singerla/pptx-automizer/issues/78))
 - **Proprietary/Binary contents** (e.g. ThinkCell): Walk through all slides, slideMasters and slideLayouts and seek for hidden Objects. Hit `ALT+F10` to toggle the sidebar.
-- **Chart styles not working**: If you try to change e.g. color or size of a chart data label, and it doesn't work as expected, try to remove all data labels and activate them again. If this does not help, try to give the first data label of a series a slightly different style (this creates a single data point).
-- **Replace Text not working**: Cut out your e.g. {CustomerName} tag from textbox to clipboard, paste it into a plaintext editor to remove all (visible and invisible) formatting. Copy & paste {CustomerName} back to the textbox. (see [#82](https://github.com/singerla/pptx-automizer/issues/82) and [#73](https://github.com/singerla/pptx-automizer/issues/73))
-- **No related chart worksheet**: It might happen to PowerPoint to lose the worksheet relation for a chart. If a chart gets corrupted by this, you will see a normal chart on your slide, but get an error message if you try to open the datasheet. Please replace the corrupted chart by a working one. (see [#104](https://github.com/singerla/pptx-automizer/issues/104)) 
-
+- **Chart datasheet won't open** If you encounter an error message on opening a chart's datasheet, please make sure that the data table (blue bordered rectangle in worksheet view) of your template starts at cell A:1. If not, open worksheet in Excel mode and edit the table size in the table draft tab.
 
 If none of these could help, please don't hesitate to [talk about it](https://github.com/singerla/pptx-automizer/issues/new). 
 

@@ -20,6 +20,7 @@ import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { contentTracker } from '../helper/content-tracker';
 import IArchive from '../interfaces/iarchive';
 import { ContentTypeExtension } from '../enums/content-type-map';
+import { vd } from '../helper/general-helper';
 
 export class Chart extends Shape implements IChart {
   sourceWorksheet: number | string;
@@ -414,8 +415,8 @@ export class Chart extends Shape implements IChart {
             this.updateTargetWorksheetRelation(
               targetRelFile,
               element,
-              target,
-              imageInfo,
+              'Target',
+              imageInfo.rel,
             );
             break;
           case this.relTypeChartThemeOverride:
@@ -451,6 +452,7 @@ export class Chart extends Shape implements IChart {
     const extension = path
       .extname(file)
       .replace('.', '') as ContentTypeExtension;
+
     return {
       source: `ppt/media/${file}`,
       target: `ppt/media/${file}-chart-${this.targetNumber}.${extension}`,

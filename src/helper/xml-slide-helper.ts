@@ -6,6 +6,9 @@ import {
 } from '../types/xml-types';
 import { XmlHelper } from './xml-helper';
 import HasShapes from '../classes/has-shapes';
+import { FindElementSelector, ShapeModificationCallback } from '../types/types';
+import ModifyTableHelper from './modify-table-helper';
+import { TableData, TableInfo } from '../types/table-types';
 
 export const nsMain =
   'http://schemas.openxmlformats.org/presentationml/2006/main';
@@ -13,6 +16,8 @@ export const mapUriType = {
   'http://schemas.openxmlformats.org/drawingml/2006/table': 'table',
   'http://schemas.openxmlformats.org/drawingml/2006/chart': 'chart',
   'http://schemas.microsoft.com/office/drawing/2014/chartex': 'chartEx',
+  'http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject': 'oleObject',
+  'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink': 'hyperlink',
 };
 
 /**
@@ -50,6 +55,18 @@ export class XmlSlideHelper {
     }
 
     return Number(creationIdSlide);
+  }
+
+  /**
+   * Get an array of ElementInfo objects for all named elements on a slide.
+   * @param selector
+   */
+  async getElement(selector: string): Promise<ElementInfo> {
+    const shapeNode = XmlHelper.isElementCreationId(selector)
+      ? XmlHelper.findByCreationId(this.slideXml, selector)
+      : XmlHelper.findByName(this.slideXml, selector);
+
+    return XmlSlideHelper.getElementInfo(shapeNode);
   }
 
   /**
@@ -100,11 +117,14 @@ export class XmlSlideHelper {
       position: XmlSlideHelper.parseShapeCoordinates(slideElement),
       hasTextBody: !!XmlSlideHelper.getTextBody(slideElement),
       getXmlElement: () => slideElement,
+      getText: () => XmlSlideHelper.parseTextFragments(slideElement),
+      getTableInfo: () => XmlSlideHelper.readTableInfo(slideElement),
+      getAltText: () => XmlSlideHelper.getImageAltText(slideElement),
     };
   }
 
   /**
-   * Retreives a list of all named elements on a slide. Automation requires at least a name.
+   * Retrieves a list of all named elements on a slide. Automation requires at least a name.
    * @param filterTags Use an array of strings to filter the output array
    */
   getNamedElements(filterTags?: string[]): XmlElement[] {
@@ -129,8 +149,25 @@ export class XmlSlideHelper {
     return shapeNode.getElementsByTagNameNS(nsMain, 'txBody').item(0);
   }
 
+  static parseTextFragments(shapeNode: XmlElement): string[] {
+    const txBody = XmlSlideHelper.getTextBody(shapeNode);
+    const textFragments: string[] = [];
+    const texts = txBody.getElementsByTagName('a:t');
+    for (let t = 0; t < texts.length; t++) {
+      textFragments.push(texts.item(t).textContent);
+    }
+    return textFragments;
+  }
+
   static getNonVisibleProperties(shapeNode: XmlElement): XmlElement {
     return shapeNode.getElementsByTagNameNS(nsMain, 'cNvPr').item(0);
+  }
+
+  static getImageAltText(slideElement: XmlElement) {
+    const cNvPr = XmlSlideHelper.getNonVisibleProperties(slideElement);
+    if (cNvPr) {
+      return cNvPr.getAttribute('descr');
+    }
   }
 
   static getElementName(slideElement: XmlElement) {
@@ -167,6 +204,15 @@ export class XmlSlideHelper {
         const uri = graphicData.getAttribute('uri');
         type = mapUriType[uri] ? mapUriType[uri] : type;
         break;
+      case 'oleObj':
+        type = 'OLEObject';
+        break;
+    }
+
+    // Check for hyperlinks
+    const hasHyperlink = slideElementParent.getElementsByTagName('a:hlinkClick');
+    if (hasHyperlink.length > 0) {
+      type = 'Hyperlink';
     }
 
     return type as ElementType;
@@ -253,5 +299,40 @@ export class XmlSlideHelper {
       console.warn(`Error while fetching XML from path ${path}: ${error}`);
       return null;
     }
+  };
+
+  static readTableInfo = (element: XmlElement): TableInfo[] => {
+    const info = <TableInfo[]>[];
+    const rows = element.getElementsByTagName('a:tr');
+    if (!rows) {
+      console.error("Can't find a table row.");
+      return info;
+    }
+
+    for (let r = 0; r < rows.length; r++) {
+      const row = rows.item(r);
+      const columns = row.getElementsByTagName('a:tc');
+      for (let c = 0; c < columns.length; c++) {
+        const cell = columns.item(c);
+        const gridSpan = cell.getAttribute('gridSpan');
+        const hMerge = cell.getAttribute('hMerge');
+        const texts = cell.getElementsByTagName('a:t');
+        const text: string[] = [];
+        for (let t = 0; t < texts.length; t++) {
+          text.push(texts.item(t).textContent);
+        }
+        info.push({
+          row: r,
+          column: c,
+          rowXml: row,
+          columnXml: cell,
+          text: text,
+          textContent: text.join(''),
+          gridSpan: Number(gridSpan),
+          hMerge: Number(hMerge),
+        });
+      }
+    }
+    return info;
   };
 }

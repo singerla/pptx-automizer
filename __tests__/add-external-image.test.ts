@@ -13,7 +13,7 @@ test('Load external media, add/modify image and set image target', async () => {
 
   const pres = automizer
     .loadRoot(`RootTemplate.pptx`)
-    .loadMedia([`feather.png`, `test.png`])
+    .loadMedia([`feather.png`, `test.png`, `Dàngerous Dinösaur.png`])
     .loadMedia(`test.png`, `${__dirname}/../__tests__/media`, 'pre_')
     .load(`SlideWithShapes.pptx`, 'shapes')
     .load(`SlideWithImages.pptx`, 'images');
@@ -34,10 +34,16 @@ test('Load external media, add/modify image and set image target', async () => {
     ]);
   });
 
+  pres.addSlide('images', 1, (slide) => {
+    slide.modifyElement('Grafik 5', [
+      ModifyImageHelper.setRelationTarget('Dàngerous Dinösaur.png'),
+    ]);
+  });
+
   const result = await pres.write(`add-external-image.test.pptx`);
 
   // expect a 5x3cm light-blue duotone feather instead of imagePNG cord loop on page 1
   // expect imagePNG cord loop on page 2 instead of cut tree jpg
 
-  expect(result.images).toBe(3);
+  expect(result.images).toBe(5);
 });

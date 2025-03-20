@@ -1,29 +1,28 @@
-import Automizer, { XmlHelper } from './index';
-import ModifyBackgroundHelper from './helper/modify-background-helper';
-import { vd } from './helper/general-helper';
-import ModifyImageHelper from './helper/modify-image-helper';
+import Automizer from './index';
 
 const run = async () => {
+  const outputDir = `${__dirname}/../__tests__/pptx-output`;
+  const templateDir = `${__dirname}/../__tests__/pptx-templates`;
+
   const automizer = new Automizer({
-    templateDir: `${__dirname}/../__tests__/pptx-templates`,
-    outputDir: `${__dirname}/../__tests__/pptx-output`,
+    templateDir,
+    outputDir,
     autoImportSlideMasters: true,
+    cleanupPlaceholders: true,
   });
 
   let pres = automizer
     .loadRoot(`RootTemplate.pptx`)
-    .load(`SlideMasterBackgrounds.pptx`)
+    .load(`EmptySlidePlaceholders.pptx`, 'placeholder')
+    .load(`EmptySlide.pptx`, 'emptySlide');
 
-    .load('SlideMasterBackgrounds.pptx')
-    .loadMedia(`test.png`, `${__dirname}/../__tests__/media`, 'pre_')
-    .addMaster(`SlideMasterBackgrounds.pptx`, 2, async (master) => {
-      ModifyBackgroundHelper.setRelationTarget(master, 'pre_test.png');
-    })
-    .addSlide(`SlideMasterBackgrounds.pptx`, 1)
-    .write(`SlideMasterBackgroundsOutput.pptx`)
-    .then((summary) => {
-      console.log(summary);
-    });
+  pres.addSlide('emptySlide', 1, (slide) => {
+    slide.addElement('placeholder', 1, 'Titel 4');
+  });
+
+  pres.write(`myOutputPresentation.pptx`).then((summary) => {
+    console.log(summary);
+  });
 };
 
 run().catch((error) => {
