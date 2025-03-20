@@ -38,6 +38,11 @@ If you require commercial support for complex .pptx automation, you can explore 
   - [Modify Charts](#modify-charts)
   - [Modify Extended Charts](#modify-extended-charts)
   - [Remove elements from a slide](#remove-elements-from-a-slide)
+  - [🔗 Hyperlink Management](#🔗-hyperlink-management)
+  - [Hyperlink Helper Functions](#hyperlink-helper-functions)
+  - [Adding Hyperlinks](#adding-hyperlinks)
+
+
 - [Tipps and Tricks](#tipps-and-tricks)
   - [Loop through the slides of a presentation](#loop-through-the-slides-of-a-presentation)
   - [Quickly get all slide numbers of a template](#quickly-get-all-slide-numbers-of-a-template)
@@ -49,6 +54,7 @@ If you require commercial support for complex .pptx automation, you can explore 
   - [Troubleshooting](#troubleshooting)
   - [Testing](#testing)
 - [Special Thanks](#special-thanks)
+
 <!-- TOC -->
 
 # Requirements and Limitations
@@ -589,6 +595,36 @@ pres
     slide.addElement('images', 2, 'imageJPG');
   });
 ```
+
+## 🔗 Hyperlink Management
+
+PowerPoint presentations often use hyperlinks to connect to external websites or internal slides. The PPTX Automizer provides simple and powerful functions to manage hyperlinks in your presentations.
+
+### Hyperlink Helper Functions
+
+Three core functions are available for all your hyperlink needs:
+
+| Function | Description |
+|----------|-------------|
+| `addHyperlink` | Add a new hyperlink to an element |
+
+
+### Adding Hyperlinks
+
+You can add hyperlinks to text elements using the `addHyperlink` helper function. The function accepts either a URL string for external links or a slide number for internal slide links:
+
+```ts
+// Add an external hyperlink
+slide.modifyElement('TextShape', modify.addHyperlink('https://example.com'));
+
+
+// Add an internal slide link (to slide 3)
+slide.modifyElement('TextShape', (element, relation) => {
+  modify.addHyperlink(3)(element, relation);
+});
+```
+
+The `addHyperlink` function will automatically detect whether the target is an external URL or an internal slide number and set up the appropriate relationship type and attributes.
 
 # Tipps and Tricks
 
