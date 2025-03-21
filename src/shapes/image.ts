@@ -29,6 +29,11 @@ export class Image extends Shape implements IImage {
     this.relType =
       'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image';
 
+    // A shape retrieved by Image.getAllOnSlide() can also be (nested) SVG.
+    if (!shape.sourceMode && this.extension === 'svg') {
+      shape.sourceMode = 'image:svg';
+    }
+
     switch (shape.sourceMode) {
       case 'image:svg':
         this.relRootTag = TargetByRelIdMap['image:svg'].relRootTag;
@@ -62,15 +67,6 @@ export class Image extends Shape implements IImage {
   ): Promise<Image> {
     await this.prepare(targetTemplate, targetSlideNumber);
     await this.updateElementsRelId();
-
-    // TODO: Process related svg/media content on added slides
-    // if (this.hasSvgBlipRelation()) {
-    //   await this.processRelatedContent(
-    //     targetTemplate,
-    //     targetSlideNumber,
-    //     'image:svg',
-    //   );
-    // }
 
     return this;
   }
