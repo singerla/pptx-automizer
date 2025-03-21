@@ -268,7 +268,11 @@ export type ImportedElement = {
   type?: AnalyzedElementType['type'];
   sourceElement?: XmlElement;
   sourceRid?: string;
-  sourceMode?: 'image:svg' | 'image:media' | 'image:audioFile';
+  sourceMode?:
+    | 'image:svg'
+    | 'image:media'
+    | 'image:audioFile'
+    | 'image:videoFile';
 };
 export type AnalyzedElementType = {
   type: ElementType;
@@ -286,6 +290,7 @@ export type TargetByRelIdMapParam = {
   prefix: string;
   expression?: RegExp;
   findAll?: boolean;
+  relType?: string;
 };
 export type Workbook = {
   archive: IArchive;

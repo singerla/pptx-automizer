@@ -41,6 +41,7 @@ export class Shape {
 
   relRootTag: string;
   relAttribute: string;
+  relType: string;
   relParent: (element: XmlElement) => XmlElement;
 
   targetElement: XmlElement;

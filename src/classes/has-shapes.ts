@@ -37,8 +37,6 @@ import { GenericShape } from '../shapes/generic';
 import { XmlSlideHelper } from '../helper/xml-slide-helper';
 import { OLEObject } from '../shapes/ole';
 import { Hyperlink } from '../shapes/hyperlink';
-import { Media } from '../shapes/media';
-import { vd } from '../helper/general-helper';
 
 export default class HasShapes {
   /**

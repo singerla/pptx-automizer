@@ -14,8 +14,16 @@ const run = async () => {
     .load(`EmptySlide.pptx`, 'emptySlide')
     .load(`SlideWithMedia.pptx`, 'media');
 
-  pres.addSlide('emptySlide', 1, (slide) => {
-    slide.addElement('media', 1, 'audio');
+  // pres.addSlide('emptySlide', 1, (slide) => {
+  //   slide.addElement('media', 1, 'audio');
+  // });
+  //
+  // pres.addSlide('emptySlide', 1, (slide) => {
+  //   slide.addElement('media', 2, 'video');
+  // });
+
+  pres.addSlide('media', 1, (slide) => {
+    //slide.addElement('media', 2, 'video');
   });
 
   pres.write(`testMedia.pptx`).then((summary) => {
