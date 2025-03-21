@@ -73,7 +73,9 @@ export interface ISlide {
   getDimensions(): Promise<{ width: number; height: number }>;
 
   /**
-   * Drop the current slide
+   * Remove a slide from output. The slide will be calculated, but
+   * eventually withdrawn from slide list.
+   * Slide number starts by 1.
    */
-  drop(): void;
+  remove(number: number): void;
 }

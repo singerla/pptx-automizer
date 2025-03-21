@@ -28,6 +28,20 @@ export default class ModifyPresentationHelper {
   };
 
   /**
+   * Pass an array of slide numbers to remove from slide sortation.
+   * @order Array of slide numbers, starting by 1
+   */
+  static removeSlides = (numbers: number[]) => (xml: XmlDocument) => {
+    const slides = ModifyPresentationHelper.getSlidesCollection(xml);
+    numbers.map((index, i) => numbers[i]--);
+    for (let i = 0; i <= slides.length; i++) {
+      if (numbers.includes(i)) {
+        XmlHelper.remove(slides[i]);
+      }
+    }
+  };
+
+  /**
    * Set ids to prevent corrupted pptx.
    * Must start with 256 and increment by one.
    */
