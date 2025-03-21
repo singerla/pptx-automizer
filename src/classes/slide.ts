@@ -9,6 +9,7 @@ import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import { IMaster } from '../interfaces/imaster';
 import HasShapes from './has-shapes';
 import { Master } from './master';
+import ModifyPresentationHelper from '../helper/modify-presentation-helper';
 
 export class Slide extends HasShapes implements ISlide {
   targetType: ShapeTargetType = 'slide';
@@ -225,5 +226,14 @@ export class Slide extends HasShapes implements ISlide {
       this.targetArchive,
       `ppt/slides/_rels/slide${this.targetNumber}.xml.rels`,
     );
+  }
+
+  /**
+   * Remove a slide from presentation's slide list.
+   * ToDo: Find the current count for this slide;
+   * ToDo: this.targetNumber is undefined at this point.
+   */
+  remove(slide: number): void {
+    this.root.modify(ModifyPresentationHelper.removeSlides([slide]));
   }
 }
