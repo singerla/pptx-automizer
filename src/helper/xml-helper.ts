@@ -285,6 +285,7 @@ export class XmlHelper {
     const relationshipItems = xml.getElementsByTagName(tag);
 
     const rels = [];
+
     for (const i in relationshipItems) {
       if (relationshipItems[i].getAttribute) {
         cb(relationshipItems[i], rels);
@@ -353,7 +354,7 @@ export class XmlHelper {
     type: string,
   ): Promise<Target> {
     const params = TargetByRelIdMap[type];
-    
+
     // For elements that need to search all instances (like hyperlinks)
     if (params.findAll) {
       // Find all hyperlink elements
@@ -361,7 +362,7 @@ export class XmlHelper {
       if (hyperlinks.length > 0) {
         // Use the first hyperlink found
         const sourceRid = hyperlinks[0].getAttribute(params.relAttribute);
-        
+
         // Get all relationships
         const allRels = await XmlHelper.getRelationshipItems(
           archive,
@@ -375,9 +376,9 @@ export class XmlHelper {
               element: element,
               isExternal: element.getAttribute('TargetMode') === 'External',
             } as Target);
-          }
+          },
         );
-        
+
         // Find the matching relationship
         const target = allRels.find((rel) => rel.rId === sourceRid);
         return target;
@@ -385,15 +386,24 @@ export class XmlHelper {
     } else {
       // Standard behavior for other element types
       const sourceRid = element
-        .getElementsByTagName(params.relRootTag)[0]
-        .getAttribute(params.relAttribute);
+        .getElementsByTagName(params.relRootTag)
+        .item(0)
+        ?.getAttribute(params.relAttribute);
+
+      if (!sourceRid) {
+        throw 'No sourceRid for ' + params.relRootTag;
+      }
 
       const shapeRels = await XmlHelper.getRelationshipTargetsByPrefix(
         archive,
         relsPath,
         params.prefix,
       );
-      const target = shapeRels.find((rel) => rel.rId === sourceRid);
+
+      const target = shapeRels.find((rel) => {
+        return rel.rId === sourceRid;
+      });
+
       return target;
     }
   }

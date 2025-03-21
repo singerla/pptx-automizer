@@ -13,6 +13,7 @@ import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { ElementType } from '../enums/element-type';
 import IArchive from '../interfaces/iarchive';
 import { ContentTypeExtension } from '../enums/content-type-map';
+import { TargetByRelIdMap } from '../constants/constants';
 
 export class Image extends Shape implements IImage {
   extension: ContentTypeExtension;
@@ -25,10 +26,21 @@ export class Image extends Shape implements IImage {
     this.sourceFile = shape.target.file.replace('../media/', '');
     this.extension = FileHelper.getFileExtension(this.sourceFile);
     this.relAttribute = 'r:embed';
+    this.relType =
+      'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image';
 
-    switch (this.extension) {
-      case 'svg':
-        this.relRootTag = 'asvg:svgBlip';
+    switch (shape.sourceMode) {
+      case 'image:svg':
+        this.relRootTag = TargetByRelIdMap['image:svg'].relRootTag;
+        this.relParent = (element: XmlElement) =>
+          element.parentNode as XmlElement;
+        break;
+      case 'image:media':
+      case 'image:audioFile':
+      case 'image:videoFile':
+        this.relRootTag = TargetByRelIdMap[shape.sourceMode].relRootTag;
+        this.relAttribute = TargetByRelIdMap[shape.sourceMode].relAttribute;
+        this.relType = TargetByRelIdMap[shape.sourceMode].relType;
         this.relParent = (element: XmlElement) =>
           element.parentNode as XmlElement;
         break;
@@ -51,6 +63,15 @@ export class Image extends Shape implements IImage {
     await this.prepare(targetTemplate, targetSlideNumber);
     await this.updateElementsRelId();
 
+    // TODO: Process related svg/media content on added slides
+    // if (this.hasSvgBlipRelation()) {
+    //   await this.processRelatedContent(
+    //     targetTemplate,
+    //     targetSlideNumber,
+    //     'image:svg',
+    //   );
+    // }
+
     return this;
   }
 
@@ -70,19 +91,6 @@ export class Image extends Shape implements IImage {
     return this;
   }
 
-  async modifySvgRelation(
-    targetTemplate: RootPresTemplate,
-    targetSlideNumber: number,
-    targetElement: XmlElement,
-  ): Promise<Image> {
-    await this.prepare(targetTemplate, targetSlideNumber);
-
-    this.targetElement = targetElement;
-    await this.updateTargetElementRelId();
-
-    return this;
-  }
-
   async append(
     targetTemplate: RootPresTemplate,
     targetSlideNumber: number,
@@ -95,32 +103,104 @@ export class Image extends Shape implements IImage {
 
     this.applyImageCallbacks();
 
+    await this.processImageRelations(targetTemplate, targetSlideNumber);
+
+    return this;
+  }
+
+  /**
+   * For audio/video and svg, some more relations need to be handled.
+   */
+  async processImageRelations(
+    targetTemplate: RootPresTemplate,
+    targetSlideNumber: number,
+  ) {
     /*
      * SVG images require a corresponding PNG image.
      */
     if (this.hasSvgBlipRelation()) {
-      const relsPath = `ppt/slides/_rels/slide${this.sourceSlideNumber}.xml.rels`;
-      const target = await XmlHelper.getTargetByRelId(
-        this.sourceArchive,
-        relsPath,
-        this.targetElement,
-        'image:svg',
-      );
-      await new Image(
-        {
-          mode: 'append',
-          target,
-          sourceArchive: this.sourceArchive,
-          sourceSlideNumber: this.sourceSlideNumber,
-          type: ElementType.Image,
-        },
-        this.targetType,
-      ).modifySvgRelation(
+      await this.processRelatedContent(
         targetTemplate,
         targetSlideNumber,
-        this.targetElement,
+        'image:svg',
       );
     }
+
+    /**
+     * Media files are children of images with additional relations
+     */
+    if (this.hasAudioRelation()) {
+      await this.processRelatedMediaContent(
+        targetTemplate,
+        targetSlideNumber,
+        'image:audioFile',
+      );
+    }
+    if (this.hasVideoRelation()) {
+      await this.processRelatedMediaContent(
+        targetTemplate,
+        targetSlideNumber,
+        'image:videoFile',
+      );
+    }
+  }
+
+  async processRelatedMediaContent(
+    targetTemplate: RootPresTemplate,
+    targetSlideNumber: number,
+    sourceMode: ImportedElement['sourceMode'],
+  ) {
+    await this.processRelatedContent(
+      targetTemplate,
+      targetSlideNumber,
+      'image:media',
+    );
+    await this.processRelatedContent(
+      targetTemplate,
+      targetSlideNumber,
+      sourceMode,
+    );
+  }
+
+  async processRelatedContent(
+    targetTemplate: RootPresTemplate,
+    targetSlideNumber: number,
+    sourceMode: ImportedElement['sourceMode'],
+  ) {
+    const relsPath = `ppt/slides/_rels/slide${this.sourceSlideNumber}.xml.rels`;
+
+    const target = await XmlHelper.getTargetByRelId(
+      this.sourceArchive,
+      relsPath,
+      this.targetElement,
+      sourceMode,
+    );
+    await new Image(
+      {
+        mode: 'append',
+        target,
+        sourceArchive: this.sourceArchive,
+        sourceSlideNumber: this.sourceSlideNumber,
+        type: ElementType.Image,
+        sourceMode,
+      },
+      this.targetType,
+    ).modifyMediaRelation(
+      targetTemplate,
+      targetSlideNumber,
+      this.targetElement,
+    );
+  }
+
+  async modifyMediaRelation(
+    targetTemplate: RootPresTemplate,
+    targetSlideNumber: number,
+    targetElement: XmlElement,
+  ): Promise<Image> {
+    await this.prepare(targetTemplate, targetSlideNumber);
+
+    this.targetElement = targetElement;
+    await this.updateTargetElementRelId();
 
     return this;
   }
@@ -155,7 +235,7 @@ export class Image extends Shape implements IImage {
     await this.setTarget(targetTemplate, targetSlideNumber);
 
     this.targetNumber = this.targetTemplate.incrementCounter('images');
-    this.targetFile = 'image' + this.targetNumber + '.' + this.extension;
+    this.targetFile = this.getTargetFileName();
 
     await this.copyFiles();
     await this.appendTypes();
@@ -169,6 +249,13 @@ export class Image extends Shape implements IImage {
       this.targetArchive,
       `ppt/media/${this.targetFile}`,
     );
+  }
+
+  getTargetFileName(): string {
+    const targetFileType = this.target.file.includes('media')
+      ? 'media'
+      : 'image';
+    return targetFileType + this.targetNumber + '.' + this.extension;
   }
 
   async appendTypes(): Promise<void> {
@@ -188,10 +275,12 @@ export class Image extends Shape implements IImage {
       targetRelFile,
     );
 
+    const targetFileName = this.getTargetFileName();
+
     const attributes = {
       Id: this.createdRid,
-      Type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image',
-      Target: `../media/image${this.targetNumber}.${this.extension}`,
+      Type: this.relType,
+      Target: `../media/${targetFileName}`,
     } as RelationshipAttribute;
 
     this.createdRelation = await XmlHelper.append(
@@ -205,6 +294,14 @@ export class Image extends Shape implements IImage {
 
   hasSvgBlipRelation(): boolean {
     return this.targetElement.getElementsByTagName('asvg:svgBlip').length > 0;
+  }
+
+  hasAudioRelation(): boolean {
+    return this.targetElement.getElementsByTagName('a:audioFile').length > 0;
+  }
+
+  hasVideoRelation(): boolean {
+    return this.targetElement.getElementsByTagName('a:videoFile').length > 0;
   }
 
   static async getAllOnSlide(

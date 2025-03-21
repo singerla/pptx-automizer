@@ -4,38 +4,61 @@ import {
   TrackedRelationTag,
 } from '../types/types';
 
-export const TargetByRelIdMap = {
+export const TargetByRelIdMap: Record<string, TargetByRelIdMapParam> = {
   chart: {
     relRootTag: 'c:chart',
     relAttribute: 'r:id',
     prefix: '../charts/chart',
-  } as TargetByRelIdMapParam,
+  },
   chartEx: {
     relRootTag: 'cx:chart',
     relAttribute: 'r:id',
     prefix: '../charts/chartEx',
-  } as TargetByRelIdMapParam,
+  },
   image: {
     relRootTag: 'a:blip',
     relAttribute: 'r:embed',
     prefix: '../media/image',
-  } as TargetByRelIdMapParam,
+  },
   'image:svg': {
     relRootTag: 'asvg:svgBlip',
     relAttribute: 'r:embed',
     prefix: '../media/image',
-  } as TargetByRelIdMapParam,
+  },
+  'image:media': {
+    relRootTag: 'p14:media',
+    relAttribute: 'r:embed',
+    relType: 'http://schemas.microsoft.com/office/2007/relationships/media',
+    prefix: '../media/media',
+    findAll: true,
+  },
+  'image:audioFile': {
+    relRootTag: 'a:audioFile',
+    relAttribute: 'r:link',
+    prefix: '../media/media',
+    relType:
+      'http://schemas.openxmlformats.org/officeDocument/2006/relationships/audio',
+    findAll: true,
+  },
+  'image:videoFile': {
+    relRootTag: 'a:videoFile',
+    relAttribute: 'r:link',
+    prefix: '../media/media',
+    relType:
+      'http://schemas.openxmlformats.org/officeDocument/2006/relationships/video',
+    findAll: true,
+  },
   hyperlink: {
     relRootTag: 'a:hlinkClick',
     relAttribute: 'r:id',
     prefix: '',
     findAll: true,
-  } as TargetByRelIdMapParam,
+  },
   oleObject: {
     relRootTag: 'p:oleObj',
     relAttribute: 'r:id',
     prefix: '../embeddings/oleObject',
-  } as TargetByRelIdMapParam,
+  },
 };
 
 export const imagesTrack: () => TrackedRelation[] = () => [

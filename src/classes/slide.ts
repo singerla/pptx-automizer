@@ -112,6 +112,12 @@ export class Slide extends HasShapes implements ISlide {
   }
 
   /**
+   * The current slide will be fully calculated, but removed from slide
+   * sortation.
+   */
+  drop() {}
+
+  /**
    * Find another slide layout by name.
    * @param targetLayoutName
    */

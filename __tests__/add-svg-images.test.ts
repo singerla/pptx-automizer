@@ -16,7 +16,10 @@ test('create presentation and append slides with images', async () => {
     slide.addElement('images', 1, 'Leaf');
   });
 
+  // TODO: Process related svg content on added slides
+  // pres.addSlide('images', 1);
+
   const result = await pres.write(`add-svg-images.test.pptx`);
 
-  expect(result.images).toBe(4);
+  expect(result.images).toBe(10);
 });
