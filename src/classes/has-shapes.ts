@@ -847,6 +847,7 @@ export default class HasShapes {
           target: hyperlink,
           sourceArchive: this.sourceArchive,
           sourceSlideNumber: this.sourceNumber,
+          sourceRid: hyperlink.rId,
         },
         this.targetType,
         this.sourceArchive,
