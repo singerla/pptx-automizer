@@ -28,7 +28,6 @@ import { ISlide } from './interfaces/islide';
 import { IMaster } from './interfaces/imaster';
 import { ContentTypeExtension } from './enums/content-type-map';
 import slugify from 'slugify';
-import PptxGenJS from 'pptxgenjs';
 
 /**
  * Automizer
