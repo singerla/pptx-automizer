@@ -189,6 +189,8 @@ test('Add and modify an existing table, apply styles to cell.', async () => {
               // Log cell XML to console:
               // XmlHelper.dump(cell);
 
+              // Please note: this will only work on cells that do already
+              // have a background color.
               ModifyColorHelper.solidFill(
                 {
                   type: 'srgbClr',
