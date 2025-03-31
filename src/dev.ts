@@ -11,22 +11,82 @@ const run = async () => {
 
   let pres = automizer
     .loadRoot(`RootTemplate.pptx`)
-    .load(`EmptySlide.pptx`, 'emptySlide')
-    .load(`SlideWithMedia.pptx`, 'media');
+    .load(`EmptySlide.pptx`, 'emptySlide');
 
-  // pres.addSlide('emptySlide', 1, (slide) => {
-  //   slide.addElement('media', 1, 'audio');
-  // });
-  //
-  // pres.addSlide('emptySlide', 1, (slide) => {
-  //   slide.addElement('media', 2, 'video');
-  // });
+  const object = {
+    position: {
+      x: 500000,
+      y: 500000,
+      cx: 500000,
+      cy: 500000,
+    },
+  };
 
-  pres.addSlide('media', 1, (slide) => {
-    //slide.addElement('media', 2, 'video');
+  pres.addSlide('emptySlide', 1, async (slide) => {
+    slide.generate(async (pptxGenJSSlide) => {
+      pptxGenJSSlide.addText('hello world1', {
+        hyperlink: {
+          url: 'https://duckduckgo.com',
+        },
+        x: object.position.x,
+        y: object.position.y,
+        w: object.position.cx,
+        h: object.position.cy,
+        fontFace: 'Kanit',
+      });
+    });
+    slide.generate(async (pptxGenJSSlide) => {
+      pptxGenJSSlide.addText('hello world2', {
+        hyperlink: {
+          url: 'https://duckduckgo.com',
+        },
+        x: object.position.x,
+        y: object.position.y,
+        w: object.position.cx,
+        h: object.position.cy,
+        fontFace: 'Kanit',
+      });
+    });
+    slide.generate(async (pptxGenJSSlide) => {
+      pptxGenJSSlide.addText('hello world3', {
+        hyperlink: {
+          url: 'https://duckduckgo.com',
+        },
+        x: object.position.x,
+        y: object.position.y,
+        w: object.position.cx,
+        h: object.position.cy,
+        fontFace: 'Kanit',
+      });
+    });
+    slide.generate(async (pptxGenJSSlide) => {
+      pptxGenJSSlide.addText('hello world5', {
+        hyperlink: {
+          url: 'https://duckduckgo.com',
+        },
+        x: object.position.x,
+        y: object.position.y,
+        w: object.position.cx,
+        h: object.position.cy,
+        fontFace: 'Kanit',
+      });
+    });
+
+    slide.generate(async (pptxGenJSSlide) => {
+      pptxGenJSSlide.addText('hello world6', {
+        hyperlink: {
+          url: 'https://duckduckgo.com',
+        },
+        x: object.position.x,
+        y: object.position.y,
+        w: object.position.cx,
+        h: object.position.cy,
+        fontFace: 'Kanit',
+      });
+    });
   });
 
-  pres.write(`testMedia.pptx`).then((summary) => {
+  pres.write(`testHyperlinks.pptx`).then((summary) => {
     console.log(summary);
   });
 };
