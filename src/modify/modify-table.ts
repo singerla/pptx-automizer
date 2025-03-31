@@ -6,17 +6,22 @@ import {
   TableRow,
   TableRowStyle,
 } from '../types/table-types';
-import { Border, Modification, ModificationTags } from '../types/modify-types';
+import {
+  Border,
+  Modification,
+  ModificationTags,
+  ModifyCallback,
+} from '../types/modify-types';
 import ModifyTextHelper from '../helper/modify-text-helper';
 import { ModifyColorHelper } from '../index';
 import { XmlDocument, XmlElement } from '../types/xml-types';
-import { GeneralHelper } from '../helper/general-helper';
+import { GeneralHelper, vd } from '../helper/general-helper';
 
 export class ModifyTable {
   data: TableData;
   table: ModifyXmlHelper;
   xml: XmlDocument | XmlElement;
-  maxCols: number = 0;
+  maxCols = 0;
   params: ModifyTableParams;
 
   constructor(table: XmlDocument | XmlElement, data?: TableData) {
@@ -121,7 +126,7 @@ export class ModifyTable {
       'a:tc': {
         index: index,
         children: children,
-        fromPrevious: true,
+        fromPrevious: !!this.params?.expand,
       },
     };
   };
@@ -149,8 +154,10 @@ export class ModifyTable {
     };
   };
 
-  setCellStyle(style) {
-    const cellProps = {
+  setCellStyle(style: TableRowStyle) {
+    const cellProps: Modification & {
+      modify: ModifyCallback[];
+    } = {
       modify: [],
       children: {},
     };
