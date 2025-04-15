@@ -228,6 +228,9 @@ export type ArchiveParams = {
   workDir?: string;
   cleanupWorkDir?: boolean;
   name?: string;
+  // Set this to true to run TextDecoder.decode before parsing XML.
+  // This will e.g. remove BOM and prevent errors.
+  decodeText?: boolean;
 };
 export type ImportElement = {
   presName: string;

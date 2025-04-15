@@ -1,18 +1,24 @@
 import { DOMParser, Node, XMLSerializer } from '@xmldom/xmldom';
 import { ArchivedFile, ArchiveType } from '../../interfaces/iarchive';
 import { XmlDocument } from '../../types/xml-types';
-import { AutomizerFile, AutomizerParams } from '../../types/types';
+import {
+  ArchiveParams,
+  AutomizerFile,
+  AutomizerParams,
+} from '../../types/types';
 import JSZip from 'jszip';
 
 export default class Archive {
   filename: AutomizerFile;
+  params: ArchiveParams;
   buffer: ArchivedFile[] = [];
   options: JSZip.JSZipGeneratorOptions<'nodebuffer'> = {
     type: 'nodebuffer',
   };
 
-  constructor(filename: AutomizerFile) {
+  constructor(filename: AutomizerFile, params: ArchiveParams) {
     this.filename = filename;
+    this.params = params;
   }
 
   parseXml(xmlString: string): XmlDocument {

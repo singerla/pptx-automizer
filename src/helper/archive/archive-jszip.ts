@@ -1,7 +1,11 @@
 import Archive from './archive';
-import fs, { promises as fsp } from 'fs';
+import fs from 'fs';
 import JSZip, { InputType } from 'jszip';
-import { AutomizerFile, AutomizerParams } from '../../types/types';
+import {
+  ArchiveParams,
+  AutomizerFile,
+  AutomizerParams,
+} from '../../types/types';
 import IArchive, { ArchivedFile } from '../../interfaces/iarchive';
 import { XmlDocument } from '../../types/xml-types';
 import path from 'path';
@@ -11,8 +15,8 @@ export default class ArchiveJszip extends Archive implements IArchive {
   archive: JSZip;
   file: Buffer;
 
-  constructor(filename: AutomizerFile) {
-    super(filename);
+  constructor(filename: AutomizerFile, params: ArchiveParams) {
+    super(filename, params);
   }
 
   private async initialize() {
@@ -82,7 +86,7 @@ export default class ArchiveJszip extends Archive implements IArchive {
 
     const zip = new JSZip();
 
-    const newArchive = new ArchiveJszip(file);
+    const newArchive = new ArchiveJszip(file, this.params);
     newArchive.archive = await zip.loadAsync(contents as unknown as InputType);
 
     return newArchive;
@@ -130,7 +134,14 @@ export default class ArchiveJszip extends Archive implements IArchive {
     const isBuffered = this.fromBuffer(file);
 
     if (!isBuffered) {
-      const xmlString = (await this.read(file, 'string')) as string;
+      let xmlString: string = '';
+      if (this.params.decodeText) {
+        const buffer = (await this.read(file, 'nodebuffer')) as Buffer;
+        xmlString = new TextDecoder().decode(buffer);
+      } else {
+        xmlString = (await this.read(file, 'string')) as string;
+      }
+
       const XmlDocument = this.parseXml(xmlString);
       this.toBuffer(file, XmlDocument);
 
