@@ -210,23 +210,26 @@ export class Chart extends Shape implements IChart {
   async copyFiles(): Promise<void> {
     await this.copyChartFiles();
 
-    this.worksheetFilePrefix = await this.getWorksheetFilePrefix(
-      this.wbRelsPath,
-    );
+    // TODO: If you don't have an embedded xlsx, you could add a break here and
+    // skip copying
 
-    const worksheets = await XmlHelper.getRelationshipTargetsByPrefix(
-      this.sourceArchive,
-      this.wbRelsPath,
-      `${this.wbEmbeddingsPath}${this.worksheetFilePrefix}`,
-    );
-
-    const worksheet = worksheets[0];
-
-    this.sourceWorksheet = worksheet.number === 0 ? '' : worksheet.number;
-    this.targetWorksheet = '-created-' + this.targetNumber;
-
-    await this.copyWorksheetFile();
-    await this.editTargetWorksheetRel();
+    // this.worksheetFilePrefix = await this.getWorksheetFilePrefix(
+    //   this.wbRelsPath,
+    // );
+    //
+    // const worksheets = await XmlHelper.getRelationshipTargetsByPrefix(
+    //   this.sourceArchive,
+    //   this.wbRelsPath,
+    //   `${this.wbEmbeddingsPath}${this.worksheetFilePrefix}`,
+    // );
+    //
+    // const worksheet = worksheets[0];
+    //
+    // this.sourceWorksheet = worksheet.number === 0 ? '' : worksheet.number;
+    // this.targetWorksheet = '-created-' + this.targetNumber;
+    //
+    // await this.copyWorksheetFile();
+    // await this.editTargetWorksheetRel();
   }
 
   async getWorksheetFilePrefix(targetRelFile: string): Promise<string> {
