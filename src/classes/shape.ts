@@ -208,7 +208,7 @@ export class Shape {
       return;
     }
 
-    if (insertBefore === true) {
+    if (insertBefore === true && this.targetElement) {
       sourceElementOnTargetSlide.parentNode.insertBefore(
         this.targetElement,
         sourceElementOnTargetSlide,
