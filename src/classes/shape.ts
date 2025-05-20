@@ -1,5 +1,5 @@
 import { XmlHelper } from '../helper/xml-helper';
-import { GeneralHelper, vd } from '../helper/general-helper';
+import { GeneralHelper } from '../helper/general-helper';
 import {
   ChartModificationCallback,
   ImportedElement,
@@ -10,10 +10,7 @@ import {
 } from '../types/types';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { XmlDocument, XmlElement } from '../types/xml-types';
-import {
-  ContentTypeExtension,
-  ContentTypeMap,
-} from '../enums/content-type-map';
+import { ContentTypeExtension, ContentTypeMap } from '../enums/content-type-map';
 import { ElementSubtype } from '../enums/element-type';
 import IArchive from '../interfaces/iarchive';
 
@@ -134,26 +131,44 @@ export class Shape {
 
   // Process hyperlinks in the element
   async processHyperlinks(targetSlideXml: XmlDocument): Promise<void> {
-    // Find all text runs in the element
-    const runs = this.targetElement.getElementsByTagName('a:r');
+    if (!this.targetElement) return;
 
+    // Scenario 1: Update r:id in <p:nvSpPr><p:cNvPr><a:hlinkClick r:id="..." />
+    // This is for hyperlinks applied to the shape itself.
+    const nvSpPr = this.targetElement.getElementsByTagName('p:nvSpPr')[0];
+    if (nvSpPr) {
+      const cNvPr = nvSpPr.getElementsByTagName('p:cNvPr')[0];
+      if (cNvPr) {
+        const shapeHlinks = cNvPr.getElementsByTagName('a:hlinkClick');
+        for (let k = 0; k < shapeHlinks.length; k++) {
+          const shapeHlink = shapeHlinks[k];
+          const currentRid = shapeHlink.getAttribute('r:id');
+
+          if (this.createdRid && currentRid) {
+            shapeHlink.setAttribute('r:id', this.createdRid);
+            shapeHlink.setAttribute(
+              'xmlns:r',
+              'http://schemas.openxmlformats.org/officeDocument/2006/relationships',
+            );
+          }
+        }
+      }
+    }
+
+    // Scenario 2: Update r:id in <p:txBody>...<a:rPr><a:hlinkClick r:id="..." />
+    // This is for hyperlinks applied to text runs within the shape.
+    const runs = this.targetElement.getElementsByTagName('a:r');
     for (let i = 0; i < runs.length; i++) {
       const run = runs[i];
       const rPr = run.getElementsByTagName('a:rPr')[0];
-
       if (rPr) {
-        // Find hyperlink elements
         const hlinkClicks = rPr.getElementsByTagName('a:hlinkClick');
-
         for (let j = 0; j < hlinkClicks.length; j++) {
           const hlinkClick = hlinkClicks[j];
-          const sourceRid = hlinkClick.getAttribute('r:id');
+          const currentRid = hlinkClick.getAttribute('r:id');
 
-          if (sourceRid) {
-            // Update the r:id attribute to use the created relationship ID
+          if (this.createdRid && currentRid) {
             hlinkClick.setAttribute('r:id', this.createdRid);
-
-            // Ensure the xmlns:r attribute is set
             hlinkClick.setAttribute(
               'xmlns:r',
               'http://schemas.openxmlformats.org/officeDocument/2006/relationships',
@@ -247,13 +262,11 @@ export class Shape {
       .getElementsByTagName('p:cSld')[0]
       .getElementsByTagName(this.relRootTag);
 
-    const sourceElements = XmlHelper.findByAttributeValue(
+    return XmlHelper.findByAttributeValue(
       sourceList,
       this.relAttribute,
       rId,
     );
-
-    return sourceElements;
   }
 
   async updateTargetElementRelId(): Promise<void> {
