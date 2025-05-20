@@ -15,7 +15,7 @@ export class Hyperlink extends Shape {
     targetType: ShapeTargetType,
     sourceArchive: IArchive,
     hyperlinkType: 'internal' | 'external' = 'external',
-    hyperlinkTarget: string = '',
+    hyperlinkTarget: string =  '',
   ) {
     super(shape, targetType);
     this.sourceArchive = sourceArchive;
@@ -31,7 +31,7 @@ export class Hyperlink extends Shape {
   ): Promise<Hyperlink> {
     await this.prepare(targetTemplate, targetSlideNumber);
     await this.editTargetHyperlinkRel();
-    await this.updateHyperlinkInSlide();
+    await this.replaceIntoSlideTree();
 
     return this;
   }
@@ -54,6 +54,10 @@ export class Hyperlink extends Shape {
     targetSlideNumber: number,
   ): Promise<Hyperlink> {
     await this.prepare(targetTemplate, targetSlideNumber);
+    if (this.target && this.target.rId) {
+      this.sourceRid = this.target.rId;
+    }
+    await this.removeFromSlideTree();
     await this.removeFromSlideRels();
 
     return this;
@@ -61,8 +65,7 @@ export class Hyperlink extends Shape {
 
   async prepare(
     targetTemplate: RootPresTemplate,
-    targetSlideNumber: number,
-    hyperlinks?: Target[]
+    targetSlideNumber: number
   ): Promise<void> {
     await this.setTarget(targetTemplate, targetSlideNumber);
 
@@ -75,6 +78,14 @@ export class Hyperlink extends Shape {
       this.createdRid = baseId.endsWith('-created') 
         ? baseId.slice(0, -8) 
         : baseId;
+    }
+    if (this.shape && this.shape.target && this.shape.target.rId) {
+      this.sourceRid = this.shape.target.rId;
+    }
+    // If hyperlinkTarget is not set, try to get it from the original rel target
+    if (!this.hyperlinkTarget && this.shape && this.shape.target && this.shape.target.file) {
+      this.hyperlinkTarget = this.shape.target.file;
+      this.hyperlinkType = (this.shape.target.isExternal || this.shape.target.type === 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink') ? 'external' : 'internal';
     }
   }
 
@@ -115,7 +126,7 @@ export class Hyperlink extends Shape {
       });
     }
 
-    await XmlHelper.writeXmlToArchive(
+    XmlHelper.writeXmlToArchive(
       this.targetArchive,
       targetRelFile,
       relXml,
@@ -124,64 +135,30 @@ export class Hyperlink extends Shape {
 
   // Add a method to update the hyperlink in the slide XML
   private async updateHyperlinkInSlide(): Promise<void> {
-    // Get the slide XML
-    const slideXml = await XmlHelper.getXmlFromArchive(
-      this.targetArchive,
-      this.targetSlideFile,
-    );
-
-    // When copying a full slide with hyperlinks, we may not have a targetElement
-    // but we still need to update hyperlinks in the slide XML
-    if (this.sourceRid && this.createdRid) {
-      // Find all a:hlinkClick elements in the entire slide
+    if (!this.targetElement && this.sourceRid && this.createdRid) {
+      const slideXml = await XmlHelper.getXmlFromArchive(
+        this.targetArchive,
+        this.targetSlideFile,
+      );
       const allHyperlinkElements = slideXml.getElementsByTagName('a:hlinkClick');
-      
+      let foundAndUpdatedInSlide = false;
       for (let i = 0; i < allHyperlinkElements.length; i++) {
         const hlinkClick = allHyperlinkElements[i];
-        
-        // Check if this element references our source relationship ID
         if (hlinkClick.getAttribute('r:id') === this.sourceRid) {
-          // Update to use the new relationship ID
           hlinkClick.setAttribute('r:id', this.createdRid);
-          
-          // Ensure the xmlns:r attribute is set
           hlinkClick.setAttribute('xmlns:r', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships');
+          foundAndUpdatedInSlide = true;
+          break;
         }
       }
-    }
-    
-    // For element-specific hyperlinks (when targetElement is set)
-    if (this.targetElement) {
-      // Find all text runs in the element
-      const runs = this.targetElement.getElementsByTagName('a:r');
-      
-      for (let i = 0; i < runs.length; i++) {
-        const run = runs[i];
-        const rPr = run.getElementsByTagName('a:rPr')[0];
-        
-        if (rPr) {
-          // Find hyperlink elements
-          const hlinkClicks = rPr.getElementsByTagName('a:hlinkClick');
-          
-          for (let j = 0; j < hlinkClicks.length; j++) {
-            const hlinkClick = hlinkClicks[j];
-            
-            // Update the r:id attribute to use the created relationship ID
-            hlinkClick.setAttribute('r:id', this.createdRid);
-            
-            // Ensure the xmlns:r attribute is set
-            hlinkClick.setAttribute('xmlns:r', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships');
-          }
-        }
+      if (foundAndUpdatedInSlide) {
+        XmlHelper.writeXmlToArchive(
+          this.targetArchive,
+          this.targetSlideFile,
+          slideXml,
+        );
       }
     }
-
-    // Write the updated XML back to the archive
-    await XmlHelper.writeXmlToArchive(
-      this.targetArchive,
-      this.targetSlideFile,
-      slideXml,
-    );
   }
 
   private updateHyperlinkRelation(element: Element): void {
@@ -225,41 +202,42 @@ export class Hyperlink extends Shape {
       targetRelFile,
     );
     const relationships = relXml.getElementsByTagName('Relationship');
-
-    for (let i = 0; i < relationships.length; i++) {
-      if (relationships[i].getAttribute('Id') === this.createdRid) {
-        relXml.documentElement.removeChild(relationships[i]);
-        break;
+    const ridToRemove = this.sourceRid || this.createdRid;
+    if (ridToRemove) {
+      for (let i = relationships.length - 1; i >= 0; i--) {
+        if (relationships[i].getAttribute('Id') === ridToRemove) {
+          relationships[i].parentNode.removeChild(relationships[i]);
+          break;
+        }
       }
+      XmlHelper.writeXmlToArchive(
+        this.targetArchive,
+        targetRelFile,
+        relXml,
+      );
     }
-
-    await XmlHelper.writeXmlToArchive(
-      this.targetArchive,
-      targetRelFile,
-      relXml,
-    );
   }
 
   static async getAllOnSlide(
     archive: IArchive,
     relsPath: string,
   ): Promise<Target[]> {
-    const hyperlinkType = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink';
-
+    const hyperlinkRelType = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink';
+    const slideRelType = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide';
     return XmlHelper.getRelationshipItems(
       archive,
       relsPath,
       (element: XmlElement, rels: Target[]) => {
         const type = element.getAttribute('Type');
 
-        if (type === hyperlinkType) {
+        if (type === hyperlinkRelType || type === slideRelType) {
           rels.push({
             rId: element.getAttribute('Id'),
             type: element.getAttribute('Type'),
             file: element.getAttribute('Target'),
             filename: element.getAttribute('Target'),
             element: element,
-            isExternal: element.getAttribute('TargetMode') === 'External',
+            isExternal: element.getAttribute('TargetMode') === 'External' || type === hyperlinkRelType,
           } as Target);
         }
       }
@@ -268,90 +246,65 @@ export class Hyperlink extends Shape {
 
   async modifyOnAddedSlide(
     targetTemplate: RootPresTemplate,
-    targetSlideNumber: number,
-    hyperlinks?: Target[]
+    targetSlideNumber: number
   ): Promise<void> {
-    await this.prepare(targetTemplate, targetSlideNumber, hyperlinks);
-    
-    // Enhanced internal link type detection
-    if (this.target && this.target.file) {
-      this.hyperlinkTarget = this.target.file;
-      this.hyperlinkType = this.target.file.includes('/slides/slide') ? 'internal' : 'external';
+    if (!this.target || !this.target.rId) {
+      console.warn('modifyOnAddedSlide called on Hyperlink without a valid source target/rId.');
+      return;
     }
-    
-    // Update the relationship in the slide's relationships file
+    this.sourceRid = this.target.rId;
+    this.hyperlinkTarget = this.target.file;
+    this.hyperlinkType = (this.target.isExternal || this.target.type === 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink') ? 'external' : 'internal';
+
+
+    await this.prepare(targetTemplate, targetSlideNumber);
+
+    // 1. Modify the copied _rels file:
     const targetRelFile = this.targetSlideRelFile;
-    const relXml = await XmlHelper.getXmlFromArchive(
-      this.targetArchive,
-      targetRelFile,
-    );
-    
-    // Find the relationship with the source rId
+    const relXml = await XmlHelper.getXmlFromArchive(this.targetArchive, targetRelFile);
     const relationships = relXml.getElementsByTagName('Relationship');
-    let relationshipUpdated = false;
-    
-    // First, check if we need to update an existing relationship
-    if (this.sourceRid) {
-      for (let i = 0; i < relationships.length; i++) {
-        const relationship = relationships[i];
-        if (relationship.getAttribute('Id') === this.sourceRid) {
-          // Update the existing relationship
-          relationship.setAttribute('Id', this.createdRid);
-          
-          // Set the relationship type
-          relationship.setAttribute('Type', this.getRelationshipType());
-          
-          // For external links, preserve the original target URL and ensure TargetMode is External
-          if (this.hyperlinkType === 'external') {
-            relationship.setAttribute('Target', this.hyperlinkTarget);
-            relationship.setAttribute('TargetMode', 'External');
-          } else {
-            // For internal links, set the target appropriately
-            relationship.setAttribute('Target', this.getRelationshipTarget());
-            if (relationship.hasAttribute('TargetMode')) {
-              relationship.removeAttribute('TargetMode');
-            }
-          }
-          
-          relationshipUpdated = true;
-          break;
+    let relFoundAndUpdated = false;
+
+    for (let i = 0; i < relationships.length; i++) {
+      const relElement = relationships[i];
+      if (relElement.getAttribute('Id') === this.sourceRid) { // Find by original rId
+        relElement.setAttribute('Id', this.createdRid); // Update Id to new unique rId
+
+        relElement.setAttribute('Target', this.getRelationshipTarget());
+
+        if (this.hyperlinkType === 'external') {
+          relElement.setAttribute('TargetMode', 'External');
+        } else {
+          if (relElement.hasAttribute('TargetMode')) relElement.removeAttribute('TargetMode');
         }
+        relFoundAndUpdated = true;
+
+        contentTracker.trackRelation(targetRelFile, {
+          Id: this.createdRid,
+          Target: relElement.getAttribute('Target') || '',
+          Type: relElement.getAttribute('Type') || '',
+        });
+        break;
       }
     }
-    
-    // If the relationship wasn't found or updated, create a new one
-    if (!relationshipUpdated) {
+
+    if (!relFoundAndUpdated) {
+      console.warn(`modifyOnAddedSlide: Relationship with sourceRId ${this.sourceRid} not found in target rels ${targetRelFile}. It might have been processed by another instance or was missing in the copied rels.`);
       const newRel = relXml.createElement('Relationship');
       newRel.setAttribute('Id', this.createdRid);
       newRel.setAttribute('Type', this.getRelationshipType());
-      
+      newRel.setAttribute('Target', this.getRelationshipTarget());
       if (this.hyperlinkType === 'external') {
-        // For external links, use the original URL and set TargetMode
-        newRel.setAttribute('Target', this.hyperlinkTarget);
         newRel.setAttribute('TargetMode', 'External');
-      } else {
-        // For internal links
-        newRel.setAttribute('Target', this.getRelationshipTarget());
       }
-      
       relXml.documentElement.appendChild(newRel);
+      contentTracker.trackRelation(targetRelFile, {
+        Id: this.createdRid, Target: this.getRelationshipTarget(), Type: this.getRelationshipType()
+      });
     }
-    
-    // Write the updated XML back to the archive
-    await XmlHelper.writeXmlToArchive(
-      this.targetArchive,
-      targetRelFile,
-      relXml,
-    );
-    
-    // Track the relationship for content integrity
-    contentTracker.trackRelation(targetRelFile, {
-      Id: this.createdRid,
-      Target: this.hyperlinkType === 'external' ? this.hyperlinkTarget : this.getRelationshipTarget(),
-      Type: this.getRelationshipType(),
-    });
-    
-    // Now update the hyperlink reference in the slide XML
+    await XmlHelper.writeXmlToArchive(this.targetArchive, targetRelFile, relXml);
+
+    // 2. Modify the copied slide content XML
     await this.updateHyperlinkInSlide();
   }
 
