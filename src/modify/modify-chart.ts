@@ -5,6 +5,7 @@ import {
   ChartData,
   ChartDataMapper,
   ChartPoint,
+  ChartPointValue,
   ChartSeries,
   ChartSlot,
   ChartValueStyle,
@@ -405,6 +406,7 @@ export class ModifyChart {
       },
     };
   };
+
   chartPointBorder = (style: ChartValueStyle['border']): ModificationTags => {
     if (!style) return;
     const modify = <ModifyCallback[]>[];
@@ -648,12 +650,16 @@ export class ModifyChart {
     };
   };
 
-  point = (r: number, c: number, value: string | number): Modification => {
+  point = (
+    r: number,
+    c: number,
+    value: string | ChartPointValue,
+  ): Modification => {
     return {
       children: {
         'c:pt': {
           index: r,
-          modify: ModifyXmlHelper.value(value, r),
+          modify: ModifyXmlHelper.value(ModifyChartHelper.parseCellValue(value), r),
         },
         'c:f': {
           modify: ModifyXmlHelper.range(c, this.height),
@@ -714,7 +720,7 @@ export class ModifyChart {
     };
   }
 
-  rowValues(r: number, c: number, value: number): ModificationTags {
+  rowValues(r: number, c: number, value: ChartPointValue): ModificationTags {
     return {
       row: {
         index: r,
@@ -727,7 +733,7 @@ export class ModifyChart {
               'r',
               CellIdHelper.getCellAddressString(c, r),
             ),
-            children: this.cellValue(value),
+            children: this.cellValue(ModifyChartHelper.parseCellValue(value)),
           },
         },
       },
@@ -757,7 +763,7 @@ export class ModifyChart {
     };
   }
 
-  cellValue(value: number): ModificationTags {
+  cellValue(value: number | string): ModificationTags {
     return {
       v: {
         modify: ModifyTextHelper.content(value),

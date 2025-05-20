@@ -1,4 +1,5 @@
-import Automizer from './index';
+import Automizer, { modify } from './index';
+import { vd } from './helper/general-helper';
 
 const run = async () => {
   const outputDir = `${__dirname}/../__tests__/pptx-output`;
@@ -6,89 +7,33 @@ const run = async () => {
 
   const automizer = new Automizer({
     templateDir,
-    outputDir,
+    outputDir
   });
 
-  let pres = automizer
+  const pres = automizer
     .loadRoot(`RootTemplate.pptx`)
-    .load(`EmptySlide.pptx`, 'emptySlide');
+    .load(`ChartBarsStacked.pptx`, 'charts');
 
-  const object = {
-    position: {
-      x: 500000,
-      y: 500000,
-      cx: 500000,
-      cy: 500000,
-    },
-  };
+  const dataSmaller = {
+    series: [
+      { label: 'series s1' },
+      { label: 'series s2' }
+    ],
+    categories: [
+      { label: 'item test r1', values: [ 10, null ] },
+      { label: 'item test r2', values: [ 12, 18 ] },
+    ],
+  }
 
-  pres.addSlide('emptySlide', 1, async (slide) => {
-    slide.generate(async (pptxGenJSSlide) => {
-      pptxGenJSSlide.addText('hello world1', {
-        hyperlink: {
-          url: 'https://duckduckgo.com',
-        },
-        x: object.position.x,
-        y: object.position.y,
-        w: object.position.cx,
-        h: object.position.cy,
-        fontFace: 'Kanit',
-      });
-    });
-    slide.generate(async (pptxGenJSSlide) => {
-      pptxGenJSSlide.addText('hello world2', {
-        hyperlink: {
-          url: 'https://duckduckgo.com',
-        },
-        x: object.position.x,
-        y: object.position.y,
-        w: object.position.cx,
-        h: object.position.cy,
-        fontFace: 'Kanit',
-      });
-    });
-    slide.generate(async (pptxGenJSSlide) => {
-      pptxGenJSSlide.addText('hello world3', {
-        hyperlink: {
-          url: 'https://duckduckgo.com',
-        },
-        x: object.position.x,
-        y: object.position.y,
-        w: object.position.cx,
-        h: object.position.cy,
-        fontFace: 'Kanit',
-      });
-    });
-    slide.generate(async (pptxGenJSSlide) => {
-      pptxGenJSSlide.addText('hello world5', {
-        hyperlink: {
-          url: 'https://duckduckgo.com',
-        },
-        x: object.position.x,
-        y: object.position.y,
-        w: object.position.cx,
-        h: object.position.cy,
-        fontFace: 'Kanit',
-      });
-    });
+  const result = await pres
+    .addSlide('charts', 1, (slide) => {
+      slide.modifyElement('BarsStacked', [
+        modify.setChartData(dataSmaller),
+      ]);
+    })
+    .write(`modify-chart-stacked-bars.test.pptx`)
 
-    slide.generate(async (pptxGenJSSlide) => {
-      pptxGenJSSlide.addText('hello world6', {
-        hyperlink: {
-          url: 'https://duckduckgo.com',
-        },
-        x: object.position.x,
-        y: object.position.y,
-        w: object.position.cx,
-        h: object.position.cy,
-        fontFace: 'Kanit',
-      });
-    });
-  });
-
-  pres.write(`testHyperlinks.pptx`).then((summary) => {
-    console.log(summary);
-  });
+  vd(result)
 };
 
 run().catch((error) => {
