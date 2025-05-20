@@ -1,12 +1,12 @@
 import { Automizer } from '../src';
-import fs from 'fs';
-import path from 'path';
-import JSZip from 'jszip';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as JSZip from 'jszip';
 import { DOMParser } from '@xmldom/xmldom';
 
 describe('Hyperlink works with generate', () => {
   const outputDir = path.join(__dirname, 'pptx-output');
-  const outputFile = 'hyperlink-generate-test.pptx';
+  const outputFile = 'generate-pptxgenjs-hyperlinks.test.pptx';
   const outputPath = path.join(outputDir, outputFile);
 
   // Clean up before tests if the file exists
@@ -23,8 +23,8 @@ describe('Hyperlink works with generate', () => {
     });
 
     // Load root and template files
-    await automizer.loadRoot('EmptyTemplate.pptx');
-    await automizer.load('EmptySlide.pptx', 'template');
+    automizer.loadRoot('EmptyTemplate.pptx');
+    automizer.load('EmptySlide.pptx', 'template');
 
     const externalUrls = [
       'https://google.com/1',

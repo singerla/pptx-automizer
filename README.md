@@ -27,6 +27,7 @@ If you require commercial support for complex .pptx automation, you can explore 
   - [As a Cloned Repository](#as-a-cloned-repository)
   - [As a Package](#as-a-package)
 - [Usage](#usage)
+
   - [Basic Example](#basic-example)
   - [How to Select Slides Shapes](#how-to-select-slides-shapes)
     - [Select slide by number and shape by name](#select-slide-by-number-and-shape-by-name)
@@ -37,11 +38,9 @@ If you require commercial support for complex .pptx automation, you can explore 
   - [Modify Tables](#modify-tables)
   - [Modify Charts](#modify-charts)
   - [Modify Extended Charts](#modify-extended-charts)
+  - [Generate shapes with PptxGenJs](#generate-shapes-with-pptxgenjs)
   - [Remove elements from a slide](#remove-elements-from-a-slide)
-  - [🔗 Hyperlink Management](#🔗-hyperlink-management)
-  - [Hyperlink Helper Functions](#hyperlink-helper-functions)
-  - [Adding Hyperlinks](#adding-hyperlinks)
-
+  - [Hyperlink Management](#hyperlink-management)
 
 - [Tipps and Tricks](#tipps-and-tricks)
   - [Loop through the slides of a presentation](#loop-through-the-slides-of-a-presentation)
@@ -181,13 +180,16 @@ const automizer = new Automizer({
 
   // use a callback function to track pptx generation process.
   // statusTracker: myStatusTracker,
-  
+
   // Use 1 to show warnings or 2 for detailed information
   // 0 disables logging
   verbosity: 1,
 
   // Remove all unused placeholders to prevent unwanted overlays:
-  cleanupPlaceholders: false
+  cleanupPlaceholders: false,
+  
+  // Use a customized version of pptxGenJs if required:
+  // pptxGenJs: PptxGenJS,
 });
 
 // Now we can start and load a pptx template.
@@ -579,6 +581,64 @@ pres.addSlide('charts', 2, (slide) => {
 });
 ```
 
+## Generate shapes with PptxGenJs
+
+This library wraps around the [PptxGenJS](https://github.com/gitbrent/PptxGenJS) to generate shapes from scratch. It is possible to use the `pptxGenJS` wrapper to generate shapes on a slide.
+
+Here's an example of how to use `pptxGenJS` to add a text shape to a slide:
+```ts
+pres.addSlide('empty', 1, (slide) => {
+  // Use pptxgenjs to add text from scratch:
+  slide.generate((pptxGenJSSlide) => {
+    pptxGenJSSlide.addText('Test 1', {
+      x: 1,
+      y: 1,
+      h: 5,
+      w: 10,
+      color: '363636',
+    });
+  }, 'custom object name');
+});
+```
+
+You can as well create charts with `pptxGenJS`:
+
+```ts
+
+const dataChartAreaLine = [
+  {
+    name: 'Actual Sales',
+    labels: ['Jan', 'Feb', 'Mar'],
+    values: [1500, 4600, 5156],
+  },
+  {
+    name: 'Projected Sales',
+    labels: ['Jan', 'Feb', 'Mar'],
+    values: [1000, 2600, 3456],
+  },
+];
+
+pres.addSlide('empty', 1, (slide) => {
+  // Use pptxgenjs to add generated contents from scratch:
+  slide.generate((pSlide, pptxGenJs) => {
+    pSlide.addChart(pptxGenJs.ChartType.line, dataChartAreaLine, {
+      x: 1,
+      y: 1,
+      w: 8,
+      h: 4,
+    });
+  });
+});
+```
+
+You can use the following functions to generate shapes with `pptxGenJS`:
+* addChart
+* addImage
+* addShape
+* addTable
+* addText
+
+
 ## Remove elements from a slide
 
 You can as well remove elements from slides.
@@ -596,27 +656,17 @@ pres
   });
 ```
 
-## 🔗 Hyperlink Management
+## Hyperlink Management
 
-PowerPoint presentations often use hyperlinks to connect to external websites or internal slides. The PPTX Automizer provides simple and powerful functions to manage hyperlinks in your presentations.
+PowerPoint presentations often use hyperlinks to connect to external websites or internal slides. The `pptx-automizer` provides simple and powerful functions to manage hyperlinks in your presentations.
 
-### Hyperlink Helper Functions
+### Add Hyperlinks to existing shapes
 
-Three core functions are available for all your hyperlink needs:
-
-| Function | Description |
-|----------|-------------|
-| `addHyperlink` | Add a new hyperlink to an element |
-
-
-### Adding Hyperlinks
-
-You can add hyperlinks to text elements using the `addHyperlink` helper function. The function accepts either a URL string for external links or a slide number for internal slide links:
+You can add hyperlinks to template text shapes using the `addHyperlink` helper function. The function accepts either a URL string for external links or a slide number for internal slide links:
 
 ```ts
 // Add an external hyperlink
 slide.modifyElement('TextShape', modify.addHyperlink('https://example.com'));
-
 
 // Add an internal slide link (to slide 3)
 slide.modifyElement('TextShape', (element, relation) => {
@@ -625,6 +675,36 @@ slide.modifyElement('TextShape', (element, relation) => {
 ```
 
 The `addHyperlink` function will automatically detect whether the target is an external URL or an internal slide number and set up the appropriate relationship type and attributes.
+
+### Create a new hyperlinked text shape with pptxGenJS
+
+It is also possible to create a new hyperlink from scratch with the `pptxGenJS` wrapper. This is useful if you want to add hyperlinks to shapes that are not part of the template.
+
+```ts
+// Generate a new text shape pointing to an external site
+slide.generate((pptxGenJSSlide) => {
+  pptxGenJSSlide.addText(`External Link`, {
+    hyperlink: { url: 'https://github.com' },
+    x: 1,
+    y: 1,
+    w: 2.5,
+    h: 0.5,
+    fontSize: 12,
+  });
+});
+
+// Or generate an internal hyperlink
+slide.generate((pptxGenJSSlide) => {
+  pptxGenJSSlide.addText(`Go to slide 3`, {
+    hyperlink: { slide: 3 },
+    x: 1,
+    y: 1,
+    w: 2.5,
+    h: 0.5,
+    fontSize: 12,
+  });
+});
+```
 
 # Tipps and Tricks
 
@@ -913,6 +993,7 @@ Take a look into [**tests**-directory](https://github.com/singerla/pptx-automize
 - [Update chart legend](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-chart-legend.test.ts)
 
 ## Troubleshooting
+
 If you encounter problems when opening a `.pptx`-file modified by this library, you might worry about PowerPoint not giving any details about the error. It can be hard to find the cause, but there are some things you can check:
 
 - **Broken relation**: There are still unsupported shape types and `pptx-automizer` wil not copy required relations of those. You can inflate `.pptx`-output and check `ppt/slides/_rels/slide[#].xml.rels`-files to find possible missing files.
@@ -921,7 +1002,7 @@ If you encounter problems when opening a `.pptx`-file modified by this library, 
 - **Proprietary/Binary contents** (e.g. ThinkCell): Walk through all slides, slideMasters and slideLayouts and seek for hidden Objects. Hit `ALT+F10` to toggle the sidebar.
 - **Chart datasheet won't open** If you encounter an error message on opening a chart's datasheet, please make sure that the data table (blue bordered rectangle in worksheet view) of your template starts at cell A:1. If not, open worksheet in Excel mode and edit the table size in the table draft tab.
 
-If none of these could help, please don't hesitate to [talk about it](https://github.com/singerla/pptx-automizer/issues/new). 
+If none of these could help, please don't hesitate to [talk about it](https://github.com/singerla/pptx-automizer/issues/new).
 
 ## Testing
 

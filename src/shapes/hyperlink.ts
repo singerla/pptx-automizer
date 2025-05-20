@@ -15,12 +15,12 @@ export class Hyperlink extends Shape {
     targetType: ShapeTargetType,
     sourceArchive: IArchive,
     hyperlinkType: 'internal' | 'external' = 'external',
-    hyperlinkTarget: string =  '',
+    hyperlinkTarget: string,
   ) {
     super(shape, targetType);
     this.sourceArchive = sourceArchive;
     this.hyperlinkType = hyperlinkType;
-    this.hyperlinkTarget = hyperlinkTarget;
+    this.hyperlinkTarget = hyperlinkTarget || '';
     this.relRootTag = 'a:hlinkClick';
     this.relAttribute = 'r:id';
   }
@@ -75,8 +75,8 @@ export class Hyperlink extends Shape {
         this.targetSlideRelFile,
       );
       // Strip '-created' suffix more robustly
-      this.createdRid = baseId.endsWith('-created') 
-        ? baseId.slice(0, -8) 
+      this.createdRid = baseId.endsWith('-created')
+        ? baseId.slice(0, -8)
         : baseId;
     }
     if (this.shape && this.shape.target && this.shape.target.rId) {
@@ -117,7 +117,7 @@ export class Hyperlink extends Shape {
         newRel.setAttribute('TargetMode', 'External');
       }
       relXml.documentElement.appendChild(newRel);
-      
+
       // Track the relationship for content integrity
       contentTracker.trackRelation(targetRelFile, {
         Id: this.createdRid,
@@ -164,7 +164,7 @@ export class Hyperlink extends Shape {
   private updateHyperlinkRelation(element: Element): void {
     element.setAttribute('Type', this.getRelationshipType());
     element.setAttribute('Target', this.getRelationshipTarget());
-    
+
     if (this.hyperlinkType === 'external') {
       element.setAttribute('TargetMode', 'External');
     } else if (element.hasAttribute('TargetMode')) {
@@ -317,32 +317,32 @@ export class Hyperlink extends Shape {
     hyperlinkTarget: string | number
   ): Promise<string> {
     const slideXml = await XmlHelper.getXmlFromArchive(archive, slidePath);
-    
+
     // Find the shape by ID or name
     const shape = XmlHelper.isElementCreationId(shapeId)
       ? XmlHelper.findByCreationId(slideXml, shapeId)
       : XmlHelper.findByName(slideXml, shapeId);
-    
+
     if (!shape) {
       throw new Error(`Shape with ID/name "${shapeId}" not found`);
     }
 
     // Create a new relationship ID
     const relId = await XmlHelper.getNextRelId(archive, slideRelsPath);
-    
+
     // Add the hyperlink relationship to the slide relationships
     const relXml = await XmlHelper.getXmlFromArchive(archive, slideRelsPath);
     const newRel = relXml.createElement('Relationship');
     newRel.setAttribute('Id', relId);
 
     // Improved internal link detection
-    const isInternalLink = typeof hyperlinkTarget === 'number' || 
+    const isInternalLink = typeof hyperlinkTarget === 'number' ||
       (typeof hyperlinkTarget === 'string' && /^\d+$/.test(hyperlinkTarget));
-    
+
     if (isInternalLink) {
       // Enhanced internal slide link handling
-      const slideNumber = typeof hyperlinkTarget === 'number' ? 
-        hyperlinkTarget : 
+      const slideNumber = typeof hyperlinkTarget === 'number' ?
+        hyperlinkTarget :
         parseInt(hyperlinkTarget, 10);
       newRel.setAttribute('Type', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide');
       newRel.setAttribute('Target', `../slides/slide${slideNumber}.xml`);
@@ -351,7 +351,7 @@ export class Hyperlink extends Shape {
       newRel.setAttribute('Target', hyperlinkTarget.toString());
       newRel.setAttribute('TargetMode', 'External');
     }
-    
+
     relXml.documentElement.appendChild(newRel);
     await XmlHelper.writeXmlToArchive(archive, slideRelsPath, relXml);
 
@@ -359,15 +359,15 @@ export class Hyperlink extends Shape {
     const txBody = shape.getElementsByTagName('p:txBody')[0];
     if (txBody) {
       const paragraphs = txBody.getElementsByTagName('a:p');
-      
+
       if (paragraphs.length > 0) {
         const paragraph = paragraphs[0];
         const runs = paragraph.getElementsByTagName('a:r');
-        
+
         if (runs.length > 0) {
           const run = runs[0];
           const rPr = run.getElementsByTagName('a:rPr')[0];
-          
+
           if (rPr) {
             const hlinkClick = slideXml.createElement('a:hlinkClick');
             hlinkClick.setAttribute('r:id', relId);
@@ -382,7 +382,7 @@ export class Hyperlink extends Shape {
     }
 
     await XmlHelper.writeXmlToArchive(archive, slidePath, slideXml);
-    
+
     return relId;
   }
-} 
+}
