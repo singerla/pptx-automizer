@@ -20,7 +20,7 @@ import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { contentTracker } from '../helper/content-tracker';
 import IArchive from '../interfaces/iarchive';
 import { ContentTypeExtension } from '../enums/content-type-map';
-import { vd } from '../helper/general-helper';
+import { log } from '../helper/general-helper';
 
 export class Chart extends Shape implements IChart {
   sourceWorksheet: number | string;
@@ -37,6 +37,8 @@ export class Chart extends Shape implements IChart {
     [key: string]: string[];
   };
   callbacks: ChartModificationCallback[];
+  // Will be false if the chart has no workbook (e.g. driven by external data)
+  hasWorkbook: boolean;
 
   constructor(shape: ImportedElement, targetType: ShapeTargetType) {
     super(shape, targetType);
@@ -62,6 +64,7 @@ export class Chart extends Shape implements IChart {
     this.relTypeChartThemeOverride =
       'http://schemas.openxmlformats.org/officeDocument/2006/relationships/themeOverride';
     this.styleRelationFiles = {};
+    this.hasWorkbook = true;
   }
 
   async modify(
@@ -128,6 +131,10 @@ export class Chart extends Shape implements IChart {
   }
 
   async modifyChartData(): Promise<void> {
+    if (!this.hasWorkbook) {
+      return;
+    }
+
     const chartXml = await XmlHelper.getXmlFromArchive(
       this.targetArchive,
       `ppt/charts/${this.subtype}${this.targetNumber}.xml`,
@@ -210,26 +217,28 @@ export class Chart extends Shape implements IChart {
   async copyFiles(): Promise<void> {
     await this.copyChartFiles();
 
-    // TODO: If you don't have an embedded xlsx, you could add a break here and
-    // skip copying
+    this.worksheetFilePrefix = await this.getWorksheetFilePrefix(
+      this.wbRelsPath,
+    );
 
-    // this.worksheetFilePrefix = await this.getWorksheetFilePrefix(
-    //   this.wbRelsPath,
-    // );
-    //
-    // const worksheets = await XmlHelper.getRelationshipTargetsByPrefix(
-    //   this.sourceArchive,
-    //   this.wbRelsPath,
-    //   `${this.wbEmbeddingsPath}${this.worksheetFilePrefix}`,
-    // );
-    //
-    // const worksheet = worksheets[0];
-    //
-    // this.sourceWorksheet = worksheet.number === 0 ? '' : worksheet.number;
-    // this.targetWorksheet = '-created-' + this.targetNumber;
-    //
-    // await this.copyWorksheetFile();
-    // await this.editTargetWorksheetRel();
+    if (this.hasWorkbook) {
+      const worksheets = await XmlHelper.getRelationshipTargetsByPrefix(
+        this.sourceArchive,
+        this.wbRelsPath,
+        `${this.wbEmbeddingsPath}${this.worksheetFilePrefix}`,
+      );
+
+      const worksheet = worksheets[0];
+
+      this.sourceWorksheet = worksheet.number === 0 ? '' : worksheet.number;
+      this.targetWorksheet = '-created-' + this.targetNumber;
+
+      await this.copyWorksheetFile();
+    } else {
+      log('Chart has no worksheet: ' + this.wbRelsPath, 2);
+    }
+
+    await this.editTargetWorksheetRel();
   }
 
   async getWorksheetFilePrefix(targetRelFile: string): Promise<string> {
@@ -240,9 +249,8 @@ export class Chart extends Shape implements IChart {
     );
 
     if (!relationTargets[0]) {
-      throw new Error(
-        `Could not find a related worksheet pointing to ${this.wbEmbeddingsPath}@${targetRelFile}`,
-      );
+      this.hasWorkbook = false;
+      return '';
     }
 
     return relationTargets[0].filenameBase;
@@ -413,13 +421,11 @@ export class Chart extends Shape implements IChart {
             );
             break;
           case this.relTypeChartImage:
-            const target = element.getAttribute('Target');
-            const imageInfo = this.getTargetChartImageUri(target);
             this.updateTargetWorksheetRelation(
               targetRelFile,
               element,
               'Target',
-              imageInfo.rel,
+              this.getTargetChartImageUri(element.getAttribute('Target')).rel,
             );
             break;
           case this.relTypeChartThemeOverride:
