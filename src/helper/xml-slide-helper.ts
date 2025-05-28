@@ -9,6 +9,7 @@ import HasShapes from '../classes/has-shapes';
 import { FindElementSelector, ShapeModificationCallback } from '../types/types';
 import ModifyTableHelper from './modify-table-helper';
 import { TableData, TableInfo } from '../types/table-types';
+import { vd } from './general-helper';
 
 export const nsMain =
   'http://schemas.openxmlformats.org/presentationml/2006/main';
@@ -152,9 +153,11 @@ export class XmlSlideHelper {
   static parseTextFragments(shapeNode: XmlElement): string[] {
     const txBody = XmlSlideHelper.getTextBody(shapeNode);
     const textFragments: string[] = [];
-    const texts = txBody.getElementsByTagName('a:t');
-    for (let t = 0; t < texts.length; t++) {
-      textFragments.push(texts.item(t).textContent);
+    if (txBody) {
+      const texts = txBody.getElementsByTagName('a:t');
+      for (let t = 0; t < texts.length; t++) {
+        textFragments.push(texts.item(t).textContent);
+      }
     }
     return textFragments;
   }
