@@ -456,6 +456,14 @@ export class Chart extends Shape implements IChart {
               `../theme/themeOverride${this.targetNumber}.xml`,
             );
             break;
+          case this.relTypeChartUserShapes:
+            this.updateTargetWorksheetRelation(
+              targetRelFile,
+              element,
+              'Target',
+              `../drawings/drawing${this.targetNumber}.xml`,
+            );
+            break;
         }
         contentTracker.trackRelation(targetRelFile, {
           Id: element.getAttribute('Id'),
