@@ -29,6 +29,7 @@ export class Chart extends Shape implements IChart {
   wbEmbeddingsPath: string;
   wbExtension: string;
   relTypeChartColorStyle: string;
+  relTypeChartUserShapes: string;
   relTypeChartStyle: string;
   relTypeChartImage: string;
   relTypeChartThemeOverride: string;
@@ -63,6 +64,8 @@ export class Chart extends Shape implements IChart {
       'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image';
     this.relTypeChartThemeOverride =
       'http://schemas.openxmlformats.org/officeDocument/2006/relationships/themeOverride';
+    this.relTypeChartUserShapes =
+      'http://schemas.openxmlformats.org/officeDocument/2006/relationships/chartUserShapes';
     this.styleRelationFiles = {};
     this.hasWorkbook = true;
   }
@@ -258,6 +261,7 @@ export class Chart extends Shape implements IChart {
 
   async appendTypes(): Promise<void> {
     await this.appendChartExtensionToContentType();
+    await this.appendChartUserShapesToContentType();
     await this.appendChartToContentType();
     await this.appendColorToContentType();
     await this.appendStyleToContentType();
@@ -315,6 +319,21 @@ export class Chart extends Shape implements IChart {
       }
     }
 
+    if (this.styleRelationFiles.relTypeChartUserShapes?.length) {
+      const sourceFile =
+        this.styleRelationFiles.relTypeChartUserShapes[0].replace(
+          '../drawings/',
+          '',
+        );
+
+      await FileHelper.zipCopy(
+        this.sourceArchive,
+        `ppt/drawings/${sourceFile}`,
+        this.targetArchive,
+        `ppt/drawings/drawing${this.targetNumber}.xml`,
+      );
+    }
+
     if (this.styleRelationFiles.relTypeChartThemeOverride?.length) {
       const sourceFile =
         this.styleRelationFiles.relTypeChartThemeOverride[0].replace(
@@ -336,6 +355,7 @@ export class Chart extends Shape implements IChart {
       'relTypeChartColorStyle',
       'relTypeChartImage',
       'relTypeChartThemeOverride',
+      'relTypeChartUserShapes',
     ];
 
     for (const i in styleTypes) {
@@ -529,6 +549,15 @@ export class Chart extends Shape implements IChart {
       XmlHelper.createContentTypeChild(this.targetArchive, {
         PartName: `/ppt/theme/themeOverride${this.targetNumber}.xml`,
         ContentType: `application/vnd.openxmlformats-officedocument.themeOverride+xml`,
+      }),
+    );
+  }
+
+  appendChartUserShapesToContentType(): Promise<XmlElement> {
+    return XmlHelper.append(
+      XmlHelper.createContentTypeChild(this.targetArchive, {
+        PartName: `/ppt/drawings/drawing${this.targetNumber}.xml`,
+        ContentType: `application/vnd.openxmlformats-officedocument.drawingml.chartshapes+xml`,
       }),
     );
   }
