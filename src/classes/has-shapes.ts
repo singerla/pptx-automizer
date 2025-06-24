@@ -862,7 +862,6 @@ export default class HasShapes {
       await hyperlinkInstance.modifyOnAddedSlide(
         this.targetTemplate,
         this.targetNumber,
-        hyperlinks,
       );
     }
   }

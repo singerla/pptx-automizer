@@ -31,7 +31,7 @@ export interface Logger {
   verbosity: 0 | 1 | 2;
   target: 'console' | 'file';
   log: (
-    message: string,
+    message: string | number | object,
     verbosity: Logger['verbosity'],
     showStack?: boolean,
     target?: Logger['target'],
@@ -58,7 +58,7 @@ export const Logger = <Logger>{
   },
 };
 
-export const log = (message: string, verbosity: Logger['verbosity']) => {
+export const log = (message: string | number | object, verbosity: Logger['verbosity']) => {
   Logger.log(message, verbosity);
 };
 

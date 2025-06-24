@@ -6,7 +6,7 @@ import {
   ChartCategory,
   ChartData,
   ChartElementCoordinateShares,
-  ChartPoint,
+  ChartPoint, ChartPointValue,
   ChartSeries,
   ChartSeriesDataLabelAttributes,
   ChartSlot,
@@ -627,8 +627,11 @@ export default class ModifyChartHelper {
       },
     };
   };
+
+  // Prevent a "null" from being written to the xml file.
+  static parseCellValue(value: string | ChartPointValue): string {
+    if (value === null) return '';
+
+    return String(value);
+  }
 }
-
-/*
-
- */

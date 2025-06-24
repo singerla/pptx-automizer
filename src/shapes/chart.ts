@@ -20,7 +20,7 @@ import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { contentTracker } from '../helper/content-tracker';
 import IArchive from '../interfaces/iarchive';
 import { ContentTypeExtension } from '../enums/content-type-map';
-import { vd } from '../helper/general-helper';
+import { log, vd } from '../helper/general-helper';
 
 export class Chart extends Shape implements IChart {
   sourceWorksheet: number | string;
@@ -29,6 +29,7 @@ export class Chart extends Shape implements IChart {
   wbEmbeddingsPath: string;
   wbExtension: string;
   relTypeChartColorStyle: string;
+  relTypeChartUserShapes: string;
   relTypeChartStyle: string;
   relTypeChartImage: string;
   relTypeChartThemeOverride: string;
@@ -37,6 +38,8 @@ export class Chart extends Shape implements IChart {
     [key: string]: string[];
   };
   callbacks: ChartModificationCallback[];
+  // Will be false if the chart has no workbook (e.g. driven by external data)
+  hasWorkbook: boolean;
 
   constructor(shape: ImportedElement, targetType: ShapeTargetType) {
     super(shape, targetType);
@@ -61,7 +64,10 @@ export class Chart extends Shape implements IChart {
       'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image';
     this.relTypeChartThemeOverride =
       'http://schemas.openxmlformats.org/officeDocument/2006/relationships/themeOverride';
+    this.relTypeChartUserShapes =
+      'http://schemas.openxmlformats.org/officeDocument/2006/relationships/chartUserShapes';
     this.styleRelationFiles = {};
+    this.hasWorkbook = true;
   }
 
   async modify(
@@ -128,6 +134,10 @@ export class Chart extends Shape implements IChart {
   }
 
   async modifyChartData(): Promise<void> {
+    if (!this.hasWorkbook) {
+      return;
+    }
+
     const chartXml = await XmlHelper.getXmlFromArchive(
       this.targetArchive,
       `ppt/charts/${this.subtype}${this.targetNumber}.xml`,
@@ -214,18 +224,23 @@ export class Chart extends Shape implements IChart {
       this.wbRelsPath,
     );
 
-    const worksheets = await XmlHelper.getRelationshipTargetsByPrefix(
-      this.sourceArchive,
-      this.wbRelsPath,
-      `${this.wbEmbeddingsPath}${this.worksheetFilePrefix}`,
-    );
+    if (this.hasWorkbook) {
+      const worksheets = await XmlHelper.getRelationshipTargetsByPrefix(
+        this.sourceArchive,
+        this.wbRelsPath,
+        `${this.wbEmbeddingsPath}${this.worksheetFilePrefix}`,
+      );
 
-    const worksheet = worksheets[0];
+      const worksheet = worksheets[0];
 
-    this.sourceWorksheet = worksheet.number === 0 ? '' : worksheet.number;
-    this.targetWorksheet = '-created-' + this.targetNumber;
+      this.sourceWorksheet = worksheet.number === 0 ? '' : worksheet.number;
+      this.targetWorksheet = '-created-' + this.targetNumber;
 
-    await this.copyWorksheetFile();
+      await this.copyWorksheetFile();
+    } else {
+      log('Chart has no worksheet: ' + this.wbRelsPath, 2);
+    }
+
     await this.editTargetWorksheetRel();
   }
 
@@ -237,9 +252,8 @@ export class Chart extends Shape implements IChart {
     );
 
     if (!relationTargets[0]) {
-      throw new Error(
-        `Could not find a related worksheet pointing to ${this.wbEmbeddingsPath}@${targetRelFile}`,
-      );
+      this.hasWorkbook = false;
+      return '';
     }
 
     return relationTargets[0].filenameBase;
@@ -247,6 +261,7 @@ export class Chart extends Shape implements IChart {
 
   async appendTypes(): Promise<void> {
     await this.appendChartExtensionToContentType();
+    await this.appendChartUserShapesToContentType();
     await this.appendChartToContentType();
     await this.appendColorToContentType();
     await this.appendStyleToContentType();
@@ -304,6 +319,21 @@ export class Chart extends Shape implements IChart {
       }
     }
 
+    if (this.styleRelationFiles.relTypeChartUserShapes?.length) {
+      const sourceFile =
+        this.styleRelationFiles.relTypeChartUserShapes[0].replace(
+          '../drawings/',
+          '',
+        );
+
+      await FileHelper.zipCopy(
+        this.sourceArchive,
+        `ppt/drawings/${sourceFile}`,
+        this.targetArchive,
+        `ppt/drawings/drawing${this.targetNumber}.xml`,
+      );
+    }
+
     if (this.styleRelationFiles.relTypeChartThemeOverride?.length) {
       const sourceFile =
         this.styleRelationFiles.relTypeChartThemeOverride[0].replace(
@@ -325,6 +355,7 @@ export class Chart extends Shape implements IChart {
       'relTypeChartColorStyle',
       'relTypeChartImage',
       'relTypeChartThemeOverride',
+      'relTypeChartUserShapes',
     ];
 
     for (const i in styleTypes) {
@@ -410,13 +441,11 @@ export class Chart extends Shape implements IChart {
             );
             break;
           case this.relTypeChartImage:
-            const target = element.getAttribute('Target');
-            const imageInfo = this.getTargetChartImageUri(target);
             this.updateTargetWorksheetRelation(
               targetRelFile,
               element,
               'Target',
-              imageInfo.rel,
+              this.getTargetChartImageUri(element.getAttribute('Target')).rel,
             );
             break;
           case this.relTypeChartThemeOverride:
@@ -425,6 +454,14 @@ export class Chart extends Shape implements IChart {
               element,
               'Target',
               `../theme/themeOverride${this.targetNumber}.xml`,
+            );
+            break;
+          case this.relTypeChartUserShapes:
+            this.updateTargetWorksheetRelation(
+              targetRelFile,
+              element,
+              'Target',
+              `../drawings/drawing${this.targetNumber}.xml`,
             );
             break;
         }
@@ -462,13 +499,17 @@ export class Chart extends Shape implements IChart {
   }
 
   async copyWorksheetFile(): Promise<void> {
+    const sourceFile = `ppt/embeddings/${this.worksheetFilePrefix}${this.sourceWorksheet}${this.wbExtension}`;
     const targetFile = `ppt/embeddings/${this.worksheetFilePrefix}${this.targetWorksheet}${this.wbExtension}`;
+
     await FileHelper.zipCopy(
       this.sourceArchive,
-      `ppt/embeddings/${this.worksheetFilePrefix}${this.sourceWorksheet}${this.wbExtension}`,
+      sourceFile,
       this.targetArchive,
       targetFile,
-    );
+    ).catch((e) => {
+      log(e, 2);
+    });
   }
 
   appendChartExtensionToContentType(): Promise<XmlElement | boolean> {
@@ -520,6 +561,15 @@ export class Chart extends Shape implements IChart {
       XmlHelper.createContentTypeChild(this.targetArchive, {
         PartName: `/ppt/theme/themeOverride${this.targetNumber}.xml`,
         ContentType: `application/vnd.openxmlformats-officedocument.themeOverride+xml`,
+      }),
+    );
+  }
+
+  appendChartUserShapesToContentType(): Promise<XmlElement> {
+    return XmlHelper.append(
+      XmlHelper.createContentTypeChild(this.targetArchive, {
+        PartName: `/ppt/drawings/drawing${this.targetNumber}.xml`,
+        ContentType: `application/vnd.openxmlformats-officedocument.drawingml.chartshapes+xml`,
       }),
     );
   }

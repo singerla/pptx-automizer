@@ -33,9 +33,7 @@ export default class ArchiveFs extends Archive implements IArchive {
   filename: string;
 
   constructor(filename: string, params: ArchiveParams) {
-    super(filename);
-    this.filename = filename;
-    this.params = params;
+    super(filename, params);
   }
 
   private async initialize() {
@@ -201,7 +199,7 @@ export default class ArchiveFs extends Archive implements IArchive {
   async extract(file: string): Promise<ArchiveJszip> {
     const contents = (await this.read(file)) as Buffer;
     const zip = new JSZip();
-    const newArchive = new ArchiveJszip(file);
+    const newArchive = new ArchiveJszip(file, this.params);
     newArchive.archive = await zip.loadAsync(contents as unknown as InputType);
     return newArchive;
   }

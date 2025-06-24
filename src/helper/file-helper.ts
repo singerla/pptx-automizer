@@ -21,12 +21,12 @@ export class FileHelper {
 
       switch (params.mode) {
         case 'jszip':
-          return new ArchiveJszip(file);
+          return new ArchiveJszip(file, params);
         case 'fs':
           return new ArchiveFs(file, params);
       }
     } else {
-      return new ArchiveJszip(file);
+      return new ArchiveJszip(file, params);
     }
   }
 

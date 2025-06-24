@@ -1,14 +1,14 @@
 import {
   ElementInfo,
   ElementType,
+  TextParagraph,
+  TextParagraphGroup,
   XmlDocument,
   XmlElement,
 } from '../types/xml-types';
 import { XmlHelper } from './xml-helper';
 import HasShapes from '../classes/has-shapes';
-import { FindElementSelector, ShapeModificationCallback } from '../types/types';
-import ModifyTableHelper from './modify-table-helper';
-import { TableData, TableInfo } from '../types/table-types';
+import { TableInfo } from '../types/table-types';
 
 export const nsMain =
   'http://schemas.openxmlformats.org/presentationml/2006/main';
@@ -16,8 +16,10 @@ export const mapUriType = {
   'http://schemas.openxmlformats.org/drawingml/2006/table': 'table',
   'http://schemas.openxmlformats.org/drawingml/2006/chart': 'chart',
   'http://schemas.microsoft.com/office/drawing/2014/chartex': 'chartEx',
-  'http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject': 'oleObject',
-  'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink': 'hyperlink',
+  'http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject':
+    'oleObject',
+  'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink':
+    'hyperlink',
 };
 
 /**
@@ -118,6 +120,9 @@ export class XmlSlideHelper {
       hasTextBody: !!XmlSlideHelper.getTextBody(slideElement),
       getXmlElement: () => slideElement,
       getText: () => XmlSlideHelper.parseTextFragments(slideElement),
+      getParagraphs: () => XmlSlideHelper.parseTextParagraphs(slideElement),
+      getParagraphGroups: () =>
+        XmlSlideHelper.parseParagraphGroups(slideElement),
       getTableInfo: () => XmlSlideHelper.readTableInfo(slideElement),
       getAltText: () => XmlSlideHelper.getImageAltText(slideElement),
     };
@@ -152,11 +157,168 @@ export class XmlSlideHelper {
   static parseTextFragments(shapeNode: XmlElement): string[] {
     const txBody = XmlSlideHelper.getTextBody(shapeNode);
     const textFragments: string[] = [];
+
+    if (!txBody) {
+      return textFragments;
+    }
+
     const texts = txBody.getElementsByTagName('a:t');
     for (let t = 0; t < texts.length; t++) {
-      textFragments.push(texts.item(t).textContent);
+      const text = texts.item(t);
+      textFragments.push(text.textContent);
     }
     return textFragments;
+  }
+
+  static parseParagraphGroups(shapeNode: XmlElement): TextParagraphGroup[] {
+    const rawParagraphs = XmlSlideHelper.parseTextParagraphs(shapeNode);
+    return XmlSlideHelper.groupSimilarParagraphs(rawParagraphs);
+  }
+
+  static parseTextParagraphs(shapeNode: XmlElement): TextParagraph[] {
+    const textParagraphs: TextParagraph[] = [];
+
+    // Find txBody element first
+    const txBody =
+      shapeNode.getElementsByTagName('p:txBody')[0] ||
+      shapeNode.getElementsByTagName('a:txBody')[0];
+
+    if (!txBody) return textParagraphs;
+
+    // Get all paragraph elements
+    const paragraphs = txBody.getElementsByTagName('a:p');
+
+    for (const p of Array.from(paragraphs)) {
+      const paragraph: TextParagraph = { texts: [] };
+
+      // Check for paragraph properties (indent and bullet)
+      const pPr = p.getElementsByTagName('a:pPr')[0];
+
+      if (pPr) {
+        XmlSlideHelper.setParagraphProperties(pPr, paragraph)
+      }
+
+      // Get all text runs in the paragraph
+      const runs = p.getElementsByTagName('a:r');
+      const texts: string[] = [];
+
+      for (const run of Array.from(runs)) {
+        XmlSlideHelper.setTextProperties(run, paragraph)
+
+        // Get text content
+        const textElements = run.getElementsByTagName('a:t');
+        for (const textElement of Array.from(textElements)) {
+          texts.push(textElement.textContent || '');
+        }
+      }
+
+      // Only add paragraphs that have text content
+      if (texts.length > 0) {
+        paragraph.texts = texts;
+        textParagraphs.push(paragraph);
+      }
+    }
+
+    return textParagraphs;
+  }
+
+  static setTextProperties(run: XmlElement, paragraph: TextParagraph) {
+    const rPr = run.getElementsByTagName('a:rPr')[0];
+    if (rPr) {
+      const isBold = rPr.getAttribute('b') === '1';
+      const isUnderlined = rPr.getAttribute('u') === '1';
+      const isItalic = rPr.getAttribute('i') === '1';
+      const fontSize = parseInt(rPr.getAttribute('sz') || '0') / 100; // Convert to points
+
+      if (isBold) paragraph.isBold = true;
+      if (isItalic) paragraph.isItalic = true;
+      if (isUnderlined) paragraph.isUnderlined = true;
+      if (fontSize) paragraph.fontSize = fontSize;
+    }
+  }
+
+  static setParagraphProperties(pPr: XmlElement, paragraph: TextParagraph) {
+    const marL = pPr.getAttribute('marL');
+    if (marL) {
+      paragraph.indent = parseInt(marL);
+    }
+
+    const buChar = pPr.getElementsByTagName('a:buChar')[0];
+    if (buChar) {
+      paragraph.bullet = buChar.getAttribute('char');
+    }
+
+    // Check for numbered list
+    const buAutoNum = pPr.getElementsByTagName('a:buAutoNum')[0];
+    if (buAutoNum) {
+      paragraph.isNumbered = true;
+      paragraph.numberingType = buAutoNum.getAttribute('type') || undefined;
+      paragraph.startAt = buAutoNum.getAttribute('startAt') || undefined;
+    }
+
+    // Check for alignment
+    const algn = pPr.getAttribute('algn');
+    if (algn) {
+      paragraph.align = algn as TextParagraph['align'];
+    }
+  }
+
+  static groupSimilarParagraphs(
+    paragraphs: TextParagraph[],
+  ): TextParagraphGroup[] {
+    const groups: TextParagraphGroup[] = [];
+    let currentGroup: TextParagraphGroup | null = null;
+
+    const getDefinedProperties = (paragraph: TextParagraph) => {
+      const properties: Record<string, any> = {};
+
+      const propertyKeys = [
+        'fontSize',
+        'isBold',
+        'isItalic',
+        'isUnderlined',
+        // 'indent',
+        'align',
+        'isNumbered',
+        'numberingType',
+        'bullet',
+        'startAt',
+      ] as const;
+
+      for (const key of propertyKeys) {
+        if (paragraph[key] !== undefined) {
+          properties[key] = paragraph[key];
+        }
+      }
+
+      return properties;
+    };
+
+    for (const paragraph of paragraphs) {
+      const properties = getDefinedProperties(paragraph);
+
+      // Helper function to check if properties match
+      const propertiesMatch = (a: any, b: any): boolean => {
+        return JSON.stringify(a) === JSON.stringify(b);
+      };
+
+      // If we have no current group or properties don't match, create new group
+      if (
+        !currentGroup ||
+        !propertiesMatch(currentGroup.properties, properties)
+      ) {
+        currentGroup = {
+          properties,
+          texts: [],
+        };
+        groups.push(currentGroup);
+      }
+
+      // Add text to current group
+      currentGroup.texts.push(paragraph.texts.join(''));
+    }
+
+    return groups;
   }
 
   static getNonVisibleProperties(shapeNode: XmlElement): XmlElement {
@@ -197,12 +359,15 @@ export class XmlSlideHelper {
   static getElementType(slideElementParent: XmlElement): ElementType {
     let type = slideElementParent.localName;
 
+    const getUri = () => {
+      const graphicData =
+        slideElementParent.getElementsByTagName('a:graphicData')[0];
+      return graphicData.getAttribute('uri');
+    };
+
     switch (type) {
       case 'graphicFrame':
-        const graphicData =
-          slideElementParent.getElementsByTagName('a:graphicData')[0];
-        const uri = graphicData.getAttribute('uri');
-        type = mapUriType[uri] ? mapUriType[uri] : type;
+        type = mapUriType[getUri()] || type;
         break;
       case 'oleObj':
         type = 'OLEObject';
@@ -210,7 +375,8 @@ export class XmlSlideHelper {
     }
 
     // Check for hyperlinks
-    const hasHyperlink = slideElementParent.getElementsByTagName('a:hlinkClick');
+    const hasHyperlink =
+      slideElementParent.getElementsByTagName('a:hlinkClick');
     if (hasHyperlink.length > 0) {
       type = 'Hyperlink';
     }
@@ -228,6 +394,7 @@ export class XmlSlideHelper {
       y: 0,
       cx: 0,
       cy: 0,
+      rot: 0,
     };
 
     if (!xFrms.item(0)) {
@@ -235,6 +402,7 @@ export class XmlSlideHelper {
     }
 
     const xFrm = xFrms.item(0);
+
     const Off = xFrm.getElementsByTagName('a:off').item(0);
     const Ext = xFrm.getElementsByTagName('a:ext').item(0);
 
@@ -242,6 +410,10 @@ export class XmlSlideHelper {
     position.y = XmlSlideHelper.parseCoordinate(Off, 'y');
     position.cx = XmlSlideHelper.parseCoordinate(Ext, 'cx');
     position.cy = XmlSlideHelper.parseCoordinate(Ext, 'cy');
+
+    if(xFrm.getAttribute('rot')) {
+      position.rot = parseInt(xFrm.getAttribute('rot'));
+    }
 
     return position;
   }

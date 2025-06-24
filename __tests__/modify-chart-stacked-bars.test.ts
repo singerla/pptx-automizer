@@ -1,4 +1,4 @@
-import Automizer, { modify } from '../src/index';
+import Automizer, { ChartData, modify } from '../src/index';
 
 test('create presentation, add vertical lines chart, add a series, add categories.', async () => {
   const automizer = new Automizer({
@@ -12,7 +12,7 @@ test('create presentation, add vertical lines chart, add a series, add categorie
 
   const data = {
     series: [
-      { label: 'series s1' }, 
+      { label: 'series s1' },
       { label: 'series s2' },
       { label: 'series s3' },
       { label: 'series s4' },
@@ -27,13 +27,14 @@ test('create presentation, add vertical lines chart, add a series, add categorie
     ],
   }
 
-  const dataSmaller = {
+  const dataSmaller: ChartData = {
     series: [
-      { label: 'series s1' }, 
+      { label: 'series s1' },
       { label: 'series s2' }
     ],
     categories: [
-      { label: 'item test r1', values: [ 10, 16 ] },
+      // a null value will be converted to ""
+      { label: 'item test r1', values: [ 10, null ] },
       { label: 'item test r2', values: [ 12, 18 ] },
     ],
   }

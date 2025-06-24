@@ -75,6 +75,7 @@ export default class Automizer implements IPresentationProps {
       baseDir: params?.archiveType?.baseDir || __dirname + '/../cache',
       workDir: params?.archiveType?.workDir || 'tmp',
       cleanupWorkDir: params?.archiveType?.cleanupWorkDir,
+      decodeText: params?.archiveType?.decodeText,
     };
 
     this.timer = Date.now();

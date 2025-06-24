@@ -38,6 +38,14 @@ export class XmlTemplateHelper {
       this.relType,
     );
 
+    // ToDo: The slide list is based on the relations from this.path
+    // which contains non-visible slides, too.
+    // Should be either:
+    //  a.) remove unused slides on generation
+    //  b.) use slides list from 'p:sldIdLst' in `ppt/presentation.xml`
+    vd(this.relType)
+    vd(this.path)
+
     const creationIds: SlideInfo[] = [];
     for (const slideRel of relationships) {
       try {
