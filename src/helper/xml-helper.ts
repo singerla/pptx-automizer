@@ -140,7 +140,8 @@ export class XmlHelper {
     let max = 0;
     for (const i in rels) {
       const rel = rels[i] as XmlElement;
-      if (rel.getAttribute !== undefined) {
+
+      if (rel.getAttribute !== undefined && rel.getAttribute(attribute)) {
         const id = Number(
           rel
             .getAttribute(attribute)

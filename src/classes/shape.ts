@@ -89,21 +89,6 @@ export class Shape {
   }
 
   async setTargetElement(): Promise<void> {
-    if (!this.sourceElement) {
-      // If we don't have a source element, we might be trying to remove a hyperlink
-      console.log(
-        `Warning: No source element for shape ${this.name}. Creating empty element for operations.`,
-      );
-      if (this.shape && this.shape.mode === 'remove' && this.targetArchive) {
-        // For remove operations, we don't need a source element
-        // Just continue without setting targetElement
-        return;
-      }
-
-      // For non-remove operations or if other conditions aren't met, throw the error
-      console.log(this.shape);
-      throw `No source element for shape ${this.name}`;
-    }
     this.targetElement = this.sourceElement.cloneNode(true) as XmlElement;
   }
 
