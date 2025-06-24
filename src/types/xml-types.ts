@@ -72,13 +72,38 @@ export type ElementInfo = {
     y: number;
     cx: number;
     cy: number;
+    rot?: number;
   };
   hasTextBody: boolean;
   getText: () => string[];
+  getParagraphs: () => TextParagraph[];
+  getParagraphGroups: () => TextParagraphGroup[];
   getAltText: () => string;
   getTableInfo: () => TableInfo[];
   getXmlElement: () => XmlElement;
 };
+
+export type TextParagraphProps = {
+  isBold?: boolean;
+  isItalic?: boolean;
+  isUnderlined?: boolean;
+  fontSize?: number;
+  align?: 'l' | 'ctr' | 'r';
+  indent?: number;
+  bullet?: string;
+  isNumbered?: boolean;
+  numberingType?: string
+  startAt?: string
+}
+
+export type TextParagraph = {
+  texts: string[];
+} & TextParagraphProps
+
+export type TextParagraphGroup = {
+  properties: TextParagraphProps;
+  texts: string[];
+}
 
 export type ContentMapType = 'slideMaster' | 'slideLayout';
 export type ContentMap = {
