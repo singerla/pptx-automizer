@@ -151,6 +151,10 @@ export default class ModifyXmlHelper {
         throw 'Unable to set value @index: ' + index;
       }
 
+      if(!valueElement[0].firstChild) {
+        return
+      }
+
       valueElement[0].firstChild.textContent = String(value);
       if (index !== undefined) {
         element.setAttribute('idx', String(index));

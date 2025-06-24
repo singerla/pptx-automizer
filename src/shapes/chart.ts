@@ -20,7 +20,7 @@ import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { contentTracker } from '../helper/content-tracker';
 import IArchive from '../interfaces/iarchive';
 import { ContentTypeExtension } from '../enums/content-type-map';
-import { log } from '../helper/general-helper';
+import { log, vd } from '../helper/general-helper';
 
 export class Chart extends Shape implements IChart {
   sourceWorksheet: number | string;
@@ -499,13 +499,17 @@ export class Chart extends Shape implements IChart {
   }
 
   async copyWorksheetFile(): Promise<void> {
+    const sourceFile = `ppt/embeddings/${this.worksheetFilePrefix}${this.sourceWorksheet}${this.wbExtension}`;
     const targetFile = `ppt/embeddings/${this.worksheetFilePrefix}${this.targetWorksheet}${this.wbExtension}`;
+
     await FileHelper.zipCopy(
       this.sourceArchive,
-      `ppt/embeddings/${this.worksheetFilePrefix}${this.sourceWorksheet}${this.wbExtension}`,
+      sourceFile,
       this.targetArchive,
       targetFile,
-    );
+    ).catch((e) => {
+      log(e, 2);
+    });
   }
 
   appendChartExtensionToContentType(): Promise<XmlElement | boolean> {
