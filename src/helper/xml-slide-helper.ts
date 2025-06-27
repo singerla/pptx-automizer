@@ -9,6 +9,7 @@ import {
 import { XmlHelper } from './xml-helper';
 import HasShapes from '../classes/has-shapes';
 import { TableInfo } from '../types/table-types';
+import { vd } from './general-helper';
 
 export const nsMain =
   'http://schemas.openxmlformats.org/presentationml/2006/main';
@@ -210,6 +211,12 @@ export class XmlSlideHelper {
         for (const textElement of Array.from(textElements)) {
           texts.push(textElement.textContent || '');
         }
+
+        // Check if the next sibling after rPr is a line break
+        const nextSibling = run.nextSibling;
+        if (nextSibling && nextSibling.nodeName === 'a:br') {
+          texts.push(`\n`)
+        }
       }
 
       // Only add paragraphs that have text content
@@ -283,6 +290,7 @@ export class XmlSlideHelper {
         'numberingType',
         'bullet',
         'startAt',
+        'breaks',
       ] as const;
 
       for (const key of propertyKeys) {

@@ -43,8 +43,6 @@ export class XmlTemplateHelper {
     // Should be either:
     //  a.) remove unused slides on generation
     //  b.) use slides list from 'p:sldIdLst' in `ppt/presentation.xml`
-    vd(this.relType)
-    vd(this.path)
 
     const creationIds: SlideInfo[] = [];
     for (const slideRel of relationships) {
