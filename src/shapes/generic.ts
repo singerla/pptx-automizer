@@ -7,6 +7,7 @@ import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { Shape } from '../classes/shape';
 import { XmlElement } from '../types/xml-types';
 import { XmlHelper } from '../helper/xml-helper';
+import { HyperlinkProcessor } from '../helper/hyperlink-processor';
 
 export class GenericShape extends Shape {
   sourceElement: XmlElement;
@@ -31,6 +32,10 @@ export class GenericShape extends Shape {
   ): Promise<GenericShape> {
     await this.prepare(targetTemplate, targetSlideNumber);
     await this.appendToSlideTree();
+    
+    // If this element contains hyperlinks, copy the hyperlink relationships
+    await this.copyHyperlinkRelationships(targetSlideNumber);
+    
     return this;
   }
 
@@ -60,5 +65,20 @@ export class GenericShape extends Shape {
     // Pass both the element and the relation to applyCallbacks
     // Use the documentElement property to get the root element of the XML document
     this.applyCallbacks(this.callbacks, this.targetElement, slideRelXml.documentElement as XmlElement);
+  }
+
+  /**
+   * Copy hyperlink relationships from source slide to target slide
+   */
+  async copyHyperlinkRelationships(targetSlideNumber: number): Promise<void> {
+    if (!this.targetElement) return;
+
+    await HyperlinkProcessor.copyMultipleHyperlinks(
+      this.targetElement,
+      this.sourceArchive,
+      this.sourceSlideNumber,
+      this.targetArchive,
+      this.targetSlideRelFile
+    );
   }
 }

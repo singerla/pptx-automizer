@@ -1,5 +1,6 @@
 import { XmlHelper } from '../helper/xml-helper';
 import { GeneralHelper } from '../helper/general-helper';
+import { HyperlinkProcessor } from '../helper/hyperlink-processor';
 import {
   ChartModificationCallback,
   ImportedElement,
@@ -104,7 +105,7 @@ export class Shape {
 
     // Process hyperlinks in the element if this is a hyperlink element
     if (this.relRootTag === 'a:hlinkClick') {
-      await this.processHyperlinks(targetSlideXml);
+      await this.processHyperlinks();
     }
 
     XmlHelper.writeXmlToArchive(
@@ -114,54 +115,13 @@ export class Shape {
     );
   }
 
-  // Process hyperlinks in the element
-  async processHyperlinks(targetSlideXml: XmlDocument): Promise<void> {
-    if (!this.targetElement) return;
+  /**
+   * Process hyperlinks in the element
+   */
+  async processHyperlinks(): Promise<void> {
+    if (!this.targetElement || !this.createdRid) return;
 
-    // Scenario 1: Update r:id in <p:nvSpPr><p:cNvPr><a:hlinkClick r:id="..." />
-    // This is for hyperlinks applied to the shape itself.
-    const nvSpPr = this.targetElement.getElementsByTagName('p:nvSpPr')[0];
-    if (nvSpPr) {
-      const cNvPr = nvSpPr.getElementsByTagName('p:cNvPr')[0];
-      if (cNvPr) {
-        const shapeHlinks = cNvPr.getElementsByTagName('a:hlinkClick');
-        for (let k = 0; k < shapeHlinks.length; k++) {
-          const shapeHlink = shapeHlinks[k];
-          const currentRid = shapeHlink.getAttribute('r:id');
-
-          if (this.createdRid && currentRid) {
-            shapeHlink.setAttribute('r:id', this.createdRid);
-            shapeHlink.setAttribute(
-              'xmlns:r',
-              'http://schemas.openxmlformats.org/officeDocument/2006/relationships',
-            );
-          }
-        }
-      }
-    }
-
-    // Scenario 2: Update r:id in <p:txBody>...<a:rPr><a:hlinkClick r:id="..." />
-    // This is for hyperlinks applied to text runs within the shape.
-    const runs = this.targetElement.getElementsByTagName('a:r');
-    for (let i = 0; i < runs.length; i++) {
-      const run = runs[i];
-      const rPr = run.getElementsByTagName('a:rPr')[0];
-      if (rPr) {
-        const hlinkClicks = rPr.getElementsByTagName('a:hlinkClick');
-        for (let j = 0; j < hlinkClicks.length; j++) {
-          const hlinkClick = hlinkClicks[j];
-          const currentRid = hlinkClick.getAttribute('r:id');
-
-          if (this.createdRid && currentRid) {
-            hlinkClick.setAttribute('r:id', this.createdRid);
-            hlinkClick.setAttribute(
-              'xmlns:r',
-              'http://schemas.openxmlformats.org/officeDocument/2006/relationships',
-            );
-          }
-        }
-      }
-    }
+    await HyperlinkProcessor.processSingleHyperlink(this.targetElement, this.createdRid);
   }
 
   async replaceIntoSlideTree(): Promise<void> {
@@ -206,7 +166,7 @@ export class Shape {
 
     // Process hyperlinks in the element if this is a hyperlink element
     if (this.relRootTag === 'a:hlinkClick') {
-      await this.processHyperlinks(targetSlideXml);
+      await this.processHyperlinks();
     }
 
     XmlHelper.writeXmlToArchive(archive, slideFile, targetSlideXml);
