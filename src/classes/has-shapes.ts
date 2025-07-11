@@ -37,6 +37,7 @@ import { GenericShape } from '../shapes/generic';
 import { XmlSlideHelper } from '../helper/xml-slide-helper';
 import { OLEObject } from '../shapes/ole';
 import { Hyperlink } from '../shapes/hyperlink';
+import { HyperlinkProcessor } from '../helper/hyperlink-processor';
 
 export default class HasShapes {
   /**
@@ -938,51 +939,40 @@ export default class HasShapes {
       } as AnalyzedElementType;
     }
 
-    // Check for hyperlinks in text runs
-    const hasHyperlink = this.findHyperlinkInElement(sourceElement);
+    // Check for hyperlinks using the centralized processor
+    const hasHyperlink = HyperlinkProcessor.hasHyperlinks(sourceElement);
+
     if (hasHyperlink) {
       try {
-        const target = await XmlHelper.getTargetByRelId(
-          sourceArchive,
-          relsPath,
-          sourceElement,
-          'hyperlink',
-        );
+        // Check if this element has multiple hyperlinks
+        if (HyperlinkProcessor.hasMultipleHyperlinks(sourceElement)) {
+          // For elements with multiple hyperlinks (like tables), treat as generic shape
+          // The GenericShape class will handle copying the hyperlink relationships properly
+          return {
+            type: ElementType.Shape,
+          } as AnalyzedElementType;
+        } else {
+          // Single hyperlink - use existing logic
+          const target = await XmlHelper.getTargetByRelId(
+            sourceArchive,
+            relsPath,
+            sourceElement,
+            'hyperlink',
+          );
 
-        return {
-          type: ElementType.Hyperlink,
-          target: target,
-          element: sourceElement,
-        } as AnalyzedElementType;
+          return {
+            type: ElementType.Hyperlink,
+            target: target,
+            element: sourceElement,
+          } as AnalyzedElementType;
+        }
       } catch (error) {
         console.warn('Error finding hyperlink target:', error);
       }
     }
-
     return {
       type: ElementType.Shape,
     } as AnalyzedElementType;
-  }
-
-  // Helper method to find hyperlinks in an element
-  private findHyperlinkInElement(element: XmlElement): boolean {
-    // Check for direct hyperlinks
-    const directHyperlinks = element.getElementsByTagName('a:hlinkClick');
-    if (directHyperlinks.length > 0) {
-      return true;
-    }
-
-    // Check for hyperlinks in text runs
-    const textRuns = element.getElementsByTagName('a:r');
-    for (let i = 0; i < textRuns.length; i++) {
-      const run = textRuns[i];
-      const rPr = run.getElementsByTagName('a:rPr')[0];
-      if (rPr && rPr.getElementsByTagName('a:hlinkClick').length > 0) {
-        return true;
-      }
-    }
-
-    return false;
   }
 
   /**
