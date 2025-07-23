@@ -233,7 +233,7 @@ export class XmlSlideHelper {
     const rPr = run.getElementsByTagName('a:rPr')[0];
     if (rPr) {
       const isBold = rPr.getAttribute('b') === '1';
-      const isUnderlined = rPr.getAttribute('u') === '1';
+      const isUnderlined = rPr.getAttribute('u');
       const isItalic = rPr.getAttribute('i') === '1';
       const fontSize = parseInt(rPr.getAttribute('sz') || '0') / 100; // Convert to points
 
