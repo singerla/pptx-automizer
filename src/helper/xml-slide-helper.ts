@@ -118,6 +118,7 @@ export class XmlSlideHelper {
       id: XmlSlideHelper.getElementCreationId(slideElement),
       type: XmlSlideHelper.getElementType(slideElement),
       position: XmlSlideHelper.parseShapeCoordinates(slideElement),
+      placeholder: XmlSlideHelper.parsePlaceholderInfo(slideElement),
       hasTextBody: !!XmlSlideHelper.getTextBody(slideElement),
       getXmlElement: () => slideElement,
       getText: () => XmlSlideHelper.parseTextFragments(slideElement),
@@ -431,6 +432,22 @@ export class XmlSlideHelper {
     attributeName: string,
   ): number => {
     return parseInt(element.getAttribute(attributeName), 10);
+  };
+
+  static parsePlaceholderInfo = (
+    element: XmlElement,
+  ): ElementInfo['placeholder'] => {
+    const info = element.getElementsByTagName('p:ph').item(0)
+
+    if(!info) {
+      return
+    }
+
+    return {
+      type: info.getAttribute('type'),
+      sz: info.getAttribute('sz'),
+      idx: parseInt(info.getAttribute('idx')),
+    };
   };
 
   /**

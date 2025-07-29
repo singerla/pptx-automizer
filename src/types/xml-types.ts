@@ -74,6 +74,11 @@ export type ElementInfo = {
     cy: number;
     rot?: number;
   };
+  placeholder: {
+    type: string;
+    sz: string;
+    idx: number;
+  };
   hasTextBody: boolean;
   getText: () => string[];
   getParagraphs: () => TextParagraph[];
@@ -92,18 +97,18 @@ export type TextParagraphProps = {
   indent?: number;
   bullet?: string;
   isNumbered?: boolean;
-  numberingType?: string
-  startAt?: string
-}
+  numberingType?: string;
+  startAt?: string;
+};
 
 export type TextParagraph = {
   texts: string[];
-} & TextParagraphProps
+} & TextParagraphProps;
 
 export type TextParagraphGroup = {
   properties: TextParagraphProps;
   texts: string[];
-}
+};
 
 export type ContentMapType = 'slideMaster' | 'slideLayout';
 export type ContentMap = {
