@@ -2,6 +2,7 @@ import { Color, ImageStyle } from '../types/modify-types';
 import XmlElements from './xml-elements';
 import { XmlHelper } from './xml-helper';
 import { XmlElement } from '../types/xml-types';
+import { vd } from './general-helper';
 
 export default class ModifyColorHelper {
   /**
@@ -21,11 +22,16 @@ export default class ModifyColorHelper {
         const solidFill = new XmlElements(element, {
           color: color,
         }).solidFill();
-        element.appendChild(solidFill);
+
+        if (element.firstChild && index && index === 0) {
+          element.insertBefore(solidFill, element.firstChild);
+        } else {
+          element.appendChild(solidFill);
+        }
         return;
       }
 
-      let targetIndex = !index
+      const targetIndex = !index
         ? 0
         : index === 'last'
         ? solidFills.length - 1
