@@ -4,7 +4,7 @@ export interface MultiTextParagraph {
   paragraph: {
     level?: number; // Indentation/bullet level (0 = no bullet, 1+ = bullet levels)
     bullet?: boolean; // Whether to show a bullet or not
-    alignment?: 'left' | 'center' | 'right' | 'justify'; // Text alignment
+    alignment?: 'l' | 'ctr' | 'r' | 'just'; // Text alignment
     lineSpacing?: number; // Line spacing in points
     spaceBefore?: number; // Space before paragraph in points
     spaceAfter?: number; // Space after paragraph in points

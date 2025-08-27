@@ -1,7 +1,6 @@
-import { Color, TextStyle } from '../types/modify-types';
+import { TextStyle } from '../types/modify-types';
 import { MultiTextParagraph } from '../interfaces/imulti-text';
 import { DOMParser, Node } from '@xmldom/xmldom';
-import { vd } from './general-helper';
 
 type TextRun = { text: string; style?: TextStyle };
 
@@ -54,7 +53,7 @@ export class HtmlToMultiTextHelper {
 
       case 'ul':
       case 'ol':
-        this.processList(node, level, paragraphs, bulletLevel);
+        this.processList(node, paragraphs, bulletLevel);
         break;
 
       case 'li':
@@ -88,7 +87,7 @@ export class HtmlToMultiTextHelper {
       paragraph: {
         level: 0,
         bullet: false,
-        alignment: 'left',
+        alignment: 'l',
       },
       textRuns,
     });
@@ -99,7 +98,6 @@ export class HtmlToMultiTextHelper {
    */
   private processList(
     node: ChildNode,
-    level: number,
     paragraphs: MultiTextParagraph[],
     bulletLevel: { value: number },
   ): void {
@@ -152,7 +150,7 @@ export class HtmlToMultiTextHelper {
       paragraph: {
         level,
         bullet: true,
-        alignment: 'left',
+        alignment: 'l',
       },
       textRuns,
     });
@@ -187,7 +185,6 @@ export class HtmlToMultiTextHelper {
     return textRuns;
   }
 
-
   /**
    * Processes a text node and creates a TextRun
    */
@@ -220,7 +217,7 @@ export class HtmlToMultiTextHelper {
   private applyElementStyles(element: Element, style: TextStyle): TextStyle {
     const newStyle = { ...style };
 
-    const tagName = element.tagName.toLowerCase()
+    const tagName = element.tagName.toLowerCase();
 
     // Handle styling based on element type
     if (tagName === 'strong' || tagName === 'b') {
@@ -256,7 +253,6 @@ export class HtmlToMultiTextHelper {
       };
     }
   }
-
 
   /**
    * Processes an element with child nodes

@@ -43,7 +43,6 @@ const run = async () => {
             level: 1,
             marginLeft: 541338,
             indent: -187325,
-            alignment: 'left'
           },
           textRuns: [
             {
