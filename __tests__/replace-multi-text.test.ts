@@ -1,42 +1,37 @@
-import Automizer, { modify } from './index';
-import { vd } from './helper/general-helper';
-import * as fs from 'fs';
+import Automizer, { modify } from '../src/index';
 
-const run = async () => {
-  const outputDir = `${__dirname}/../__tests__/pptx-output`;
-  const templateDir = `${__dirname}/../__tests__/pptx-templates`;
 
-  // Step 1: Create a pptx with images and a chart inside.
-  // The chart is modified by pptx-automizer
-
+test('create presentation, replace multi text.', async () => {
   const automizer = new Automizer({
-    templateDir,
-    outputDir,
-    verbosity: 2,
-    removeExistingSlides: true,
+    templateDir: `${__dirname}/pptx-templates`,
+    outputDir: `${__dirname}/pptx-output`,
   });
 
   const pres = automizer.loadRoot(`RootTemplate.pptx`).load(`TextReplace.pptx`);
 
-  const html =
-    '<p><span style="font-size: 24px;">Testing layouts and exporting them.</span></p>\n' +
-    '<ul>\n' +
-    '<li>level 1 - 1</li>\n' +
-    '<li>level 1 - 2</li>\n' +
-    '<ul>\n' +
-    '<li>level 1-2-1 <em>italics</em></li>\n' +
-    '</ul>\n' +
-    '<li>level 1 - 3</li>\n' +
-    '<ul>\n' +
-    '<li>level 1 - 3 - 1</li>\n' +
-    '</ul>\n' +
-    '</ul>\n' +
-    '<p>Testing testing testing</p>\n' +
-    '<p><strong>bold text</strong></p>\n';
-
   await pres
     .addSlide('TextReplace.pptx', 1, (slide) => {
       slide.modifyElement('setText', modify.setMultiText([
+        {
+          paragraph: {
+            bullet: true,
+            level: 0,
+            marginLeft: 41338,
+            indent: -87325,
+            alignment: 'left'
+          },
+          textRuns: [
+            {
+              text: 'test 0',
+              style: {
+                color: {
+                  type: 'srgbClr',
+                  value: 'CCCCCC'
+                }
+              }
+            },
+          ]
+        },
         {
           paragraph: {
             bullet: true,
@@ -76,12 +71,26 @@ const run = async () => {
               }
             }
           ]
-        }
+        },
+        {
+          paragraph: {
+            alignment: 'right'
+          },
+          textRuns: [
+            {
+              text: 'aligned Center',
+              style: {
+                color: {
+                  type: 'srgbClr',
+                  value: '00FF00'
+                }
+              }
+            },
+          ]
+        },
       ]));
     })
     .write(`modify-multi-text.test.pptx`);
-};
 
-run().catch((error) => {
-  console.error(error);
+  // expect(result.tables).toBe(2); // TODO: fixture for pptx-output
 });
