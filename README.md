@@ -187,7 +187,7 @@ const automizer = new Automizer({
 
   // Remove all unused placeholders to prevent unwanted overlays:
   cleanupPlaceholders: false,
-  
+
   // Use a customized version of pptxGenJs if required:
   // pptxGenJs: PptxGenJS,
 });
@@ -451,10 +451,64 @@ pres.addSlide('TextReplace.pptx', 1, (slide) => {
 });
 ```
 
+You can use `modify.setMultiText` to replace all text contents of an existing textfield by styled paragraphs, bulleted lists and text runs:
+
+```ts
+import { modify } from 'pptx-automizer';
+
+pres.addSlide('TextReplace.pptx', 1, (slide) => {
+  slide.modifyElement(
+    'setText',
+    modify.setMultiText([
+      {
+        paragraph: {
+          bullet: true,
+          level: 0,
+          marginLeft: 41338,
+          indent: -87325,
+          alignment: 'l',
+        },
+        textRuns: [
+          {
+            text: 'Bullet point level 0',
+            style: {
+              isItalics: true,
+              color: {
+                type: 'srgbClr',
+                value: 'CCCCCC',
+              },
+            },
+          },
+        ],
+      },
+    ]),
+  );
+});
+```
+
+It is also possible to directly convert an HTML page into pptx text contents. HTML code will be flattened and converted into a MultiText array.
+
+```ts
+import { modify } from 'pptx-automizer';
+
+const html =
+  '<html><body>' +
+  '<ul>' +
+  '<li><span style="font-size: 14px;">bullet 1 level 1</span></li>' +
+  '</ul>' +
+  '</body></html>';
+
+pres.addSlide('TextReplace.pptx', 1, (slide) => {
+  slide.modifyElement('setText', modify.htmlToMultiText(html));
+});
+```
+
 Find out more about text replacement:
 
 - [Replace and style by tags](https://github.com/singerla/pptx-automizer/blob/main/__tests__/replace-tagged-text.test.ts)
 - [Modify text elements using getAllTextElementIds](https://github.com/singerla/pptx-automizer/blob/main/__tests__/get-all-text-element-ids.test.ts)
+- [Replace text by multitext objects](https://github.com/singerla/pptx-automizer/blob/main/__tests__/replace-multi-text.test.ts)
+- [Replace text by HTML](https://github.com/singerla/pptx-automizer/blob/main/__tests__/replace-multi-text-html.test.ts)
 
 ## Modify Images
 
@@ -586,6 +640,7 @@ pres.addSlide('charts', 2, (slide) => {
 This library wraps around the [PptxGenJS](https://github.com/gitbrent/PptxGenJS) to generate shapes from scratch. It is possible to use the `pptxGenJS` wrapper to generate shapes on a slide.
 
 Here's an example of how to use `pptxGenJS` to add a text shape to a slide:
+
 ```ts
 pres.addSlide('empty', 1, (slide) => {
   // Use pptxgenjs to add text from scratch:
@@ -604,7 +659,6 @@ pres.addSlide('empty', 1, (slide) => {
 You can as well create charts with `pptxGenJS`:
 
 ```ts
-
 const dataChartAreaLine = [
   {
     name: 'Actual Sales',
@@ -632,12 +686,12 @@ pres.addSlide('empty', 1, (slide) => {
 ```
 
 You can use the following functions to generate shapes with `pptxGenJS`:
-* addChart
-* addImage
-* addShape
-* addTable
-* addText
 
+- addChart
+- addImage
+- addShape
+- addTable
+- addText
 
 ## Remove elements from a slide
 
