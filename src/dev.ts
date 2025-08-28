@@ -36,47 +36,50 @@ const run = async () => {
 
   await pres
     .addSlide('TextReplace.pptx', 1, (slide) => {
-      slide.modifyElement('setText', modify.setMultiText([
-        {
-          paragraph: {
-            bullet: true,
-            level: 1,
-            marginLeft: 541338,
-            indent: -187325,
+      slide.modifyElement(
+        'setText',
+        modify.setMultiText([
+          {
+            paragraph: {
+              bullet: true,
+              level: 1,
+              marginLeft: 541338,
+              indent: -187325,
+            },
+            textRuns: [
+              {
+                text: 'test ',
+                style: {
+                  color: {
+                    type: 'srgbClr',
+                    value: 'CCCCCC',
+                  },
+                },
+              },
+              {
+                text: 'test 2',
+                style: {
+                  size: 700,
+                  color: {
+                    type: 'srgbClr',
+                    value: 'FF0000',
+                  },
+                },
+              },
+              {
+                text: 'test 3',
+                style: {
+                  size: 1200,
+                  color: {
+                    type: 'srgbClr',
+                    value: '00FF00',
+                  },
+                },
+              },
+            ],
           },
-          textRuns: [
-            {
-              text: 'test ',
-              style: {
-                color: {
-                  type: 'srgbClr',
-                  value: 'CCCCCC'
-                }
-              }
-            },
-            {
-              text: 'test 2',
-              style: {
-                size: 700,
-                color: {
-                  type: 'srgbClr',
-                  value: 'FF0000'
-                }
-              }
-            },
-            {
-              text: 'test 3',
-              style: {
-                size: 1200,
-                color: {
-                  type: 'srgbClr',
-                  value: '00FF00'
-                }
-              }
-            }
-          ]
-        }
-      ]));
+        ]),
+      );
     })
     .write(`modify-multi-text.test.pptx`);
 };

@@ -106,6 +106,44 @@ test('create presentation, replace multi text.', async () => {
           },
         ]),
       );
+
+      // Generate a textfield with pptxGenJS and modify its contents with setMultiText
+      // This way, you can work around some pptxGenJS restrictions.
+      slide.generate((iSlide) => {
+        iSlide.addText(
+          'test',
+          {
+            x: 10,
+            h: 3,
+            w: 3,
+            valign: 'top',
+            fontSize: 14,
+          },
+          [
+            modify.setMultiText([
+              {
+                paragraph: {
+                  bullet: true,
+                  level: 1,
+                  marginLeft: 541338,
+                  indent: -187325,
+                },
+                textRuns: [
+                  {
+                    text: 'test 123',
+                    style: {
+                      color: {
+                        type: 'srgbClr',
+                        value: 'CCCCCC',
+                      },
+                    },
+                  },
+                ],
+              },
+            ]),
+          ],
+        );
+      }, 'my object');
     })
     .write(`modify-multi-text.test.pptx`);
 

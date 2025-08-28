@@ -1,4 +1,5 @@
 import PptxGenJS from 'pptxgenjs';
+import { ModificationCallback } from '../types/types';
 
 /**
  * Usage of pptxGenJs insinde pptx-automizer is restricted to supported
@@ -10,7 +11,6 @@ export interface IPptxGenJSSlide {
    * @param {CHART_NAME|IChartMulti[]} type - chart type
    * @param {object[]} data - data object
    * @param {IChartOpts} options - chart options
-   * @return {Slide} this Slide
    * @type {Function}
    */
   addChart(
@@ -22,7 +22,6 @@ export interface IPptxGenJSSlide {
   /**
    * Add image to Slide
    * @param {ImageProps} options - image options
-   * @return {Slide} this Slide
    */
   addImage(options: PptxGenJS.ImageProps): void;
 
@@ -30,7 +29,6 @@ export interface IPptxGenJSSlide {
    * Add shape to Slide
    * @param {SHAPE_NAME} shapeName - shape name
    * @param {ShapeProps} options - shape options
-   * @return {Slide} this Slide
    */
   addShape(
     shapeName: PptxGenJS.SHAPE_NAME,
@@ -41,7 +39,6 @@ export interface IPptxGenJSSlide {
    * Add table to Slide
    * @param {TableRow[]} tableRows - table rows
    * @param {TableProps} options - table options
-   * @return {Slide} this Slide
    */
   addTable(
     tableRows: PptxGenJS.TableRow[],
@@ -52,10 +49,11 @@ export interface IPptxGenJSSlide {
    * Add text to Slide
    * @param {string|TextProps[]} text - text string or complex object
    * @param {TextPropsOptions} options - text options
-   * @return {Slide} this Slide
+   * @param callbacks - use pptx-automizer's modifiers to update the generated textfield
    */
   addText(
     text: string | PptxGenJS.TextProps[],
     options?: PptxGenJS.TextPropsOptions,
+    callbacks?: ModificationCallback[],
   ): void;
 }

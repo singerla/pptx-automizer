@@ -2,7 +2,12 @@ import { randomUUID } from 'crypto';
 import PptxGenJS from 'pptxgenjs';
 import { ISlide } from '../../interfaces/islide';
 import Automizer from '../../automizer';
-import { AutomizerFile, GenerateElements } from '../../types/types';
+import {
+  AutomizerFile,
+  AddedObject,
+  GenerateElements,
+  ModificationCallback,
+} from '../../types/types';
 import { IGenerator } from '../../interfaces/igenerator';
 import { IPptxGenJSSlide } from '../../interfaces/ipptxgenjs-slide';
 import fs from 'fs';
@@ -71,7 +76,7 @@ export default class GeneratePptxGenJs implements IGenerator {
   ): Promise<void> {
     for (const generateElement of generate) {
       generateElement.tmpSlideNumber = tmpSlideNumber;
-      const addedObjects = <string[]>[];
+      const addedObjects = <AddedObject[]>[];
       await generateElement.callback(
         this.addSlideItems(pgenSlide, generateElement, addedObjects),
         this.generator,
@@ -82,11 +87,12 @@ export default class GeneratePptxGenJs implements IGenerator {
 
   addElements(generate: GenerateElements[], slide: ISlide) {
     generate.forEach((generateElement) => {
-      generateElement.addedObjects.forEach((addedObjectName) => {
+      generateElement.addedObjects.forEach((addedObject: AddedObject) => {
         slide.addElement(
           this.tmpFile,
           generateElement.tmpSlideNumber,
-          addedObjectName,
+          addedObject.objectName,
+          addedObject.callbacks,
         );
       });
     });
@@ -104,50 +110,51 @@ export default class GeneratePptxGenJs implements IGenerator {
   addSlideItems = (
     pgenSlide: PptxGenJS.Slide,
     generateElement: GenerateElements,
-    addedObjects: string[],
+    addedObjects: AddedObject[],
   ): IPptxGenJSSlide => {
-    const getObjectName = () => {
-      return this.generateObjectName(generateElement, addedObjects);
+    const addObjectToList = (callbacks?: ModificationCallback[]) => {
+      const objectName =
+        (generateElement.objectName ? generateElement.objectName + '-' : '') +
+        randomUUID();
+
+      addedObjects.push({
+        objectName,
+        callbacks,
+      });
+
+      return objectName;
     };
     return {
       addChart: (type, data, options) => {
         pgenSlide.addChart(
           type,
           data,
-          this.getOptions(options, getObjectName()),
+          this.getOptions(options, addObjectToList()),
         );
       },
       addImage: (options) => {
-        pgenSlide.addImage(this.getOptions(options, getObjectName()));
+        pgenSlide.addImage(this.getOptions(options, addObjectToList()));
       },
       addShape: (shapeName, options?) => {
         pgenSlide.addShape(
           shapeName,
-          this.getOptions(options, getObjectName()),
+          this.getOptions(options, addObjectToList()),
         );
       },
       addTable: (tableRows, options?) => {
         pgenSlide.addTable(
           tableRows,
-          this.getOptions(options, getObjectName()),
+          this.getOptions(options, addObjectToList()),
         );
       },
-      addText: (text, options?) => {
-        pgenSlide.addText(text, this.getOptions(options, getObjectName()));
+      addText: (text, options?, callbacks?: ModificationCallback[]) => {
+        pgenSlide.addText(
+          text,
+          this.getOptions(options, addObjectToList(callbacks)),
+        );
       },
     };
   };
-
-  generateObjectName(
-    generateElement: GenerateElements,
-    addedObjects: string[],
-  ): string {
-    const objectName =
-      (generateElement.objectName ? generateElement.objectName + '-' : '') +
-      randomUUID();
-    addedObjects.push(objectName);
-    return objectName;
-  }
 
   getOptions = (options, objectName: string) => {
     options = options || {};

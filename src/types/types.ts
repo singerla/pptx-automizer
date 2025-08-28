@@ -248,8 +248,12 @@ export type GenerateElements = {
   objectName?: string;
   tmpSlideNumber?: number;
   callback?: GenerateOnSlideCallback;
-  addedObjects?: string[];
+  addedObjects?: AddedObject[];
 };
+export type AddedObject = {
+  objectName: string,
+  callbacks: ModificationCallback[]
+}
 export type FindElementSelector =
   | string
   | {

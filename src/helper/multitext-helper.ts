@@ -96,7 +96,7 @@ export class MultiTextHelper {
     this.applyBulletConfiguration(pPr, paragraphProps);
 
     // Set alignment
-    if (paragraphProps.alignment) {
+    if (paragraphProps.alignment !== undefined) {
       pPr.setAttribute('algn', paragraphProps.alignment);
     }
 
