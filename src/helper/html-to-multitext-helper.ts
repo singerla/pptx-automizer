@@ -134,9 +134,11 @@ export class HtmlToMultiTextHelper {
         return;
       }
 
-      const run = this.processTextNode(child);
-      if (run.text) {
-        textRuns.push(run);
+      const result = this.processTextNode(child);
+      if (Array.isArray(result)) {
+        textRuns.push(...result.filter((run) => run.text));
+      } else if (result.text) {
+        textRuns.push(result);
       }
     });
 
@@ -176,9 +178,11 @@ export class HtmlToMultiTextHelper {
     // Process all child nodes to create text runs
     // Using Array.from to convert NodeList to array that has forEach
     Array.from(node.childNodes).forEach((child) => {
-      const run = this.processTextNode(child);
-      if (run.text) {
-        textRuns.push(run);
+      const result = this.processTextNode(child);
+      if (Array.isArray(result)) {
+        textRuns.push(...result.filter((run) => run.text));
+      } else if (result.text) {
+        textRuns.push(result);
       }
     });
 
@@ -186,12 +190,19 @@ export class HtmlToMultiTextHelper {
   }
 
   /**
-   * Processes a text node and creates a TextRun
+   * Processes a text node and creates a TextRun or array of TextRuns
    */
-  private processTextNode(node: ChildNode, style: TextStyle = {}): TextRun {
+  private processTextNode(
+    node: ChildNode,
+    style: TextStyle = {},
+  ): TextRun | TextRun[] {
     // If this is a text node, return its content
     if (node.nodeType === Node.TEXT_NODE) {
-      return { text: node.textContent || '', style };
+      const text = node.textContent || '';
+      if (text.trim() === '') {
+        return { text: text, style };
+      }
+      return { text, style };
     }
 
     // If this is an element, handle specific styling
@@ -260,25 +271,20 @@ export class HtmlToMultiTextHelper {
   private processElementWithChildren(
     element: Element,
     style: TextStyle,
-  ): TextRun {
+  ): TextRun[] {
     const runs: TextRun[] = [];
 
     Array.from(element.childNodes).forEach((child) => {
       const childRun = this.processTextNode(child, style);
-      if (childRun.text) {
+      if (Array.isArray(childRun)) {
+        // If the result is an array of runs, add them all
+        runs.push(...childRun.filter((run) => run.text));
+      } else if (childRun.text) {
+        // If it's a single run, add it
         runs.push(childRun);
       }
     });
 
-    // If we have a single run, return it directly
-    if (runs.length === 1) {
-      return runs[0];
-    }
-
-    // If we have multiple runs, concatenate the text
-    return {
-      text: runs.map((run) => run.text).join(''),
-      style,
-    };
+    return runs;
   }
 }
