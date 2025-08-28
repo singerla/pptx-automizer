@@ -235,7 +235,9 @@ export class HtmlToMultiTextHelper {
       newStyle.isBold = true;
     } else if (tagName === 'em' || tagName === 'i') {
       newStyle.isItalics = true;
-    } else if (tagName === 'span') {
+    } else if (tagName === 'ins') {
+      newStyle.isUnderlined = true;
+    }  else if (tagName === 'span') {
       this.processSpanStyles(element, newStyle);
     }
 

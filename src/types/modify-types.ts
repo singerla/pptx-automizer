@@ -47,6 +47,7 @@ export type TextStyle = {
   color?: Color;
   isBold?: boolean;
   isItalics?: boolean;
+  isUnderlined?: boolean;
 };
 
 export type ImageStyle = {

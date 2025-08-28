@@ -1,10 +1,5 @@
-import { Color, TextStyle } from '../types/modify-types';
-import ModifyColorHelper from './modify-color-helper';
-import ModifyXmlHelper from './modify-xml-helper';
+import { TextStyle } from '../types/modify-types';
 import { XmlElement } from '../types/xml-types';
-import { vd } from './general-helper';
-import XmlElements from './xml-elements';
-import { XmlHelper } from './xml-helper';
 import { MultiTextParagraph } from '../interfaces/imulti-text';
 import ModifyTextHelper from './modify-text-helper';
 
@@ -22,8 +17,64 @@ export class MultiTextHelper {
    */
   run(paragraphs: MultiTextParagraph[]): void {
     const txBody = this.getOrCreateTxBody();
+    const defaultStyle = this.extractDefaultStyle(txBody);
     this.clearExistingParagraphs(txBody);
-    this.createParagraphs(txBody, paragraphs);
+    this.createParagraphs(txBody, paragraphs, defaultStyle);
+  }
+
+  /**
+   * Extract default style from existing paragraphs
+   */
+  private extractDefaultStyle(txBody: XmlElement): TextStyle {
+    const defaultStyle: TextStyle = {};
+    const existingParagraphs = txBody.getElementsByTagName('a:p');
+
+    if (existingParagraphs.length === 0) {
+      return defaultStyle;
+    }
+
+    // Try to get font size from the first text run
+    const firstPara = existingParagraphs[0];
+    const firstRun = firstPara.getElementsByTagName('a:r')[0];
+
+    if (firstRun) {
+      const rPr = firstRun.getElementsByTagName('a:rPr')[0];
+      if (rPr) {
+        // Extract font size if it exists
+        const fontSize = rPr.getAttribute('sz');
+        if (fontSize) {
+          defaultStyle.size = parseInt(fontSize);
+        }
+
+        // Extract color if it exists
+        const solidFill = rPr.getElementsByTagName('a:solidFill')[0];
+        if (solidFill) {
+          const srgbClr = solidFill.getElementsByTagName('a:srgbClr')[0];
+          if (srgbClr) {
+            const colorValue = srgbClr.getAttribute('val');
+            if (colorValue) {
+              defaultStyle.color = {
+                type: 'srgbClr',
+                value: colorValue,
+              };
+            }
+          }
+        }
+
+        // Extract bold and italic if they exist
+        const bold = rPr.getAttribute('b');
+        if (bold === '1') {
+          defaultStyle.isBold = true;
+        }
+
+        const italic = rPr.getAttribute('i');
+        if (italic === '1') {
+          defaultStyle.isItalics = true;
+        }
+      }
+    }
+
+    return defaultStyle;
   }
 
   /**
@@ -63,8 +114,12 @@ export class MultiTextHelper {
   /**
    * Create paragraph elements for each MultiTextParagraph
    */
-  private createParagraphs(txBody: XmlElement, paragraphs: MultiTextParagraph[]): void {
-    paragraphs.forEach(para => {
+  private createParagraphs(
+    txBody: XmlElement,
+    paragraphs: MultiTextParagraph[],
+    defaultStyle: TextStyle = {},
+  ): void {
+    paragraphs.forEach((para) => {
       const p = this.document.createElement('a:p');
       txBody.appendChild(p);
 
@@ -76,11 +131,26 @@ export class MultiTextHelper {
       }
 
       if (para.textRuns && para.textRuns.length > 0) {
-        this.createTextRuns(p, para.textRuns);
+        this.createTextRuns(p, para.textRuns, defaultStyle);
       } else if (para.text !== undefined) {
-        this.createSingleTextRun(p, para.text, para.style);
+        // Merge default style with provided style
+        const mergedStyle = this.mergeStyles(defaultStyle, para.style);
+        this.createSingleTextRun(p, para.text, mergedStyle);
       }
     });
+  }
+
+  /**
+   * Merge default style with provided style
+   */
+  private mergeStyles(
+    defaultStyle: TextStyle = {},
+    customStyle: TextStyle = {},
+  ): TextStyle {
+    return {
+      ...defaultStyle,
+      ...customStyle,
+    };
   }
 
   /**
@@ -138,7 +208,7 @@ export class MultiTextHelper {
       const spcPts = this.document.createElement('a:spcPts');
       spcPts.setAttribute(
         'val',
-        String(Math.round(paragraphProps.lineSpacing * 100))
+        String(Math.round(paragraphProps.lineSpacing * 100)),
       ); // Convert to 100ths of a point
       lnSpc.appendChild(spcPts);
       pPr.appendChild(lnSpc);
@@ -150,7 +220,7 @@ export class MultiTextHelper {
       const spcPts = this.document.createElement('a:spcPts');
       spcPts.setAttribute(
         'val',
-        String(Math.round(paragraphProps.spaceBefore * 100))
+        String(Math.round(paragraphProps.spaceBefore * 100)),
       ); // Convert to 100ths of a point
       spcBef.appendChild(spcPts);
       pPr.appendChild(spcBef);
@@ -162,7 +232,7 @@ export class MultiTextHelper {
       const spcPts = this.document.createElement('a:spcPts');
       spcPts.setAttribute(
         'val',
-        String(Math.round(paragraphProps.spaceAfter * 100))
+        String(Math.round(paragraphProps.spaceAfter * 100)),
       ); // Convert to 100ths of a point
       spcAft.appendChild(spcPts);
       pPr.appendChild(spcAft);
@@ -172,17 +242,22 @@ export class MultiTextHelper {
   /**
    * Create text runs for a paragraph
    */
-  private createTextRuns(p: XmlElement, textRuns: Array<{ text: string; style?: TextStyle }>): void {
-    textRuns.forEach(run => {
+  private createTextRuns(
+    p: XmlElement,
+    textRuns: Array<{ text: string; style?: TextStyle }>,
+    defaultStyle: TextStyle = {},
+  ): void {
+    textRuns.forEach((run) => {
       const r = this.document.createElement('a:r');
       p.appendChild(r);
 
       const rPr = this.document.createElement('a:rPr');
       r.appendChild(rPr);
 
-      // Apply text styling if specified
-      if (run.style) {
-        ModifyTextHelper.style(run.style)(rPr);
+      // Apply default styling first, then override with text run specific styling
+      const mergedStyle = this.mergeStyles(defaultStyle, run.style);
+      if (mergedStyle) {
+        ModifyTextHelper.style(mergedStyle)(rPr);
       }
 
       this.createTextElement(r, run.text || '');
@@ -192,7 +267,11 @@ export class MultiTextHelper {
   /**
    * Create a single text run with the given text and style
    */
-  private createSingleTextRun(p: XmlElement, text: string | number, style?: TextStyle): void {
+  private createSingleTextRun(
+    p: XmlElement,
+    text: string | number,
+    style?: TextStyle,
+  ): void {
     const r = this.document.createElement('a:r');
     p.appendChild(r);
 

@@ -2,9 +2,7 @@ import { Color, TextStyle } from '../types/modify-types';
 import ModifyColorHelper from './modify-color-helper';
 import ModifyXmlHelper from './modify-xml-helper';
 import { XmlElement } from '../types/xml-types';
-import { vd } from './general-helper';
 import XmlElements from './xml-elements';
-import { XmlHelper } from './xml-helper';
 import { MultiTextParagraph } from '../interfaces/imulti-text';
 import { MultiTextHelper } from './multitext-helper';
 import { HtmlToMultiTextHelper } from './html-to-multitext-helper';
@@ -85,6 +83,9 @@ export default class ModifyTextHelper {
       if (style.isItalics !== undefined) {
         ModifyTextHelper.setItalics(style.isItalics)(element);
       }
+      if (style.isUnderlined !== undefined) {
+        ModifyTextHelper.setUnderlined(style.isUnderlined)(element);
+      }
     };
 
   /**
@@ -122,5 +123,16 @@ export default class ModifyTextHelper {
     (isItalics: boolean) =>
     (element: XmlElement): void => {
       ModifyXmlHelper.booleanAttribute('i', isItalics)(element);
+    };
+
+  /**
+   * Set underlined attribute on text
+   */
+  static setUnderlined =
+    (isUnderlined: boolean) =>
+    (element: XmlElement): void => {
+      if (isUnderlined) {
+        element.setAttribute('u', 'sng');
+      }
     };
 }
