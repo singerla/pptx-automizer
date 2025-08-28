@@ -2,8 +2,10 @@ import { Color, TextStyle } from '../types/modify-types';
 import ModifyColorHelper from './modify-color-helper';
 import ModifyXmlHelper from './modify-xml-helper';
 import { XmlElement } from '../types/xml-types';
-import { vd } from './general-helper';
 import XmlElements from './xml-elements';
+import { MultiTextParagraph } from '../interfaces/imulti-text';
+import { MultiTextHelper } from './multitext-helper';
+import { HtmlToMultiTextHelper } from './html-to-multitext-helper';
 
 export default class ModifyTextHelper {
   /**
@@ -34,8 +36,22 @@ export default class ModifyTextHelper {
       }
     };
 
+  static setMultiText =
+    (paragraphs: MultiTextParagraph[]) =>
+    (element: XmlElement): void => {
+      new MultiTextHelper(element).run(paragraphs);
+    };
+
+  static htmlToMultiText = (html: string) => {
+    const paragraphs = new HtmlToMultiTextHelper().run(html);
+    return (element: XmlElement): void => {
+      this.setMultiText(paragraphs)(element);
+    };
+  };
+
   static setBulletList =
-    (list) => (element: XmlElement): void => {
+    (list) =>
+    (element: XmlElement): void => {
       const xmlElements = new XmlElements(element);
       xmlElements.addBulletList(list);
     };
@@ -66,6 +82,9 @@ export default class ModifyTextHelper {
       }
       if (style.isItalics !== undefined) {
         ModifyTextHelper.setItalics(style.isItalics)(element);
+      }
+      if (style.isUnderlined !== undefined) {
+        ModifyTextHelper.setUnderlined(style.isUnderlined)(element);
       }
     };
 
@@ -104,5 +123,16 @@ export default class ModifyTextHelper {
     (isItalics: boolean) =>
     (element: XmlElement): void => {
       ModifyXmlHelper.booleanAttribute('i', isItalics)(element);
+    };
+
+  /**
+   * Set underlined attribute on text
+   */
+  static setUnderlined =
+    (isUnderlined: boolean) =>
+    (element: XmlElement): void => {
+      if (isUnderlined) {
+        element.setAttribute('u', 'sng');
+      }
     };
 }
