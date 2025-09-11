@@ -63,17 +63,72 @@ export default class ModifyShapeHelper {
     };
 
   /**
+   * Creates missing transformation elements (a:off and a:ext) with default values
+   * @param element The XML element to check and modify
+   * @returns The xfrm element that contains or will contain the a:off element
+   */
+  static ensureTransformElements = (element: XmlElement): XmlElement | null => {
+    // First find the xfrm element (could be a:xfrm or p:xfrm)
+    let xfrm = element.getElementsByTagName('a:xfrm')[0] as XmlElement;
+    if (!xfrm) {
+      xfrm = element.getElementsByTagName('p:xfrm')[0] as XmlElement;
+    }
+
+    // If no xfrm element exists, try to find the appropriate parent to create it
+    if (!xfrm) {
+      const spPr =
+        element.getElementsByTagName('p:spPr')[0] ||
+        element.getElementsByTagName('a:spPr')[0];
+
+      if (!spPr) {
+        return null; // Cannot create xfrm without a proper parent
+      }
+
+      // Create the xfrm element
+      xfrm = element.ownerDocument.createElement('a:xfrm');
+      spPr.appendChild(xfrm);
+    }
+
+    // Create a:off element if it doesn't exist
+    if (!xfrm.getElementsByTagName('a:off')[0]) {
+      const newAOff = element.ownerDocument.createElement('a:off');
+      // Set default coordinates
+      newAOff.setAttribute('x', '0');
+      newAOff.setAttribute('y', '0');
+
+      // Insert a:off as the first child of xfrm
+      if (xfrm.hasChildNodes()) {
+        xfrm.insertBefore(newAOff, xfrm.firstChild);
+      } else {
+        xfrm.appendChild(newAOff);
+      }
+    }
+
+    // Create a:ext element if it doesn't exist
+    if (!xfrm.getElementsByTagName('a:ext')[0]) {
+      const newAExt = element.ownerDocument.createElement('a:ext');
+      // Set default dimensions - using 1000000 which is about 2.78cm
+      newAExt.setAttribute('cx', '1000000');
+      newAExt.setAttribute('cy', '1000000');
+
+      // Add the a:ext element after a:off
+      xfrm.appendChild(newAExt);
+    }
+
+    return xfrm;
+  };
+
+  /**
    * Set position and size of modified shape.
    */
   static setPosition =
     (pos: ShapeCoordinates) =>
     (element: XmlElement): void => {
-      const aOff = element.getElementsByTagName('a:off');
-      if (!aOff?.item(0)) {
-        return;
+      // Ensure the transform elements exist
+      const xfrm = ModifyShapeHelper.ensureTransformElements(element);
+      if (!xfrm) {
+        return; // Cannot set position without proper structure
       }
-
-      const xfrm = aOff.item(0).parentNode as XmlElement;
 
       Object.keys(pos).forEach((key) => {
         let value = Math.round(pos[key]);
@@ -92,8 +147,11 @@ export default class ModifyShapeHelper {
   static updatePosition =
     (pos: ShapeCoordinates) =>
     (element: XmlElement): void => {
-      const xfrm = element.getElementsByTagName('a:off')[0]
-        .parentNode as XmlElement;
+      // Ensure the transform elements exist
+      const xfrm = ModifyShapeHelper.ensureTransformElements(element);
+      if (!xfrm) {
+        return; // Cannot update position without proper structure
+      }
 
       Object.keys(pos).forEach((key) => {
         let value = Math.round(pos[key]);
