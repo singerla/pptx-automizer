@@ -38,6 +38,7 @@ import { XmlSlideHelper } from '../helper/xml-slide-helper';
 import { OLEObject } from '../shapes/ole';
 import { Hyperlink } from '../shapes/hyperlink';
 import { HyperlinkProcessor } from '../helper/hyperlink-processor';
+import { Logger, vd } from '../helper/general-helper';
 
 export default class HasShapes {
   /**
@@ -125,7 +126,8 @@ export default class HasShapes {
     'p:custDataLst',
     // 'p:oleObj',
     // 'mc:AlternateContent',
-    //'a14:imgProps',
+    // 'a14:imgProps',
+    'a14:imgLayer'
   ];
   /**
    * List of unsupported tags in slide xml
@@ -139,7 +141,7 @@ export default class HasShapes {
   targetType: ShapeTargetType;
   params: AutomizerParams;
 
-  cleanupPlaceholders: boolean = false;
+  cleanupPlaceholders = false;
 
   constructor(params: {
     presentation: IPresentationProps;
@@ -1028,9 +1030,29 @@ export default class HasShapes {
       const drop = xml.getElementsByTagName(tag);
       const length = drop.length;
       if (length && length > 0) {
+        console.log('Cleaning unsupported tag ' + tag);
+
+        // First get parent elements before removing
+        const parents = [];
+        for (let i = 0; i < drop.length; i++) {
+          const parent = drop[i].parentNode;
+          if (parent && !parents.includes(parent)) {
+            parents.push(parent);
+          }
+        }
+
+        // Remove the unsupported tags
         XmlHelper.sliceCollection(drop, 0);
+
+        // Check each parent and remove it if it has no children left
+        parents.forEach(parent => {
+          if (parent.childNodes.length === 0) {
+            XmlHelper.remove(parent);
+          }
+        });
       }
     });
+
     XmlHelper.writeXmlToArchive(this.targetArchive, targetPath, xml);
   }
 
