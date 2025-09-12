@@ -86,7 +86,15 @@ export type ElementInfo = {
   getAltText: () => string;
   getTableInfo: () => TableInfo[];
   getXmlElement: () => XmlElement;
+  getGroupInfo: () => GroupInfo;
 };
+
+export type GroupInfo = {
+  isChild: boolean;
+  isParent: boolean;
+  getParent: () => XmlElement;
+  getChildren: () => XmlElement[];
+}
 
 export type TextParagraphProps = {
   isBold?: boolean;

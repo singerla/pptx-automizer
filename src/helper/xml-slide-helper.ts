@@ -1,6 +1,7 @@
 import {
   ElementInfo,
   ElementType,
+  GroupInfo,
   TextParagraph,
   TextParagraphGroup,
   XmlDocument,
@@ -127,6 +128,7 @@ export class XmlSlideHelper {
         XmlSlideHelper.parseParagraphGroups(slideElement),
       getTableInfo: () => XmlSlideHelper.readTableInfo(slideElement),
       getAltText: () => XmlSlideHelper.getImageAltText(slideElement),
+      getGroupInfo: () => XmlSlideHelper.parseGroupInfo(slideElement),
     };
   }
 
@@ -433,6 +435,55 @@ export class XmlSlideHelper {
   ): number => {
     return parseInt(element.getAttribute(attributeName), 10);
   };
+
+  static parseGroupInfo = (
+    element: XmlElement,
+  ): GroupInfo => {
+    // Check if element is a child of a group
+    // Look for a parent node that is a group (grpSp)
+    const isChild = element.parentNode &&
+      (element.parentNode.nodeName === 'grpSp' ||
+        element.parentNode.nodeName.includes('grpSp'));
+
+    // Check if element is a group parent itself
+    const isParent = element.localName === 'grpSp' ||
+      element.nodeName.includes('grpSp');
+
+    // Function to get the parent group if element is a child
+    const getParent = () => {
+      if (isChild && element.parentNode) {
+        return element.parentNode as XmlElement;
+      }
+      return null;
+    };
+
+    // Function to get children if element is a group parent
+    const getChildren = () => {
+      if (isParent) {
+        // Get all children that are not group properties or group metadata
+        const children = Array.from(element.childNodes)
+          .filter((node: Node) => {
+            if (node.nodeType !== 1) return false; // Skip non-element nodes
+
+            const nodeName = (node as Element).localName || (node as Element).nodeName;
+            // Skip group property elements
+            return !nodeName.includes('nvGrpSpPr') &&
+              !nodeName.includes('grpSpPr');
+          }) as XmlElement[];
+
+        return children;
+      }
+      return [];
+    };
+
+    return {
+      isChild,
+      isParent,
+      getParent,
+      getChildren,
+    };
+  };
+
 
   static parsePlaceholderInfo = (
     element: XmlElement,
