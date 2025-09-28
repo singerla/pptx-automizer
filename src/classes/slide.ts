@@ -4,12 +4,15 @@ import { ISlide } from '../interfaces/islide';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
 import { PresTemplate } from '../interfaces/pres-template';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
-import { last } from '../helper/general-helper';
+import { last, vd } from '../helper/general-helper';
 import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import { IMaster } from '../interfaces/imaster';
 import HasShapes from './has-shapes';
 import { Master } from './master';
 import ModifyPresentationHelper from '../helper/modify-presentation-helper';
+import { ElementInfo, PlaceholderInfo, SlideInfo } from '../types/xml-types';
+import XmlPlaceholderHelper from '../helper/xml-placeholder-helper';
+import { XmlHelper } from '../helper/xml-helper';
 
 export class Slide extends HasShapes implements ISlide {
   targetType: ShapeTargetType = 'slide';
@@ -81,7 +84,7 @@ export class Slide extends HasShapes implements ISlide {
 
   /**
    * Use another slide layout.
-   * @param targetLayoutId
+   * @param layoutId
    */
   useSlideLayout(layoutId?: number | string): this {
     this.relModifications.push(async (slideRelXml) => {
@@ -111,11 +114,119 @@ export class Slide extends HasShapes implements ISlide {
     return this;
   }
 
-  /**
-   * The current slide will be fully calculated, but removed from slide
-   * sortation.
-   */
-  drop() {}
+  async mergeIntoSlideLayout(
+    targetLayout: string,
+    slidesInfo: SlideInfo[],
+  ): Promise<this> {
+    this.useSlideLayout(targetLayout);
+
+    const elements = await this.getAllElements();
+
+    const layoutPlaceholders =
+      slidesInfo.find((slide) => slide.info.layoutName === targetLayout)?.info
+        .layoutPlaceholders || [];
+
+    // vd(layoutPlaceholders)
+
+    const usedPlaceholders: number[] = [];
+    const unmatchedPhElements: ElementInfo[] = [];
+    elements.forEach((element: ElementInfo) => {
+      if (element.placeholder) {
+        if (element.placeholder.type) {
+          const matchesPlaceholder = this.applyPlaceholderToElement(
+            layoutPlaceholders,
+            element.placeholder.type,
+            usedPlaceholders,
+            element,
+          );
+
+          if (!matchesPlaceholder) {
+            unmatchedPhElements.push(element);
+          }
+        } else {
+          unmatchedPhElements.push(element);
+        }
+      }
+    });
+
+    unmatchedPhElements.forEach((element) => {
+      const forceType = !element.placeholder.type
+        ? 'body'
+        : element.placeholder.type;
+
+      const matchesPlaceholder = this.applyPlaceholderToElement(
+        layoutPlaceholders,
+        forceType,
+        usedPlaceholders,
+        element,
+      );
+
+      if (!matchesPlaceholder) {
+        const forceType = element.placeholder.type === 'title'
+          ? 'ctrTitle'
+          : 'subTitle';
+
+        const matchesPlaceholder2 = this.applyPlaceholderToElement(
+          layoutPlaceholders,
+          forceType,
+          usedPlaceholders,
+          element,
+        );
+
+        if (!matchesPlaceholder2) {
+          this.modifyElement(
+            {
+              creationId: element.creationId,
+              name: element.name,
+            },
+            (element) => {
+              XmlPlaceholderHelper.removePlaceholder(element)
+            },
+          );
+        }
+      }
+    });
+
+    return this;
+  }
+
+  applyPlaceholderToElement(
+    layoutPlaceholders: PlaceholderInfo[],
+    forceType: string,
+    usedPlaceholders: number[],
+    element: ElementInfo,
+  ): boolean {
+    const unusedPlaceholders = layoutPlaceholders.filter(
+      (ph) => !usedPlaceholders.includes(ph.idx),
+    );
+
+    const matchPlaceholders = unusedPlaceholders.filter((ph) => {
+      return ph.type === forceType;
+    });
+
+    if (matchPlaceholders.length) {
+      const matchPlaceholder = XmlPlaceholderHelper.findBestTargetPlaceholder(
+        element,
+        matchPlaceholders,
+      );
+      usedPlaceholders.push(matchPlaceholder.idx);
+
+      this.modifyElement(
+        {
+          creationId: element.creationId,
+          name: element.name,
+        },
+        (element) => {
+          XmlPlaceholderHelper.resetPlaceholderToDefaults(
+            element,
+            matchPlaceholder,
+          );
+        },
+      );
+      return true;
+    }
+    return false;
+  }
 
   /**
    * Find another slide layout by name.

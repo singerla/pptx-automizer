@@ -1,7 +1,7 @@
 import JSZip from 'jszip';
 import { Target } from '../types/types';
 import {
-  ElementInfo,
+  ElementInfo, PlaceholderInfo,
   SlideInfo,
   TemplateSlideInfo,
   XmlDocument,
@@ -97,6 +97,8 @@ export class XmlTemplateHelper {
     slideRelFile: string,
   ): Promise<TemplateSlideInfo> {
     let name;
+    let layoutName = '';
+    const placeholders: PlaceholderInfo[] = [];
 
     const slideNoteRels = await this.getSlideNoteRels(archive, slideRelFile);
     if (slideNoteRels.length > 0) {
@@ -109,8 +111,61 @@ export class XmlTemplateHelper {
 
     name = !name ? this.defaultSlideName : name;
 
+    // Get slide layout information
+    try {
+      // Get the slide layout relationship
+      const relFileName = slideRelFile.replace('slides', '');
+      const slideRels = await XmlHelper.getXmlFromArchive(
+        archive,
+        `ppt/slides/_rels${relFileName}.rels`,
+      );
+
+      if (slideRels) {
+        // Find the relationship with type "slideLayout"
+        const relationships = slideRels.getElementsByTagName('Relationship');
+        for (let i = 0; i < relationships.length; i++) {
+          const relationship = relationships.item(i);
+          const relType = relationship.getAttribute('Type');
+
+          if (relType && relType.endsWith('/slideLayout')) {
+            const target = relationship.getAttribute('Target');
+
+            if (target) {
+              // Get the layout XML
+              const layoutPath = 'ppt/' + target.replace('../', '');
+              const layoutXml = await XmlHelper.getXmlFromArchive(archive, layoutPath);
+
+              if (layoutXml) {
+                // Get layout name from the slideLayout XML
+                const cSldElement = layoutXml.getElementsByTagName('p:cSld').item(0);
+                if (cSldElement && cSldElement.getAttribute('name')) {
+                  layoutName = cSldElement.getAttribute('name');
+                }
+
+                // Get placeholders from the slideLayout
+                const phElements = layoutXml.getElementsByTagName('p:ph');
+                for (let j = 0; j < phElements.length; j++) {
+                  const ph = phElements.item(j);
+                  placeholders.push({
+                    type: ph.getAttribute('type'),
+                    sz: ph.getAttribute('sz'),
+                    idx: parseInt(ph.getAttribute('idx') || '0')
+                  });
+                }
+              }
+            }
+            break;
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`Error getting slide layout information: ${error.message}`);
+    }
+
     return {
       name: name,
+      layoutName: layoutName,
+      layoutPlaceholders: placeholders
     };
   }
 

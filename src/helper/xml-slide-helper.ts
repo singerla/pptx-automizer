@@ -117,6 +117,7 @@ export class XmlSlideHelper {
     return {
       name: XmlSlideHelper.getElementName(slideElement),
       id: XmlSlideHelper.getElementCreationId(slideElement),
+      creationId: XmlSlideHelper.getElementCreationId(slideElement, true),
       type: XmlSlideHelper.getElementType(slideElement),
       position: XmlSlideHelper.parseShapeCoordinates(slideElement),
       placeholder: XmlSlideHelper.parsePlaceholderInfo(slideElement),
@@ -199,7 +200,7 @@ export class XmlSlideHelper {
       const pPr = p.getElementsByTagName('a:pPr')[0];
 
       if (pPr) {
-        XmlSlideHelper.setParagraphProperties(pPr, paragraph)
+        XmlSlideHelper.setParagraphProperties(pPr, paragraph);
       }
 
       // Get all text runs in the paragraph
@@ -207,7 +208,7 @@ export class XmlSlideHelper {
       const texts: string[] = [];
 
       for (const run of Array.from(runs)) {
-        XmlSlideHelper.setTextProperties(run, paragraph)
+        XmlSlideHelper.setTextProperties(run, paragraph);
 
         // Get text content
         const textElements = run.getElementsByTagName('a:t');
@@ -218,7 +219,7 @@ export class XmlSlideHelper {
         // Check if the next sibling after rPr is a line break
         const nextSibling = run.nextSibling;
         if (nextSibling && nextSibling.nodeName === 'a:br') {
-          texts.push(`\n`)
+          texts.push(`\n`);
         }
       }
 
@@ -350,7 +351,10 @@ export class XmlSlideHelper {
     }
   }
 
-  static getElementCreationId(slideElement: XmlElement): string | undefined {
+  static getElementCreationId(
+    slideElement: XmlElement,
+    stripBrackets?: boolean,
+  ): string | undefined {
     const cNvPr = XmlSlideHelper.getNonVisibleProperties(slideElement);
     if (cNvPr) {
       const creationIdElement = cNvPr
@@ -358,7 +362,9 @@ export class XmlSlideHelper {
         .item(0);
 
       if (creationIdElement) {
-        return creationIdElement.getAttribute('id');
+        const id = creationIdElement.getAttribute('id');
+        if (stripBrackets) return id.replace('{', '').replace('}', '');
+        return id;
       }
     }
   }
@@ -422,7 +428,7 @@ export class XmlSlideHelper {
     position.cx = XmlSlideHelper.parseCoordinate(Ext, 'cx');
     position.cy = XmlSlideHelper.parseCoordinate(Ext, 'cy');
 
-    if(xFrm.getAttribute('rot')) {
+    if (xFrm.getAttribute('rot')) {
       position.rot = parseInt(xFrm.getAttribute('rot'));
     }
 
@@ -436,18 +442,17 @@ export class XmlSlideHelper {
     return parseInt(element.getAttribute(attributeName), 10);
   };
 
-  static parseGroupInfo = (
-    element: XmlElement,
-  ): GroupInfo => {
+  static parseGroupInfo = (element: XmlElement): GroupInfo => {
     // Check if element is a child of a group
     // Look for a parent node that is a group (grpSp)
-    const isChild = element.parentNode &&
+    const isChild =
+      element.parentNode &&
       (element.parentNode.nodeName === 'grpSp' ||
         element.parentNode.nodeName.includes('grpSp'));
 
     // Check if element is a group parent itself
-    const isParent = element.localName === 'grpSp' ||
-      element.nodeName.includes('grpSp');
+    const isParent =
+      element.localName === 'grpSp' || element.nodeName.includes('grpSp');
 
     // Function to get the parent group if element is a child
     const getParent = () => {
@@ -461,15 +466,16 @@ export class XmlSlideHelper {
     const getChildren = () => {
       if (isParent) {
         // Get all children that are not group properties or group metadata
-        const children = Array.from(element.childNodes)
-          .filter((node: Node) => {
-            if (node.nodeType !== 1) return false; // Skip non-element nodes
+        const children = Array.from(element.childNodes).filter((node: Node) => {
+          if (node.nodeType !== 1) return false; // Skip non-element nodes
 
-            const nodeName = (node as Element).localName || (node as Element).nodeName;
-            // Skip group property elements
-            return !nodeName.includes('nvGrpSpPr') &&
-              !nodeName.includes('grpSpPr');
-          }) as XmlElement[];
+          const nodeName =
+            (node as Element).localName || (node as Element).nodeName;
+          // Skip group property elements
+          return (
+            !nodeName.includes('nvGrpSpPr') && !nodeName.includes('grpSpPr')
+          );
+        }) as XmlElement[];
 
         return children;
       }
@@ -484,14 +490,13 @@ export class XmlSlideHelper {
     };
   };
 
-
   static parsePlaceholderInfo = (
     element: XmlElement,
   ): ElementInfo['placeholder'] => {
-    const info = element.getElementsByTagName('p:ph').item(0)
+    const info = element.getElementsByTagName('p:ph').item(0);
 
-    if(!info) {
-      return
+    if (!info) {
+      return;
     }
 
     return {

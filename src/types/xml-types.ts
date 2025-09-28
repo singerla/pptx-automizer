@@ -53,6 +53,8 @@ export type SlideInfo = {
 
 export type TemplateSlideInfo = {
   name: string;
+  layoutName: string;
+  layoutPlaceholders: PlaceholderInfo[]
 };
 
 export type ElementType =
@@ -63,10 +65,17 @@ export type ElementType =
   | 'pic'
   | 'cxnSp';
 
+export type PlaceholderInfo = {
+  type: string;
+  sz: string;
+  idx: number;
+};
+
 export type ElementInfo = {
   name: string;
   type: ElementType;
   id: string;
+  creationId: string;
   position: {
     x: number;
     y: number;
@@ -74,11 +83,7 @@ export type ElementInfo = {
     cy: number;
     rot?: number;
   };
-  placeholder: {
-    type: string;
-    sz: string;
-    idx: number;
-  };
+  placeholder: PlaceholderInfo;
   hasTextBody: boolean;
   getText: () => string[];
   getParagraphs: () => TextParagraph[];
@@ -94,7 +99,7 @@ export type GroupInfo = {
   isParent: boolean;
   getParent: () => XmlElement;
   getChildren: () => XmlElement[];
-}
+};
 
 export type TextParagraphProps = {
   isBold?: boolean;

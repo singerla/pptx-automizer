@@ -8,7 +8,7 @@ import {
   SourceIdentifier,
 } from '../types/types';
 import IArchive from './iarchive';
-import { ElementInfo } from '../types/xml-types';
+import { ElementInfo, SlideInfo, TemplateSlideInfo } from '../types/xml-types';
 
 export interface ISlide {
   sourceArchive: IArchive;
@@ -58,6 +58,8 @@ export interface ISlide {
   removeElement(selector: FindElementSelector): ISlide;
 
   useSlideLayout(targetLayout?: number | string): ISlide;
+
+  mergeIntoSlideLayout(targetLayout: string, slidesInfo: SlideInfo[]): Promise<ISlide>
 
   getElement(selector: FindElementSelector): Promise<ElementInfo>;
 

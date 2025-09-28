@@ -38,7 +38,7 @@ import { XmlSlideHelper } from '../helper/xml-slide-helper';
 import { OLEObject } from '../shapes/ole';
 import { Hyperlink } from '../shapes/hyperlink';
 import { HyperlinkProcessor } from '../helper/hyperlink-processor';
-import { Logger, vd } from '../helper/general-helper';
+import { GeneralHelper, vd } from '../helper/general-helper';
 
 export default class HasShapes {
   /**
@@ -127,7 +127,7 @@ export default class HasShapes {
     // 'p:oleObj',
     // 'mc:AlternateContent',
     // 'a14:imgProps',
-    'a14:imgLayer'
+    // 'a14:imgLayer'
   ];
   /**
    * List of unsupported tags in slide xml
@@ -343,13 +343,45 @@ export default class HasShapes {
     mode: string,
     callback?: ShapeModificationCallback | ShapeModificationCallback[],
   ): void {
-    this.importElements.push({
-      presName,
-      slideNumber,
-      selector,
-      mode,
-      callback,
+    // Check if an element with the same selector is already imported in modify mode
+    const existingElement = this.importElements.find((element) => {
+      if (
+        typeof selector === 'object' &&
+        typeof element.selector === 'object'
+      ) {
+        const creaId1 = selector.creationId.replace('{', '').replace('}', '');
+        const creaId2 = element.selector.creationId
+          .replace('{', '')
+          .replace('}', '');
+
+        return selector.name === element.selector.name && creaId1 === creaId2;
+      }
     });
+
+    if (existingElement && mode === 'modify') {
+      if (callback) {
+        const addCallback = GeneralHelper.arrayify(callback);
+
+        if (existingElement.callback) {
+          existingElement.callback = GeneralHelper.arrayify(
+            existingElement.callback,
+          );
+        }
+
+        if (Array.isArray(existingElement.callback)) {
+          existingElement.callback.push(...addCallback);
+        }
+      }
+    } else {
+      // If the element is not already imported or not in modify mode, add it as a new import
+      this.importElements.push({
+        presName,
+        slideNumber,
+        selector,
+        mode,
+        callback,
+      });
+    }
   }
 
   /**
@@ -1045,7 +1077,7 @@ export default class HasShapes {
         XmlHelper.sliceCollection(drop, 0);
 
         // Check each parent and remove it if it has no children left
-        parents.forEach(parent => {
+        parents.forEach((parent) => {
           if (parent.childNodes.length === 0) {
             XmlHelper.remove(parent);
           }
