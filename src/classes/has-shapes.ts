@@ -347,7 +347,9 @@ export default class HasShapes {
     const existingElement = this.importElements.find((element) => {
       if (
         typeof selector === 'object' &&
-        typeof element.selector === 'object'
+        typeof element.selector === 'object' &&
+        selector.creationId &&
+        element.selector?.creationId
       ) {
         const creaId1 = selector.creationId.replace('{', '').replace('}', '');
         const creaId2 = element.selector.creationId
