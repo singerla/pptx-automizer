@@ -185,4 +185,76 @@ export default class ModifyShapeHelper {
         xfrm.setAttribute('rot', String(Math.round(degrees * 60000)));
       }
     };
+
+  /**
+   * Apply rounded corners to a shape with a fixed corner radius
+   * @param degree Corner radius in EMU units (1 cm = 360000 EMU)
+   */
+  static roundedCorners = (degree: number) => (element: XmlElement): void => {
+    // Find the spPr element where we need to add or modify the a:prstGeom element
+    const spPr = element.getElementsByTagName('p:spPr')[0] ||
+      element.getElementsByTagName('a:spPr')[0];
+
+    if (!spPr) {
+      return; // Cannot find spPr element
+    }
+
+    // Get the shape dimensions to calculate the appropriate adjustment value
+    const xfrm = ModifyShapeHelper.ensureTransformElements(element);
+    if (!xfrm) {
+      return; // Cannot proceed without proper transformation data
+    }
+
+    // Get current width and height
+    const width = Number(xfrm.getElementsByTagName('a:ext')[0].getAttribute('cx'));
+    const height = Number(xfrm.getElementsByTagName('a:ext')[0].getAttribute('cy'));
+
+    // Calculate the adjustment value (percentage)
+    // The adjustment is a percentage (0-100000) of the smaller dimension
+    const minDimension = Math.min(width, height);
+
+    // Ensure degree is within reasonable bounds (PowerPoint uses 0-50% for rounded rect)
+    const clampedDegree = Math.max(0, Math.min(degree, minDimension / 2));
+
+    // Calculate the adjustment value (0-100000 where 100000 is 100%)
+    // PowerPoint uses the percentage of the shorter dimension for corners
+    const adjValue = Math.round((clampedDegree / minDimension) * 100000);
+
+    // Remove any existing prstGeom element
+    const existingPrstGeom = spPr.getElementsByTagName('a:prstGeom')[0];
+    if (existingPrstGeom) {
+      spPr.removeChild(existingPrstGeom);
+    }
+
+    // Create the new prstGeom element with the roundRect preset
+    const prstGeom = element.ownerDocument.createElement('a:prstGeom');
+    prstGeom.setAttribute('prst', 'roundRect');
+
+    // Create the avLst element and the adjustment value
+    const avLst = element.ownerDocument.createElement('a:avLst');
+    const gd = element.ownerDocument.createElement('a:gd');
+    gd.setAttribute('name', 'adj');
+    gd.setAttribute('fmla', `val ${adjValue}`);
+
+    // Build the element hierarchy
+    avLst.appendChild(gd);
+    prstGeom.appendChild(avLst);
+
+    // Add the new prstGeom element to spPr at the appropriate position
+    // It should be added after xfrm but before other elements
+    const xfrmElement = spPr.getElementsByTagName('a:xfrm')[0];
+
+    if (xfrmElement && xfrmElement.nextSibling) {
+      spPr.insertBefore(prstGeom, xfrmElement.nextSibling);
+    } else {
+      spPr.appendChild(prstGeom);
+    }
+
+    // Check for noFill element - for picture elements, we need to remove noFill
+    // otherwise the picture will be invisible when we apply rounded corners
+    const noFillElement = spPr.getElementsByTagName('a:noFill')[0];
+    if (noFillElement) {
+      spPr.removeChild(noFillElement);
+    }
+  }
 }
