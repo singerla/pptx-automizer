@@ -499,11 +499,19 @@ export class XmlSlideHelper {
       return;
     }
 
-    return {
+    const idx = info.getAttribute('idx')
+
+    const placeholder = {
       type: info.getAttribute('type'),
       sz: info.getAttribute('sz'),
-      idx: parseInt(info.getAttribute('idx')),
-    };
+      idx: idx?.length ? parseInt(idx) : null,
+    }
+
+    if(!placeholder?.type && placeholder?.idx !== null) {
+      placeholder.type = "body"
+    }
+
+    return placeholder
   };
 
   /**

@@ -126,7 +126,9 @@ export class Slide extends HasShapes implements ISlide {
       slidesInfo.find((slide) => slide.info.layoutName === targetLayout)?.info
         .layoutPlaceholders || [];
 
-    // vd(layoutPlaceholders)
+    vd(layoutPlaceholders)
+    vd(elements.map(element => element.placeholder))
+    vd(elements.map(element => element.type))
 
     const usedPlaceholders: number[] = [];
     const unmatchedPhElements: ElementInfo[] = [];
@@ -150,9 +152,9 @@ export class Slide extends HasShapes implements ISlide {
     });
 
     unmatchedPhElements.forEach((element) => {
-      const forceType = !element.placeholder.type
-        ? 'body'
-        : element.placeholder.type;
+      const forceType = element.placeholder.type === 'title'
+        ? 'ctrTitle'
+        : 'subTitle';
 
       const matchesPlaceholder = this.applyPlaceholderToElement(
         layoutPlaceholders,
@@ -162,28 +164,15 @@ export class Slide extends HasShapes implements ISlide {
       );
 
       if (!matchesPlaceholder) {
-        const forceType = element.placeholder.type === 'title'
-          ? 'ctrTitle'
-          : 'subTitle';
-
-        const matchesPlaceholder2 = this.applyPlaceholderToElement(
-          layoutPlaceholders,
-          forceType,
-          usedPlaceholders,
-          element,
+        this.modifyElement(
+          {
+            creationId: element.creationId,
+            name: element.name,
+          },
+          (element) => {
+            XmlPlaceholderHelper.removePlaceholder(element)
+          },
         );
-
-        if (!matchesPlaceholder2) {
-          this.modifyElement(
-            {
-              creationId: element.creationId,
-              name: element.name,
-            },
-            (element) => {
-              XmlPlaceholderHelper.removePlaceholder(element)
-            },
-          );
-        }
       }
     });
 
