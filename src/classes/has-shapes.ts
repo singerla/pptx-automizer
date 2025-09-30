@@ -38,7 +38,7 @@ import { XmlSlideHelper } from '../helper/xml-slide-helper';
 import { OLEObject } from '../shapes/ole';
 import { Hyperlink } from '../shapes/hyperlink';
 import { HyperlinkProcessor } from '../helper/hyperlink-processor';
-import { GeneralHelper, vd } from '../helper/general-helper';
+import { vd } from '../helper/general-helper';
 
 export default class HasShapes {
   /**
@@ -343,14 +343,29 @@ export default class HasShapes {
     mode: string,
     callback?: ShapeModificationCallback | ShapeModificationCallback[],
   ): void {
+    this.importElements.push({
+      presName,
+      slideNumber,
+      selector,
+      mode,
+      callback,
+    });
+  }
+
+  getAlreadyModifiedElement(selector: FindElementSelector) {
     // Check if an element with the same selector is already imported in modify mode
     const existingElement = this.importElements.find((element) => {
       if (
-        typeof selector === 'object' &&
-        typeof element.selector === 'object' &&
-        selector.creationId &&
-        element.selector?.creationId
+        typeof selector !== 'object' ||
+        typeof element.selector !== 'object'
       ) {
+        return;
+      }
+
+      if (!selector.creationId) {
+        // Match by name and nameIdx only if the shape has no creationId
+        return selector.name === element.selector.name && selector.nameIdx === element.selector.nameIdx;
+      } else if (selector.creationId && element.selector?.creationId) {
         const creaId1 = selector.creationId.replace('{', '').replace('}', '');
         const creaId2 = element.selector.creationId
           .replace('{', '')
@@ -359,31 +374,7 @@ export default class HasShapes {
         return selector.name === element.selector.name && creaId1 === creaId2;
       }
     });
-
-    if (existingElement && mode === 'modify') {
-      if (callback) {
-        const addCallback = GeneralHelper.arrayify(callback);
-
-        if (existingElement.callback) {
-          existingElement.callback = GeneralHelper.arrayify(
-            existingElement.callback,
-          );
-        }
-
-        if (Array.isArray(existingElement.callback)) {
-          existingElement.callback.push(...addCallback);
-        }
-      }
-    } else {
-      // If the element is not already imported or not in modify mode, add it as a new import
-      this.importElements.push({
-        presName,
-        slideNumber,
-        selector,
-        mode,
-        callback,
-      });
-    }
+    return existingElement;
   }
 
   /**
@@ -573,14 +564,18 @@ export default class HasShapes {
         mode: 'findByElementName',
         selector: selector,
       });
-    } else if (selector.name) {
-      strategies.push({
-        mode: 'findByElementCreationId',
-        selector: selector.creationId,
-      });
+    } else {
+      if(selector.creationId) {
+        strategies.push({
+          mode: 'findByElementCreationId',
+          selector: selector.creationId,
+        });
+      }
+
       strategies.push({
         mode: 'findByElementName',
         selector: selector.name,
+        nameIdx: selector.nameIdx
       });
     }
 
@@ -591,6 +586,7 @@ export default class HasShapes {
         sourceArchive,
         sourcePath,
         findElement.selector,
+        findElement.nameIdx,
       );
 
       if (sourceElement) {

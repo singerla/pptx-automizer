@@ -114,10 +114,14 @@ export class XmlSlideHelper {
   }
 
   static getElementInfo(slideElement: XmlElement): ElementInfo {
+    const creationId = XmlSlideHelper.getElementCreationId(slideElement, true);
+    const nameIdx = (!creationId) ? XmlSlideHelper.getElementNameIdx(slideElement) : 0;
+
     return {
       name: XmlSlideHelper.getElementName(slideElement),
       id: XmlSlideHelper.getElementCreationId(slideElement),
-      creationId: XmlSlideHelper.getElementCreationId(slideElement, true),
+      creationId,
+      nameIdx,
       type: XmlSlideHelper.getElementType(slideElement),
       position: XmlSlideHelper.parseShapeCoordinates(slideElement),
       placeholder: XmlSlideHelper.parsePlaceholderInfo(slideElement),
@@ -367,6 +371,45 @@ export class XmlSlideHelper {
         return id;
       }
     }
+  }
+
+  static getElementNameIdx(
+    slideElement: XmlElement,
+  ): number {
+    const elementName = XmlSlideHelper.getElementName(slideElement);
+    if (!elementName) {
+      return 0;
+    }
+
+    // Find the parent slide element (spTree) to search all elements on the slide
+    const currentNode = XmlHelper.getClosestParent('p:spTree', slideElement)
+
+    if (!currentNode) {
+      return 0; // Unable to find slide parent
+    }
+
+    const spTree = currentNode as XmlElement;
+
+    // Get all named elements from the slide
+    const namedElements: XmlElement[] = [];
+    const nvPrs = spTree.getElementsByTagNameNS(nsMain, 'cNvPr');
+
+    XmlHelper.modifyCollection(nvPrs, (nvPr: any) => {
+      const parentNode = nvPr.parentNode.parentNode;
+      const name = nvPr.getAttribute('name');
+      if (name === elementName) {
+        namedElements.push(parentNode);
+      }
+    });
+
+    // Find the index of the current element in the array of elements with the same name
+    for (let i = 0; i < namedElements.length; i++) {
+      if (namedElements[i] === slideElement) {
+        return i;
+      }
+    }
+
+    return 0;
   }
 
   /**

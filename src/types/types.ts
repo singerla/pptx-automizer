@@ -251,18 +251,22 @@ export type GenerateElements = {
   addedObjects?: AddedObject[];
 };
 export type AddedObject = {
-  objectName: string,
-  callbacks: ModificationCallback[]
-}
+  objectName: string;
+  callbacks: ModificationCallback[];
+};
 export type FindElementSelector =
   | string
   | {
-      creationId: string;
+      creationId?: string;
       name: string;
+      // Specify the nth occurance in case you have more than one
+      // shape with the same name on your template slide:
+      nameIdx?: number;
     };
 export type FindElementStrategy = {
   mode: 'findByElementCreationId' | 'findByElementName';
   selector: string;
+  nameIdx?: number;
 };
 export type ImportedElement = {
   mode: string;

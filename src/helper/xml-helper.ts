@@ -419,6 +419,7 @@ export class XmlHelper {
     archive: IArchive,
     path: string,
     creationId: string,
+    nameIdx?: number
   ): Promise<XmlElement> {
     const slideXml = await XmlHelper.getXmlFromArchive(archive, path);
 
@@ -429,18 +430,28 @@ export class XmlHelper {
     archive: IArchive,
     path: string,
     name: string,
+    nameIdx?: number
   ): Promise<XmlElement> {
     const slideXml = await XmlHelper.getXmlFromArchive(archive, path);
 
-    return XmlHelper.findByName(slideXml, name);
+    return XmlHelper.findByName(slideXml, name, nameIdx);
   }
 
-  static findByName(doc: Document, name: string): XmlElement {
+  static findByName(doc: Document, name: string, nameIdx?: number): XmlElement {
     const names = doc.getElementsByTagName('p:cNvPr');
+    let matchCount = 0;
 
-    for (const i in names) {
-      if (names[i].getAttribute && names[i].getAttribute('name') === name) {
-        return names[i].parentNode.parentNode as XmlElement;
+    // Default nameIdx to 0 if not provided
+    const targetIdx = nameIdx !== undefined ? nameIdx : 0;
+
+    for (let i = 0; i < names.length; i++) {
+      const item = names.item(i);
+      if (item && item.getAttribute && item.getAttribute('name') === name) {
+        // Check if this is the occurrence we're looking for
+        if (matchCount === targetIdx) {
+          return item.parentNode.parentNode as XmlElement;
+        }
+        matchCount++;
       }
     }
 

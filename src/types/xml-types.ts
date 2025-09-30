@@ -76,6 +76,7 @@ export type ElementInfo = {
   type: ElementType;
   id: string;
   creationId: string;
+  nameIdx: number;
   position: {
     x: number;
     y: number;
