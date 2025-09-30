@@ -3,12 +3,14 @@ import { XmlHelper } from './xml-helper';
 import { ShapeCoordinates } from '../types/shape-types';
 
 export default class XmlPlaceholderHelper {
-  static resetPlaceholderToDefaults(element: XmlElement, layoutPlaceholder: PlaceholderInfo): void {
+  static setPlaceholderDefaults(element: XmlElement, layoutPlaceholder: PlaceholderInfo): void {
     // Get the placeholder element
     const ph = element.getElementsByTagName('p:ph').item(0);
 
-    // Set the index to match the layout placeholder
-    ph.setAttribute('idx', String(layoutPlaceholder.idx));
+    if(ph) {
+      // Set the index to match the layout placeholder
+      ph.setAttribute('idx', String(layoutPlaceholder.idx));
+    }
 
     // Reset all positioning information
     const xfrm = element.getElementsByTagName('a:xfrm').item(0);

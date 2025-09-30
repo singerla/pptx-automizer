@@ -1,18 +1,26 @@
 import { FileHelper } from '../helper/file-helper';
-import { ShapeTargetType, SourceIdentifier } from '../types/types';
+import {
+  ShapeModificationCallback,
+  ShapeTargetType,
+  SourceIdentifier,
+} from '../types/types';
 import { ISlide } from '../interfaces/islide';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
 import { PresTemplate } from '../interfaces/pres-template';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
-import { last, vd } from '../helper/general-helper';
+import { GeneralHelper, last, vd } from '../helper/general-helper';
 import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import { IMaster } from '../interfaces/imaster';
 import HasShapes from './has-shapes';
 import { Master } from './master';
 import ModifyPresentationHelper from '../helper/modify-presentation-helper';
-import { ElementInfo, PlaceholderInfo, SlideInfo } from '../types/xml-types';
+import {
+  ElementInfo,
+  PlaceholderInfo,
+  SlideInfo,
+  XmlElement,
+} from '../types/xml-types';
 import XmlPlaceholderHelper from '../helper/xml-placeholder-helper';
-import { XmlHelper } from '../helper/xml-helper';
 
 export class Slide extends HasShapes implements ISlide {
   targetType: ShapeTargetType = 'slide';
@@ -126,35 +134,31 @@ export class Slide extends HasShapes implements ISlide {
       slidesInfo.find((slide) => slide.info.layoutName === targetLayout)?.info
         .layoutPlaceholders || [];
 
-    vd(layoutPlaceholders)
-    vd(elements.map(element => element.placeholder))
-    vd(elements.map(element => element.type))
+    // vd('sourcePlaceholders: ')
+    // vd(elements.map(element => element.placeholder))
+    // vd('targetPlaceholders: ')
+    // vd(layoutPlaceholders)
 
     const usedPlaceholders: number[] = [];
     const unmatchedPhElements: ElementInfo[] = [];
     elements.forEach((element: ElementInfo) => {
-      if (element.placeholder) {
-        if (element.placeholder.type) {
-          const matchesPlaceholder = this.applyPlaceholderToElement(
-            layoutPlaceholders,
-            element.placeholder.type,
-            usedPlaceholders,
-            element,
-          );
+      if (element.placeholder?.type) {
+        const matchesPlaceholder = this.applyPlaceholderToElement(
+          layoutPlaceholders,
+          element.placeholder.type,
+          usedPlaceholders,
+          element,
+        );
 
-          if (!matchesPlaceholder) {
-            unmatchedPhElements.push(element);
-          }
-        } else {
+        if (!matchesPlaceholder) {
           unmatchedPhElements.push(element);
         }
       }
     });
 
     unmatchedPhElements.forEach((element) => {
-      const forceType = element.placeholder.type === 'title'
-        ? 'ctrTitle'
-        : 'subTitle';
+      const forceType =
+        element.placeholder.type === 'title' ? 'ctrTitle' : 'subTitle';
 
       const matchesPlaceholder = this.applyPlaceholderToElement(
         layoutPlaceholders,
@@ -164,15 +168,10 @@ export class Slide extends HasShapes implements ISlide {
       );
 
       if (!matchesPlaceholder) {
-        this.modifyElement(
-          {
-            creationId: element.creationId,
-            name: element.name,
-          },
-          (element) => {
-            XmlPlaceholderHelper.removePlaceholder(element)
-          },
-        );
+        const callback = (element) => {
+          XmlPlaceholderHelper.removePlaceholder(element);
+        };
+        this.postApplyModification(element, callback);
       }
     });
 
@@ -199,22 +198,35 @@ export class Slide extends HasShapes implements ISlide {
         matchPlaceholders,
       );
       usedPlaceholders.push(matchPlaceholder.idx);
+      const callback = (element: XmlElement) => {
+        XmlPlaceholderHelper.setPlaceholderDefaults(element, matchPlaceholder);
+      };
+      this.postApplyModification(element, callback);
 
-      this.modifyElement(
-        {
-          creationId: element.creationId,
-          name: element.name,
-        },
-        (element) => {
-          XmlPlaceholderHelper.resetPlaceholderToDefaults(
-            element,
-            matchPlaceholder,
-          );
-        },
-      );
       return true;
     }
     return false;
+  }
+
+  postApplyModification(
+    element: ElementInfo,
+    callback: ShapeModificationCallback,
+  ) {
+    const selector = {
+      creationId: element.creationId,
+      nameIdx: element.nameIdx,
+      name: element.name,
+    };
+
+    const alreadyModified = this.getAlreadyModifiedElement(selector);
+    if (alreadyModified) {
+      alreadyModified.callback = GeneralHelper.arrayify(
+        alreadyModified.callback,
+      );
+      alreadyModified.callback.push(callback);
+    } else {
+      this.modifyElement(selector, callback);
+    }
   }
 
   /**
