@@ -4,6 +4,7 @@ import { GeneralHelper } from './general-helper';
 import TextReplaceHelper from './text-replace-helper';
 import ModifyTextHelper from './modify-text-helper';
 import { XmlElement } from '../types/xml-types';
+import { XmlHelper } from './xml-helper';
 
 const map = {
   x: { tag: 'a:off', attribute: 'x' },
@@ -190,71 +191,150 @@ export default class ModifyShapeHelper {
    * Apply rounded corners to a shape with a fixed corner radius
    * @param degree Corner radius in EMU units (1 cm = 360000 EMU)
    */
-  static roundedCorners = (degree: number) => (element: XmlElement): void => {
-    // Find the spPr element where we need to add or modify the a:prstGeom element
-    const spPr = element.getElementsByTagName('p:spPr')[0] ||
+  static roundedCorners =
+    (degree: number) =>
+    (element: XmlElement): void => {
+      // Find the spPr element where we need to add or modify the a:prstGeom element
+      const spPr =
+        element.getElementsByTagName('p:spPr')[0] ||
+        element.getElementsByTagName('a:spPr')[0];
+
+      if (!spPr) {
+        return; // Cannot find spPr element
+      }
+
+      // Get the shape dimensions to calculate the appropriate adjustment value
+      const xfrm = ModifyShapeHelper.ensureTransformElements(element);
+      if (!xfrm) {
+        return; // Cannot proceed without proper transformation data
+      }
+
+      // Get current width and height
+      const width = Number(
+        xfrm.getElementsByTagName('a:ext')[0].getAttribute('cx'),
+      );
+      const height = Number(
+        xfrm.getElementsByTagName('a:ext')[0].getAttribute('cy'),
+      );
+
+      // Calculate the adjustment value (percentage)
+      // The adjustment is a percentage (0-100000) of the smaller dimension
+      const minDimension = Math.min(width, height);
+
+      // Ensure degree is within reasonable bounds (PowerPoint uses 0-50% for rounded rect)
+      const clampedDegree = Math.max(0, Math.min(degree, minDimension / 2));
+
+      // Calculate the adjustment value (0-100000 where 100000 is 100%)
+      // PowerPoint uses the percentage of the shorter dimension for corners
+      const adjValue = Math.round((clampedDegree / minDimension) * 100000);
+
+      // Remove any existing prstGeom element
+      const existingPrstGeom = spPr.getElementsByTagName('a:prstGeom')[0];
+      if (existingPrstGeom) {
+        spPr.removeChild(existingPrstGeom);
+      }
+
+      // Create the new prstGeom element with the roundRect preset
+      const prstGeom = element.ownerDocument.createElement('a:prstGeom');
+      prstGeom.setAttribute('prst', 'roundRect');
+
+      // Create the avLst element and the adjustment value
+      const avLst = element.ownerDocument.createElement('a:avLst');
+      const gd = element.ownerDocument.createElement('a:gd');
+      gd.setAttribute('name', 'adj');
+      gd.setAttribute('fmla', `val ${adjValue}`);
+
+      // Build the element hierarchy
+      avLst.appendChild(gd);
+      prstGeom.appendChild(avLst);
+
+      // Add the new prstGeom element to spPr at the appropriate position
+      // It should be added after xfrm but before other elements
+      const xfrmElement = spPr.getElementsByTagName('a:xfrm')[0];
+
+      if (xfrmElement && xfrmElement.nextSibling) {
+        spPr.insertBefore(prstGeom, xfrmElement.nextSibling);
+      } else {
+        spPr.appendChild(prstGeom);
+      }
+
+      // Check for noFill element - for picture elements, we need to remove noFill
+      // otherwise the picture will be invisible when we apply rounded corners
+      const noFillElement = spPr.getElementsByTagName('a:noFill')[0];
+      if (noFillElement) {
+        spPr.removeChild(noFillElement);
+      }
+    };
+
+  /**
+   * Removes background color and fill elements from a shape
+   * This removes both visible and hidden fill properties
+   * @param element The XML element representing the shape
+   */
+  static removeBackground = (element: XmlElement): void => {
+    // Find the spPr (ShapeProperties) element where fill properties are defined
+    const spPr =
+      element.getElementsByTagName('p:spPr')[0] ||
       element.getElementsByTagName('a:spPr')[0];
 
     if (!spPr) {
-      return; // Cannot find spPr element
+      return; // No shape properties found, nothing to remove
     }
 
-    // Get the shape dimensions to calculate the appropriate adjustment value
-    const xfrm = ModifyShapeHelper.ensureTransformElements(element);
-    if (!xfrm) {
-      return; // Cannot proceed without proper transformation data
+    // Remove all types of fill elements
+    // 1. solidFill - used for solid color backgrounds
+    const solidFill = spPr.getElementsByTagName('a:solidFill')[0];
+    if (solidFill) {
+      XmlHelper.remove(solidFill);
     }
 
-    // Get current width and height
-    const width = Number(xfrm.getElementsByTagName('a:ext')[0].getAttribute('cx'));
-    const height = Number(xfrm.getElementsByTagName('a:ext')[0].getAttribute('cy'));
-
-    // Calculate the adjustment value (percentage)
-    // The adjustment is a percentage (0-100000) of the smaller dimension
-    const minDimension = Math.min(width, height);
-
-    // Ensure degree is within reasonable bounds (PowerPoint uses 0-50% for rounded rect)
-    const clampedDegree = Math.max(0, Math.min(degree, minDimension / 2));
-
-    // Calculate the adjustment value (0-100000 where 100000 is 100%)
-    // PowerPoint uses the percentage of the shorter dimension for corners
-    const adjValue = Math.round((clampedDegree / minDimension) * 100000);
-
-    // Remove any existing prstGeom element
-    const existingPrstGeom = spPr.getElementsByTagName('a:prstGeom')[0];
-    if (existingPrstGeom) {
-      spPr.removeChild(existingPrstGeom);
+    // 2. gradFill - used for gradient backgrounds
+    const gradFill = spPr.getElementsByTagName('a:gradFill')[0];
+    if (gradFill) {
+      XmlHelper.remove(gradFill);
     }
 
-    // Create the new prstGeom element with the roundRect preset
-    const prstGeom = element.ownerDocument.createElement('a:prstGeom');
-    prstGeom.setAttribute('prst', 'roundRect');
-
-    // Create the avLst element and the adjustment value
-    const avLst = element.ownerDocument.createElement('a:avLst');
-    const gd = element.ownerDocument.createElement('a:gd');
-    gd.setAttribute('name', 'adj');
-    gd.setAttribute('fmla', `val ${adjValue}`);
-
-    // Build the element hierarchy
-    avLst.appendChild(gd);
-    prstGeom.appendChild(avLst);
-
-    // Add the new prstGeom element to spPr at the appropriate position
-    // It should be added after xfrm but before other elements
-    const xfrmElement = spPr.getElementsByTagName('a:xfrm')[0];
-
-    if (xfrmElement && xfrmElement.nextSibling) {
-      spPr.insertBefore(prstGeom, xfrmElement.nextSibling);
-    } else {
-      spPr.appendChild(prstGeom);
+    // 3. blipFill - used for image backgrounds
+    const blipFill = spPr.getElementsByTagName('a:blipFill')[0];
+    if (blipFill) {
+      XmlHelper.remove(blipFill);
     }
 
-    // Check for noFill element - for picture elements, we need to remove noFill
-    // otherwise the picture will be invisible when we apply rounded corners
-    const noFillElement = spPr.getElementsByTagName('a:noFill')[0];
-    if (noFillElement) {
-      spPr.removeChild(noFillElement);
+    // 4. pattFill - used for pattern backgrounds
+    const pattFill = spPr.getElementsByTagName('a:pattFill')[0];
+    if (pattFill) {
+      XmlHelper.remove(pattFill);
     }
-  }
+
+    // 5. grpFill - used when inheriting fill from parent group
+    const grpFill = spPr.getElementsByTagName('a:grpFill')[0];
+    if (grpFill) {
+      XmlHelper.remove(grpFill);
+    }
+
+    // Add noFill element to explicitly indicate no background
+    // Only add if there's no noFill element already
+    const noFill = spPr.getElementsByTagName('a:noFill')[0];
+    if (!noFill) {
+      const newNoFill = element.ownerDocument.createElement('a:noFill');
+
+      // Insert noFill after xfrm if it exists, otherwise as the first child
+      const xfrm =
+        spPr.getElementsByTagName('a:xfrm')[0] ||
+        spPr.getElementsByTagName('p:xfrm')[0];
+
+      if (xfrm && xfrm.nextSibling) {
+        spPr.insertBefore(newNoFill, xfrm.nextSibling);
+      } else if (xfrm) {
+        spPr.appendChild(newNoFill);
+      } else {
+        // If no xfrm, add as the first child
+        if (spPr.firstChild) {
+          spPr.insertBefore(newNoFill, spPr.firstChild);
+        } else {
+          spPr.appendChild(newNoFill);
+        }
+      }
+    }
+  };
 }
