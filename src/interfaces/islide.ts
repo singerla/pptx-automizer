@@ -8,7 +8,12 @@ import {
   SourceIdentifier,
 } from '../types/types';
 import IArchive from './iarchive';
-import { ElementInfo, SlideInfo, TemplateSlideInfo } from '../types/xml-types';
+import {
+  ElementInfo,
+  PlaceholderInfo,
+  SlideInfo,
+  TemplateSlideInfo,
+} from '../types/xml-types';
 
 export interface ISlide {
   sourceArchive: IArchive;
@@ -59,7 +64,13 @@ export interface ISlide {
 
   useSlideLayout(targetLayout?: number | string): ISlide;
 
-  mergeIntoSlideLayout(targetLayout: string, slidesInfo: SlideInfo[]): Promise<ISlide>
+  /**
+   * Merges slide content into a specified slide layout by matching placeholders.
+   * @param targetLayout - The layout identifier to merge into
+   * @param matchPlaceholders - Array of placeholder information for content mapping
+   * @returns Promise resolving to the updated slide instance
+   */
+  mergeIntoSlideLayout(targetLayout: string, matchPlaceholders: PlaceholderInfo[]): Promise<ISlide>
 
   getElement(selector: FindElementSelector): Promise<ElementInfo>;
 

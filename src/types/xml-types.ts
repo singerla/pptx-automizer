@@ -1,5 +1,5 @@
 import IArchive from '../interfaces/iarchive';
-import { TableData, TableInfo } from './table-types';
+import { TableInfo } from './table-types';
 
 export type DefaultAttribute = {
   Extension: string;
@@ -54,7 +54,7 @@ export type SlideInfo = {
 export type TemplateSlideInfo = {
   name: string;
   layoutName: string;
-  layoutPlaceholders: PlaceholderInfo[]
+  layoutPlaceholders: PlaceholderInfo[];
 };
 
 export type ElementType =
@@ -65,10 +65,67 @@ export type ElementType =
   | 'pic'
   | 'cxnSp';
 
+export type ElementVisualType =
+  | 'chart'
+  | 'smartArt'
+  | 'diagram'
+  | 'graphicFrame'
+  | '3dModel'
+  | 'icon'
+  | 'picture'
+  | 'imageFilledShape'
+  | 'vectorShape'
+  | 'unknown';
+
+/**
+ * body - Body text placeholder
+ * title - Title placeholder
+ * ctrTitle - Center title placeholder
+ * subTitle - Subtitle placeholder
+ * dt - Date placeholder
+ * ftr - Footer placeholder
+ * sldNum - Slide number placeholder
+ * pic - Picture placeholder
+ * chart - Chart placeholder
+ * tbl - Table placeholder
+ * media - Media clip placeholder
+ * obj - Object placeholder
+ * dgm - Diagram placeholder
+ * clipArt - Clip art placeholder
+ * orgChart - Organization chart placeholder
+ * bitmap - Bitmap placeholder
+ * hdr - Header placeholder
+ * unknown - For cases where the type cannot be determined
+ */
+export type PlaceholderType =
+  | 'body'
+  | 'title'
+  | 'ctrTitle'
+  | 'subTitle'
+  | 'dt'
+  | 'ftr'
+  | 'sldNum'
+  | 'pic'
+  | 'chart'
+  | 'tbl'
+  | 'media'
+  | 'obj'
+  | 'dgm'
+  | 'clipArt'
+  | 'orgChart'
+  | 'bitmap'
+  | 'hdr'
+  | 'unknown';
+
 export type PlaceholderInfo = {
-  type: string;
+  type: PlaceholderType;
   sz: string;
   idx: number;
+  elementType?: ElementType;
+  // We can use the ph layout position as fallback.
+  // Some ph shapes on a slide do not have coordinates, but inherit
+  // them from the placeholder.
+  position?: ElementPosition;
 };
 
 export type ElementInfo = {
@@ -77,13 +134,7 @@ export type ElementInfo = {
   id: string;
   creationId: string;
   nameIdx: number;
-  position: {
-    x: number;
-    y: number;
-    cx: number;
-    cy: number;
-    rot?: number;
-  };
+  position: ElementPosition;
   placeholder: PlaceholderInfo;
   hasTextBody: boolean;
   getText: () => string[];
@@ -93,6 +144,35 @@ export type ElementInfo = {
   getTableInfo: () => TableInfo[];
   getXmlElement: () => XmlElement;
   getGroupInfo: () => GroupInfo;
+};
+
+export type LayoutInfo = {
+  layoutName: string;
+  placeholders: PlaceholderInfo[];
+};
+
+/**
+ * Result object for tracking placeholder mapping operations
+ */
+export type PlaceholderMappingResult = {
+  /** Array of placeholders that have been assigned to elements */
+  usedPlaceholders: PlaceholderInfo[];
+  /** Array of elements that couldn't be matched to placeholders */
+  unmatchedElements: ElementInfo[];
+};
+
+export type ElementPosition = {
+  x: number;
+  y: number;
+  cx: number;
+  cy: number;
+  rot?: number;
+};
+
+export type SlideHelperProps = {
+  sourceArchive: IArchive;
+  slideNumber: number;
+  sourceLayoutId?: number;
 };
 
 export type GroupInfo = {

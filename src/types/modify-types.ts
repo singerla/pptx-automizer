@@ -34,8 +34,12 @@ export type ModificationTags = {
 export type Color = {
   type?: 'schemeClr' | 'srgbClr';
   value: string;
+  shade?: string | number; // Shade value (e.g. "50000")
+  tint?: string | number;  // Tint value (e.g. "20000")
+  // satMod?: string | number; // Saturation modifier
+  // lumMod?: string | number; // Luminance modifier
+  // alpha?: string | number; // Alpha/transparency value
 };
-
 export type Border = {
   tag: 'lnL' | 'lnR' | 'lnT' | 'lnB';
   type?: 'solid' | 'sysDot' | string;

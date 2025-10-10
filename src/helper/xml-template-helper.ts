@@ -1,7 +1,7 @@
-import JSZip from 'jszip';
 import { Target } from '../types/types';
 import {
-  ElementInfo, PlaceholderInfo,
+  LayoutInfo,
+  PlaceholderInfo,
   SlideInfo,
   TemplateSlideInfo,
   XmlDocument,
@@ -11,12 +11,13 @@ import { XmlHelper } from './xml-helper';
 import IArchive from '../interfaces/iarchive';
 import { XmlRelationshipHelper } from './xml-relationship-helper';
 import { XmlSlideHelper } from './xml-slide-helper';
-import { vd } from './general-helper';
+import XmlPlaceholderHelper from './xml-placeholder-helper';
 
 export class XmlTemplateHelper {
   archive: IArchive;
   relType: string;
   relTypeNotes: string;
+  relTypeLayout: string;
   path: string;
   defaultSlideName: string;
 
@@ -25,6 +26,8 @@ export class XmlTemplateHelper {
       'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide';
     this.relTypeNotes =
       'http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide';
+    this.relTypeLayout =
+      'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout';
     this.archive = archive;
     this.path = 'ppt/_rels/presentation.xml.rels';
     this.defaultSlideName = 'untitled';
@@ -56,7 +59,13 @@ export class XmlTemplateHelper {
           continue;
         }
 
-        const slideHelper = new XmlSlideHelper(slideXml);
+        const number = this.parseSlideRelFile(slideRel.file);
+
+        const slideHelper = new XmlSlideHelper(slideXml, {
+          sourceArchive: archive,
+          slideNumber: number,
+        });
+
         const creationIdSlide = slideHelper.getSlideCreationId();
         if (!creationIdSlide) {
           console.warn(`No creationId found in ${slideRel.file}`);
@@ -70,8 +79,8 @@ export class XmlTemplateHelper {
 
         creationIds.push({
           id: creationIdSlide,
-          number: this.parseSlideRelFile(slideRel.file),
-          elements: slideHelper.getAllElements(),
+          number,
+          elements: slideHelper.getAllElements([], slideInfo),
           info: slideInfo,
         });
       } catch (err) {
@@ -93,12 +102,13 @@ export class XmlTemplateHelper {
 
   async getSlideInfo(
     slideXml: XmlDocument,
-    archive,
+    archive: IArchive,
     slideRelFile: string,
   ): Promise<TemplateSlideInfo> {
     let name;
-    let layoutName = '';
-    const placeholders: PlaceholderInfo[] = [];
+
+    const slideLayoutXml = await this.getSlideLayoutXml(archive, slideRelFile);
+    const layoutInfo = XmlTemplateHelper.getLayoutInfo(slideLayoutXml);
 
     const slideNoteRels = await this.getSlideNoteRels(archive, slideRelFile);
     if (slideNoteRels.length > 0) {
@@ -111,61 +121,75 @@ export class XmlTemplateHelper {
 
     name = !name ? this.defaultSlideName : name;
 
+    return {
+      name: name,
+      layoutName: layoutInfo.layoutName,
+      layoutPlaceholders: layoutInfo.placeholders,
+    };
+  }
+
+  async getSlideLayoutXml(
+    archive: IArchive,
+    slideRelFile: string,
+  ): Promise<XmlDocument> {
     // Get slide layout information
     try {
-      // Get the slide layout relationship
       const relFileName = slideRelFile.replace('slides', '');
-      const slideRels = await XmlHelper.getXmlFromArchive(
+      const relPath = `ppt/slides/_rels${relFileName}.rels`;
+
+      // Get the slide layout relationship using the existing getTargetsByRelationshipType
+      const layoutRels = await XmlHelper.getTargetsByRelationshipType(
         archive,
-        `ppt/slides/_rels${relFileName}.rels`,
+        relPath,
+        this.relTypeLayout,
       );
 
-      if (slideRels) {
-        // Find the relationship with type "slideLayout"
-        const relationships = slideRels.getElementsByTagName('Relationship');
-        for (let i = 0; i < relationships.length; i++) {
-          const relationship = relationships.item(i);
-          const relType = relationship.getAttribute('Type');
+      // If we found a layout relationship
+      if (layoutRels.length > 0) {
+        const target = layoutRels[0].file;
 
-          if (relType && relType.endsWith('/slideLayout')) {
-            const target = relationship.getAttribute('Target');
+        if (target) {
+          // Get the layout XML
+          const layoutPath = 'ppt/' + target.replace('../', '');
+          const layoutXml = await XmlHelper.getXmlFromArchive(
+            archive,
+            layoutPath,
+          );
 
-            if (target) {
-              // Get the layout XML
-              const layoutPath = 'ppt/' + target.replace('../', '');
-              const layoutXml = await XmlHelper.getXmlFromArchive(archive, layoutPath);
-
-              if (layoutXml) {
-                // Get layout name from the slideLayout XML
-                const cSldElement = layoutXml.getElementsByTagName('p:cSld').item(0);
-                if (cSldElement && cSldElement.getAttribute('name')) {
-                  layoutName = cSldElement.getAttribute('name');
-                }
-
-                // Get placeholders from the slideLayout
-                const phElements = layoutXml.getElementsByTagName('p:ph');
-                for (let j = 0; j < phElements.length; j++) {
-                  const ph = phElements.item(j);
-                  placeholders.push({
-                    type: ph.getAttribute('type'),
-                    sz: ph.getAttribute('sz'),
-                    idx: parseInt(ph.getAttribute('idx') || '0')
-                  });
-                }
-              }
-            }
-            break;
+          if (layoutXml) {
+            return layoutXml;
           }
         }
       }
     } catch (error) {
       console.error(`Error getting slide layout information: ${error.message}`);
     }
+  }
+
+  static getLayoutInfo(layoutXml: XmlDocument): LayoutInfo {
+    let layoutName = '';
+    const placeholders: PlaceholderInfo[] = [];
+
+    // Get layout name from the slideLayout XML
+    const cSldElement = layoutXml.getElementsByTagName('p:cSld').item(0);
+    if (cSldElement && cSldElement.getAttribute('name')) {
+      layoutName = cSldElement.getAttribute('name');
+    }
+
+    // Get placeholders from the slideLayout
+    const phElements = layoutXml.getElementsByTagName('p:ph');
+
+    for (let j = 0; j < phElements.length; j++) {
+      const ph = phElements.item(j);
+      const element = ph.parentNode.parentNode.parentNode as XmlElement;
+      const placeholderInfo = XmlPlaceholderHelper.getPlaceholderInfo(element);
+
+      placeholders.push(placeholderInfo);
+    }
 
     return {
-      name: name,
-      layoutName: layoutName,
-      layoutPlaceholders: placeholders
+      layoutName,
+      placeholders,
     };
   }
 

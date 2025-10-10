@@ -1,7 +1,12 @@
 import {
   ElementInfo,
+  ElementPosition,
   ElementType,
+  ElementVisualType,
   GroupInfo,
+  LayoutInfo,
+  SlideHelperProps,
+  TemplateSlideInfo,
   TextParagraph,
   TextParagraphGroup,
   XmlDocument,
@@ -11,6 +16,10 @@ import { XmlHelper } from './xml-helper';
 import HasShapes from '../classes/has-shapes';
 import { TableInfo } from '../types/table-types';
 import { vd } from './general-helper';
+import IArchive from '../interfaces/iarchive';
+import { Target } from '../types/types';
+import { XmlTemplateHelper } from './xml-template-helper';
+import XmlPlaceholderHelper from './xml-placeholder-helper';
 
 export const nsMain =
   'http://schemas.openxmlformats.org/presentationml/2006/main';
@@ -29,19 +38,23 @@ export const mapUriType = {
  */
 export class XmlSlideHelper {
   private slideXml: XmlDocument;
-  protected hasShapes: HasShapes;
+  protected sourceArchive: IArchive;
+  protected slideNumber: number;
+  protected sourceLayoutId: number;
 
   /**
    * Constructor for the XmlSlideHelper class.
    * @param {XmlDocument} slideXml - The slide XML document to be used by the helper.
    * @param hasShapes
    */
-  constructor(slideXml: XmlDocument, hasShapes?: HasShapes) {
+  constructor(slideXml: XmlDocument, params: SlideHelperProps) {
     if (!slideXml) {
       throw Error('Slide XML is not defined');
     }
     this.slideXml = slideXml;
-    this.hasShapes = hasShapes;
+    this.sourceArchive = params.sourceArchive;
+    this.slideNumber = params.slideNumber;
+    this.sourceLayoutId = params.sourceLayoutId;
   }
 
   getSlideCreationId(): number | undefined {
@@ -61,8 +74,13 @@ export class XmlSlideHelper {
     return Number(creationIdSlide);
   }
 
+  async getSlideLayout(): Promise<LayoutInfo> {
+    const xml = await this.getSlideLayoutXml(this.sourceLayoutId);
+    return XmlTemplateHelper.getLayoutInfo(xml);
+  }
+
   /**
-   * Get an array of ElementInfo objects for all named elements on a slide.
+   * Get an ElementInfo object for the target element on the slide.
    * @param selector
    */
   async getElement(selector: string): Promise<ElementInfo> {
@@ -76,13 +94,18 @@ export class XmlSlideHelper {
   /**
    * Get an array of ElementInfo objects for all named elements on a slide.
    * @param filterTags Use an array of strings to filter the output array
+   * @param slideInfo Use placeholder position from layout as fallback
    */
-  getAllElements(filterTags?: string[]): ElementInfo[] {
+  getAllElements(
+    filterTags?: string[],
+    slideInfo?: TemplateSlideInfo,
+  ): ElementInfo[] {
     const elementInfo: ElementInfo[] = [];
+
     try {
       const shapeNodes = this.getNamedElements(filterTags);
       shapeNodes.forEach((shapeNode: XmlElement) => {
-        elementInfo.push(XmlSlideHelper.getElementInfo(shapeNode));
+        elementInfo.push(XmlSlideHelper.getElementInfo(shapeNode, slideInfo));
       });
     } catch (error) {
       console.error(error);
@@ -113,18 +136,25 @@ export class XmlSlideHelper {
     return elementIds;
   }
 
-  static getElementInfo(slideElement: XmlElement): ElementInfo {
+  static getElementInfo(
+    slideElement: XmlElement,
+    slideInfo?: TemplateSlideInfo,
+  ): ElementInfo {
     const creationId = XmlSlideHelper.getElementCreationId(slideElement, true);
-    const nameIdx = (!creationId) ? XmlSlideHelper.getElementNameIdx(slideElement) : 0;
+    const nameIdx = !creationId
+      ? XmlSlideHelper.getElementNameIdx(slideElement)
+      : 0;
+    const position = XmlSlideHelper.parseShapeCoordinates(slideElement);
+    const type = XmlSlideHelper.getElementType(slideElement);
 
     return {
       name: XmlSlideHelper.getElementName(slideElement),
       id: XmlSlideHelper.getElementCreationId(slideElement),
       creationId,
       nameIdx,
-      type: XmlSlideHelper.getElementType(slideElement),
-      position: XmlSlideHelper.parseShapeCoordinates(slideElement),
-      placeholder: XmlSlideHelper.parsePlaceholderInfo(slideElement),
+      type,
+      position,
+      placeholder: XmlPlaceholderHelper.getPlaceholderInfo(slideElement, slideInfo?.layoutPlaceholders),
       hasTextBody: !!XmlSlideHelper.getTextBody(slideElement),
       getXmlElement: () => slideElement,
       getText: () => XmlSlideHelper.parseTextFragments(slideElement),
@@ -373,16 +403,14 @@ export class XmlSlideHelper {
     }
   }
 
-  static getElementNameIdx(
-    slideElement: XmlElement,
-  ): number {
+  static getElementNameIdx(slideElement: XmlElement): number {
     const elementName = XmlSlideHelper.getElementName(slideElement);
     if (!elementName) {
       return 0;
     }
 
     // Find the parent slide element (spTree) to search all elements on the slide
-    const currentNode = XmlHelper.getClosestParent('p:spTree', slideElement)
+    const currentNode = XmlHelper.getClosestParent('p:spTree', slideElement);
 
     if (!currentNode) {
       return 0; // Unable to find slide parent
@@ -444,7 +472,10 @@ export class XmlSlideHelper {
     return type as ElementType;
   }
 
-  static parseShapeCoordinates(slideElementParent: XmlElement) {
+  static parseShapeCoordinates(
+    slideElementParent: XmlElement,
+    returnDefaults?: boolean
+  ): ElementPosition {
     const xFrmsA = slideElementParent.getElementsByTagName('a:xfrm');
     const xFrmsP = slideElementParent.getElementsByTagName('p:xfrm');
     const xFrms = xFrmsP.item(0) ? xFrmsP : xFrmsA;
@@ -458,6 +489,9 @@ export class XmlSlideHelper {
     };
 
     if (!xFrms.item(0)) {
+      if(returnDefaults === false) {
+        return null
+      }
       return position;
     }
 
@@ -533,29 +567,18 @@ export class XmlSlideHelper {
     };
   };
 
-  static parsePlaceholderInfo = (
-    element: XmlElement,
-  ): ElementInfo['placeholder'] => {
-    const info = element.getElementsByTagName('p:ph').item(0);
 
-    if (!info) {
-      return;
+  async getSlideLayoutXml(layoutId: number): Promise<XmlDocument> {
+    const layoutPath = 'ppt/slideLayouts/slideLayout' + layoutId + '.xml';
+    const layoutXml = await XmlHelper.getXmlFromArchive(
+      this.sourceArchive,
+      layoutPath,
+    );
+
+    if (layoutXml) {
+      return layoutXml;
     }
-
-    const idx = info.getAttribute('idx')
-
-    const placeholder = {
-      type: info.getAttribute('type'),
-      sz: info.getAttribute('sz'),
-      idx: idx?.length ? parseInt(idx) : null,
-    }
-
-    if(!placeholder?.type && placeholder?.idx !== null) {
-      placeholder.type = "body"
-    }
-
-    return placeholder
-  };
+  }
 
   /**
    * Asynchronously retrieves the dimensions of a slide.
@@ -586,10 +609,7 @@ export class XmlSlideHelper {
     path: string,
   ): Promise<{ width: number; height: number } | null> => {
     try {
-      const xml = await XmlHelper.getXmlFromArchive(
-        this.hasShapes.sourceTemplate.archive,
-        path,
-      );
+      const xml = await XmlHelper.getXmlFromArchive(this.sourceArchive, path);
       if (!xml) return null;
 
       const sldSz = xml.getElementsByTagName('p:sldSz')[0];
@@ -639,4 +659,62 @@ export class XmlSlideHelper {
     }
     return info;
   };
+
+  /**
+   * Determines the type of visual element in PowerPoint
+   * @param element The XML element to check
+   * @returns A string identifying the element type
+   */
+  static getElementVisualType(element: XmlElement): ElementVisualType {
+    // Check for graphicFrame elements (charts, SmartArt, etc.)
+    if (element.getElementsByTagName('p:graphicFrame')[0]) {
+      const graphicData = XmlHelper.findElement(element, 'a:graphicData');
+      if (graphicData) {
+        const uri = graphicData.getAttribute('uri');
+
+        // Check for specific URIs that identify element types
+        if (uri && uri.includes('chart')) {
+          return 'chart';
+        } else if (uri && uri.includes('smartArt')) {
+          return 'smartArt';
+        } else if (uri && uri.includes('diagram')) {
+          return 'diagram';
+        }
+      }
+      return 'graphicFrame';
+    }
+
+    // Check for 3D models
+    if (XmlHelper.findElement(element, 'a:scene3d')) {
+      return '3dModel';
+    }
+
+    // Check for icons (SVG)
+    if (XmlHelper.findElement(element, 'a:svgBlip')) {
+      return 'icon';
+    }
+
+    // Check for pictures/photos
+    const hasPicPr = !!element.getElementsByTagName('p:nvPicPr')[0];
+    if (hasPicPr) {
+      return 'picture';
+    }
+
+    // Check for image fills
+    const hasBlipFill = !!XmlHelper.findElement(element, 'a:blipFill');
+    if (hasBlipFill) {
+      return 'imageFilledShape';
+    }
+
+    // Check for vector shapes
+    const hasGeometry =
+      !!XmlHelper.findElement(element, 'a:prstGeom') ||
+      !!XmlHelper.findElement(element, 'a:custGeom');
+    if (hasGeometry) {
+      return 'vectorShape';
+    }
+
+    // Default case
+    return 'unknown';
+  }
 }

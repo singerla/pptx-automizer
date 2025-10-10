@@ -419,7 +419,7 @@ export class XmlHelper {
     archive: IArchive,
     path: string,
     creationId: string,
-    nameIdx?: number
+    nameIdx?: number,
   ): Promise<XmlElement> {
     const slideXml = await XmlHelper.getXmlFromArchive(archive, path);
 
@@ -430,7 +430,7 @@ export class XmlHelper {
     archive: IArchive,
     path: string,
     name: string,
-    nameIdx?: number
+    nameIdx?: number,
   ): Promise<XmlElement> {
     const slideXml = await XmlHelper.getXmlFromArchive(archive, path);
 
@@ -675,5 +675,46 @@ export class XmlHelper {
     const xmlBuffer = s.serializeToString(<Node>element);
     const p = new XmlPrettyPrint(xmlBuffer);
     p.dump();
+  }
+
+  static removeByTagName = (element: XmlElement, tagName: string, i = 0) => {
+    const tagToRemove = element.getElementsByTagName(tagName).item(i);
+    if (tagToRemove) XmlHelper.remove(tagToRemove);
+  };
+
+  /**
+   * Find an element with the given tag name, searching deeply through the structure
+   * @param element The root element to search in
+   * @param tagName The tag name to search for
+   * @returns The found element or null
+   */
+  static findElement(element: XmlElement, tagName: string): XmlElement | null {
+    // Check if element exists
+    if (!element) {
+      return null;
+    }
+
+    // Direct child check
+    const directMatch = element.getElementsByTagName(tagName)[0];
+    if (directMatch) {
+      return directMatch;
+    }
+
+    // Recursive check in child elements
+    // Make sure element.children exists before accessing it
+    if (element.children && element.children.length) {
+      for (let i = 0; i < element.children.length; i++) {
+        const child = element.children[i] as XmlElement;
+        if (child.nodeType === 1) {
+          // Element node
+          const found = XmlHelper.findElement(child, tagName);
+          if (found) {
+            return found;
+          }
+        }
+      }
+    }
+
+    return null;
   }
 }

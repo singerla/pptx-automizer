@@ -261,7 +261,7 @@ export class XmlRelationshipHelper {
     return relType === subtype && target.indexOf(prefix) === 0;
   }
 
-  static async getSlideLayoutNumber(sourceArchive, slideId: number) {
+  static async getSlideLayoutNumber(sourceArchive: IArchive, slideId: number) {
     const slideToLayouts = await new XmlRelationshipHelper().initialize(
       sourceArchive,
       `slide${slideId}.xml.rels`,
@@ -272,7 +272,10 @@ export class XmlRelationshipHelper {
     return slideToLayouts[0].number;
   }
 
-  static async getSlideMasterNumber(sourceArchive, slideLayoutId: number) {
+  static async getSlideMasterNumber(
+    sourceArchive: IArchive,
+    slideLayoutId: number,
+  ) {
     const layoutToMaster = (await new XmlRelationshipHelper().initialize(
       sourceArchive,
       `slideLayout${slideLayoutId}.xml.rels`,

@@ -6,7 +6,8 @@ import { vd } from './general-helper';
 
 export default class ModifyColorHelper {
   /**
-   * Replaces or creates an <a:solidFill> Element
+   * Replaces or creates an <a:solidFill> Element.
+   * The given elelement must be a <p:spPr> or <a:spPr>
    */
   static solidFill =
     (color: Color, index?: number | 'last') =>

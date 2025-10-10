@@ -1,13 +1,113 @@
-import { ElementInfo, PlaceholderInfo, XmlElement } from '../types/xml-types';
+import {
+  ElementInfo,
+  ElementPosition,
+  PlaceholderInfo,
+  PlaceholderType,
+  XmlElement,
+} from '../types/xml-types';
 import { XmlHelper } from './xml-helper';
-import { ShapeCoordinates } from '../types/shape-types';
+import { XmlSlideHelper } from './xml-slide-helper';
 
 export default class XmlPlaceholderHelper {
-  static setPlaceholderDefaults(element: XmlElement, layoutPlaceholder: PlaceholderInfo): void {
+  private static mapAlternativePlaceholders = {
+    // Title-related placeholders
+    title: ['ctrTitle', 'subTitle', 'body'],
+    ctrTitle: ['title', 'subTitle', 'body'],
+    subTitle: ['title', 'ctrTitle', 'body'],
+
+    // Content placeholders
+    body: ['title', 'ctrTitle', 'subTitle'],
+
+    // Media and visual content
+    pic: ['media', 'obj', 'clipArt', 'bitmap'],
+    media: ['pic', 'obj', 'clipArt', 'bitmap'],
+    obj: ['pic', 'media', 'clipArt', 'bitmap'],
+    clipArt: ['pic', 'media', 'obj', 'bitmap'],
+    bitmap: ['pic', 'media', 'obj', 'clipArt'],
+
+    // Data visualization
+    chart: ['tbl', 'dgm', 'orgChart', 'obj'],
+    tbl: ['chart', 'dgm', 'orgChart'],
+    dgm: ['chart', 'orgChart', 'tbl', 'obj'],
+    orgChart: ['dgm', 'chart', 'tbl', 'obj'],
+
+    // Footer elements
+    ftr: ['dt', 'sldNum', 'hdr'],
+    dt: ['ftr', 'sldNum', 'hdr'],
+    sldNum: ['ftr', 'dt', 'hdr'],
+    hdr: ['ftr', 'dt', 'sldNum'],
+
+    // Fallback for unknown
+    unknown: ['body', 'obj', 'pic'],
+  };
+
+  /**
+   * Extracts placeholder information from an XML element.
+   *
+   * This method parses a PowerPoint shape element to extract its placeholder properties,
+   * including placeholder type, size, index, position, and element type. It also attempts to merge
+   * position information from layout placeholders when available.
+   *
+   * @param element - The XML element representing a PowerPoint shape
+   * @param layoutPlaceholders - Optional array of placeholder info from the slide layout
+   * @returns PlaceholderInfo object containing all extracted placeholder data, or undefined if no placeholder found
+   */
+  static getPlaceholderInfo(
+    element: XmlElement,
+    layoutPlaceholders?: PlaceholderInfo[],
+  ): PlaceholderInfo | undefined {
+    // Find the placeholder element within the shape
+    const placeholderElement = element.getElementsByTagName('p:ph').item(0);
+
+    // Early return if this element doesn't contain a placeholder
+    if (!placeholderElement) {
+      return undefined;
+    }
+
+    // Extract the shape properties element for determining element type
+    const slideElementParent = element.getElementsByTagName('p:spPr').item(0)
+      ?.parentNode as XmlElement;
+
+    // Parse the placeholder index attribute
+    const indexAttribute = placeholderElement.getAttribute('idx');
+    const placeholderIndex = indexAttribute?.length
+      ? parseInt(indexAttribute, 10)
+      : null;
+
+    // Try to find corresponding layout placeholder by matching index
+    const matchingLayoutPlaceholder = layoutPlaceholders?.find(
+      (layoutPh) =>
+        placeholderIndex !== null && layoutPh.idx === placeholderIndex,
+    );
+
+    // Determine position - prefer shape's own position, fallback to layout position
+    const shapePosition = XmlSlideHelper.parseShapeCoordinates(element, false);
+    const finalPosition = shapePosition || matchingLayoutPlaceholder?.position;
+
+    const elementType = XmlSlideHelper.getElementType(slideElementParent);
+    const phType = placeholderElement.getAttribute('type') as PlaceholderType;
+    const type = !phType && elementType === 'sp' ? 'body' : phType;
+
+    // Build the placeholder info object
+    const placeholderInfo: PlaceholderInfo = {
+      type: type || 'unknown',
+      sz: placeholderElement.getAttribute('sz'),
+      idx: placeholderIndex,
+      elementType,
+      position: finalPosition,
+    };
+
+    return placeholderInfo;
+  }
+
+  static setPlaceholderDefaults(
+    element: XmlElement,
+    layoutPlaceholder: PlaceholderInfo,
+  ): void {
     // Get the placeholder element
     const ph = element.getElementsByTagName('p:ph').item(0);
 
-    if(ph) {
+    if (ph && layoutPlaceholder.idx) {
       // Set the index to match the layout placeholder
       ph.setAttribute('idx', String(layoutPlaceholder.idx));
     }
@@ -19,16 +119,14 @@ export default class XmlPlaceholderHelper {
     }
   }
 
-  static removePlaceholder(element: XmlElement): void {
+  static removePlaceholder(
+    element: XmlElement,
+    fallbackPosition: ElementPosition,
+  ): void {
     const ph = element.getElementsByTagName('p:ph').item(0);
     XmlHelper.remove(ph);
 
-    XmlPlaceholderHelper.assertShapeCoordinates(element, {
-      x: 10,
-      y: 10,
-      w: 5000000,
-      h: 1000000
-    })
+    XmlPlaceholderHelper.assertShapeCoordinates(element, fallbackPosition);
   }
 
   /**
@@ -38,33 +136,17 @@ export default class XmlPlaceholderHelper {
    * @param sourceElement
    * @param typeMatches
    */
-  static findBestTargetPlaceholder(
+  static findBestMatchingPlaceholder(
     sourceElement: ElementInfo,
     typeMatches: PlaceholderInfo[],
   ): PlaceholderInfo | null {
-    const sourcePlaceholder = sourceElement.placeholder
-
     // Score each potential match based on multiple criteria
-    const scoredMatches = typeMatches.map(target => {
-      let score = 0;
-
-      // 1. Same size gets a high score
-      if (target.sz === sourcePlaceholder.sz) {
-        score += 50;
-      } else {
-        // Smaller difference in size is better
-        const sizeDiff = Math.abs(
-          parseInt(target.sz || "0") - parseInt(sourcePlaceholder.sz || "0")
-        );
-        // Inverse relationship - smaller difference gets higher score
-        score += Math.max(0, 30 - (sizeDiff / 100));
-      }
-
-      // 2. Similar idx values get a small bonus
-      // This is lower priority but can be a tiebreaker
-      const idxDiff = Math.abs(sourcePlaceholder.idx - target.idx);
-      score += Math.max(0, 10 - idxDiff);
-
+    const scoredMatches = typeMatches.map((target) => {
+      const score = XmlPlaceholderHelper.calculatePlaceholderSimilarityScore(
+        0,
+        target,
+        sourceElement,
+      );
       return { target, score };
     });
 
@@ -75,14 +157,91 @@ export default class XmlPlaceholderHelper {
     return scoredMatches.length > 0 ? scoredMatches[0].target : null;
   }
 
+  static findBestTargetPlaceholderAlternative(
+    element: ElementInfo,
+    targetPlaceholders: PlaceholderInfo[],
+    usedPlaceholders: PlaceholderInfo[],
+  ): PlaceholderInfo {
+    const originalType = element.placeholder.type;
+    const alternatives = this.mapAlternativePlaceholders[originalType] || [];
+
+    let bestMatch = null;
+    let bestScore = -1;
+
+    // Try to find the best alternative placeholder in the target layout
+    for (const alternativeType of alternatives) {
+      // Look for available placeholders of this alternative type
+      const availablePlaceholder = targetPlaceholders.find(
+        (ph) => ph.type === alternativeType && !usedPlaceholders.includes(ph),
+      );
+
+      if (availablePlaceholder) {
+        const initScore =
+          alternatives.length - alternatives.indexOf(alternativeType);
+        const score = XmlPlaceholderHelper.calculatePlaceholderSimilarityScore(
+          initScore,
+          availablePlaceholder,
+          element,
+        );
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestMatch = availablePlaceholder;
+        }
+      }
+    }
+
+    return bestMatch;
+  }
+
+  static calculatePlaceholderSimilarityScore(
+    score: number,
+    availablePlaceholder: PlaceholderInfo,
+    element: ElementInfo,
+  ) {
+    // Bonus points for matching size if available
+    if (
+      element.placeholder.sz &&
+      availablePlaceholder.sz === element.placeholder.sz
+    ) {
+      score += 10;
+    }
+
+    // Bonus points for similar position if available
+    if (element.placeholder.position && availablePlaceholder.position) {
+      const distanceScore = Math.max(
+        0,
+        100 -
+          Math.sqrt(
+            Math.pow(
+              element.placeholder.position.x - availablePlaceholder.position.x,
+              2,
+            ) +
+              Math.pow(
+                element.placeholder.position.y -
+                  availablePlaceholder.position.y,
+                2,
+              ),
+          ) /
+            1000,
+      );
+      score += distanceScore;
+    }
+    return score;
+  }
+
   /**
    * Adds or updates coordinates in a shape element
    * @param element The XML element of the shape
    * @param coords The coordinates to set
    */
-  static assertShapeCoordinates(element: XmlElement, coords: ShapeCoordinates): void {
+  static assertShapeCoordinates(
+    element: XmlElement,
+    coords: ElementPosition,
+  ): void {
     // Find or create the transform element
-    let xfrm = element.getElementsByTagName('a:xfrm').item(0) ||
+    let xfrm =
+      element.getElementsByTagName('a:xfrm').item(0) ||
       element.getElementsByTagName('p:xfrm').item(0);
 
     const spPr = element.getElementsByTagName('p:spPr').item(0);
@@ -111,8 +270,8 @@ export default class XmlPlaceholderHelper {
     if (!ext) {
       ext = element.ownerDocument.createElement('a:ext');
       xfrm.appendChild(ext);
-      if (coords.w !== undefined) ext.setAttribute('cx', coords.w.toString());
-      if (coords.h !== undefined) ext.setAttribute('cy', coords.h.toString());
+      if (coords.cx !== undefined) ext.setAttribute('cx', coords.cx.toString());
+      if (coords.cy !== undefined) ext.setAttribute('cy', coords.cy.toString());
     }
   }
 }

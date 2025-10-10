@@ -25,6 +25,7 @@ import {
   ElementInfo,
   RelationshipAttribute,
   SlideListAttribute,
+  TemplateSlideInfo,
   XmlDocument,
   XmlElement,
 } from '../types/xml-types';
@@ -175,14 +176,18 @@ export default class HasShapes {
 
   /**
    * Asynchronously retrieves all elements from the slide.
-   * @params filterTags Use an array of strings to filter parent tags (e.g. 'sp')
+   * @param filterTags Use an array of strings to filter parent tags (e.g. 'sp')
+   * @param slideInfo Use placeholder position from layout as fallback
    * @returns {Promise<ElementInfo[]>} A promise that resolves to an array of ElementInfo objects.
    */
-  async getAllElements(filterTags?: string[]): Promise<ElementInfo[]> {
+  async getAllElements(
+    filterTags?: string[],
+    slideInfo?: TemplateSlideInfo,
+  ): Promise<ElementInfo[]> {
     const xmlSlideHelper = await this.getSlideHelper();
 
     // Get all ElementInfo objects
-    return xmlSlideHelper.getAllElements(filterTags);
+    return xmlSlideHelper.getAllElements(filterTags, slideInfo);
   }
 
   /**
@@ -218,8 +223,17 @@ export default class HasShapes {
         this.sourcePath,
       );
 
+      const sourceLayoutId = await XmlRelationshipHelper.getSlideLayoutNumber(
+        this.sourceTemplate.archive,
+        this.sourceNumber,
+      );
+
       // Initialize the XmlSlideHelper
-      return new XmlSlideHelper(slideXml, this);
+      return new XmlSlideHelper(slideXml, {
+        sourceArchive: this.sourceTemplate.archive,
+        slideNumber: this.sourceNumber,
+        sourceLayoutId
+      });
     } catch (error) {
       // Log the error message
       throw new Error(error.message);
@@ -352,29 +366,53 @@ export default class HasShapes {
     });
   }
 
-  getAlreadyModifiedElement(selector: FindElementSelector) {
-    // Check if an element with the same selector is already imported in modify mode
-    const existingElement = this.importElements.find((element) => {
+  /**
+   * Checks if an element with the same selector has already been imported or modified.
+   * This function helps to apply placeholder modifications properly.
+   *
+   * @param {FindElementSelector} selector - The selector used to identify an element.
+   *                                         Can be a string or an object with name and optional creationId/nameIdx.
+   * @returns {ImportElement|undefined} The existing element if found, otherwise undefined.
+   */
+  getAlreadyModifiedElement(
+    selector: FindElementSelector,
+  ): ImportElement | undefined {
+    // Search through previously imported/modified elements
+    return this.importElements.find((element) => {
+      // Skip comparison if either selector is not an object
       if (
         typeof selector !== 'object' ||
         typeof element.selector !== 'object'
       ) {
-        return;
+        return false;
       }
 
+      // Case 1: Element without creationId - match by name and nameIdx
       if (!selector.creationId) {
-        // Match by name and nameIdx only if the shape has no creationId
-        return selector.name === element.selector.name && selector.nameIdx === element.selector.nameIdx;
-      } else if (selector.creationId && element.selector?.creationId) {
-        const creaId1 = selector.creationId.replace('{', '').replace('}', '');
-        const creaId2 = element.selector.creationId
-          .replace('{', '')
-          .replace('}', '');
-
-        return selector.name === element.selector.name && creaId1 === creaId2;
+        return (
+          selector.name === element.selector.name &&
+          selector.nameIdx === element.selector.nameIdx
+        );
       }
+
+      // Case 2: Element with creationId - match by name and normalized creationId
+      if (selector.creationId && element.selector?.creationId) {
+        // Normalize creationIds by removing curly braces
+        const normalizedSelectorId = selector.creationId.replace(/{|}/g, '');
+        const normalizedElementId = element.selector.creationId.replace(
+          /{|}/g,
+          '',
+        );
+
+        return (
+          selector.name === element.selector.name &&
+          normalizedSelectorId === normalizedElementId
+        );
+      }
+
+      // No match found for this element
+      return false;
     });
-    return existingElement;
   }
 
   /**
@@ -565,7 +603,7 @@ export default class HasShapes {
         selector: selector,
       });
     } else {
-      if(selector.creationId) {
+      if (selector.creationId) {
         strategies.push({
           mode: 'findByElementCreationId',
           selector: selector.creationId,
@@ -575,7 +613,7 @@ export default class HasShapes {
       strategies.push({
         mode: 'findByElementName',
         selector: selector.name,
-        nameIdx: selector.nameIdx
+        nameIdx: selector.nameIdx,
       });
     }
 

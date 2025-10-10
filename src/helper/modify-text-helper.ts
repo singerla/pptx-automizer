@@ -6,6 +6,7 @@ import XmlElements from './xml-elements';
 import { MultiTextParagraph } from '../interfaces/imulti-text';
 import { MultiTextHelper } from './multitext-helper';
 import { HtmlToMultiTextHelper } from './html-to-multitext-helper';
+import { XmlHelper } from './xml-helper';
 
 export default class ModifyTextHelper {
   /**
@@ -134,5 +135,31 @@ export default class ModifyTextHelper {
       if (isUnderlined) {
         element.setAttribute('u', 'sng');
       }
+    };
+
+  /**
+   * Set bullet type (font and character) for bullet points
+   */
+  static setBulletType =
+    (font: string, character: string) =>
+    (element: XmlElement): void => {
+      const paragraphs = element.getElementsByTagName('a:p');
+      XmlHelper.modifyCollection(paragraphs, (paragraph) => {
+        const pPr = paragraph.getElementsByTagName('a:pPr')[0];
+
+        if (!pPr) {
+          return;
+        }
+
+        const existingBuFont = pPr.getElementsByTagName('a:buFont')[0];
+        if (existingBuFont) {
+          existingBuFont.setAttribute('typeface', font);
+        }
+
+        const existingBuChar = pPr.getElementsByTagName('a:buChar')[0];
+        if (existingBuChar) {
+          existingBuChar.setAttribute('char', character);
+        }
+      });
     };
 }
