@@ -284,7 +284,7 @@ export default class ModifyShapeHelper {
       // Remove any existing prstGeom element
       const existingPrstGeom = spPr.getElementsByTagName('a:prstGeom')[0];
       if (existingPrstGeom) {
-        spPr.removeChild(existingPrstGeom);
+        XmlHelper.remove(existingPrstGeom)
       }
 
       // Create the new prstGeom element with the roundRect preset
@@ -315,7 +315,7 @@ export default class ModifyShapeHelper {
       // otherwise the picture will be invisible when we apply rounded corners
       const noFillElement = spPr.getElementsByTagName('a:noFill')[0];
       if (noFillElement) {
-        spPr.removeChild(noFillElement);
+        XmlHelper.remove(noFillElement)
       }
     };
 

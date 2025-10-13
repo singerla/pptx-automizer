@@ -1,5 +1,5 @@
 import { XmlHelper } from '../helper/xml-helper';
-import { GeneralHelper } from '../helper/general-helper';
+import { GeneralHelper, vd } from '../helper/general-helper';
 import { HyperlinkProcessor } from '../helper/hyperlink-processor';
 import {
   ChartModificationCallback,
@@ -172,20 +172,26 @@ export class Shape {
     XmlHelper.writeXmlToArchive(archive, slideFile, targetSlideXml);
   }
 
-  async updateElementsRelId(): Promise<void> {
+  async updateElementsRelId(cb?: (targetElement: XmlElement) => void): Promise<void> {
     const targetSlideXml = await XmlHelper.getXmlFromArchive(
       this.targetArchive,
       this.targetSlideFile,
     );
+
+
     const targetElements = await this.getElementsByRid(
       targetSlideXml,
       this.sourceRid,
     );
 
     targetElements.forEach((targetElement: XmlElement) => {
-      this.relParent(targetElement)
-        .getElementsByTagName(this.relRootTag)[0]
-        .setAttribute(this.relAttribute, this.createdRid);
+      if(cb && typeof cb === 'function') {
+        cb(targetElement)
+      } else {
+        this.relParent(targetElement)
+          .getElementsByTagName(this.relRootTag)[0]
+          .setAttribute(this.relAttribute, this.createdRid);
+      }
     });
 
     XmlHelper.writeXmlToArchive(

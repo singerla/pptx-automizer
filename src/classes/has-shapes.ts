@@ -40,6 +40,7 @@ import { OLEObject } from '../shapes/ole';
 import { Hyperlink } from '../shapes/hyperlink';
 import { HyperlinkProcessor } from '../helper/hyperlink-processor';
 import { vd } from '../helper/general-helper';
+import { Diagram } from '../shapes/diagram';
 
 export default class HasShapes {
   /**
@@ -125,6 +126,8 @@ export default class HasShapes {
    */
   unsupportedTags = [
     'p:custDataLst',
+    // exclude bullet images
+    // 'a:buBlip',
     // 'p:oleObj',
     // 'mc:AlternateContent',
     // 'a14:imgProps',
@@ -888,6 +891,19 @@ export default class HasShapes {
       ).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);
     }
 
+    const diagrams = await Diagram.getAllOnSlide(this.sourceArchive, this.relsPath);
+    for (const diagram of diagrams) {
+      await new Diagram(
+        {
+          mode: 'append',
+          target: diagram,
+          sourceArchive: this.sourceArchive,
+          sourceSlideNumber: this.sourceNumber,
+        },
+        this.targetType,
+      ).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);
+    }
+
     const oleObjects = await OLEObject.getAllOnSlide(
       this.sourceArchive,
       this.relsPath,
@@ -990,6 +1006,19 @@ export default class HasShapes {
           relsPath,
           sourceElement,
           'image',
+        ),
+      } as AnalyzedElementType;
+    }
+
+    const isDiagram = sourceElement.getElementsByTagName('p:nvGraphicFramePr');
+    if (isDiagram.length) {
+      return {
+        type: ElementType.Diagram,
+        target: await XmlHelper.getTargetByRelId(
+          sourceArchive,
+          relsPath,
+          sourceElement,
+          'diagram',
         ),
       } as AnalyzedElementType;
     }

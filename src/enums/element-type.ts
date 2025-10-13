@@ -1,14 +1,15 @@
 export enum ElementType {
   Chart = 'Chart',
   Image = 'Image',
+  Diagram = 'Diagram',
   Shape = 'Generic',
-  OLEObject = 'OLEObject', 
+  OLEObject = 'OLEObject',
   Hyperlink = 'Hyperlink',
 }
 
 export enum ElementSubtype {
   chart = 'chart',
   chartEx = 'chartEx',
-  oleObject = 'oleObject',  
+  oleObject = 'oleObject',
   hyperlink = 'hyperlink',
 }

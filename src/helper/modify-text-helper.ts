@@ -160,6 +160,11 @@ export default class ModifyTextHelper {
         if (existingBuChar) {
           existingBuChar.setAttribute('char', character);
         }
+
+        const existingBuBlip = pPr.getElementsByTagName('a:buBlip')[0];
+        if (existingBuBlip) {
+          XmlHelper.remove(existingBuBlip)
+        }
       });
     };
 }

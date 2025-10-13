@@ -11,7 +11,7 @@ import {
 import { TargetByRelIdMap } from '../constants/constants';
 import { XmlPrettyPrint } from './xml-pretty-print';
 import { GetRelationshipsCallback, Target } from '../types/types';
-import { log } from './general-helper';
+import { log, vd } from './general-helper';
 import { contentTracker } from './content-tracker';
 import IArchive from '../interfaces/iarchive';
 import {
@@ -191,7 +191,12 @@ export class XmlHelper {
 
     const last = (arr: string[]): string => arr[arr.length - 1];
     const filename = last(file.split('/'));
-    const subtype = last(prefix.split('/'));
+
+    let subtype = last(prefix.split('/'));
+    const mapSubtype = {
+      data: 'diagramData'
+    }
+    subtype = mapSubtype[subtype] || subtype
 
     const relType = last(type.split('/'));
     const rId = element.getAttribute('Id');

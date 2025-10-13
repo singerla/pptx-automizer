@@ -233,7 +233,7 @@ export class Slide extends HasShapes implements ISlide {
     const elementsToProcess = [...unmatchedElements];
 
     elementsToProcess.forEach((element) => {
-      const bestAlternativeMatch = this.findBestAlternativeMatch(
+      const bestAlternativeMatch = XmlPlaceholderHelper.findBestTargetPlaceholderAlternative(
         element,
         targetPlaceholders,
         usedPlaceholders,
@@ -248,27 +248,6 @@ export class Slide extends HasShapes implements ISlide {
         this.removeElementFromUnmatched(element, unmatchedElements);
       }
     });
-  }
-
-  /**
-   * Finds the best alternative placeholder match for an unmatched element.
-   *
-   * @param element - Element that needs a placeholder match
-   * @param targetPlaceholders - Available placeholders in target layout
-   * @param usedPlaceholders - Already assigned placeholders
-   * @returns PlaceholderInfo | null - Best match or null if none found
-   * @private
-   */
-  private findBestAlternativeMatch(
-    element: ElementInfo,
-    targetPlaceholders: PlaceholderInfo[],
-    usedPlaceholders: PlaceholderInfo[],
-  ): PlaceholderInfo | null {
-    return XmlPlaceholderHelper.findBestTargetPlaceholderAlternative(
-      element,
-      targetPlaceholders,
-      usedPlaceholders,
-    );
   }
 
   /**

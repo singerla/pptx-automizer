@@ -98,6 +98,7 @@ export class Template implements ITemplate {
         new CountHelper('slides', newTemplate),
         new CountHelper('charts', newTemplate),
         new CountHelper('images', newTemplate),
+        new CountHelper('diagrams', newTemplate),
         new CountHelper('masters', newTemplate),
         new CountHelper('layouts', newTemplate),
         new CountHelper('themes', newTemplate),

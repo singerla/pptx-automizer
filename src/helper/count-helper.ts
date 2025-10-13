@@ -63,9 +63,10 @@ export class CountHelper implements ICounter {
         return CountHelper.countCharts(presentation);
       case 'images':
         return CountHelper.countImages(presentation);
-        case 'oleObjects':  
-        return CountHelper.countOleObjects(presentation);  
-  
+      case 'diagrams':
+        return CountHelper.countDiagrams(presentation);
+      case 'oleObjects':
+        return CountHelper.countOleObjects(presentation);
     }
 
     throw new Error(`No way to count ${this.name}.`);
@@ -138,23 +139,24 @@ export class CountHelper implements ICounter {
       ).length;
   }
 
-  private static async countOleObjects(presentation: IArchive): Promise<number> {
+  private static async countOleObjects(
+    presentation: IArchive,
+  ): Promise<number> {
     const contentTypesXml = await XmlHelper.getXmlFromArchive(
       presentation,
       '[Content_Types].xml',
     );
     const overrides = contentTypesXml.getElementsByTagName('Override');
-  
+
     return Object.keys(overrides)
       .map((key) => overrides[key] as XmlElement)
       .filter(
         (o) =>
           o.getAttribute &&
           o.getAttribute('ContentType') ===
-            `application/vnd.openxmlformats-officedocument.oleObject`
+            `application/vnd.openxmlformats-officedocument.oleObject`,
       ).length;
   }
-  
 
   private static async countImages(presentation: IArchive): Promise<number> {
     const mediaFiles = await presentation.folder('ppt/media');
@@ -162,5 +164,22 @@ export class CountHelper implements ICounter {
       (file) => file.relativePath.indexOf('image') === 0,
     ).length;
     return count;
+  }
+
+  private static async countDiagrams(presentation: IArchive): Promise<number> {
+    const contentTypesXml = await XmlHelper.getXmlFromArchive(
+      presentation,
+      '[Content_Types].xml',
+    );
+    const overrides = contentTypesXml.getElementsByTagName('Override');
+
+    return Object.keys(overrides)
+      .map((key) => overrides[key] as XmlElement)
+      .filter(
+        (o) =>
+          o.getAttribute &&
+          o.getAttribute('ContentType') ===
+          `application/vnd.openxmlformats-officedocument.drawingml.diagramData+xml`,
+      ).length;
   }
 }

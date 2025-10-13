@@ -6,9 +6,6 @@ const run = async () => {
   const outputDir = `${__dirname}/../__tests__/pptx-output`;
   const templateDir = `${__dirname}/../__tests__/pptx-templates`;
 
-  // Step 1: Create a pptx with images and a chart inside.
-  // The chart is modified by pptx-automizer
-
   const automizer = new Automizer({
     templateDir,
     outputDir,
@@ -16,15 +13,13 @@ const run = async () => {
     removeExistingSlides: true,
   });
 
-  const pres = automizer.loadRoot(`RootTemplate.pptx`).load(`SlideWithShapes.pptx`);
+  const pres = automizer.loadRoot(`RootTemplate.pptx`).load(`SlideWithDiagram.pptx`);
 
-  pres.addSlide("SlideWithShapes.pptx", 3, async (slide) => {
-    const infoTopLevel = await slide.getElement('TopLevelGroup')
-    const groupInfoTopLevel = infoTopLevel.getGroupInfo()
+  pres.addSlide("SlideWithDiagram.pptx", 1, async (slide) => {
 
   })
 
-  await pres.write(`modify-multi-text.test.pptx`);
+  await pres.write(`add-diagram.test.pptx`);
 };
 
 run().catch((error) => {

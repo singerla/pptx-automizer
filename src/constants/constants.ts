@@ -15,6 +15,11 @@ export const TargetByRelIdMap: Record<string, TargetByRelIdMapParam> = {
     relAttribute: 'r:id',
     prefix: '../charts/chartEx',
   },
+  diagram: {
+    relRootTag: 'dgm:relIds',
+    relAttribute: 'r:dm',
+    prefix: '../diagrams/data',
+  },
   image: {
     relRootTag: 'a:blip',
     relAttribute: 'r:embed',
