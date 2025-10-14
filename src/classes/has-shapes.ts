@@ -1010,7 +1010,7 @@ export default class HasShapes {
       } as AnalyzedElementType;
     }
 
-    const isDiagram = sourceElement.getElementsByTagName('p:nvGraphicFramePr');
+    const isDiagram = sourceElement.getElementsByTagName('dgm:relIds');
     if (isDiagram.length) {
       return {
         type: ElementType.Diagram,
