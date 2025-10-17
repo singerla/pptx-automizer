@@ -17,8 +17,11 @@ test('create presentation and append diagrams', async () => {
   pres.addSlide('empty', 1, (slide) => {
     slide.addElement('diagrams', 1, 'MatrixDiagram')
   });
+  pres.addSlide('empty', 1, (slide) => {
+    slide.addElement('diagrams', 3, 'SmartArt (Diagram)')
+  });
 
   const result = await pres.write(`add-slide-diagrams.test.pptx`);
 
-  expect(result.slides).toBe(4);
+  expect(result.slides).toBe(5);
 });
