@@ -66,15 +66,19 @@ export type ElementType =
   | 'cxnSp';
 
 export type ElementVisualType =
+  | 'textField'
   | 'chart'
   | 'smartArt'
   | 'diagram'
   | 'graphicFrame'
+  | 'table'
   | '3dModel'
-  | 'icon'
+  | 'pictogram'
   | 'picture'
+  | 'svgImage'
   | 'imageFilledShape'
   | 'vectorShape'
+  | 'vectorLine'
   | 'unknown';
 
 /**

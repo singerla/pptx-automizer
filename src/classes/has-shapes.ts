@@ -485,6 +485,13 @@ export default class HasShapes {
             this.targetType,
           );
           break;
+        case ElementType.Diagram:
+          await new Diagram(info, this.targetType)[info.mode](
+            this.targetTemplate,
+            this.targetNumber,
+            this.targetType,
+          );
+          break;
         case ElementType.OLEObject:
           await new OLEObject(info, this.targetType, this.sourceArchive)[
             info.mode

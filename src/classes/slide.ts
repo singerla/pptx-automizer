@@ -21,6 +21,7 @@ import {
   XmlElement,
 } from '../types/xml-types';
 import XmlPlaceholderHelper from '../helper/xml-placeholder-helper';
+import { XmlHelper } from '../helper/xml-helper';
 
 export class Slide extends HasShapes implements ISlide {
   targetType: ShapeTargetType = 'slide';
@@ -159,7 +160,16 @@ export class Slide extends HasShapes implements ISlide {
       placeholderMappingResult.usedPlaceholders,
     );
 
-    // Step 6: Clean up remaining unmatched placeholders
+    const forceAssignPhTypes = ['title', 'body'];
+    // Step 6: Handle force assignment for specific placeholder types
+    this.handleForceAssignmentPlaceholders(
+      forceAssignPhTypes,
+      placeholderMappingResult,
+      targetPlaceholders,
+      slideElements,
+    );
+
+    // Step 7: Clean up remaining unmatched placeholders
     this.cleanupUnmatchedPlaceholders(
       placeholderMappingResult.unmatchedElements,
       sourceLayoutInfo.placeholders,
@@ -233,11 +243,12 @@ export class Slide extends HasShapes implements ISlide {
     const elementsToProcess = [...unmatchedElements];
 
     elementsToProcess.forEach((element) => {
-      const bestAlternativeMatch = XmlPlaceholderHelper.findBestTargetPlaceholderAlternative(
-        element,
-        targetPlaceholders,
-        usedPlaceholders,
-      );
+      const bestAlternativeMatch =
+        XmlPlaceholderHelper.findBestTargetPlaceholderAlternative(
+          element,
+          targetPlaceholders,
+          usedPlaceholders,
+        );
 
       if (bestAlternativeMatch) {
         this.applyAlternativePlaceholderMatch(
@@ -397,6 +408,309 @@ export class Slide extends HasShapes implements ISlide {
     } else {
       this.modifyElement(selector, callback);
     }
+  }
+
+  /**
+   * Handles force assignment of placeholder types by finding the best matching
+   * unmatched slide elements for unassigned target placeholders.
+   *
+   * @param forceAssignPhTypes - Array of placeholder types that should be force assigned
+   * @param placeholderMappingResult - Current mapping state
+   * @param targetPlaceholders - Available target placeholders
+   * @param slideElements - All slide elements
+   * @private
+   */
+  private handleForceAssignmentPlaceholders(
+    forceAssignPhTypes: string[],
+    placeholderMappingResult: PlaceholderMappingResult,
+    targetPlaceholders: PlaceholderInfo[],
+    slideElements: ElementInfo[],
+  ): void {
+    forceAssignPhTypes.forEach((phType) => {
+      // Find unassigned target placeholders of this type
+      const unassignedTargetPlaceholders = targetPlaceholders.filter(
+        (ph) =>
+          ph.type === phType &&
+          !placeholderMappingResult.usedPlaceholders.includes(ph),
+      );
+
+      if (unassignedTargetPlaceholders.length === 0) {
+        return; // No unassigned placeholders of this type
+      }
+
+      // Find unmatched slide elements that could fit this placeholder type
+      const candidateElements = this.findCandidateElementsForForceAssignment(
+        slideElements,
+        placeholderMappingResult.unmatchedElements,
+        phType,
+      );
+
+      if (candidateElements.length === 0) {
+        return; // No suitable elements to assign
+      }
+
+      // Match elements to placeholders using best-fit algorithm
+      this.performForceAssignmentMatching(
+        candidateElements,
+        unassignedTargetPlaceholders,
+        placeholderMappingResult,
+      );
+    });
+  }
+
+  /**
+   * Finds candidate slide elements that could be force-assigned to a specific placeholder type.
+   * This includes both unmatched elements and elements that don't currently have placeholders.
+   *
+   * @param slideElements - All slide elements
+   * @param unmatchedElements - Elements that couldn't be matched initially
+   * @param phType - Placeholder type to find candidates for
+   * @returns Array of candidate elements
+   * @private
+   */
+  private findCandidateElementsForForceAssignment(
+    slideElements: ElementInfo[],
+    unmatchedElements: ElementInfo[],
+    phType: string,
+  ): ElementInfo[] {
+    const candidates: ElementInfo[] = [];
+
+    // Include unmatched elements that have placeholders
+    const unmatchedWithPlaceholders = unmatchedElements.filter(
+      (element) => element.placeholder?.type,
+    );
+    candidates.push(...unmatchedWithPlaceholders);
+
+    // Include elements without placeholders that could fit this type
+    const elementsWithoutPlaceholders = slideElements.filter(
+      (element) =>
+        !element.placeholder?.type &&
+        !unmatchedElements.includes(element) &&
+        this.isElementSuitableForPlaceholderType(element, phType),
+    );
+    candidates.push(...elementsWithoutPlaceholders);
+
+    return candidates;
+  }
+
+  /**
+   * Determines if an element is suitable for a specific placeholder type
+   * based on element type and other characteristics.
+   *
+   * @param element - Element to check
+   * @param phType - Placeholder type
+   * @returns True if element is suitable
+   * @private
+   */
+  private isElementSuitableForPlaceholderType(
+    element: ElementInfo,
+    phType: string,
+  ): boolean {
+    // Use the alternative placeholder mapping to determine suitability
+    const alternatives =
+      XmlPlaceholderHelper['mapAlternativePlaceholders'][phType] || [];
+
+    const textLength = element.getText().length
+
+    if (
+      !element.placeholder &&
+      element.type === 'sp' &&
+      ['title', 'ctrTitle', 'subTitle'].includes(phType) &&
+      textLength > 0 &&
+      textLength <= 2
+    ) {
+      return true;
+    }
+    if (
+      !element.placeholder &&
+      element.type === 'sp' &&
+      ['body'].includes(phType) &&
+      textLength > 2
+    ) {
+      return true;
+    }
+
+    // Check if element type matches the placeholder type or its alternatives
+    if (element.placeholder?.elementType === 'sp') {
+      // Shape elements are suitable for title and body placeholders
+      return ['title', 'body', 'ctrTitle', 'subTitle'].includes(phType);
+    }
+
+    // For other element types, check if they match the alternatives
+    return alternatives.some(
+      (alt) =>
+        element.placeholder?.elementType &&
+        this.elementTypeMatchesPlaceholderType(
+          element.placeholder.elementType,
+          alt,
+        ),
+    );
+  }
+
+  /**
+   * Checks if an element type matches a placeholder type.
+   *
+   * @param elementType - Type of the element
+   * @param placeholderType - Placeholder type to match
+   * @returns True if they match
+   * @private
+   */
+  private elementTypeMatchesPlaceholderType(
+    elementType: string,
+    placeholderType: string,
+  ): boolean {
+    const typeMapping = {
+      pic: ['pic', 'media', 'clipArt', 'bitmap'],
+      sp: ['title', 'body', 'ctrTitle', 'subTitle'],
+      chart: ['chart'],
+      tbl: ['tbl'],
+      dgm: ['dgm', 'orgChart'],
+    };
+
+    return typeMapping[elementType]?.includes(placeholderType) || false;
+  }
+
+  /**
+   * Performs the actual matching between candidate elements and unassigned placeholders
+   * using a best-fit algorithm that considers element characteristics and placeholder properties.
+   *
+   * @param candidateElements - Elements available for assignment
+   * @param unassignedPlaceholders - Placeholders that need elements
+   * @param mappingResult - Current mapping state to update
+   * @private
+   */
+  private performForceAssignmentMatching(
+    candidateElements: ElementInfo[],
+    unassignedPlaceholders: PlaceholderInfo[],
+    mappingResult: PlaceholderMappingResult,
+  ): void {
+    // Create a copy to avoid modifying during iteration
+    const availableElements = [...candidateElements];
+    const availablePlaceholders = [...unassignedPlaceholders];
+
+    // Sort placeholders by specificity (more specific placeholders get priority)
+    availablePlaceholders.sort((a, b) => {
+      const aSpecificity = this.getPlaceholderSpecificity(a);
+      const bSpecificity = this.getPlaceholderSpecificity(b);
+      return bSpecificity - aSpecificity;
+    });
+
+    availablePlaceholders.forEach((placeholder) => {
+      if (availableElements.length === 0) {
+        return; // No more elements to assign
+      }
+
+      // Find the best matching element for this placeholder
+      const bestElement = this.findBestElementForPlaceholder(
+        availableElements,
+        placeholder,
+      );
+
+      if (bestElement) {
+        // Apply the force assignment
+        this.applyForceAssignmentMatch(bestElement, placeholder, mappingResult);
+
+        // Remove the element from available pool
+        const elementIndex = availableElements.indexOf(bestElement);
+        if (elementIndex > -1) {
+          availableElements.splice(elementIndex, 1);
+        }
+
+        // Remove from unmatched elements if it was there
+        this.removeElementFromUnmatched(
+          bestElement,
+          mappingResult.unmatchedElements,
+        );
+      }
+    });
+  }
+
+  /**
+   * Calculates specificity score for a placeholder to prioritize assignment.
+   * More specific placeholders (with size, position, etc.) get higher scores.
+   *
+   * @param placeholder - Placeholder to score
+   * @returns Specificity score
+   * @private
+   */
+  private getPlaceholderSpecificity(placeholder: PlaceholderInfo): number {
+    let score = 0;
+
+    if (placeholder.sz) score += 2;
+    if (placeholder.position) score += 3;
+    if (placeholder.idx !== null && placeholder.idx !== undefined) score += 1;
+
+    return score;
+  }
+
+  /**
+   * Finds the best element match for a given placeholder using similarity scoring.
+   *
+   * @param availableElements - Elements to choose from
+   * @param placeholder - Target placeholder
+   * @returns Best matching element or null
+   * @private
+   */
+  private findBestElementForPlaceholder(
+    availableElements: ElementInfo[],
+    placeholder: PlaceholderInfo,
+  ): ElementInfo | null {
+    if (availableElements.length === 0) {
+      return null;
+    }
+
+    // Score each element for this placeholder
+    const scoredElements = availableElements.map((element) => {
+      let score = 0;
+
+      // Base score for type compatibility
+      if (this.isElementSuitableForPlaceholderType(element, placeholder.type)) {
+        score += 10;
+      }
+
+      // Use existing similarity calculation from XmlPlaceholderHelper
+      const similarityScore =
+        XmlPlaceholderHelper.calculatePlaceholderSimilarityScore(
+          score,
+          placeholder,
+          element,
+        );
+
+      return { element, score: similarityScore };
+    });
+
+    // Sort by score and return the best match
+    scoredElements.sort((a, b) => b.score - a.score);
+
+    return scoredElements.length > 0 ? scoredElements[0].element : null;
+  }
+
+  /**
+   * Applies a force assignment match between an element and placeholder.
+   *
+   * @param element - Element to assign
+   * @param placeholder - Target placeholder
+   * @param mappingResult - Mapping result to update
+   * @private
+   */
+  private applyForceAssignmentMatch(
+    element: ElementInfo,
+    placeholder: PlaceholderInfo,
+    mappingResult: PlaceholderMappingResult,
+  ): void {
+    // If element doesn't have a placeholder, create one
+    if (!element.placeholder) {
+      element.placeholder = {
+        type: placeholder.type,
+        elementType: element.type || 'sp',
+        idx: placeholder.idx,
+        sz: placeholder.sz,
+        position: null,
+      };
+    }
+
+    // Apply the placeholder using existing logic
+    this.applyPlaceholder(element, placeholder, mappingResult.usedPlaceholders);
   }
 
   /**

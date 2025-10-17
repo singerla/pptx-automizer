@@ -154,7 +154,10 @@ export class XmlSlideHelper {
       nameIdx,
       type,
       position,
-      placeholder: XmlPlaceholderHelper.getPlaceholderInfo(slideElement, slideInfo?.layoutPlaceholders),
+      placeholder: XmlPlaceholderHelper.getPlaceholderInfo(
+        slideElement,
+        slideInfo?.layoutPlaceholders,
+      ),
       hasTextBody: !!XmlSlideHelper.getTextBody(slideElement),
       getXmlElement: () => slideElement,
       getText: () => XmlSlideHelper.parseTextFragments(slideElement),
@@ -474,7 +477,7 @@ export class XmlSlideHelper {
 
   static parseShapeCoordinates(
     slideElementParent: XmlElement,
-    returnDefaults?: boolean
+    returnDefaults?: boolean,
   ): ElementPosition {
     const xFrmsA = slideElementParent.getElementsByTagName('a:xfrm');
     const xFrmsP = slideElementParent.getElementsByTagName('p:xfrm');
@@ -489,8 +492,8 @@ export class XmlSlideHelper {
     };
 
     if (!xFrms.item(0)) {
-      if(returnDefaults === false) {
-        return null
+      if (returnDefaults === false) {
+        return null;
       }
       return position;
     }
@@ -566,7 +569,6 @@ export class XmlSlideHelper {
       getChildren,
     };
   };
-
 
   async getSlideLayoutXml(layoutId: number): Promise<XmlDocument> {
     const layoutPath = 'ppt/slideLayouts/slideLayout' + layoutId + '.xml';
@@ -666,22 +668,33 @@ export class XmlSlideHelper {
    * @returns A string identifying the element type
    */
   static getElementVisualType(element: XmlElement): ElementVisualType {
-    // Check for graphicFrame elements (charts, SmartArt, etc.)
-    if (element.getElementsByTagName('p:graphicFrame')[0]) {
+    // Check for graphicFrame elements (charts, SmartArt, tables, etc.)
+    if (element.tagName === 'p:graphicFrame') {
       const graphicData = XmlHelper.findElement(element, 'a:graphicData');
       if (graphicData) {
-        const uri = graphicData.getAttribute('uri');
+        const uri = graphicData.getAttribute('uri').toLowerCase();
 
         // Check for specific URIs that identify element types
         if (uri && uri.includes('chart')) {
           return 'chart';
-        } else if (uri && uri.includes('smartArt')) {
+        } else if (
+          uri &&
+          (uri.includes('smartart') || uri.includes('diagram'))
+        ) {
           return 'smartArt';
-        } else if (uri && uri.includes('diagram')) {
-          return 'diagram';
+        } else if (uri && uri.includes('table')) {
+          return 'table';
         }
       }
       return 'graphicFrame';
+    }
+
+    // Check for tables - also check direct table elements
+    if (
+      XmlHelper.findElement(element, 'a:tbl') ||
+      element.getElementsByTagName('a:tbl')[0]
+    ) {
+      return 'table';
     }
 
     // Check for 3D models
@@ -689,9 +702,14 @@ export class XmlSlideHelper {
       return '3dModel';
     }
 
-    // Check for icons (SVG)
+    // Check for SVG Images
     if (XmlHelper.findElement(element, 'a:svgBlip')) {
-      return 'icon';
+      return 'svgImage';
+    }
+
+    // Check for SVG Images
+    if (XmlHelper.findElement(element, 'asvg:svgBlip')) {
+      return 'svgImage';
     }
 
     // Check for pictures/photos
@@ -706,11 +724,50 @@ export class XmlSlideHelper {
       return 'imageFilledShape';
     }
 
-    // Check for vector shapes
     const hasGeometry =
       !!XmlHelper.findElement(element, 'a:prstGeom') ||
       !!XmlHelper.findElement(element, 'a:custGeom');
     if (hasGeometry) {
+      // Check if it's a line shape specifically
+      const prstGeomElement = XmlHelper.findElement(element, 'a:prstGeom');
+      if (prstGeomElement) {
+        const prst = prstGeomElement.getAttribute('prst');
+        // Common line presets in PowerPoint
+        const linePresets = [
+          'line',
+          'lineInv',
+          'straightConnector1',
+          'bentConnector2',
+          'bentConnector3',
+          'bentConnector4',
+          'bentConnector5',
+          'curvedConnector2',
+          'curvedConnector3',
+          'curvedConnector4',
+          'curvedConnector5',
+          'callout1',
+          'callout2',
+          'callout3',
+          'accentCallout1',
+          'accentCallout2',
+          'accentCallout3',
+          'borderCallout1',
+          'borderCallout2',
+          'borderCallout3',
+          'accentBorderCallout1',
+          'accentBorderCallout2',
+          'accentBorderCallout3',
+        ];
+
+        if (prst && linePresets.includes(prst)) {
+          return 'vectorLine';
+        }
+
+        if (prst && prst === 'rect') {
+          return 'textField';
+        }
+      }
+
       return 'vectorShape';
     }
 

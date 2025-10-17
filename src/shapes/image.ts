@@ -14,6 +14,7 @@ import { ElementType } from '../enums/element-type';
 import IArchive from '../interfaces/iarchive';
 import { ContentTypeExtension } from '../enums/content-type-map';
 import { TargetByRelIdMap } from '../constants/constants';
+import { vd } from '../helper/general-helper';
 
 export class Image extends Shape implements IImage {
   extension: ContentTypeExtension;
@@ -79,6 +80,7 @@ export class Image extends Shape implements IImage {
 
     await this.setTargetElement();
     await this.updateTargetElementRelId();
+    await this.processImageRelations(targetTemplate, targetSlideNumber);
 
     this.applyImageCallbacks();
 
@@ -95,11 +97,11 @@ export class Image extends Shape implements IImage {
     await this.setTargetElement();
 
     await this.updateTargetElementRelId();
-    await this.appendToSlideTree();
+    await this.processImageRelations(targetTemplate, targetSlideNumber);
 
     this.applyImageCallbacks();
 
-    await this.processImageRelations(targetTemplate, targetSlideNumber);
+    await this.appendToSlideTree();
 
     return this;
   }

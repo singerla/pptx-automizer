@@ -7,7 +7,7 @@ import { ShapeCoordinates } from '../types/shape-types';
 import { GeneralHelper, vd } from './general-helper';
 import TextReplaceHelper from './text-replace-helper';
 import ModifyTextHelper from './modify-text-helper';
-import { XmlElement } from '../types/xml-types';
+import { ElementVisualType, XmlElement } from '../types/xml-types';
 import { XmlHelper } from './xml-helper';
 import { XmlSlideHelper } from './xml-slide-helper';
 import { ModifyColorHelper } from '../index';
@@ -284,7 +284,7 @@ export default class ModifyShapeHelper {
       // Remove any existing prstGeom element
       const existingPrstGeom = spPr.getElementsByTagName('a:prstGeom')[0];
       if (existingPrstGeom) {
-        XmlHelper.remove(existingPrstGeom)
+        XmlHelper.remove(existingPrstGeom);
       }
 
       // Create the new prstGeom element with the roundRect preset
@@ -315,7 +315,7 @@ export default class ModifyShapeHelper {
       // otherwise the picture will be invisible when we apply rounded corners
       const noFillElement = spPr.getElementsByTagName('a:noFill')[0];
       if (noFillElement) {
-        XmlHelper.remove(noFillElement)
+        XmlHelper.remove(noFillElement);
       }
     };
 
@@ -458,11 +458,6 @@ export default class ModifyShapeHelper {
     // Determine the visual type of the element (picture, chart, etc.)
     const elementType = XmlSlideHelper.getElementVisualType(element);
 
-    // Common elements to process
-    const spPr =
-      element.getElementsByTagName('p:spPr')[0] ||
-      element.getElementsByTagName('a:spPr')[0];
-
     // Remove shadow effects for all types
     XmlHelper.removeByTagName(element, 'a:outerShdw');
     XmlHelper.removeByTagName(element, 'a:innerShdw');
@@ -491,8 +486,8 @@ export default class ModifyShapeHelper {
         XmlHelper.removeByTagName(element, 'p:style');
         break;
 
-      case 'icon':
-      case 'smartArt':
+      case 'svgImage':
+      case 'pictogram':
         // For icons and SmartArt, preserve basic structure but remove decorative effects
         XmlHelper.removeByTagName(element, 'a:prstTxWarp');
         XmlHelper.removeByTagName(element, 'a:sketch');
@@ -504,12 +499,6 @@ export default class ModifyShapeHelper {
         XmlHelper.removeByTagName(element, 'c:view3D');
         XmlHelper.removeByTagName(element, 'c:perspective');
         XmlHelper.removeByTagName(element, 'a:prstTxWarp');
-        break;
-
-      case 'vectorShape':
-        // For vector shapes/drawings, preserve most styling but remove extreme effects
-        XmlHelper.removeByTagName(element, 'a:prstTxWarp');
-        XmlHelper.removeByTagName(element, 'ask:lineSketchStyleProps');
         break;
 
       case '3dModel':
@@ -556,5 +545,14 @@ export default class ModifyShapeHelper {
         textRun.setAttribute('b', '1');
       }
     });
+  }
+
+  /**
+   * Determines the type of visual element in PowerPoint
+   * @param element The XML element to check
+   * @returns A string identifying the element type
+   */
+  static getElementVisualType(element: XmlElement): ElementVisualType {
+    return XmlSlideHelper.getElementVisualType(element);
   }
 }

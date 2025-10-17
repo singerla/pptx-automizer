@@ -1,36 +1,27 @@
 import { FileHelper } from '../helper/file-helper';
 import { XmlHelper } from '../helper/xml-helper';
 import { Shape } from '../classes/shape';
-import path from 'path';
 
+import { RelationshipAttribute, XmlElement } from '../types/xml-types';
 import {
-  RelationshipAttribute,
-  XmlDocument,
-  XmlElement,
-} from '../types/xml-types';
-import {
-  ChartModificationCallback,
   ImportedElement,
+  ShapeModificationCallback,
   ShapeTargetType,
   Target,
-  Workbook,
 } from '../types/types';
-import { IChart } from '../interfaces/ichart';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
-import { contentTracker } from '../helper/content-tracker';
 import IArchive from '../interfaces/iarchive';
-import { ContentTypeExtension } from '../enums/content-type-map';
-import { log, vd } from '../helper/general-helper';
 import { TargetByRelIdMap } from '../constants/constants';
 
 export class Diagram extends Shape {
+  sourceElement: XmlElement;
   relTypeColors: string;
   relTypeData: string;
   relTypeLayout: string;
   relTypeQuickStyle: string;
   relTypeDrawing: string;
-  callbacks: ChartModificationCallback[];
-  createdRids: Record<string, string> = {}
+  callbacks: ShapeModificationCallback[];
+  createdRids: Record<string, string> = {};
 
   constructor(shape: ImportedElement, targetType: ShapeTargetType) {
     super(shape, targetType);
@@ -38,7 +29,7 @@ export class Diagram extends Shape {
     this.relRootTag = TargetByRelIdMap.diagram.relRootTag;
     this.relAttribute = TargetByRelIdMap.diagram.relAttribute;
     this.relParent = (element: XmlElement) =>
-      element.parentNode.parentNode.parentNode as XmlElement
+      element.parentNode.parentNode.parentNode as XmlElement;
 
     this.relTypeData =
       'http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramData';
@@ -58,7 +49,9 @@ export class Diagram extends Shape {
   ): Promise<Diagram> {
     await this.prepare(targetTemplate, targetSlideNumber);
     await this.clone();
+
     await this.replaceIntoSlideTree();
+    await this.updateRelIds();
 
     return this;
   }
@@ -71,6 +64,7 @@ export class Diagram extends Shape {
     await this.clone();
 
     await this.appendToSlideTree();
+    await this.updateRelIds();
 
     return this;
   }
@@ -90,6 +84,7 @@ export class Diagram extends Shape {
     targetSlideNumber: number,
   ): Promise<Diagram> {
     await this.prepare(targetTemplate, targetSlideNumber);
+    await this.updateRelIds();
 
     return this;
   }
@@ -104,24 +99,45 @@ export class Diagram extends Shape {
     await this.copyFiles();
     await this.appendTypes();
 
-    await this.appendToSlideRels(this.relTypeData, `../diagrams/data${this.targetNumber}.xml`);
-    await this.appendToSlideRels(this.relTypeColors, `../diagrams/colors${this.targetNumber}.xml`);
-    await this.appendToSlideRels(this.relTypeLayout, `../diagrams/layout${this.targetNumber}.xml`);
-    await this.appendToSlideRels(this.relTypeQuickStyle, `../diagrams/quickStyle${this.targetNumber}.xml`);
+    await this.appendToSlideRels(
+      this.relTypeData,
+      `../diagrams/data${this.targetNumber}.xml`,
+    );
+    await this.appendToSlideRels(
+      this.relTypeColors,
+      `../diagrams/colors${this.targetNumber}.xml`,
+    );
+    await this.appendToSlideRels(
+      this.relTypeLayout,
+      `../diagrams/layout${this.targetNumber}.xml`,
+    );
+    await this.appendToSlideRels(
+      this.relTypeQuickStyle,
+      `../diagrams/quickStyle${this.targetNumber}.xml`,
+    );
 
     // drawing xml will be copied, but it has no explicit relation attribute in slide.xml
-    await this.appendToSlideRels(this.relTypeDrawing, `../diagrams/drawing${this.targetNumber}.xml`);
-
-    await this.updateElementsRelId((targetElement: XmlElement)=> {
-      targetElement.setAttribute('r:dm', this.createdRids[this.relTypeData])
-      targetElement.setAttribute('r:lo', this.createdRids[this.relTypeLayout])
-      targetElement.setAttribute('r:qs', this.createdRids[this.relTypeQuickStyle])
-      targetElement.setAttribute('r:cs', this.createdRids[this.relTypeColors])
-    });
+    await this.appendToSlideRels(
+      this.relTypeDrawing,
+      `../diagrams/drawing${this.targetNumber}.xml`,
+    );
   }
 
   async clone(): Promise<void> {
     await this.setTargetElement();
+    this.applyCallbacks(this.callbacks, this.targetElement);
+  }
+
+  async updateRelIds() {
+    await this.updateElementsRelId((targetElement: XmlElement) => {
+      targetElement.setAttribute('r:dm', this.createdRids[this.relTypeData]);
+      targetElement.setAttribute('r:lo', this.createdRids[this.relTypeLayout]);
+      targetElement.setAttribute(
+        'r:qs',
+        this.createdRids[this.relTypeQuickStyle],
+      );
+      targetElement.setAttribute('r:cs', this.createdRids[this.relTypeColors]);
+    });
   }
 
   async copyFiles(): Promise<void> {
@@ -158,11 +174,11 @@ export class Diagram extends Shape {
   }
 
   async appendTypes(): Promise<void> {
-    await this.appendDataContentType()
-    await this.appendColorsToContentType()
-    await this.appendLyoutToContentType()
-    await this.appendQuickStyleToContentType()
-    await this.appendDrawingToContentType()
+    await this.appendDataContentType();
+    await this.appendColorsToContentType();
+    await this.appendLyoutToContentType();
+    await this.appendQuickStyleToContentType();
+    await this.appendDrawingToContentType();
   }
 
   async appendToSlideRels(type: string, target: string): Promise<XmlElement> {
@@ -171,7 +187,7 @@ export class Diagram extends Shape {
       this.targetSlideRelFile,
     );
 
-    this.createdRids[type] = this.createdRid
+    this.createdRids[type] = this.createdRid;
 
     const attributes = {
       Id: this.createdRid,
@@ -192,7 +208,8 @@ export class Diagram extends Shape {
     return XmlHelper.append(
       XmlHelper.createContentTypeChild(this.targetArchive, {
         PartName: `/ppt/diagrams/data${this.targetNumber}.xml`,
-        ContentType: 'application/vnd.openxmlformats-officedocument.drawingml.diagramData+xml',
+        ContentType:
+          'application/vnd.openxmlformats-officedocument.drawingml.diagramData+xml',
       }),
     );
   }
@@ -227,7 +244,7 @@ export class Diagram extends Shape {
   appendDrawingToContentType(): Promise<XmlElement> {
     return XmlHelper.append(
       XmlHelper.createContentTypeChild(this.targetArchive, {
-        PartName: `/ppt/drawings/drawing${this.targetNumber}.xml`,
+        PartName: `/ppt/diagrams/drawing${this.targetNumber}.xml`,
         ContentType: `application/vnd.openxmlformats-officedocument.drawingml.diagramDrawing+xml`,
       }),
     );

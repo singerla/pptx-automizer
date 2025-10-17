@@ -105,7 +105,23 @@ export default class XmlPlaceholderHelper {
     layoutPlaceholder: PlaceholderInfo,
   ): void {
     // Get the placeholder element
-    const ph = element.getElementsByTagName('p:ph').item(0);
+    let ph = element.getElementsByTagName('p:ph').item(0);
+
+    if(!ph) {
+      const nvPr = element.getElementsByTagName('p:nvPr').item(0);
+      if (nvPr) {
+        ph = element.ownerDocument.createElement('p:ph');
+
+        if(layoutPlaceholder.type) {
+          ph.setAttribute('type', layoutPlaceholder.type);
+        }
+
+        if(layoutPlaceholder.sz) {
+          ph.setAttribute('sz', layoutPlaceholder.sz);
+        }
+        nvPr.appendChild(ph);
+      }
+    }
 
     if (ph && layoutPlaceholder.idx) {
       // Set the index to match the layout placeholder
@@ -201,27 +217,21 @@ export default class XmlPlaceholderHelper {
   ) {
     // Bonus points for matching size if available
     if (
-      element.placeholder.sz &&
+      element.placeholder?.sz &&
       availablePlaceholder.sz === element.placeholder.sz
     ) {
       score += 10;
     }
 
     // Bonus points for similar position if available
-    if (element.placeholder.position && availablePlaceholder.position) {
+    const position = element.placeholder?.position || element.position;
+    if (position && availablePlaceholder.position) {
       const distanceScore = Math.max(
         0,
         100 -
           Math.sqrt(
-            Math.pow(
-              element.placeholder.position.x - availablePlaceholder.position.x,
-              2,
-            ) +
-              Math.pow(
-                element.placeholder.position.y -
-                  availablePlaceholder.position.y,
-                2,
-              ),
+            Math.pow(position.x - availablePlaceholder.position.x, 2) +
+              Math.pow(position.y - availablePlaceholder.position.y, 2),
           ) /
             1000,
       );

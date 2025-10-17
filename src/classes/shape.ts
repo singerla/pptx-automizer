@@ -178,7 +178,6 @@ export class Shape {
       this.targetSlideFile,
     );
 
-
     const targetElements = await this.getElementsByRid(
       targetSlideXml,
       this.sourceRid,
@@ -193,6 +192,10 @@ export class Shape {
           .setAttribute(this.relAttribute, this.createdRid);
       }
     });
+
+    // if(cb && typeof cb === 'function') {
+    //   XmlHelper.dump(targetSlideXml)
+    // }
 
     XmlHelper.writeXmlToArchive(
       this.targetArchive,
