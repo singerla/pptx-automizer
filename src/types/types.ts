@@ -12,10 +12,13 @@ import { ContentTypeExtension } from '../enums/content-type-map';
 import PptxGenJS from 'pptxgenjs';
 import { Logger } from '../helper/general-helper';
 import { IPptxGenJSSlide } from '../interfaces/ipptxgenjs-slide';
+import HasShapes from '../classes/has-shapes';
+import { ISlide } from '../interfaces/islide';
+import { IMaster } from '../interfaces/imaster';
 
 export type ShapeTargetType = 'slide' | 'slideMaster' | 'slideLayout';
 export type SourceIdentifier = number | string;
-export type SlideModificationCallback = (document: XmlDocument) => void;
+export type SlideModificationCallback = (document: XmlDocument, parent?: HasShapes | ISlide | IMaster) => Promise<void>;
 export type SlidePlaceholder = {
   xml: XmlElement;
   type: string;
@@ -238,7 +241,7 @@ export type ImportElement = {
   selector: FindElementSelector;
   mode: string;
   callback?: ShapeModificationCallback | ShapeModificationCallback[];
-  info?: any;
+  info?: ImportedElement;
 };
 export type GenerateOnSlideCallback = (
   pptxGenJSSlide: IPptxGenJSSlide,
@@ -278,6 +281,7 @@ export type ImportedElement = {
   target?: AnalyzedElementType['target'];
   type?: AnalyzedElementType['type'];
   sourceElement?: XmlElement;
+  hash?: string;
   sourceRid?: string;
   sourceMode?:
     | 'image:svg'

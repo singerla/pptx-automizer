@@ -5,6 +5,7 @@ import {
   ElementVisualType,
   GroupInfo,
   LayoutInfo,
+  PlaceholderInfo,
   SlideHelperProps,
   TemplateSlideInfo,
   TextParagraph,
@@ -45,7 +46,7 @@ export class XmlSlideHelper {
   /**
    * Constructor for the XmlSlideHelper class.
    * @param {XmlDocument} slideXml - The slide XML document to be used by the helper.
-   * @param hasShapes
+   * @param params
    */
   constructor(slideXml: XmlDocument, params: SlideHelperProps) {
     if (!slideXml) {
@@ -94,18 +95,20 @@ export class XmlSlideHelper {
   /**
    * Get an array of ElementInfo objects for all named elements on a slide.
    * @param filterTags Use an array of strings to filter the output array
-   * @param slideInfo Use placeholder position from layout as fallback
+   * @param layoutPlaceholders
    */
   getAllElements(
     filterTags?: string[],
-    slideInfo?: TemplateSlideInfo,
+    layoutPlaceholders?: PlaceholderInfo[],
   ): ElementInfo[] {
     const elementInfo: ElementInfo[] = [];
 
     try {
       const shapeNodes = this.getNamedElements(filterTags);
       shapeNodes.forEach((shapeNode: XmlElement) => {
-        elementInfo.push(XmlSlideHelper.getElementInfo(shapeNode, slideInfo));
+        elementInfo.push(
+          XmlSlideHelper.getElementInfo(shapeNode, layoutPlaceholders),
+        );
       });
     } catch (error) {
       console.error(error);
@@ -138,7 +141,7 @@ export class XmlSlideHelper {
 
   static getElementInfo(
     slideElement: XmlElement,
-    slideInfo?: TemplateSlideInfo,
+    layoutPlaceholders?: PlaceholderInfo[],
   ): ElementInfo {
     const creationId = XmlSlideHelper.getElementCreationId(slideElement, true);
     const nameIdx = !creationId
@@ -156,7 +159,7 @@ export class XmlSlideHelper {
       position,
       placeholder: XmlPlaceholderHelper.getPlaceholderInfo(
         slideElement,
-        slideInfo?.layoutPlaceholders,
+        layoutPlaceholders,
       ),
       hasTextBody: !!XmlSlideHelper.getTextBody(slideElement),
       getXmlElement: () => slideElement,
@@ -571,12 +574,18 @@ export class XmlSlideHelper {
   };
 
   async getSlideLayoutXml(layoutId: number): Promise<XmlDocument> {
+    return XmlSlideHelper.getSlideLayoutXml(this.sourceArchive, layoutId);
+  }
+
+  static async getSlideLayoutXml(
+    sourceArchive: IArchive,
+    layoutId: number,
+  ): Promise<XmlDocument> {
     const layoutPath = 'ppt/slideLayouts/slideLayout' + layoutId + '.xml';
     const layoutXml = await XmlHelper.getXmlFromArchive(
-      this.sourceArchive,
+      sourceArchive,
       layoutPath,
     );
-
     if (layoutXml) {
       return layoutXml;
     }

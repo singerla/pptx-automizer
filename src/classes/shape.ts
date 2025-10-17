@@ -193,10 +193,6 @@ export class Shape {
       }
     });
 
-    // if(cb && typeof cb === 'function') {
-    //   XmlHelper.dump(targetSlideXml)
-    // }
-
     XmlHelper.writeXmlToArchive(
       this.targetArchive,
       this.targetSlideFile,

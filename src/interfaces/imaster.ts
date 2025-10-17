@@ -6,13 +6,14 @@ import {
   SourceIdentifier,
 } from '../types/types';
 import IArchive from './iarchive';
+import { ModifyXmlCallback } from '../types/xml-types';
 
 export interface IMaster {
   sourceArchive: IArchive;
   sourceNumber: number;
   key: string;
   modify(callback: SlideModificationCallback): void;
-  modifyRelations(callback: SlideModificationCallback): void;
+  modifyRelations(callback: ModifyXmlCallback): void;
   append(targetTemplate: RootPresTemplate): Promise<void>;
   addElement(
     presName: string,

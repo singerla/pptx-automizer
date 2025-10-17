@@ -80,7 +80,7 @@ export class XmlTemplateHelper {
         creationIds.push({
           id: creationIdSlide,
           number,
-          elements: slideHelper.getAllElements([], slideInfo),
+          elements: slideHelper.getAllElements([], slideInfo.layoutPlaceholders),
           info: slideInfo,
         });
       } catch (err) {
@@ -175,6 +175,8 @@ export class XmlTemplateHelper {
     if (cSldElement && cSldElement.getAttribute('name')) {
       layoutName = cSldElement.getAttribute('name');
     }
+
+    // XmlHelper.dump(layoutXml)
 
     // Get placeholders from the slideLayout
     const phElements = layoutXml.getElementsByTagName('p:ph');

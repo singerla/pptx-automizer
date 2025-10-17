@@ -10,6 +10,7 @@ import {
 import IArchive from './iarchive';
 import {
   ElementInfo,
+  ModifyXmlCallback,
   PlaceholderInfo,
   SlideInfo,
   TemplateSlideInfo,
@@ -19,9 +20,13 @@ export interface ISlide {
   sourceArchive: IArchive;
   sourceNumber: SourceIdentifier;
 
+  /** Will be executed before any shape modifications callback */
+  prepare(callback: SlideModificationCallback): void;
+
+  /** Will be executed after shape modification callbacks were executed */
   modify(callback: SlideModificationCallback): void;
 
-  modifyRelations(callback: SlideModificationCallback): void;
+  modifyRelations(callback: ModifyXmlCallback): void;
 
   append(targetTemplate: RootPresTemplate): Promise<void>;
 
@@ -67,10 +72,9 @@ export interface ISlide {
   /**
    * Merges slide content into a specified slide layout by matching placeholders.
    * @param targetLayout - The layout identifier to merge into
-   * @param matchPlaceholders - Array of placeholder information for content mapping
    * @returns Promise resolving to the updated slide instance
    */
-  mergeIntoSlideLayout(targetLayout: string, matchPlaceholders: PlaceholderInfo[]): Promise<ISlide>
+  mergeIntoSlideLayout(targetLayout: number | string): ISlide;
 
   getElement(selector: FindElementSelector): Promise<ElementInfo>;
 

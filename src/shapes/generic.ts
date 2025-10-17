@@ -8,6 +8,7 @@ import { Shape } from '../classes/shape';
 import { XmlElement } from '../types/xml-types';
 import { XmlHelper } from '../helper/xml-helper';
 import { HyperlinkProcessor } from '../helper/hyperlink-processor';
+import { vd } from '../helper/general-helper';
 
 export class GenericShape extends Shape {
   sourceElement: XmlElement;
@@ -32,10 +33,10 @@ export class GenericShape extends Shape {
   ): Promise<GenericShape> {
     await this.prepare(targetTemplate, targetSlideNumber);
     await this.appendToSlideTree();
-    
+
     // If this element contains hyperlinks, copy the hyperlink relationships
     await this.copyHyperlinkRelationships(targetSlideNumber);
-    
+
     return this;
   }
 
@@ -55,13 +56,13 @@ export class GenericShape extends Shape {
   ): Promise<void> {
     await this.setTarget(targetTemplate, targetSlideNumber);
     await this.setTargetElement();
-    
+
     // Get the slide relations XML to pass to callbacks
     const slideRelXml = await XmlHelper.getXmlFromArchive(
       this.targetArchive,
       this.targetSlideRelFile
     );
-    
+
     // Pass both the element and the relation to applyCallbacks
     // Use the documentElement property to get the root element of the XML document
     this.applyCallbacks(this.callbacks, this.targetElement, slideRelXml.documentElement as XmlElement);

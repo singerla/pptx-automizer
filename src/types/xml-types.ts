@@ -161,8 +161,10 @@ export type LayoutInfo = {
 export type PlaceholderMappingResult = {
   /** Array of placeholders that have been assigned to elements */
   usedPlaceholders: PlaceholderInfo[];
-  /** Array of elements that couldn't be matched to placeholders */
-  unmatchedElements: ElementInfo[];
+  /** All source elements that could be assigned to a target placeholder */
+  matchedSourceElements: ElementInfo[];
+  /** Array of source placeholder elements that couldn't be matched to target placeholders */
+  unmatchedSourcePlaceholderElements: ElementInfo[];
 };
 
 export type ElementPosition = {

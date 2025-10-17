@@ -268,7 +268,6 @@ export class XmlRelationshipHelper {
       `ppt/slides/_rels`,
       '../slideLayouts/slideLayout',
     );
-
     return slideToLayouts[0].number;
   }
 

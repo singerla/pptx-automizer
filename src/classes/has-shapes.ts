@@ -23,6 +23,8 @@ import {
 import { ContentTracker } from '../helper/content-tracker';
 import {
   ElementInfo,
+  ModifyXmlCallback,
+  PlaceholderInfo,
   RelationshipAttribute,
   SlideListAttribute,
   TemplateSlideInfo,
@@ -39,8 +41,9 @@ import { XmlSlideHelper } from '../helper/xml-slide-helper';
 import { OLEObject } from '../shapes/ole';
 import { Hyperlink } from '../shapes/hyperlink';
 import { HyperlinkProcessor } from '../helper/hyperlink-processor';
-import { vd } from '../helper/general-helper';
 import { Diagram } from '../shapes/diagram';
+import { ISlide } from '../interfaces/islide';
+import { GeneralHelper, vd } from '../helper/general-helper';
 
 export default class HasShapes {
   /**
@@ -84,6 +87,11 @@ export default class HasShapes {
    */
   targetPath: string;
   /**
+   * Preparations of root template slide
+   * @internal
+   */
+  preparations: SlideModificationCallback[];
+  /**
    * Modifications of root template slide
    * @internal
    */
@@ -92,7 +100,7 @@ export default class HasShapes {
    * Modifications of slide relations
    * @internal
    */
-  relModifications: SlideModificationCallback[];
+  relModifications: ModifyXmlCallback[];
   /**
    * Import elements of slide
    * @internal
@@ -144,6 +152,7 @@ export default class HasShapes {
   ];
   targetType: ShapeTargetType;
   params: AutomizerParams;
+  presentation: IPresentationProps;
 
   cleanupPlaceholders = false;
 
@@ -153,10 +162,13 @@ export default class HasShapes {
   }) {
     this.sourceTemplate = params.template;
 
+    this.preparations = [];
     this.modifications = [];
     this.relModifications = [];
     this.importElements = [];
     this.generateElements = [];
+
+    this.presentation = params.presentation;
 
     this.status = params.presentation.status;
     this.content = params.presentation.content;
@@ -180,17 +192,17 @@ export default class HasShapes {
   /**
    * Asynchronously retrieves all elements from the slide.
    * @param filterTags Use an array of strings to filter parent tags (e.g. 'sp')
-   * @param slideInfo Use placeholder position from layout as fallback
+   * @param layoutPlaceholders
    * @returns {Promise<ElementInfo[]>} A promise that resolves to an array of ElementInfo objects.
    */
   async getAllElements(
     filterTags?: string[],
-    slideInfo?: TemplateSlideInfo,
+    layoutPlaceholders?: PlaceholderInfo[],
   ): Promise<ElementInfo[]> {
     const xmlSlideHelper = await this.getSlideHelper();
 
     // Get all ElementInfo objects
-    return xmlSlideHelper.getAllElements(filterTags, slideInfo);
+    return xmlSlideHelper.getAllElements(filterTags, layoutPlaceholders);
   }
 
   /**
@@ -219,28 +231,46 @@ export default class HasShapes {
    * @returns {Promise<XmlSlideHelper>} An instance of XmlSlideHelper.
    */
   async getSlideHelper(): Promise<XmlSlideHelper> {
+    return this.getSlideHelperInstance(
+      this.sourceTemplate.archive,
+      this.sourcePath,
+      this.sourceNumber,
+    );
+  }
+
+  async getSlideHelperInstance(
+    archive: IArchive,
+    path: string,
+    number: number,
+  ): Promise<XmlSlideHelper> {
     try {
       // Retrieve the slide XML data
-      const slideXml = await XmlHelper.getXmlFromArchive(
-        this.sourceTemplate.archive,
-        this.sourcePath,
-      );
+      const slideXml = await XmlHelper.getXmlFromArchive(archive, path);
 
       const sourceLayoutId = await XmlRelationshipHelper.getSlideLayoutNumber(
-        this.sourceTemplate.archive,
-        this.sourceNumber,
+        archive,
+        number,
       );
 
       // Initialize the XmlSlideHelper
       return new XmlSlideHelper(slideXml, {
-        sourceArchive: this.sourceTemplate.archive,
-        slideNumber: this.sourceNumber,
-        sourceLayoutId
+        sourceArchive: archive,
+        slideNumber: number,
+        sourceLayoutId,
       });
     } catch (error) {
       // Log the error message
       throw new Error(error.message);
     }
+  }
+
+  /**
+   * Push preparations list
+   * @internal
+   * @param callback
+   */
+  prepare(callback: SlideModificationCallback): void {
+    this.preparations.push(callback);
   }
 
   /**
@@ -257,7 +287,7 @@ export default class HasShapes {
    * @internal
    * @param callback
    */
-  modifyRelations(callback: SlideModificationCallback): void {
+  modifyRelations(callback: ModifyXmlCallback): void {
     this.relModifications.push(callback);
   }
 
@@ -370,55 +400,6 @@ export default class HasShapes {
   }
 
   /**
-   * Checks if an element with the same selector has already been imported or modified.
-   * This function helps to apply placeholder modifications properly.
-   *
-   * @param {FindElementSelector} selector - The selector used to identify an element.
-   *                                         Can be a string or an object with name and optional creationId/nameIdx.
-   * @returns {ImportElement|undefined} The existing element if found, otherwise undefined.
-   */
-  getAlreadyModifiedElement(
-    selector: FindElementSelector,
-  ): ImportElement | undefined {
-    // Search through previously imported/modified elements
-    return this.importElements.find((element) => {
-      // Skip comparison if either selector is not an object
-      if (
-        typeof selector !== 'object' ||
-        typeof element.selector !== 'object'
-      ) {
-        return false;
-      }
-
-      // Case 1: Element without creationId - match by name and nameIdx
-      if (!selector.creationId) {
-        return (
-          selector.name === element.selector.name &&
-          selector.nameIdx === element.selector.nameIdx
-        );
-      }
-
-      // Case 2: Element with creationId - match by name and normalized creationId
-      if (selector.creationId && element.selector?.creationId) {
-        // Normalize creationIds by removing curly braces
-        const normalizedSelectorId = selector.creationId.replace(/{|}/g, '');
-        const normalizedElementId = element.selector.creationId.replace(
-          /{|}/g,
-          '',
-        );
-
-        return (
-          selector.name === element.selector.name &&
-          normalizedSelectorId === normalizedElementId
-        );
-      }
-
-      // No match found for this element
-      return false;
-    });
-  }
-
-  /**
    * ToDo: Implement creationIds as well for slideMasters
    *
    * Try to convert a given slide's creationId to corresponding slide number.
@@ -456,13 +437,19 @@ export default class HasShapes {
   }
 
   /**
-   * Imported selected elements
+   * Imported selected elements while merging multiple element modifications
    * @internal
    */
   async importedSelectedElements(): Promise<void> {
-    for (const element of this.importElements) {
-      const info = await this.getElementInfo(element);
+    await this.getUniqueImportedElements();
 
+    for (const element of this.importElements) {
+      if (!element.info) {
+        // Element has already been modified, skipping...
+        continue;
+      }
+
+      const info = element.info;
       switch (info?.type) {
         case ElementType.Chart:
           await new Chart(info, this.targetType)[info.mode](
@@ -511,6 +498,35 @@ export default class HasShapes {
           break;
         default:
           break;
+      }
+    }
+  }
+
+  /**
+   * Processes and updates the list of imported elements by ensuring their uniqueness based on a generated hash.
+   * If duplicate elements are found, their callbacks are merged.
+   *
+   * @return {Promise<void>} Resolves when the process of identifying and updating unique imported elements is complete.
+   */
+  async getUniqueImportedElements(): Promise<void> {
+    for (const element of this.importElements) {
+      const info = await this.getElementInfo(element);
+      const eleHash =
+
+        XmlHelper.createHashFromXmlElement(info.sourceElement, element);
+
+      const alreadyImported = this.importElements.find(
+        (ele) => ele.info?.hash === eleHash,
+      );
+      if (alreadyImported) {
+        alreadyImported.callback = GeneralHelper.arrayify(
+          alreadyImported.callback,
+        );
+        const pushCallbacks = GeneralHelper.arrayify(element.callback);
+        alreadyImported.callback.push(...pushCallbacks);
+      } else {
+        info.hash = eleHash;
+        element.info = info;
       }
     }
   }
@@ -898,7 +914,10 @@ export default class HasShapes {
       ).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);
     }
 
-    const diagrams = await Diagram.getAllOnSlide(this.sourceArchive, this.relsPath);
+    const diagrams = await Diagram.getAllOnSlide(
+      this.sourceArchive,
+      this.relsPath,
+    );
     for (const diagram of diagrams) {
       await new Diagram(
         {
@@ -1082,7 +1101,25 @@ export default class HasShapes {
   }
 
   /**
-   * Applys modifications
+   * Applys slide preparation callbacks
+   * Will be executed before any shape modifications callback
+   * @internal
+   * @returns modifications
+   */
+  async applyPreparations(): Promise<void> {
+    for (const modification of this.preparations) {
+      const xml = await XmlHelper.getXmlFromArchive(
+        this.targetArchive,
+        this.targetPath,
+      );
+      await modification(xml, this);
+      XmlHelper.writeXmlToArchive(this.targetArchive, this.targetPath, xml);
+    }
+  }
+
+  /**
+   * Applys slide modification callbacks
+   * Will be executed after all shape modifications callbacks
    * @internal
    * @returns modifications
    */
@@ -1092,7 +1129,7 @@ export default class HasShapes {
         this.targetArchive,
         this.targetPath,
       );
-      modification(xml);
+      await modification(xml, this);
       XmlHelper.writeXmlToArchive(this.targetArchive, this.targetPath, xml);
     }
   }

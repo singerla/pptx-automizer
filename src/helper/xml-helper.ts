@@ -18,6 +18,7 @@ import {
   ContentTypeExtension,
   ContentTypeMap,
 } from '../enums/content-type-map';
+import { createHash } from 'node:crypto';
 
 export class XmlHelper {
   static async modifyXmlInArchive(
@@ -194,9 +195,9 @@ export class XmlHelper {
 
     let subtype = last(prefix.split('/'));
     const mapSubtype = {
-      data: 'diagramData'
-    }
-    subtype = mapSubtype[subtype] || subtype
+      data: 'diagramData',
+    };
+    subtype = mapSubtype[subtype] || subtype;
 
     const relType = last(type.split('/'));
     const rId = element.getAttribute('Id');
@@ -721,5 +722,37 @@ export class XmlHelper {
     }
 
     return null;
+  }
+
+  /**
+   * Creates a hash from an XML element
+   * @param xmlElement The XML element to hash
+   * @returns A hash string
+   */
+  static createHashFromXmlElement(xmlElement, eleInfo): string {
+    try {
+      // Serialize XML element to string
+      const serializer = new XMLSerializer();
+      const xmlString = serializer.serializeToString(xmlElement);
+
+      // Create hash using SHA-256
+      const hash = createHash('sha256');
+      hash.update(xmlString);
+
+      // force different hashes for equal elements from different slides
+      const prefix =
+        eleInfo.presName + '-' + eleInfo.slideNumber + '-' + eleInfo.mode + '-';
+
+      return prefix + hash.digest('hex');
+    } catch (error) {
+      console.error('Error creating hash from XML element:', error);
+      // Fallback: create hash from element tag name and attributes
+      const fallbackString = `${xmlElement.tagName}_${
+        xmlElement.getAttribute('id') || ''
+      }_${xmlElement.getAttribute('name') || ''}`;
+      const hash = createHash('sha256');
+      hash.update(fallbackString);
+      return hash.digest('hex');
+    }
   }
 }

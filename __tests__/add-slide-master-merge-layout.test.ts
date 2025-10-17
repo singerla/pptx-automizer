@@ -1,21 +1,11 @@
-import Automizer, {
-  ISlide,
-  ModifyShapeHelper,
-  ModifyTextHelper,
-  XmlHelper,
-} from './index';
-import { vd } from './helper/general-helper';
+import Automizer from '../src/automizer';
+import { ModifyShapeHelper, ModifyTextHelper } from '../src';
 
-const run = async () => {
-  const outputDir = `${__dirname}/../__tests__/pptx-output`;
-  const templateDir = `${__dirname}/../__tests__/pptx-templates`;
-
+test('Import layout from another template and merge with auto-mapping placeholders', async () => {
   const automizer = new Automizer({
-    templateDir,
-    outputDir,
-    verbosity: 0,
+    templateDir: `${__dirname}/pptx-templates`,
+    outputDir: `${__dirname}/pptx-output`,
     autoImportSlideMasters: false,
-    removeExistingSlides: true,
     cleanupPlaceholders: false,
   });
 
@@ -34,7 +24,6 @@ const run = async () => {
       '@TitleNoPlaceholder',
       ModifyTextHelper.setText('Test orig add'),
     );
-
     slide.modifyElement('@TitleNoPlaceholder', [
       ModifyShapeHelper.roundedCorners(1400),
     ]);
@@ -43,9 +32,5 @@ const run = async () => {
     ]);
   });
 
-  await pres.write(`mergeIntoSlideLayout.test.pptx`);
-};
-
-run().catch((error) => {
-  console.error(error);
+  await pres.write(`add-slide-master-merge-layout.test.pptx`);
 });

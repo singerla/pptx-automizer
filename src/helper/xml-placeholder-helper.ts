@@ -1,15 +1,27 @@
 import {
   ElementInfo,
   ElementPosition,
+  LayoutInfo,
   PlaceholderInfo,
+  PlaceholderMappingResult,
   PlaceholderType,
   XmlElement,
 } from '../types/xml-types';
 import { XmlHelper } from './xml-helper';
 import { XmlSlideHelper } from './xml-slide-helper';
+import { ShapeModificationCallback } from '../types/types';
+import { ISlide } from '../interfaces/islide';
+import { vd } from './general-helper';
+
+export type EnrichedElementInfo = ElementInfo & {
+  fromTopRank: number;
+  fromLeftRank: number;
+  sizeRank: number;
+};
+export type GroupedByType = Record<ElementInfo['type'], EnrichedElementInfo[]>;
 
 export default class XmlPlaceholderHelper {
-  private static mapAlternativePlaceholders = {
+  private mapAlternativePlaceholders = {
     // Title-related placeholders
     title: ['ctrTitle', 'subTitle', 'body'],
     ctrTitle: ['title', 'subTitle', 'body'],
@@ -40,6 +52,285 @@ export default class XmlPlaceholderHelper {
     // Fallback for unknown
     unknown: ['body', 'obj', 'pic'],
   };
+
+  slide: ISlide;
+  slideElements: ElementInfo[];
+  sourceLayoutInfo: LayoutInfo;
+  targetPlaceholders: PlaceholderInfo[];
+  mappingResult: PlaceholderMappingResult = {
+    usedPlaceholders: [],
+    unmatchedSourcePlaceholderElements: [],
+    matchedSourceElements: [],
+  };
+
+  constructor(
+    slide: ISlide,
+    slideElements: ElementInfo[],
+    sourceLayoutInfo: LayoutInfo,
+    targetPlaceholders: PlaceholderInfo[],
+  ) {
+    this.slide = slide;
+    this.slideElements = slideElements;
+    this.sourceLayoutInfo = sourceLayoutInfo;
+    this.targetPlaceholders = targetPlaceholders;
+  }
+
+  run() {
+    this.performInitialPlaceholderMatching();
+    this.handleUnmatchedPlaceholderElements();
+    this.handleForceAssignmentPlaceholders([
+      'title',
+      'ctrTitle',
+      'subTitle',
+      'body',
+      'pic',
+    ]);
+    this.cleanupUnmatchedPlaceholders();
+  }
+
+  /**
+   * Performs the initial placeholder matching between source elements and target placeholders.
+   * Elements with exact placeholder type matches are processed first.
+   */
+  public performInitialPlaceholderMatching(): void {
+    this.slideElements.forEach((element: ElementInfo) => {
+      if (element.placeholder?.type) {
+        const matchesPlaceholder = this.applyPlaceholderToElement(
+          this.targetPlaceholders,
+          element,
+        );
+        if (!matchesPlaceholder) {
+          this.mappingResult.unmatchedSourcePlaceholderElements.push(element);
+        } else {
+          this.mappingResult.matchedSourceElements.push(element);
+        }
+      }
+    });
+  }
+
+  /**
+   * Handles placeholder elements on the source slide that couldn't be matched in the
+   * initial pass by finding alternative placeholder matches using best-fit algorithms.
+   */
+  public handleUnmatchedPlaceholderElements(): void {
+    const unmatchedElements = this.mappingResult
+      .unmatchedSourcePlaceholderElements as ElementInfo[];
+
+    unmatchedElements.forEach((element) => {
+      const bestAlternativeMatch =
+        this.findBestTargetPlaceholderAlternative(element);
+
+      if (bestAlternativeMatch) {
+        this.applyPlaceholder(element, bestAlternativeMatch);
+        this.removeElementFromUnmatched(element, unmatchedElements);
+        this.mappingResult.matchedSourceElements.push(element);
+      }
+    });
+  }
+
+  /**
+   * Removes an element from the unmatched elements array.
+   *
+   * @param element - Element to remove
+   * @param unmatchedElements - Array to remove from
+   * @private
+   */
+  private removeElementFromUnmatched(
+    element: ElementInfo,
+    unmatchedElements: ElementInfo[],
+  ): ElementInfo[] {
+    const index = unmatchedElements.indexOf(element);
+    if (index > -1) {
+      unmatchedElements.splice(index, 1);
+    }
+    return unmatchedElements;
+  }
+
+  /**
+   * Handles force assignment of placeholder types by finding the best matching
+   * unmatched slide elements for unassigned target placeholders.
+   *
+   * @param forceAssignPhTypes - Array of placeholder types that should be force assigned
+   */
+  public handleForceAssignmentPlaceholders(forceAssignPhTypes: string[]): void {
+    const mappingResult = this.mappingResult;
+    const usedElements = [];
+
+    forceAssignPhTypes.forEach((phType) => {
+      // Find unassigned target placeholders of this type
+      const unassignedTargetPlaceholders = this.targetPlaceholders.filter(
+        (ph) =>
+          ph.type === phType && !mappingResult.usedPlaceholders.includes(ph),
+      );
+      if (unassignedTargetPlaceholders.length === 0) {
+        return; // No unassigned placeholders of this type
+      }
+      const unmatchedElements = this.slideElements.filter((ele) => {
+        return !mappingResult.matchedSourceElements.includes(ele);
+      });
+
+      // Recalculate candidate elements for each placeholder to reflect current state
+      const unmatchedElementsGroups =
+        XmlPlaceholderHelper.groupUnmatchedElements(unmatchedElements);
+
+      unassignedTargetPlaceholders.forEach((ph) => {
+        const candidateElements = unmatchedElementsGroups[ph.elementType] || [];
+        const filteredCandidates = candidateElements.filter((candidate) => {
+          return !usedElements.includes(candidate);
+        });
+
+        const bestCandidate = this.findBestCandidateElementForPlaceholder(
+          filteredCandidates,
+          ph,
+        );
+
+        if (bestCandidate) {
+          this.applyForceAssignedPlaceholderToElement(
+            bestCandidate,
+            ph,
+            unmatchedElements,
+          );
+          usedElements.push(bestCandidate);
+        }
+      });
+    });
+  }
+
+  private findBestCandidateElementForPlaceholder(
+    candidateElements: EnrichedElementInfo[],
+    ph: PlaceholderInfo,
+  ): ElementInfo {
+    if (ph.type === 'title') {
+      const bestCandidate = candidateElements.find((ele) => {
+        return ele.fromTopRank === 1;
+      });
+      if (bestCandidate) {
+        return bestCandidate;
+      }
+    }
+    if (ph.type === 'subTitle' || ph.type === 'ctrTitle') {
+      const bestCandidate = candidateElements.find((ele) => {
+        return ele.fromTopRank > 1;
+      });
+      if (bestCandidate) {
+        return bestCandidate;
+      }
+    }
+
+    if (ph.type === 'body') {
+      let maxSize = 0;
+      candidateElements.forEach((ele) => {
+        maxSize = ele.sizeRank > maxSize ? ele.sizeRank : maxSize;
+      });
+      const bestCandidate = candidateElements.find((ele) => {
+        return ele.sizeRank === maxSize;
+      });
+      if (bestCandidate) {
+        return bestCandidate;
+      }
+    }
+
+    if (ph.type === 'pic') {
+      let maxSize = 0;
+      candidateElements.forEach((ele) => {
+        maxSize = ele.sizeRank > maxSize ? ele.sizeRank : maxSize;
+      });
+      const bestCandidate = candidateElements.find((ele) => {
+        return ele.sizeRank === maxSize;
+      });
+      if (bestCandidate) {
+        return bestCandidate;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Cleans up elements that still don't have placeholder matches by removing
+   * their placeholder properties and applying fallback positioning.
+   */
+  public cleanupUnmatchedPlaceholders(): void {
+    const sourcePlaceholders = this.sourceLayoutInfo.placeholders;
+    const unmatchedElements =
+      this.mappingResult.unmatchedSourcePlaceholderElements;
+    unmatchedElements.forEach((element) => {
+      this.clearUnmatchedPlaceholder(element, sourcePlaceholders);
+    });
+  }
+
+  clearUnmatchedPlaceholder(
+    element: ElementInfo,
+    sourcePlaceholders: PlaceholderInfo[],
+  ) {
+    const fallbackPh = sourcePlaceholders.find(
+      (ph) => ph.idx === element.placeholder.idx,
+    );
+    const fallbackPosition = fallbackPh?.position || {
+      x: 1000,
+      y: 1000,
+      cx: 5000000,
+      cy: 1000000,
+    };
+
+    const callback = (element) => {
+      XmlPlaceholderHelper.removePlaceholder(element, fallbackPosition);
+    };
+    this.postApplyModification(element, callback);
+  }
+
+  applyPlaceholderToElement(
+    layoutPlaceholders: PlaceholderInfo[],
+    element: ElementInfo,
+  ): PlaceholderInfo {
+    const unusedPlaceholders = layoutPlaceholders.filter(
+      (ph) => !this.mappingResult.usedPlaceholders.includes(ph),
+    );
+    const matchPlaceholders = unusedPlaceholders.filter((ph) => {
+      return ph.type === element.placeholder?.type;
+    });
+
+    if (matchPlaceholders.length) {
+      const bestMatch = XmlPlaceholderHelper.findBestMatchingPlaceholder(
+        element,
+        matchPlaceholders,
+      );
+      this.applyPlaceholder(element, bestMatch);
+      return bestMatch;
+    }
+
+    return null;
+  }
+
+  applyPlaceholder(element: ElementInfo, bestMatch: PlaceholderInfo) {
+    const callback = (element: XmlElement) => {
+      XmlPlaceholderHelper.setPlaceholderDefaults(element, bestMatch);
+    };
+    this.postApplyModification(element, callback);
+    this.mappingResult.usedPlaceholders.push(bestMatch);
+  }
+
+  applyForceAssignedPlaceholderToElement(
+    bestCandidate: ElementInfo,
+    bestMatch: PlaceholderInfo,
+    unmatchedElements: ElementInfo[],
+  ) {
+    this.applyPlaceholder(bestCandidate, bestMatch);
+    this.removeElementFromUnmatched(bestCandidate, unmatchedElements);
+    this.mappingResult.matchedSourceElements.push(bestCandidate);
+  }
+
+  postApplyModification(
+    element: ElementInfo,
+    callback: ShapeModificationCallback,
+  ) {
+    const selector = {
+      creationId: element.creationId,
+      nameIdx: element.nameIdx,
+      name: element.name,
+    };
+    this.slide.modifyElement(selector, callback);
+  }
 
   /**
    * Extracts placeholder information from an XML element.
@@ -106,17 +397,17 @@ export default class XmlPlaceholderHelper {
   ): void {
     // Get the placeholder element
     let ph = element.getElementsByTagName('p:ph').item(0);
-
-    if(!ph) {
+    if (!ph) {
+      // If element has no placeholder, create one
       const nvPr = element.getElementsByTagName('p:nvPr').item(0);
       if (nvPr) {
         ph = element.ownerDocument.createElement('p:ph');
 
-        if(layoutPlaceholder.type) {
+        if (layoutPlaceholder.type) {
           ph.setAttribute('type', layoutPlaceholder.type);
         }
 
-        if(layoutPlaceholder.sz) {
+        if (layoutPlaceholder.sz) {
           ph.setAttribute('sz', layoutPlaceholder.sz);
         }
         nvPr.appendChild(ph);
@@ -128,7 +419,7 @@ export default class XmlPlaceholderHelper {
       ph.setAttribute('idx', String(layoutPlaceholder.idx));
     }
 
-    // Reset all positioning information
+    // Reset all positioning information to force inherit positioning from layout.
     const xfrm = element.getElementsByTagName('a:xfrm').item(0);
     if (xfrm) {
       XmlHelper.remove(xfrm);
@@ -173,10 +464,8 @@ export default class XmlPlaceholderHelper {
     return scoredMatches.length > 0 ? scoredMatches[0].target : null;
   }
 
-  static findBestTargetPlaceholderAlternative(
+  private findBestTargetPlaceholderAlternative(
     element: ElementInfo,
-    targetPlaceholders: PlaceholderInfo[],
-    usedPlaceholders: PlaceholderInfo[],
   ): PlaceholderInfo {
     const originalType = element.placeholder.type;
     const alternatives = this.mapAlternativePlaceholders[originalType] || [];
@@ -187,8 +476,10 @@ export default class XmlPlaceholderHelper {
     // Try to find the best alternative placeholder in the target layout
     for (const alternativeType of alternatives) {
       // Look for available placeholders of this alternative type
-      const availablePlaceholder = targetPlaceholders.find(
-        (ph) => ph.type === alternativeType && !usedPlaceholders.includes(ph),
+      const availablePlaceholder = this.targetPlaceholders.find(
+        (ph) =>
+          ph.type === alternativeType &&
+          !this.mappingResult.usedPlaceholders.includes(ph),
       );
 
       if (availablePlaceholder) {
@@ -238,6 +529,85 @@ export default class XmlPlaceholderHelper {
       score += distanceScore;
     }
     return score;
+  }
+
+  /**
+   * @param unmatchedElements - Elements that couldn't be matched initially
+   * @returns groupedByType
+   * @private
+   */
+  static groupUnmatchedElements(
+    unmatchedElements: ElementInfo[],
+  ): GroupedByType {
+    const groupedByType = {} as GroupedByType;
+
+    unmatchedElements.forEach((element: EnrichedElementInfo) => {
+      if (!groupedByType[element.type]) {
+        groupedByType[element.type] = [];
+      }
+
+      element.fromTopRank = 0;
+      element.fromLeftRank = 0;
+      element.sizeRank = 0;
+
+      groupedByType[element.type].push(element);
+    });
+
+    // Process each group
+    Object.keys(groupedByType).forEach((shapeType) => {
+      const elementsOfType = groupedByType[shapeType as ElementInfo['type']];
+
+      // Sort by position from top-left to bottom-right for ranking
+      const sortedByPosition = [...elementsOfType].sort((a, b) => {
+        // First sort by Y position (top to bottom)
+        if (a.position.y !== b.position.y) {
+          return a.position.y - b.position.y;
+        }
+        // Then sort by X position (left to right)
+        return a.position.x - b.position.x;
+      });
+
+      // Sort by size (area) for size ranking
+      const sortedBySize = [...elementsOfType].sort((a, b) => {
+        const areaA = a.position.cx * a.position.cy;
+        const areaB = b.position.cx * b.position.cy;
+        return areaB - areaA; // Descending order (largest first)
+      });
+
+      // Create ranking maps
+      const topRankMap = new Map<string, number>();
+      const leftRankMap = new Map<string, number>();
+      const sizeRankMap = new Map<string, number>();
+
+      // Assign fromTopRank and fromLeftRank based on position sorting
+      sortedByPosition.forEach((element, index) => {
+        const elementKey = element.creationId || element.name + element.nameIdx;
+        topRankMap.set(elementKey, index + 1);
+        leftRankMap.set(elementKey, index + 1);
+      });
+
+      // Assign sizeRank based on size sorting
+      sortedBySize.forEach((element, index) => {
+        const elementKey = element.creationId || element.name + element.nameIdx;
+        sizeRankMap.set(elementKey, index + 1);
+      });
+
+      // Create enriched elements with rankings
+      groupedByType[shapeType as ElementInfo['type']] = elementsOfType.map(
+        (element) => {
+          const elementKey =
+            element.creationId || element.name + element.nameIdx;
+
+          element.fromTopRank = topRankMap.get(elementKey) || 0;
+          element.fromLeftRank = leftRankMap.get(elementKey) || 0;
+          element.sizeRank = sizeRankMap.get(elementKey) || 0;
+
+          return element
+        },
+      );
+    });
+
+    return groupedByType;
   }
 
   /**
