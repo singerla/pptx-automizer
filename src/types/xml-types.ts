@@ -63,7 +63,8 @@ export type ElementType =
   | 'chartEx'
   | 'table'
   | 'pic'
-  | 'cxnSp';
+  | 'cxnSp'
+  | 'grpSp';
 
 export type ElementVisualType =
   | 'chart'
@@ -80,6 +81,7 @@ export type ElementVisualType =
   | 'textBox'
   | 'rectangle'
   | 'vectorLine'
+  | 'group'
   | 'unknown';
 
 /**
@@ -136,6 +138,7 @@ export type PlaceholderInfo = {
 export type ElementInfo = {
   name: string;
   type: ElementType;
+  visualType: ElementVisualType;
   id: string;
   creationId: string;
   nameIdx: number;

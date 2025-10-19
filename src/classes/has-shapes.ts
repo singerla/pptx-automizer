@@ -592,6 +592,7 @@ export default class HasShapes {
     return {
       mode: importElement.mode,
       name: selector,
+      selector: XmlSlideHelper.getSelector(sourceElement),
       hasCreationId: mode === 'findByElementCreationId',
       sourceArchive,
       sourceSlideNumber: slideNumber,

@@ -82,4 +82,47 @@ export default class ModifyTableHelper {
       const modTable = new ModifyTable(element);
       modTable.updateRowHeight(index, size);
     };
+
+  static setTableStyle =
+    (styleId: string, attribs: string[]) => (element: XmlElement) => {
+      const tblPr = element.getElementsByTagName('a:tblPr').item(0);
+
+      const setTableStyleId = (tableStyleId: XmlElement, id: string) => {
+        tableStyleId.textContent = id;
+      };
+
+      const createTableStyleId = (tblPr: XmlElement) => {
+        const tableStyleId =
+          tblPr.ownerDocument.createElement('a:tableStyleId');
+        tblPr.appendChild(tableStyleId);
+        return tableStyleId;
+      };
+      const updateTable = (tblPr: XmlElement) => {
+        [
+          'firstRow',
+          'firstCol',
+          'lastRow',
+          'lastCol',
+          'bandRow',
+          'bandCol',
+        ].forEach((attrib) => {
+          if (attribs.includes(attrib)) {
+            tblPr.setAttribute(attrib, '1');
+          } else {
+            tblPr.removeAttribute(attrib);
+          }
+        });
+
+        const tableStyleId =
+          element.getElementsByTagName('a:tableStyleId').item(0) ||
+          createTableStyleId(tblPr);
+
+        if (tableStyleId) {
+          setTableStyleId(tableStyleId, styleId);
+        }
+      };
+      if (tblPr) {
+        updateTable(tblPr);
+      }
+    };
 }

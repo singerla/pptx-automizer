@@ -143,12 +143,12 @@ export default class ModifyCleanupHelper {
    * @param element - The XML element to clean up
    */
   static removeEffects(element: XmlElement): void {
-    this.removeShapeStyle(element);
-    this.removeColorAdjustment(element);
-    this.removeShadowEffects(element);
-    this.remove3dEffects(element);
-    this.removeFillEffects(element);
-    this.removeTextEffects(element);
+    ModifyCleanupHelper.removeShapeStyle(element);
+    ModifyCleanupHelper.removeColorAdjustment(element);
+    ModifyCleanupHelper.removeShadowEffects(element);
+    ModifyCleanupHelper.remove3dEffects(element);
+    ModifyCleanupHelper.removeFillEffects(element);
+    ModifyCleanupHelper.removeTextEffects(element);
 
     // Determine the visual type of the element (picture, chart, etc.)
     // Apply type-specific cleanup

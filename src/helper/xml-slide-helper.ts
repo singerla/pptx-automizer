@@ -141,9 +141,10 @@ export class XmlSlideHelper {
     slideElement: XmlElement,
     layoutPlaceholders?: PlaceholderInfo[],
   ): ElementInfo {
-    const selector = this.getSelector(slideElement)
+    const selector = this.getSelector(slideElement);
     const position = XmlSlideHelper.parseShapeCoordinates(slideElement);
     const type = XmlSlideHelper.getElementType(slideElement);
+    const visualType = XmlSlideHelper.getElementVisualType(slideElement)
 
     return {
       name: selector.name,
@@ -151,6 +152,7 @@ export class XmlSlideHelper {
       creationId: selector.creationId,
       nameIdx: selector.nameIdx,
       type,
+      visualType,
       position,
       placeholder: XmlPlaceholderHelper.getPlaceholderInfo(
         slideElement,
@@ -690,6 +692,10 @@ export class XmlSlideHelper {
    * @returns A string identifying the element type
    */
   static getElementVisualType(element: XmlElement): ElementVisualType {
+    if(XmlSlideHelper.getElementType(element) === 'grpSp') {
+      return 'group'
+    }
+
     // Check for graphicFrame elements (charts, SmartArt, tables, etc.)
     if (element.tagName === 'p:graphicFrame') {
       const graphicData = XmlHelper.findElement(element, 'a:graphicData');
@@ -725,8 +731,10 @@ export class XmlSlideHelper {
     }
 
     // Check for SVG Images
-    if (XmlHelper.findElement(element, 'a:svgBlip')
-    || XmlHelper.findElement(element, 'asvg:svgBlip')) {
+    if (
+      XmlHelper.findElement(element, 'a:svgBlip') ||
+      XmlHelper.findElement(element, 'asvg:svgBlip')
+    ) {
       return 'svgImage';
     }
 
@@ -783,14 +791,21 @@ export class XmlSlideHelper {
 
         if (prst && prst === 'rect') {
           const cNvSpPr = XmlHelper.findElement(element, 'p:cNvSpPr');
-          if(cNvSpPr && cNvSpPr.getAttribute('txBox') === '1' ) {
-            return 'textBox'
+          if (cNvSpPr && cNvSpPr.getAttribute('txBox') === '1') {
+            return 'textBox';
           }
           return 'rectangle';
         }
       }
 
       return 'vectorShape';
+    }
+
+    if (element.tagName === 'p:sp') {
+      const txBody = XmlHelper.findElement(element, 'p:txBody');
+      if (txBody) {
+        return 'textBox';
+      }
     }
 
     // Default case

@@ -425,7 +425,6 @@ export class XmlHelper {
     archive: IArchive,
     path: string,
     creationId: string,
-    nameIdx?: number,
   ): Promise<XmlElement> {
     const slideXml = await XmlHelper.getXmlFromArchive(archive, path);
 

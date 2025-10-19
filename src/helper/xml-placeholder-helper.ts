@@ -11,48 +11,21 @@ import { XmlHelper } from './xml-helper';
 import { XmlSlideHelper } from './xml-slide-helper';
 import { ShapeModificationCallback } from '../types/types';
 import { ISlide } from '../interfaces/islide';
-import { vd } from './general-helper';
 
 export type EnrichedElementInfo = ElementInfo & {
   fromTopRank: number;
   fromLeftRank: number;
   sizeRank: number;
 };
-export type GroupedByType = Record<ElementInfo['type'], EnrichedElementInfo[]>;
+export type GroupedByType = Record<
+  ElementInfo['visualType'],
+  EnrichedElementInfo[]
+>;
+type MapCandidates = Partial<
+  Record<PlaceholderType, ElementInfo['visualType'][]>
+>;
 
 export default class XmlPlaceholderHelper {
-  private mapAlternativePlaceholders = {
-    // Title-related placeholders
-    title: ['ctrTitle', 'subTitle', 'body'],
-    ctrTitle: ['title', 'subTitle', 'body'],
-    subTitle: ['title', 'ctrTitle', 'body'],
-
-    // Content placeholders
-    body: ['title', 'ctrTitle', 'subTitle'],
-
-    // Media and visual content
-    pic: ['media', 'obj', 'clipArt', 'bitmap'],
-    media: ['pic', 'obj', 'clipArt', 'bitmap'],
-    obj: ['pic', 'media', 'clipArt', 'bitmap'],
-    clipArt: ['pic', 'media', 'obj', 'bitmap'],
-    bitmap: ['pic', 'media', 'obj', 'clipArt'],
-
-    // Data visualization
-    chart: ['tbl', 'dgm', 'orgChart', 'obj'],
-    tbl: ['chart', 'dgm', 'orgChart'],
-    dgm: ['chart', 'orgChart', 'tbl', 'obj'],
-    orgChart: ['dgm', 'chart', 'tbl', 'obj'],
-
-    // Footer elements
-    ftr: ['dt', 'sldNum', 'hdr'],
-    dt: ['ftr', 'sldNum', 'hdr'],
-    sldNum: ['ftr', 'dt', 'hdr'],
-    hdr: ['ftr', 'dt', 'sldNum'],
-
-    // Fallback for unknown
-    unknown: ['body', 'obj', 'pic'],
-  };
-
   slide: ISlide;
   slideElements: ElementInfo[];
   sourceLayoutInfo: LayoutInfo;
@@ -61,6 +34,14 @@ export default class XmlPlaceholderHelper {
     usedPlaceholders: [],
     unmatchedSourcePlaceholderElements: [],
     matchedSourceElements: [],
+  };
+
+  mapCandidates: MapCandidates = {
+    body: ['textBox', 'rectangle'],
+    title: ['textBox', 'rectangle'],
+    subTitle: ['textBox', 'rectangle'],
+    ctrTitle: ['textBox', 'rectangle'],
+    pic: ['picture'],
   };
 
   constructor(
@@ -77,7 +58,6 @@ export default class XmlPlaceholderHelper {
 
   run() {
     this.performInitialPlaceholderMatching();
-    this.handleUnmatchedPlaceholderElements();
     this.handleForceAssignmentPlaceholders([
       'title',
       'ctrTitle',
@@ -104,26 +84,6 @@ export default class XmlPlaceholderHelper {
         } else {
           this.mappingResult.matchedSourceElements.push(element);
         }
-      }
-    });
-  }
-
-  /**
-   * Handles placeholder elements on the source slide that couldn't be matched in the
-   * initial pass by finding alternative placeholder matches using best-fit algorithms.
-   */
-  public handleUnmatchedPlaceholderElements(): void {
-    const unmatchedElements = this.mappingResult
-      .unmatchedSourcePlaceholderElements as ElementInfo[];
-
-    unmatchedElements.forEach((element) => {
-      const bestAlternativeMatch =
-        this.findBestTargetPlaceholderAlternative(element);
-
-      if (bestAlternativeMatch) {
-        this.applyPlaceholder(element, bestAlternativeMatch);
-        this.removeElementFromUnmatched(element, unmatchedElements);
-        this.mappingResult.matchedSourceElements.push(element);
       }
     });
   }
@@ -165,16 +125,22 @@ export default class XmlPlaceholderHelper {
       if (unassignedTargetPlaceholders.length === 0) {
         return; // No unassigned placeholders of this type
       }
+
       const unmatchedElements = this.slideElements.filter((ele) => {
         return !mappingResult.matchedSourceElements.includes(ele);
       });
 
       // Recalculate candidate elements for each placeholder to reflect current state
-      const unmatchedElementsGroups =
-        XmlPlaceholderHelper.groupUnmatchedElements(unmatchedElements);
+      const elementsGroups =
+        XmlPlaceholderHelper.groupElements(unmatchedElements);
 
       unassignedTargetPlaceholders.forEach((ph) => {
-        const candidateElements = unmatchedElementsGroups[ph.elementType] || [];
+        const targetTypes = this.mapCandidates[ph.type];
+        const candidateElements = [];
+
+        targetTypes.forEach((targetType) => {
+          candidateElements.push(...(elementsGroups[targetType] || []));
+        });
         const filteredCandidates = candidateElements.filter((candidate) => {
           return !usedElements.includes(candidate);
         });
@@ -207,23 +173,20 @@ export default class XmlPlaceholderHelper {
       return this.findFromTopCandidate(candidateElements, 1, true);
     }
 
-    // if (ph.type === 'subTitle' || ph.type === 'ctrTitle') {
-    //   return this.findFromTopCandidate(candidateElements, 2, false);
-    // }
+    if (ph.type === 'subTitle' || ph.type === 'ctrTitle') {
+      return this.findFromTopCandidate(candidateElements, 2, false);
+    }
 
     if (ph.type === 'body') {
       if (ph.position) {
         return this.findClosestCandidate(ph, candidateElements);
       }
-      // return this.findLargestCandidate(candidateElements);
+      return this.findLargestCandidate(candidateElements);
     }
 
-    // if (ph.type === 'pic') {
-    //   return this.findLargestCandidate(candidateElements);
-    // }
-
-    vd('no candidate for ');
-    vd(ph);
+    if (ph.type === 'pic') {
+      return this.findLargestCandidate(candidateElements);
+    }
 
     return null;
   }
@@ -268,6 +231,7 @@ export default class XmlPlaceholderHelper {
       }
       return ele.fromTopRank >= fromTopRank;
     });
+
     if (bestCandidate) {
       return bestCandidate;
     }
@@ -281,6 +245,7 @@ export default class XmlPlaceholderHelper {
     const sourcePlaceholders = this.sourceLayoutInfo.placeholders;
     const unmatchedElements =
       this.mappingResult.unmatchedSourcePlaceholderElements;
+
     unmatchedElements.forEach((element) => {
       this.clearUnmatchedPlaceholder(element, sourcePlaceholders);
     });
@@ -345,6 +310,10 @@ export default class XmlPlaceholderHelper {
     this.applyPlaceholder(bestCandidate, bestMatch);
     this.removeElementFromUnmatched(bestCandidate, unmatchedElements);
     this.mappingResult.matchedSourceElements.push(bestCandidate);
+    this.mappingResult.unmatchedSourcePlaceholderElements =
+      this.mappingResult.unmatchedSourcePlaceholderElements.filter(
+        (ele) => ele !== bestCandidate,
+      );
   }
 
   postApplyModification(
@@ -429,38 +398,44 @@ export default class XmlPlaceholderHelper {
       const nvPr = element.getElementsByTagName('p:nvPr').item(0);
       if (nvPr) {
         ph = element.ownerDocument.createElement('p:ph');
-
-        if (layoutPlaceholder.type) {
-          ph.setAttribute('type', layoutPlaceholder.type);
-        }
-        if (layoutPlaceholder.sz) {
-          ph.setAttribute('sz', layoutPlaceholder.sz);
-        }
-        if (layoutPlaceholder.idx) {
-          ph.setAttribute('idx', String(layoutPlaceholder.idx));
-        }
         nvPr.appendChild(ph);
       }
     }
 
-    if (ph && layoutPlaceholder.idx) {
-      // Set the index to match the layout placeholder
-      ph.setAttribute('idx', String(layoutPlaceholder.idx));
-    }
+    ['type', 'sz', 'idx'].forEach((tag) =>
+      XmlPlaceholderHelper.updatePlaceholderParams(tag, ph, layoutPlaceholder),
+    );
 
-    // Force fallback to layout properties
-    ['a:xfrm', 'p:style'].forEach(tag => {
+    [
+      // Force fallback to layout properties
+      'a:xfrm',
+      'p:style',
+    ].forEach((tag) => {
       const ele = element.getElementsByTagName(tag).item(0);
       if (ele) {
         XmlHelper.remove(ele);
       }
     });
-    ['p:spPr', 'a:bodyPr', 'p:cNvSpPr'].forEach(tag => {
+    ['p:spPr', 'a:bodyPr', 'p:cNvSpPr'].forEach((tag) => {
       const ele = element.getElementsByTagName(tag).item(0);
       if (ele) {
         XmlHelper.removeAllChildren(ele);
       }
-    })
+    });
+
+    // XmlHelper.dump(element);
+  }
+
+  static updatePlaceholderParams(
+    tag: string,
+    ph: XmlElement,
+    layoutPlaceholder: PlaceholderInfo,
+  ) {
+    if (layoutPlaceholder[tag]) {
+      ph.setAttribute(tag, String(layoutPlaceholder[tag]));
+    } else {
+      ph.removeAttribute(tag);
+    }
   }
 
   static removePlaceholder(
@@ -499,43 +474,6 @@ export default class XmlPlaceholderHelper {
 
     // Return the highest scoring match
     return scoredMatches.length > 0 ? scoredMatches[0].target : null;
-  }
-
-  private findBestTargetPlaceholderAlternative(
-    element: ElementInfo,
-  ): PlaceholderInfo {
-    const originalType = element.placeholder.type;
-    const alternatives = this.mapAlternativePlaceholders[originalType] || [];
-
-    let bestMatch = null;
-    let bestScore = -1;
-
-    // Try to find the best alternative placeholder in the target layout
-    for (const alternativeType of alternatives) {
-      // Look for available placeholders of this alternative type
-      const availablePlaceholder = this.targetPlaceholders.find(
-        (ph) =>
-          ph.type === alternativeType &&
-          !this.mappingResult.usedPlaceholders.includes(ph),
-      );
-
-      if (availablePlaceholder) {
-        const initScore =
-          alternatives.length - alternatives.indexOf(alternativeType);
-        const score = XmlPlaceholderHelper.calculatePlaceholderSimilarityScore(
-          initScore,
-          availablePlaceholder,
-          element,
-        );
-
-        if (score > bestScore) {
-          bestScore = score;
-          bestMatch = availablePlaceholder;
-        }
-      }
-    }
-
-    return bestMatch;
   }
 
   static calculatePlaceholderSimilarityScore(
@@ -592,26 +530,25 @@ export default class XmlPlaceholderHelper {
    * @returns groupedByType
    * @private
    */
-  static groupUnmatchedElements(
-    unmatchedElements: ElementInfo[],
-  ): GroupedByType {
+  static groupElements(unmatchedElements: ElementInfo[]): GroupedByType {
     const groupedByType = {} as GroupedByType;
 
     unmatchedElements.forEach((element: EnrichedElementInfo) => {
-      if (!groupedByType[element.type]) {
-        groupedByType[element.type] = [];
+      if (!groupedByType[element.visualType]) {
+        groupedByType[element.visualType] = [];
       }
 
       element.fromTopRank = 0;
       element.fromLeftRank = 0;
       element.sizeRank = 0;
 
-      groupedByType[element.type].push(element);
+      groupedByType[element.visualType].push(element);
     });
 
     // Process each group
     Object.keys(groupedByType).forEach((shapeType) => {
-      const elementsOfType = groupedByType[shapeType as ElementInfo['type']];
+      const elementsOfType =
+        groupedByType[shapeType as ElementInfo['visualType']];
 
       // Sort by position from top-left to bottom-right for ranking
       const sortedByPosition = [...elementsOfType].sort((a, b) => {

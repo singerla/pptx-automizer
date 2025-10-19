@@ -279,6 +279,7 @@ export type FindElementStrategy = {
 export type ImportedElement = {
   mode: string;
   name?: string;
+  selector?: FindElementMultiSelector;
   hasCreationId?: boolean;
   sourceArchive: IArchive;
   sourceSlideNumber: number;
