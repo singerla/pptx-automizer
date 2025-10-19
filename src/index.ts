@@ -2,6 +2,7 @@ import Automizer from './automizer';
 
 import ModifyHelper, { CmToDxa, DxaToCm } from './helper/modify-helper';
 import ModifyShapeHelper from './helper/modify-shape-helper';
+import ModifyCleanupHelper from './helper/modify-cleanup-helper';
 import ModifyTableHelper from './helper/modify-table-helper';
 import ModifyChartHelper from './helper/modify-chart-helper';
 import ModifyHyperlinkHelper from './helper/modify-hyperlink-helper';
@@ -115,6 +116,7 @@ export {
   XmlHelper,
   ModifyHelper,
   ModifyShapeHelper,
+  ModifyCleanupHelper,
   ModifyTableHelper,
   ModifyChartHelper,
   ModifyTextHelper,

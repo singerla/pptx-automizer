@@ -7,20 +7,18 @@ import {
   LayoutInfo,
   PlaceholderInfo,
   SlideHelperProps,
-  TemplateSlideInfo,
   TextParagraph,
   TextParagraphGroup,
   XmlDocument,
   XmlElement,
 } from '../types/xml-types';
 import { XmlHelper } from './xml-helper';
-import HasShapes from '../classes/has-shapes';
 import { TableInfo } from '../types/table-types';
-import { vd } from './general-helper';
 import IArchive from '../interfaces/iarchive';
-import { Target } from '../types/types';
 import { XmlTemplateHelper } from './xml-template-helper';
 import XmlPlaceholderHelper from './xml-placeholder-helper';
+import { vd } from './general-helper';
+import { FindElementMultiSelector, FindElementSelector } from '../types/types';
 
 export const nsMain =
   'http://schemas.openxmlformats.org/presentationml/2006/main';
@@ -143,18 +141,15 @@ export class XmlSlideHelper {
     slideElement: XmlElement,
     layoutPlaceholders?: PlaceholderInfo[],
   ): ElementInfo {
-    const creationId = XmlSlideHelper.getElementCreationId(slideElement, true);
-    const nameIdx = !creationId
-      ? XmlSlideHelper.getElementNameIdx(slideElement)
-      : 0;
+    const selector = this.getSelector(slideElement)
     const position = XmlSlideHelper.parseShapeCoordinates(slideElement);
     const type = XmlSlideHelper.getElementType(slideElement);
 
     return {
-      name: XmlSlideHelper.getElementName(slideElement),
-      id: XmlSlideHelper.getElementCreationId(slideElement),
-      creationId,
-      nameIdx,
+      name: selector.name,
+      id: selector.creationId,
+      creationId: selector.creationId,
+      nameIdx: selector.nameIdx,
       type,
       position,
       placeholder: XmlPlaceholderHelper.getPlaceholderInfo(
@@ -672,6 +667,24 @@ export class XmlSlideHelper {
   };
 
   /**
+   * Reconstruct the complete selector for a given xmlElement, including the
+   * n-th occurance of the shape name on the current slide
+   * @param slideElement
+   */
+  static getSelector(slideElement: XmlElement): FindElementMultiSelector {
+    const creationId = XmlSlideHelper.getElementCreationId(slideElement, true);
+    const nameIdx = !creationId
+      ? XmlSlideHelper.getElementNameIdx(slideElement)
+      : 0;
+
+    return {
+      name: XmlSlideHelper.getElementName(slideElement),
+      creationId,
+      nameIdx,
+    };
+  }
+
+  /**
    * Determines the type of visual element in PowerPoint
    * @param element The XML element to check
    * @returns A string identifying the element type
@@ -712,12 +725,8 @@ export class XmlSlideHelper {
     }
 
     // Check for SVG Images
-    if (XmlHelper.findElement(element, 'a:svgBlip')) {
-      return 'svgImage';
-    }
-
-    // Check for SVG Images
-    if (XmlHelper.findElement(element, 'asvg:svgBlip')) {
+    if (XmlHelper.findElement(element, 'a:svgBlip')
+    || XmlHelper.findElement(element, 'asvg:svgBlip')) {
       return 'svgImage';
     }
 
@@ -773,7 +782,11 @@ export class XmlSlideHelper {
         }
 
         if (prst && prst === 'rect') {
-          return 'textField';
+          const cNvSpPr = XmlHelper.findElement(element, 'p:cNvSpPr');
+          if(cNvSpPr && cNvSpPr.getAttribute('txBox') === '1' ) {
+            return 'textBox'
+          }
+          return 'rectangle';
         }
       }
 

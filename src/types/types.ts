@@ -18,7 +18,7 @@ import { IMaster } from '../interfaces/imaster';
 
 export type ShapeTargetType = 'slide' | 'slideMaster' | 'slideLayout';
 export type SourceIdentifier = number | string;
-export type SlideModificationCallback = (document: XmlDocument, parent?: HasShapes | ISlide | IMaster) => Promise<void>;
+export type SlideModificationCallback = (document: XmlDocument, parent?: HasShapes | ISlide | IMaster) => Promise<void> | void;
 export type SlidePlaceholder = {
   xml: XmlElement;
   type: string;
@@ -30,6 +30,7 @@ export type ModificationCallback =
 export type ShapeModificationCallback = (
   element: XmlElement,
   relation?: XmlElement,
+  info?: ElementInfo
 ) => void;
 export type ChartModificationCallback = (
   element: XmlElement,
@@ -120,6 +121,7 @@ export type AutomizerParams = {
   cleanup?: boolean;
   /**
    * Remove all unused shape placeholders from slide.
+   * Set to false when you are using slide.mergeIntoSlideLayout.
    */
   cleanupPlaceholders?: boolean;
   /**
@@ -259,13 +261,16 @@ export type AddedObject = {
 };
 export type FindElementSelector =
   | string
-  | {
-      creationId?: string;
-      name: string;
-      // Specify the nth occurance in case you have more than one
-      // shape with the same name on your template slide:
-      nameIdx?: number;
-    };
+  | FindElementMultiSelector
+
+export type FindElementMultiSelector = {
+  creationId?: string;
+  name: string;
+  // Specify the nth occurance in case you have more than one
+  // shape with the same name on your template slide:
+  nameIdx?: number;
+};
+
 export type FindElementStrategy = {
   mode: 'findByElementCreationId' | 'findByElementName';
   selector: string;

@@ -1,5 +1,6 @@
 import Automizer, { XmlElement, XmlHelper } from '../src/index';
 import { ModifyShapeHelper } from '../src';
+import { ElementVisualType } from '../src/types/xml-types';
 
 test('read shape type info', async () => {
   const automizer = new Automizer({
@@ -21,46 +22,56 @@ test('read shape type info', async () => {
       },
     );
 
+    slide.modifyElement('VecorShape (Rectangle)', (element: XmlElement) => {
+      // XmlHelper.dump(element);
+      const type = ModifyShapeHelper.getElementVisualType(element);
+      expect(type).toBe<ElementVisualType>('rectangle');
+    });
+
     slide.modifyElement('Line (Arrow)', (element: XmlElement) => {
       const type = ModifyShapeHelper.getElementVisualType(element);
-      expect(type).toBe('vectorLine');
+      expect(type).toBe<ElementVisualType>('vectorLine');
     });
 
     slide.modifyElement('Table', (element: XmlElement) => {
       const type = ModifyShapeHelper.getElementVisualType(element);
-      expect(type).toBe('table');
+      expect(type).toBe<ElementVisualType>('table');
     });
 
     slide.modifyElement('Textfield', (element: XmlElement) => {
       // XmlHelper.dump(element)
       const type = ModifyShapeHelper.getElementVisualType(element);
-      expect(type).toBe('textField');
+      expect(type).toBe<ElementVisualType>('textBox');
+    });
+
+    slide.modifyElement('Textfield (Native)', (element: XmlElement) => {
+      const type = ModifyShapeHelper.getElementVisualType(element);
+      expect(type).toBe<ElementVisualType>('textBox');
     });
 
     slide.modifyElement('SmartArt (Diagram)', (element: XmlElement) => {
       const type = ModifyShapeHelper.getElementVisualType(element);
-      expect(type).toBe('smartArt');
+      expect(type).toBe<ElementVisualType>('smartArt');
     });
 
     slide.modifyElement('Image', (element: XmlElement) => {
       const type = ModifyShapeHelper.getElementVisualType(element);
-      expect(type).toBe('picture');
+      expect(type).toBe<ElementVisualType>('picture');
     });
 
     slide.modifyElement('Chart', (element: XmlElement) => {
       const type = ModifyShapeHelper.getElementVisualType(element);
-      expect(type).toBe('chart');
+      expect(type).toBe<ElementVisualType>('chart');
     });
 
     slide.modifyElement('Pictogram', (element: XmlElement) => {
       const type = ModifyShapeHelper.getElementVisualType(element);
-      expect(type).toBe('svgImage');
+      expect(type).toBe<ElementVisualType>('svgImage');
     });
 
     slide.modifyElement('SVG Image', (element: XmlElement) => {
-      // XmlHelper.dump(element);
       const type = ModifyShapeHelper.getElementVisualType(element);
-      expect(type).toBe('svgImage');
+      expect(type).toBe<ElementVisualType>('svgImage');
     });
   });
 

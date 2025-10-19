@@ -1,5 +1,6 @@
 import Automizer, { XmlElement, XmlHelper } from '../src/index';
 import { ModifyShapeHelper } from '../src';
+import { vd } from '../src/helper/general-helper';
 
 test('add all implemented shape types to an empty slide', async () => {
   const automizer = new Automizer({
@@ -33,10 +34,15 @@ test('add all implemented shape types to an empty slide', async () => {
       expect(type).toBe('table');
     });
 
+    slide.addElement('collection', 1, 'Textfield (Native)', (element: XmlElement) => {
+      const type = ModifyShapeHelper.getElementVisualType(element);
+      expect(type).toBe('textBox');
+    });
+
     slide.addElement('collection', 1, 'Textfield', (element: XmlElement) => {
       // XmlHelper.dump(element)
       const type = ModifyShapeHelper.getElementVisualType(element);
-      expect(type).toBe('textField');
+      expect(type).toBe('textBox');
     });
 
     slide.addElement(
@@ -67,6 +73,12 @@ test('add all implemented shape types to an empty slide', async () => {
     slide.addElement('collection', 1, 'SVG Image', (element: XmlElement) => {
       // XmlHelper.dump(element);
       const type = ModifyShapeHelper.getElementVisualType(element);
+      expect(type).toBe('svgImage');
+    });
+
+    slide.addElement('collection', 1, 'Image filled rectangle', (element: XmlElement) => {
+      const type = ModifyShapeHelper.getElementVisualType(element);
+      // ToDo: SVG image breaks in the output if embedded in a vectorShape
       expect(type).toBe('svgImage');
     });
   });

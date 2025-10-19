@@ -201,49 +201,76 @@ export default class XmlPlaceholderHelper {
     ph: PlaceholderInfo,
   ): ElementInfo {
     if (ph.type === 'title') {
-      const bestCandidate = candidateElements.find((ele) => {
-        return ele.fromTopRank === 1;
-      });
-      if (bestCandidate) {
-        return bestCandidate;
+      if (ph.position) {
+        return this.findClosestCandidate(ph, candidateElements);
       }
+      return this.findFromTopCandidate(candidateElements, 1, true);
     }
-    if (ph.type === 'subTitle' || ph.type === 'ctrTitle') {
-      const bestCandidate = candidateElements.find((ele) => {
-        return ele.fromTopRank > 1;
-      });
-      if (bestCandidate) {
-        return bestCandidate;
-      }
-    }
+
+    // if (ph.type === 'subTitle' || ph.type === 'ctrTitle') {
+    //   return this.findFromTopCandidate(candidateElements, 2, false);
+    // }
 
     if (ph.type === 'body') {
-      let maxSize = 0;
-      candidateElements.forEach((ele) => {
-        maxSize = ele.sizeRank > maxSize ? ele.sizeRank : maxSize;
-      });
-      const bestCandidate = candidateElements.find((ele) => {
-        return ele.sizeRank === maxSize;
-      });
-      if (bestCandidate) {
-        return bestCandidate;
+      if (ph.position) {
+        return this.findClosestCandidate(ph, candidateElements);
       }
+      // return this.findLargestCandidate(candidateElements);
     }
 
-    if (ph.type === 'pic') {
-      let maxSize = 0;
-      candidateElements.forEach((ele) => {
-        maxSize = ele.sizeRank > maxSize ? ele.sizeRank : maxSize;
-      });
-      const bestCandidate = candidateElements.find((ele) => {
-        return ele.sizeRank === maxSize;
-      });
-      if (bestCandidate) {
-        return bestCandidate;
-      }
-    }
+    // if (ph.type === 'pic') {
+    //   return this.findLargestCandidate(candidateElements);
+    // }
+
+    vd('no candidate for ');
+    vd(ph);
 
     return null;
+  }
+
+  private findClosestCandidate(
+    ph: PlaceholderInfo,
+    candidateElements: EnrichedElementInfo[],
+  ) {
+    let highestScore = 0;
+    let bestCandidate = null;
+    candidateElements.forEach((ele) => {
+      const closestShapeScore = XmlPlaceholderHelper.calculateDistanceScore(
+        ele.position,
+        ph.position,
+      );
+      if (closestShapeScore > highestScore) {
+        highestScore = closestShapeScore;
+        bestCandidate = ele;
+      }
+    });
+    return bestCandidate;
+  }
+
+  private findLargestCandidate(candidateElements: EnrichedElementInfo[]) {
+    let minSizeRank = Number.POSITIVE_INFINITY;
+    candidateElements.forEach((ele) => {
+      minSizeRank = ele.sizeRank < minSizeRank ? ele.sizeRank : minSizeRank;
+    });
+    return candidateElements.find((ele) => {
+      return ele.sizeRank === minSizeRank;
+    });
+  }
+
+  private findFromTopCandidate(
+    candidateElements: EnrichedElementInfo[],
+    fromTopRank: number,
+    equals?: boolean,
+  ) {
+    const bestCandidate = candidateElements.find((ele) => {
+      if (equals) {
+        return ele.fromTopRank === fromTopRank;
+      }
+      return ele.fromTopRank >= fromTopRank;
+    });
+    if (bestCandidate) {
+      return bestCandidate;
+    }
   }
 
   /**
@@ -406,9 +433,11 @@ export default class XmlPlaceholderHelper {
         if (layoutPlaceholder.type) {
           ph.setAttribute('type', layoutPlaceholder.type);
         }
-
         if (layoutPlaceholder.sz) {
           ph.setAttribute('sz', layoutPlaceholder.sz);
+        }
+        if (layoutPlaceholder.idx) {
+          ph.setAttribute('idx', String(layoutPlaceholder.idx));
         }
         nvPr.appendChild(ph);
       }
@@ -419,11 +448,19 @@ export default class XmlPlaceholderHelper {
       ph.setAttribute('idx', String(layoutPlaceholder.idx));
     }
 
-    // Reset all positioning information to force inherit positioning from layout.
-    const xfrm = element.getElementsByTagName('a:xfrm').item(0);
-    if (xfrm) {
-      XmlHelper.remove(xfrm);
-    }
+    // Force fallback to layout properties
+    ['a:xfrm', 'p:style'].forEach(tag => {
+      const ele = element.getElementsByTagName(tag).item(0);
+      if (ele) {
+        XmlHelper.remove(ele);
+      }
+    });
+    ['p:spPr', 'a:bodyPr', 'p:cNvSpPr'].forEach(tag => {
+      const ele = element.getElementsByTagName(tag).item(0);
+      if (ele) {
+        XmlHelper.removeAllChildren(ele);
+      }
+    })
   }
 
   static removePlaceholder(
@@ -517,18 +554,37 @@ export default class XmlPlaceholderHelper {
     // Bonus points for similar position if available
     const position = element.placeholder?.position || element.position;
     if (position && availablePlaceholder.position) {
-      const distanceScore = Math.max(
-        0,
-        100 -
-          Math.sqrt(
-            Math.pow(position.x - availablePlaceholder.position.x, 2) +
-              Math.pow(position.y - availablePlaceholder.position.y, 2),
-          ) /
-            1000,
+      score += this.calculateDistanceScore(
+        position,
+        availablePlaceholder.position,
       );
-      score += distanceScore;
     }
     return score;
+  }
+
+  static calculateDistanceScore(pos1: ElementPosition, pos2: ElementPosition) {
+    // Calculate center points of both elements
+    const center1X = pos1.x + pos1.cx / 2;
+    const center1Y = pos1.y + pos1.cy / 2;
+    const center2X = pos2.x + pos2.cx / 2;
+    const center2Y = pos2.y + pos2.cy / 2;
+
+    // Calculate distance between center points
+    const distance =
+      Math.sqrt(
+        Math.pow(center1X - center2X, 2) + Math.pow(center1Y - center2Y, 2),
+      ) / 100000;
+
+    // Convert distance to score - closer elements get higher scores
+    const distanceScore = Math.max(0, 10 - distance); // Max 10 points for very close elements
+
+    // Calculate size similarity bonus (area comparison)
+    const area1 = pos1.cx * pos1.cy;
+    const area2 = pos2.cx * pos2.cy;
+    const sizeRatio = Math.min(area1, area2) / Math.max(area1, area2);
+    const sizeBonus = sizeRatio * 10; // Up to 10 points for identical sizes
+
+    return distanceScore + sizeBonus;
   }
 
   /**
@@ -602,7 +658,7 @@ export default class XmlPlaceholderHelper {
           element.fromLeftRank = leftRankMap.get(elementKey) || 0;
           element.sizeRank = sizeRankMap.get(elementKey) || 0;
 
-          return element
+          return element;
         },
       );
     });

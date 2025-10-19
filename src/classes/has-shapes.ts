@@ -135,7 +135,7 @@ export default class HasShapes {
   unsupportedTags = [
     'p:custDataLst',
     // exclude bullet images
-    // 'a:buBlip',
+    'a:buBlip',
     // 'p:oleObj',
     // 'mc:AlternateContent',
     // 'a14:imgProps',
@@ -405,9 +405,8 @@ export default class HasShapes {
    * Try to convert a given slide's creationId to corresponding slide number.
    * Used if automizer is run with useCreationIds: true
    * @internal
-   * @param PresTemplate
-   * @slideNumber SourceSlideIdentifier
-   * @returns number
+   * @param template
+   * @param slideIdentifier
    */
   getSlideNumber(
     template: PresTemplate,
@@ -437,18 +436,46 @@ export default class HasShapes {
   }
 
   /**
+   * Processes and updates the list of imported elements by ensuring their uniqueness based on a generated hash.
+   * If duplicate elements are found, their callbacks are merged.
+   *
+   * @return {Promise<void>} Resolves when the process of identifying and updating unique imported elements is complete.
+   */
+  async getUniqueImportedElements(): Promise<ImportElement[]> {
+    for (const element of this.importElements) {
+      const info = await this.getElementInfo(element);
+      const selector = XmlSlideHelper.getSelector(info.sourceElement)
+      const eleHash = JSON.stringify(selector)
+      const alreadyImported = this.importElements.find(
+        (ele) => ele.info?.hash === eleHash,
+      );
+      if (alreadyImported) {
+        alreadyImported.info.callback = GeneralHelper.arrayify(
+          alreadyImported.info.callback,
+        );
+        const pushCallbacks = GeneralHelper.arrayify(element.callback);
+        if(pushCallbacks.length) {
+          alreadyImported.info.callback.push(...pushCallbacks);
+        }
+      } else {
+        info.hash = eleHash;
+        element.info = info;
+      }
+    }
+
+    return this.importElements.filter(ele => {
+      return ele.info
+    })
+  }
+
+  /**
    * Imported selected elements while merging multiple element modifications
    * @internal
    */
   async importedSelectedElements(): Promise<void> {
-    await this.getUniqueImportedElements();
+    const importElements = await this.getUniqueImportedElements();
 
-    for (const element of this.importElements) {
-      if (!element.info) {
-        // Element has already been modified, skipping...
-        continue;
-      }
-
+    for (const element of importElements) {
       const info = element.info;
       switch (info?.type) {
         case ElementType.Chart:
@@ -498,35 +525,6 @@ export default class HasShapes {
           break;
         default:
           break;
-      }
-    }
-  }
-
-  /**
-   * Processes and updates the list of imported elements by ensuring their uniqueness based on a generated hash.
-   * If duplicate elements are found, their callbacks are merged.
-   *
-   * @return {Promise<void>} Resolves when the process of identifying and updating unique imported elements is complete.
-   */
-  async getUniqueImportedElements(): Promise<void> {
-    for (const element of this.importElements) {
-      const info = await this.getElementInfo(element);
-      const eleHash =
-
-        XmlHelper.createHashFromXmlElement(info.sourceElement, element);
-
-      const alreadyImported = this.importElements.find(
-        (ele) => ele.info?.hash === eleHash,
-      );
-      if (alreadyImported) {
-        alreadyImported.callback = GeneralHelper.arrayify(
-          alreadyImported.callback,
-        );
-        const pushCallbacks = GeneralHelper.arrayify(element.callback);
-        alreadyImported.callback.push(...pushCallbacks);
-      } else {
-        info.hash = eleHash;
-        element.info = info;
       }
     }
   }

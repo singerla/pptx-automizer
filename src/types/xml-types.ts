@@ -66,7 +66,6 @@ export type ElementType =
   | 'cxnSp';
 
 export type ElementVisualType =
-  | 'textField'
   | 'chart'
   | 'smartArt'
   | 'diagram'
@@ -78,6 +77,8 @@ export type ElementVisualType =
   | 'svgImage'
   | 'imageFilledShape'
   | 'vectorShape'
+  | 'textBox'
+  | 'rectangle'
   | 'vectorLine'
   | 'unknown';
 

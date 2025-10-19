@@ -622,6 +622,14 @@ export class XmlHelper {
     }
   }
 
+  static removeAllChildren(element: XmlElement): void {
+    if (element?.childNodes) {
+      while (element.childNodes.length > 0) {
+        element.removeChild(element.childNodes[0]);
+      }
+    }
+  }
+
   static moveChild(childToMove: XmlElement, insertBefore?: XmlElement): void {
     const parent = childToMove.parentNode;
     parent.insertBefore(childToMove, insertBefore);
@@ -720,39 +728,6 @@ export class XmlHelper {
         }
       }
     }
-
-    return null;
-  }
-
-  /**
-   * Creates a hash from an XML element
-   * @param xmlElement The XML element to hash
-   * @returns A hash string
-   */
-  static createHashFromXmlElement(xmlElement, eleInfo): string {
-    try {
-      // Serialize XML element to string
-      const serializer = new XMLSerializer();
-      const xmlString = serializer.serializeToString(xmlElement);
-
-      // Create hash using SHA-256
-      const hash = createHash('sha256');
-      hash.update(xmlString);
-
-      // force different hashes for equal elements from different slides
-      const prefix =
-        eleInfo.presName + '-' + eleInfo.slideNumber + '-' + eleInfo.mode + '-';
-
-      return prefix + hash.digest('hex');
-    } catch (error) {
-      console.error('Error creating hash from XML element:', error);
-      // Fallback: create hash from element tag name and attributes
-      const fallbackString = `${xmlElement.tagName}_${
-        xmlElement.getAttribute('id') || ''
-      }_${xmlElement.getAttribute('name') || ''}`;
-      const hash = createHash('sha256');
-      hash.update(fallbackString);
-      return hash.digest('hex');
-    }
+    return null
   }
 }

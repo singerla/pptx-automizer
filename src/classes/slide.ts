@@ -132,6 +132,9 @@ export class Slide extends HasShapes implements ISlide {
    * @returns Promise<this> - Returns the slide instance for method chaining
    */
   mergeIntoSlideLayout(targetLayout: number | string): this {
+    // Disabling concurring cleanup function for this slide:
+    this.cleanupPlaceholders = false
+
     this.useSlideLayout(targetLayout)
 
     this.prepare(async (_) => {
