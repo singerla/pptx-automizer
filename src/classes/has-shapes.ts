@@ -444,28 +444,27 @@ export default class HasShapes {
   async getUniqueImportedElements(): Promise<ImportElement[]> {
     for (const element of this.importElements) {
       const info = await this.getElementInfo(element);
-      const selector = XmlSlideHelper.getSelector(info.sourceElement)
-      const eleHash = JSON.stringify(selector)
+      const selector = XmlSlideHelper.getSelector(info.sourceElement);
+      const eleHash = JSON.stringify(selector);
       const alreadyImported = this.importElements.find(
         (ele) => ele.info?.hash === eleHash,
       );
       if (alreadyImported) {
-        alreadyImported.info.callback = GeneralHelper.arrayify(
-          alreadyImported.info.callback,
-        );
-        const pushCallbacks = GeneralHelper.arrayify(element.callback);
-        if(pushCallbacks.length) {
-          alreadyImported.info.callback.push(...pushCallbacks);
-        }
+        const existingCallbacks = GeneralHelper.arrayify(element.callback);
+        const pushCallbacks = GeneralHelper.arrayify(alreadyImported.info.callback)
+        alreadyImported.info.callback = [
+          ...existingCallbacks,
+          ...pushCallbacks
+        ]
       } else {
         info.hash = eleHash;
         element.info = info;
       }
     }
 
-    return this.importElements.filter(ele => {
-      return ele.info
-    })
+    return this.importElements.filter((ele) => {
+      return ele.info;
+    });
   }
 
   /**
