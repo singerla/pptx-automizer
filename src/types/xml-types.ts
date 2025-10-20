@@ -1,5 +1,6 @@
 import IArchive from '../interfaces/iarchive';
 import { TableInfo } from './table-types';
+import { Color } from './modify-types';
 
 export type DefaultAttribute = {
   Extension: string;
@@ -153,6 +154,11 @@ export type ElementInfo = {
   getXmlElement: () => XmlElement;
   getGroupInfo: () => GroupInfo;
 };
+
+export type ShapeBackgroundInfo = {
+  color?: Color,
+  isDark: boolean
+}
 
 export type LayoutInfo = {
   layoutName: string;

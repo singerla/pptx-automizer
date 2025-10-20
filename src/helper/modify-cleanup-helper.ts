@@ -149,6 +149,7 @@ export default class ModifyCleanupHelper {
     ModifyCleanupHelper.remove3dEffects(element);
     ModifyCleanupHelper.removeFillEffects(element);
     ModifyCleanupHelper.removeTextEffects(element);
+    ModifyCleanupHelper.removeExtLst(element);
 
     // Determine the visual type of the element (picture, chart, etc.)
     // Apply type-specific cleanup
@@ -212,6 +213,28 @@ export default class ModifyCleanupHelper {
     });
   }
 
+  /**
+   * Removes extension list (extLst) elements from PowerPoint shapes
+   *
+   * The extLst (Extension List) element in OOXML contains application-specific extensions
+   * and future compatibility features that may not be supported across all Office versions.
+   * These extensions can include:
+   * - Custom drawing effects and transformations
+   * - Third-party add-in specific properties
+   * - Version-specific features that may cause rendering inconsistencies
+   * - Experimental or preview features
+   *
+   * Removing extLst helps ensure cross-version compatibility and prevents rendering
+   * issues when the presentation is opened in different versions of PowerPoint or
+   * other OOXML-compatible applications.
+   *
+   * @param element - The XML element containing extension lists to remove
+   */
+  static removeExtLst(element: XmlElement): void {
+    const extLst = element.getElementsByTagName('a:extLst').item(0);
+    XmlHelper.remove(extLst);
+  }
+
   static clearTextUnderlineToBold(element: XmlElement): void {
     const textRuns = element.getElementsByTagName('a:rPr');
     XmlHelper.modifyCollection(textRuns, (textRun: XmlElement) => {
@@ -260,7 +283,7 @@ export default class ModifyCleanupHelper {
   static clearTextColor(element: XmlElement, color?: Color): void {
     const textRuns = element.getElementsByTagName('a:rPr');
     XmlHelper.modifyCollection(textRuns, (textRun: XmlElement) => {
-      if(color) {
+      if (color) {
         ModifyColorHelper.solidFill(color, 0)(textRun);
       } else {
         // Remove all color-related elements from text run properties

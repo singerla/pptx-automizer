@@ -725,11 +725,6 @@ export class XmlSlideHelper {
       return 'table';
     }
 
-    // Check for 3D models
-    if (XmlHelper.findElement(element, 'a:scene3d')) {
-      return '3dModel';
-    }
-
     // Check for SVG Images
     if (
       XmlHelper.findElement(element, 'a:svgBlip') ||
@@ -806,6 +801,11 @@ export class XmlSlideHelper {
       if (txBody) {
         return 'textBox';
       }
+    }
+
+    // Check for 3D models
+    if (XmlHelper.findElement(element, 'a:scene3d')) {
+      return '3dModel';
     }
 
     // Default case

@@ -295,10 +295,10 @@ export default class XmlPlaceholderHelper {
   }
 
   applyPlaceholder(element: ElementInfo, bestMatch: PlaceholderInfo) {
-    const callback = (element: XmlElement) => {
+    const applyPlaceholderCallback = (element: XmlElement) => {
       XmlPlaceholderHelper.setPlaceholderDefaults(element, bestMatch);
     };
-    this.postApplyModification(element, callback);
+    this.postApplyModification(element, applyPlaceholderCallback);
     this.mappingResult.usedPlaceholders.push(bestMatch);
   }
 

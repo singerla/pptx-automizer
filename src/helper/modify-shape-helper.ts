@@ -2,14 +2,21 @@
  * @file ModifyShapeHelper provides utility functions for manipulating PowerPoint shapes
  * through XML modifications.
  */
-import { ReplaceText, ReplaceTextOptions } from '../types/modify-types';
+import { Color, ReplaceText, ReplaceTextOptions } from '../types/modify-types';
 import { ShapeCoordinates } from '../types/shape-types';
 import { GeneralHelper } from './general-helper';
 import TextReplaceHelper from './text-replace-helper';
 import ModifyTextHelper from './modify-text-helper';
-import { ElementVisualType, XmlElement } from '../types/xml-types';
+import {
+  ElementVisualType,
+  PlaceholderInfo,
+  ShapeBackgroundInfo,
+  XmlElement,
+} from '../types/xml-types';
 import { XmlHelper } from './xml-helper';
 import { XmlSlideHelper } from './xml-slide-helper';
+import XmlPlaceholderHelper from './xml-placeholder-helper';
+import { ModifyColorHelper } from '../index';
 
 /**
  * Mapping between user-friendly property names and their corresponding XML structure
@@ -325,5 +332,23 @@ export default class ModifyShapeHelper {
    */
   static getElementVisualType(element: XmlElement): ElementVisualType {
     return XmlSlideHelper.getElementVisualType(element);
+  }
+
+  /**
+   * Forward placeholder info function
+   * @param element The XML element to check
+   * @returns The PlaceholderInfo object
+   */
+  static getElementPlaceholderInfo(element: XmlElement): PlaceholderInfo {
+    return XmlPlaceholderHelper.getPlaceholderInfo(element);
+  }
+
+  /**
+   * Check if the given element has a background which is non-transparent
+   * @param element The XML element to check
+   * @returns ShapeBackgroundInfo
+   */
+  static elementHasBackground(element: XmlElement): ShapeBackgroundInfo {
+    return ModifyColorHelper.elementHasBackground(element)
   }
 }
