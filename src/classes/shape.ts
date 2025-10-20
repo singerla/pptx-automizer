@@ -149,7 +149,7 @@ export class Shape {
 
     const findMethod = this.hasCreationId ? 'findByCreationId' : 'findByName';
     const selector = this.hasCreationId
-      ? this.shape.selector.creationId
+      ? this.name
       : this.shape.selector.name;
 
     const sourceElementOnTargetSlide = await XmlHelper[findMethod](
