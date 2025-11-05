@@ -444,6 +444,12 @@ export default class HasShapes {
   async getUniqueImportedElements(): Promise<ImportElement[]> {
     for (const element of this.importElements) {
       const info = await this.getElementInfo(element);
+
+      if(element.mode === 'append') {
+        element.info = info;
+        continue
+      }
+
       const selector = XmlSlideHelper.getSelector(info.sourceElement);
       const eleHash = JSON.stringify(selector);
       const alreadyImported = this.importElements.find(
