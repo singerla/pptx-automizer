@@ -237,11 +237,39 @@ export class HtmlToMultiTextHelper {
       newStyle.isItalics = true;
     } else if (tagName === 'ins') {
       newStyle.isUnderlined = true;
-    }  else if (tagName === 'span') {
+    } else if (tagName === 'a') {
+      this.processHyperlink(element, newStyle);
+    } else if (tagName === 'span') {
       this.processSpanStyles(element, newStyle);
     }
 
     return newStyle;
+  }
+
+  /**
+   * Processes anchor element for hyperlinks
+   */
+  private processHyperlink(element: Element, style: TextStyle): void {
+    const href = element.getAttribute('href');
+    if (!href) return;
+
+    if (!isNaN(parseInt(href))) {
+      // Internal slide link: <a href="3">Link to slide 3</a>
+      const slideNumber = parseInt(href);
+      style.hyperlink = {
+        url: `slide${slideNumber}.xml`,
+        isInternal: true,
+        slideNumber: slideNumber,
+      };
+    } else {
+      // External link: <a href="https://example.com">Link</a>
+      style.hyperlink = {
+        url: href,
+        isInternal: false,
+      };
+    }
+
+    console.log("style", style);
   }
 
   /**

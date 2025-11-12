@@ -46,6 +46,11 @@ export type Border = {
   weight?: number;
   color?: Color;
 };
+export type HyperlinkInfo = {
+  url: string;
+  isInternal?: boolean;
+  slideNumber?: number;
+};
 
 export type TextStyle = {
   size?: number;
@@ -55,6 +60,7 @@ export type TextStyle = {
   isUnderlined?: boolean;
   isSuperscript?: boolean;
   isSubscript?: boolean;
+  hyperlink?: HyperlinkInfo;
 };
 
 export type ImageStyle = {
