@@ -87,6 +87,12 @@ export default class ModifyTextHelper {
       if (style.isUnderlined !== undefined) {
         ModifyTextHelper.setUnderlined(style.isUnderlined)(element);
       }
+      if (style.isSuperscript !== undefined) {
+        ModifyTextHelper.setSuperscript(style.isSuperscript)(element);
+      }
+      if (style.isSubscript !== undefined) {
+        ModifyTextHelper.setSubscript(style.isSubscript)(element);
+      }
     };
 
   /**
@@ -136,6 +142,24 @@ export default class ModifyTextHelper {
         element.setAttribute('u', 'sng');
       }
     };
+
+  /**
+   * Set superscript attribute on text
+   */
+  static setSuperscript =
+    (isSuperscript: boolean) =>
+      (element: XmlElement): void => {
+        ModifyXmlHelper.attribute('baseline', isSuperscript ? '30000' : '0')(element);
+      };
+
+  /**
+   * Set subscript attribute on text
+   */
+  static setSubscript =
+    (isSubscript: boolean) =>
+      (element: XmlElement): void => {
+        ModifyXmlHelper.attribute('baseline', isSubscript ? '-25000' : '0')(element);
+      };
 
   /**
    * Set bullet type (font and character) for bullet points

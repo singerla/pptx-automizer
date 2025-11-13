@@ -46,12 +46,15 @@ export type Border = {
   weight?: number;
   color?: Color;
 };
+
 export type TextStyle = {
   size?: number;
   color?: Color;
   isBold?: boolean;
   isItalics?: boolean;
   isUnderlined?: boolean;
+  isSuperscript?: boolean;
+  isSubscript?: boolean;
 };
 
 export type ImageStyle = {
