@@ -47,6 +47,11 @@ export type Border = {
   color?: Color;
 };
 
+export type HyperlinkInfo = {
+  type?: 'internal' | 'external';
+  target?: string | number;
+};
+
 export type TextStyle = {
   size?: number;
   color?: Color;
@@ -55,6 +60,7 @@ export type TextStyle = {
   isUnderlined?: boolean;
   isSuperscript?: boolean;
   isSubscript?: boolean;
+  hyperlink?: HyperlinkInfo
 };
 
 export type ImageStyle = {

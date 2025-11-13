@@ -11,10 +11,11 @@ import IArchive from '../interfaces/iarchive';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import ModifyHyperlinkHelper from '../helper/modify-hyperlink-helper';
 import { Logger } from '../helper/general-helper';
+import { HyperlinkInfo } from '../types/modify-types';
 
 export class Hyperlink extends Shape {
-  private hyperlinkType: 'internal' | 'external';
-  private hyperlinkTarget: string;
+  private hyperlinkType: HyperlinkInfo['type'];
+  private hyperlinkTarget: HyperlinkInfo['target'];
   callbacks: ShapeModificationCallback[];
 
   constructor(

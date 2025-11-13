@@ -39,8 +39,8 @@ export default class ModifyTextHelper {
 
   static setMultiText =
     (paragraphs: MultiTextParagraph[]) =>
-    (element: XmlElement): void => {
-      new MultiTextHelper(element).run(paragraphs);
+    (element: XmlElement, relation?: XmlElement): void => {
+      new MultiTextHelper(element, relation).run(paragraphs);
     };
 
   static htmlToMultiText = (html: string) => {
@@ -148,18 +148,24 @@ export default class ModifyTextHelper {
    */
   static setSuperscript =
     (isSuperscript: boolean) =>
-      (element: XmlElement): void => {
-        ModifyXmlHelper.attribute('baseline', isSuperscript ? '30000' : '0')(element);
-      };
+    (element: XmlElement): void => {
+      ModifyXmlHelper.attribute(
+        'baseline',
+        isSuperscript ? '30000' : '0',
+      )(element);
+    };
 
   /**
    * Set subscript attribute on text
    */
   static setSubscript =
     (isSubscript: boolean) =>
-      (element: XmlElement): void => {
-        ModifyXmlHelper.attribute('baseline', isSubscript ? '-25000' : '0')(element);
-      };
+    (element: XmlElement): void => {
+      ModifyXmlHelper.attribute(
+        'baseline',
+        isSubscript ? '-25000' : '0',
+      )(element);
+    };
 
   /**
    * Set bullet type (font and character) for bullet points
@@ -187,7 +193,7 @@ export default class ModifyTextHelper {
 
         const existingBuBlip = pPr.getElementsByTagName('a:buBlip')[0];
         if (existingBuBlip) {
-          XmlHelper.remove(existingBuBlip)
+          XmlHelper.remove(existingBuBlip);
         }
       });
     };
