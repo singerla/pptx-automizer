@@ -1,6 +1,7 @@
 import { TextStyle } from '../types/modify-types';
 import { MultiTextParagraph } from '../interfaces/imulti-text';
 import { DOMParser, Node } from '@xmldom/xmldom';
+import { log } from './general-helper';
 
 type TextRun = { text: string; style?: TextStyle };
 
@@ -30,6 +31,8 @@ export class HtmlToMultiTextHelper {
           );
         }
       });
+    } else {
+      log('You need to provide a <body> tag for HtmlToMultiText', 0);
     }
 
     return paragraphs;
@@ -257,19 +260,16 @@ export class HtmlToMultiTextHelper {
       // Internal slide link: <a href="3">Link to slide 3</a>
       const slideNumber = parseInt(href);
       style.hyperlink = {
-        url: `slide${slideNumber}.xml`,
+        target: slideNumber,
         isInternal: true,
-        slideNumber: slideNumber,
       };
     } else {
       // External link: <a href="https://example.com">Link</a>
       style.hyperlink = {
-        url: href,
+        target: href,
         isInternal: false,
       };
     }
-
-    console.log("style", style);
   }
 
   /**

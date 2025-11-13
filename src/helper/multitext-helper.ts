@@ -1,10 +1,12 @@
-import { TextStyle } from '../types/modify-types';
+import { HyperlinkInfo, TextStyle } from '../types/modify-types';
 import { XmlElement } from '../types/xml-types';
 import { MultiTextParagraph } from '../interfaces/imulti-text';
 import ModifyTextHelper from './modify-text-helper';
 import { XmlHelper } from './xml-helper';
 import HyperlinkElement from './modify-hyperlink-element';
-import { Logger } from './general-helper';
+import { Logger, vd } from './general-helper';
+
+type TextRun = { text: string; style?: TextStyle; hyperlink?: HyperlinkInfo };
 
 export class MultiTextHelper {
   private element: XmlElement;
@@ -249,28 +251,18 @@ export class MultiTextHelper {
    */
   private createTextRuns(
     p: XmlElement,
-    textRuns: Array<{ text: string; style?: TextStyle }>,
+    textRuns: TextRun[],
     defaultStyle: TextStyle = {},
   ): void {
     textRuns.forEach((run) => {
-      const r = this.document.createElement('a:r');
-      p.appendChild(r);
-
-      const rPr = this.document.createElement('a:rPr');
-      r.appendChild(rPr);
-
-      // Apply default styling first, then override with text run specific styling
       const mergedStyle = this.mergeStyles(defaultStyle, run.style);
-      if (mergedStyle) {
-        ModifyTextHelper.style(mergedStyle)(rPr);
 
-        // Apply hyperlink if present
-        if (mergedStyle.hyperlink) {
-          this.applyHyperlink(rPr, mergedStyle.hyperlink);
-        }
+      // Check if this text run needs a hyperlink
+      if (mergedStyle?.hyperlink && this.relationElement) {
+        this.createHyperlinkTextRun(p, run.text || '', mergedStyle);
+      } else {
+        this.createRegularTextRun(p, run.text || '', mergedStyle);
       }
-
-      this.createTextElement(r, run.text || '');
     });
   }
 
@@ -282,23 +274,38 @@ export class MultiTextHelper {
     text: string | number,
     style?: TextStyle,
   ): void {
+    const textString = String(text || '');
+
+    // Check if this text run needs a hyperlink
+    if (style?.hyperlink && this.relationElement) {
+      this.createHyperlinkTextRun(p, textString, style);
+    } else {
+      this.createRegularTextRun(p, textString, style);
+    }
+  }
+
+  /**
+   * Create a regular text run without hyperlink
+   */
+  private createRegularTextRun(
+    p: XmlElement,
+    text: string,
+    style?: TextStyle,
+  ): void {
     const r = this.document.createElement('a:r');
     p.appendChild(r);
 
     const rPr = this.document.createElement('a:rPr');
     r.appendChild(rPr);
 
-    // Apply text styling
+    // Apply text styling (excluding hyperlink)
     if (style) {
-      ModifyTextHelper.style(style)(rPr);
-
-      // Apply hyperlink if present
-      if (style.hyperlink) {
-        this.applyHyperlink(rPr, style.hyperlink);
-      }
+      const styleWithoutHyperlink = { ...style };
+      delete styleWithoutHyperlink.hyperlink;
+      ModifyTextHelper.style(styleWithoutHyperlink)(rPr);
     }
 
-    this.createTextElement(r, String(text || ''));
+    this.createTextElement(r, text);
   }
 
   /**
@@ -319,87 +326,109 @@ export class MultiTextHelper {
   }
 
   /**
-   * Apply hyperlink to a text run properties element
+   * Create a hyperlinked text run using HyperlinkElement
    */
-  private applyHyperlink(
-    rPr: XmlElement,
-    hyperlinkInfo: { url: string; isInternal?: boolean; slideNumber?: number },
+  private createHyperlinkTextRun(
+    p: XmlElement,
+    text: string,
+    style: TextStyle,
   ): void {
-    if (!this.relationElement) {
-      Logger.log(
-        'MultiTextHelper: Cannot create hyperlink - no relation element provided',
-        1,
-      );
+    if (!style.hyperlink || !this.relationElement) {
+      // Fallback to regular text run if no hyperlink info or relation element
+      this.createRegularTextRun(p, text, style);
       return;
     }
 
-    // Create relationship
-    const relData = this.createRelationshipData(hyperlinkInfo);
-    const newRelId = this.addRelationship(relData);
+    const hyperlinkInfo = style.hyperlink;
+    const target = hyperlinkInfo.target;
+    const isInternal = hyperlinkInfo.isInternal;
 
-    // Create and append hyperlink element
+    if (!target) {
+      this.createRegularTextRun(p, text, style);
+      return;
+    }
+
+    // Create relationship data for the hyperlink
+    const relData = this.createRelationshipData(target, isInternal || false);
+    const newRelId = this.addRelationship(this.relationElement, relData);
+
+    // Create HyperlinkElement to generate the hyperlinked text run
     const hyperlinkElement = new HyperlinkElement(
       this.document,
       newRelId,
-      hyperlinkInfo.isInternal || false,
+      isInternal || false,
     );
 
-    rPr.appendChild(hyperlinkElement.createHlinkClick());
+    // Create the text run with hyperlink
+    const r = hyperlinkElement.createTextRun(text);
+
+    // Apply additional styling if needed (excluding hyperlink)
+    if (style) {
+      const rPr = r.getElementsByTagName('a:rPr')[0];
+      if (rPr) {
+        const styleWithoutHyperlink = { ...style };
+        delete styleWithoutHyperlink.hyperlink;
+        ModifyTextHelper.style(styleWithoutHyperlink)(rPr);
+      }
+    }
+
+    p.appendChild(r);
   }
 
   /**
-   * Create relationship data for hyperlink
+   * Create relationship data for hyperlink (reused from ModifyHyperlinkHelper)
    */
-  private createRelationshipData(hyperlinkInfo: {
-    url: string;
-    isInternal?: boolean;
-    slideNumber?: number;
-  }): {
-    Type: string;
-    Target: string;
-    TargetMode?: string;
-  } {
-    if (hyperlinkInfo.isInternal) {
+  private createRelationshipData(
+    target: string | number,
+    isInternal: boolean,
+  ): { Id: string; Target: string; Type: string; TargetMode?: string } {
+    if (isInternal) {
       return {
         Type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide',
-        Target: `../slides/${hyperlinkInfo.url}`,
+        Target: `../slides/${this.formatTarget(target)}`,
+        Id: '', // Will be set later
       };
     }
 
     return {
       Type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink',
-      Target: hyperlinkInfo.url,
+      Target: target.toString(),
       TargetMode: 'External',
+      Id: '', // Will be set later
     };
   }
 
+  private formatTarget(target: HyperlinkInfo['target']) {
+    // For internal links, ensure the target is properly formatted
+    let formattedTarget = target;
+    if (typeof target === 'number') {
+      formattedTarget = `slide${target}.xml`;
+    } else if (typeof target === 'string' && !target.includes('.xml')) {
+      // If it's a string but doesn't end with .xml, assume it's a slide number
+      formattedTarget = `slide${target}.xml`;
+    }
+    return formattedTarget
+  }
+
   /**
-   * Add relationship and return the relationship ID
+   * Add relationship to the relation element (reused logic from ModifyHyperlinkHelper)
    */
-  private addRelationship(relData: {
-    Type: string;
-    Target: string;
-    TargetMode?: string;
-  }): string {
-    const relNodes = this.relationElement.getElementsByTagName('Relationship');
+  private addRelationship(
+    relation: XmlElement,
+    relData: { Id: string; Target: string; Type: string; TargetMode?: string },
+  ): string {
+    const relNodes = relation.getElementsByTagName('Relationship');
     const maxId = XmlHelper.getMaxId(relNodes, 'Id', true);
+
     const newRelId = `rId${maxId}`;
 
-    const newRel = this.relationElement.ownerDocument.createElement(
-      'Relationship',
-    );
+    const newRel = relation.ownerDocument.createElement('Relationship');
     newRel.setAttribute('Id', newRelId);
-    newRel.setAttribute('Type', relData.Type);
-    newRel.setAttribute('Target', relData.Target);
-    if (relData.TargetMode) {
-      newRel.setAttribute('TargetMode', relData.TargetMode);
-    }
+    Object.entries(relData).forEach(([key, value]) => {
+      if (value) newRel.setAttribute(key, value);
+    });
 
-    // Append to the root element of the relationships document
-    const relRoot = relNodes.item(0)?.parentNode;
-    if (relRoot) {
-      relRoot.appendChild(newRel);
-    }
+    relNodes.item(0).parentNode.appendChild(newRel);
 
     return newRelId;
   }

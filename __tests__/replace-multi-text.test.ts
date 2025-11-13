@@ -23,12 +23,16 @@ test('create presentation, replace multi text.', async () => {
             },
             textRuns: [
               {
-                text: 'test 0',
+                text: 'Internal Hyperlink',
                 style: {
                   color: {
                     type: 'srgbClr',
                     value: 'CCCCCC',
                   },
+                  hyperlink: {
+                    isInternal: true,
+                    target: 1
+                  }
                 },
               },
             ],
@@ -100,6 +104,9 @@ test('create presentation, replace multi text.', async () => {
                     type: 'srgbClr',
                     value: '0000FF',
                   },
+                  hyperlink: {
+                    target: 'https://github.com',
+                  }
                 },
               },
             ],

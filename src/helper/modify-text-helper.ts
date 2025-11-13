@@ -7,6 +7,7 @@ import { MultiTextParagraph } from '../interfaces/imulti-text';
 import { MultiTextHelper } from './multitext-helper';
 import { HtmlToMultiTextHelper } from './html-to-multitext-helper';
 import { XmlHelper } from './xml-helper';
+import { vd } from './general-helper';
 
 export default class ModifyTextHelper {
   /**

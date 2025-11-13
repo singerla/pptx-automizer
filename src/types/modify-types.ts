@@ -47,9 +47,8 @@ export type Border = {
   color?: Color;
 };
 export type HyperlinkInfo = {
-  url: string;
+  target: string | number;
   isInternal?: boolean;
-  slideNumber?: number;
 };
 
 export type TextStyle = {
