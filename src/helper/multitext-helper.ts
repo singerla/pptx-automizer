@@ -2,14 +2,19 @@ import { TextStyle } from '../types/modify-types';
 import { XmlElement } from '../types/xml-types';
 import { MultiTextParagraph } from '../interfaces/imulti-text';
 import ModifyTextHelper from './modify-text-helper';
+import { XmlHelper } from './xml-helper';
+import HyperlinkElement from './modify-hyperlink-element';
+import { Logger } from './general-helper';
 
 export class MultiTextHelper {
   private element: XmlElement;
   private document: Document;
+  private relationElement?: XmlElement;
 
-  constructor(element: XmlElement) {
+  constructor(element: XmlElement, relationElement?: XmlElement) {
     this.element = element;
     this.document = element.ownerDocument;
+    this.relationElement = relationElement;
   }
 
   /**
@@ -258,6 +263,11 @@ export class MultiTextHelper {
       const mergedStyle = this.mergeStyles(defaultStyle, run.style);
       if (mergedStyle) {
         ModifyTextHelper.style(mergedStyle)(rPr);
+
+        // Apply hyperlink if present
+        if (mergedStyle.hyperlink) {
+          this.applyHyperlink(rPr, mergedStyle.hyperlink);
+        }
       }
 
       this.createTextElement(r, run.text || '');
@@ -281,6 +291,11 @@ export class MultiTextHelper {
     // Apply text styling
     if (style) {
       ModifyTextHelper.style(style)(rPr);
+
+      // Apply hyperlink if present
+      if (style.hyperlink) {
+        this.applyHyperlink(rPr, style.hyperlink);
+      }
     }
 
     this.createTextElement(r, String(text || ''));
@@ -301,5 +316,91 @@ export class MultiTextHelper {
     // Set text content
     const textNode = this.document.createTextNode(text);
     t.appendChild(textNode);
+  }
+
+  /**
+   * Apply hyperlink to a text run properties element
+   */
+  private applyHyperlink(
+    rPr: XmlElement,
+    hyperlinkInfo: { url: string; isInternal?: boolean; slideNumber?: number },
+  ): void {
+    if (!this.relationElement) {
+      Logger.log(
+        'MultiTextHelper: Cannot create hyperlink - no relation element provided',
+        1,
+      );
+      return;
+    }
+
+    // Create relationship
+    const relData = this.createRelationshipData(hyperlinkInfo);
+    const newRelId = this.addRelationship(relData);
+
+    // Create and append hyperlink element
+    const hyperlinkElement = new HyperlinkElement(
+      this.document,
+      newRelId,
+      hyperlinkInfo.isInternal || false,
+    );
+
+    rPr.appendChild(hyperlinkElement.createHlinkClick());
+  }
+
+  /**
+   * Create relationship data for hyperlink
+   */
+  private createRelationshipData(hyperlinkInfo: {
+    url: string;
+    isInternal?: boolean;
+    slideNumber?: number;
+  }): {
+    Type: string;
+    Target: string;
+    TargetMode?: string;
+  } {
+    if (hyperlinkInfo.isInternal) {
+      return {
+        Type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide',
+        Target: `../slides/${hyperlinkInfo.url}`,
+      };
+    }
+
+    return {
+      Type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink',
+      Target: hyperlinkInfo.url,
+      TargetMode: 'External',
+    };
+  }
+
+  /**
+   * Add relationship and return the relationship ID
+   */
+  private addRelationship(relData: {
+    Type: string;
+    Target: string;
+    TargetMode?: string;
+  }): string {
+    const relNodes = this.relationElement.getElementsByTagName('Relationship');
+    const maxId = XmlHelper.getMaxId(relNodes, 'Id', true);
+    const newRelId = `rId${maxId}`;
+
+    const newRel = this.relationElement.ownerDocument.createElement(
+      'Relationship',
+    );
+    newRel.setAttribute('Id', newRelId);
+    newRel.setAttribute('Type', relData.Type);
+    newRel.setAttribute('Target', relData.Target);
+    if (relData.TargetMode) {
+      newRel.setAttribute('TargetMode', relData.TargetMode);
+    }
+
+    // Append to the root element of the relationships document
+    const relRoot = relNodes.item(0)?.parentNode;
+    if (relRoot) {
+      relRoot.appendChild(newRel);
+    }
+
+    return newRelId;
   }
 }

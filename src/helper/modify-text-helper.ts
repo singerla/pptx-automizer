@@ -39,14 +39,14 @@ export default class ModifyTextHelper {
 
   static setMultiText =
     (paragraphs: MultiTextParagraph[]) =>
-    (element: XmlElement): void => {
-      new MultiTextHelper(element).run(paragraphs);
+    (element: XmlElement, relation?: XmlElement): void => {
+      new MultiTextHelper(element, relation).run(paragraphs);
     };
 
   static htmlToMultiText = (html: string) => {
     const paragraphs = new HtmlToMultiTextHelper().run(html);
-    return (element: XmlElement): void => {
-      this.setMultiText(paragraphs)(element);
+    return (element: XmlElement, relation?: XmlElement): void => {
+      this.setMultiText(paragraphs)(element, relation);
     };
   };
 

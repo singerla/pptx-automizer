@@ -30,6 +30,7 @@ import {
 import {
   Border,
   Color,
+  HyperlinkInfo,
   ImageStyle,
   ReplaceText,
   TextStyle,
@@ -109,6 +110,7 @@ export type {
   ShapeValueStyle,
   ShapeCoordinates,
   ReplaceText,
+  HyperlinkInfo,
 };
 
 export {
