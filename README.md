@@ -268,6 +268,22 @@ pres.addSlide('RootTemplate.pptx', 1, (slide) => {
     /* ... */
   ]);
 });
+
+// In case you have two or more shapes on your template slide with the same name,
+// you can address the target by nameIdx:
+pres.addSlide('SlideWithGraph.pptx', 1, (slide) => {
+  // Starting from 0, this will find the second shape named 'ColumnChart'
+  // on the slide.
+  slide.modifyElement(
+    {
+      name: 'ColumnChart',
+      nameIdx: 1,
+    },
+    [
+      /* ... */
+    ],
+  );
+});
 ```
 
 > You can display and manage shape names directly in PowerPoint by opening the "Selection"-pane for your current slide. Hit `ALT+F10` and PowerPoint will give you a (nested) list including all (grouped) shapes. You can edit a shape name by double-click or by hitting `F2` after selecting a shape from the list. [See MS-docs for more info.](https://support.microsoft.com/en-us/office/use-the-selection-pane-to-manage-objects-in-documents-a6b2fd3e-d769-46c1-9b9c-b94e04a72550)
@@ -540,6 +556,19 @@ pres.addSlide('images', 2, (slide) => {
       w: CmToDxa(5),
       h: CmToDxa(3),
     }),
+  ]);
+});
+```
+
+This will also auto-crop the image to the new width and height,
+based on the container aspect ratio, derived from the original image
+and using the new image width and height based on the files loaded into
+the presentation media folder using .loadMedia():
+
+```ts
+pres.addSlide('images', 2, (slide) => {
+  slide.modifyElement('Image Placeholder', [
+    ModifyImageHelper.setRelationTargetCover('feather.png', pres),
   ]);
 });
 ```

@@ -2,7 +2,12 @@ type SrcRect = { l?: number; t?: number; r?: number; b?: number }; // thousandth
 const K = 100000;
 
 // Convert the source rectangle to fractions of the image width and height for easier calculation
-function toFractions(src: SrcRect): { l: number; t: number; r: number; b: number } {
+function toFractions(src: SrcRect): {
+  l: number;
+  t: number;
+  r: number;
+  b: number;
+} {
   return {
     l: (src.l ?? 0) / K,
     t: (src.t ?? 0) / K,
@@ -15,7 +20,7 @@ function toFractions(src: SrcRect): { l: number; t: number; r: number; b: number
 export function inferContainerAr(
   oldImageWidth: number,
   oldImageHeight: number,
-  currentSrcRect: SrcRect // read from the slide; missing attrs mean 0
+  currentSrcRect: SrcRect, // read from the slide; missing attrs mean 0
 ): number {
   const { l, t, r, b } = toFractions(currentSrcRect);
   const wf = 1 - (l + r);
@@ -28,10 +33,15 @@ export function inferContainerAr(
 export function computeSrcRectForNewImage(
   containerAr: number,
   newImageWidth: number,
-  newImageHeight: number
+  newImageHeight: number,
 ): SrcRect {
   const newAr = newImageWidth / newImageHeight;
-  if (!isFinite(containerAr) || !isFinite(newAr) || containerAr <= 0 || newAr <= 0) {
+  if (
+    !isFinite(containerAr) ||
+    !isFinite(newAr) ||
+    containerAr <= 0 ||
+    newAr <= 0
+  ) {
     return { l: 0, t: 0, r: 0, b: 0 };
   }
 
