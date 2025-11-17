@@ -154,10 +154,12 @@ export class XmlSlideHelper {
       type,
       visualType,
       position,
-      placeholder: XmlPlaceholderHelper.getPlaceholderInfo(
-        slideElement,
-        layoutPlaceholders,
-      ),
+      getPlaceholderInfo: () => {
+        return XmlPlaceholderHelper.getPlaceholderInfo(
+          slideElement,
+          layoutPlaceholders,
+        )
+      },
       hasTextBody: !!XmlSlideHelper.getTextBody(slideElement),
       getXmlElement: () => slideElement,
       getText: () => XmlSlideHelper.parseTextFragments(slideElement),
@@ -180,8 +182,8 @@ export class XmlSlideHelper {
     const nvPrs = this.slideXml.getElementsByTagNameNS(nsMain, 'cNvPr');
     const namedElements = <XmlElement[]>[];
     XmlHelper.modifyCollection(nvPrs, (nvPr: any) => {
-      const parentNode = nvPr.parentNode.parentNode;
-      const parentTag = parentNode.localName;
+      const parentNode = nvPr?.parentNode?.parentNode;
+      const parentTag = parentNode?.localName;
       if (
         !skipTags.includes(parentTag) &&
         (!filterTags?.length || filterTags.includes(parentTag))
@@ -448,7 +450,7 @@ export class XmlSlideHelper {
    * @param slideElementParent
    */
   static getElementType(slideElementParent: XmlElement): ElementType {
-    let type = slideElementParent.localName;
+    let type = slideElementParent?.localName;
 
     const getUri = () => {
       const graphicData =
@@ -523,6 +525,10 @@ export class XmlSlideHelper {
   };
 
   static parseGroupInfo = (element: XmlElement): GroupInfo => {
+    if(!element?.parentNode) {
+      return
+    }
+
     // Check if element is a child of a group
     // Look for a parent node that is a group (grpSp)
     const isChild =

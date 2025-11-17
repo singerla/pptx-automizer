@@ -74,10 +74,12 @@ export default class XmlPlaceholderHelper {
    */
   public performInitialPlaceholderMatching(): void {
     this.slideElements.forEach((element: ElementInfo) => {
-      if (element.placeholder?.type) {
+      const placeholder = element.getPlaceholderInfo()
+      if (placeholder?.type) {
         const matchesPlaceholder = this.applyPlaceholderToElement(
           this.targetPlaceholders,
           element,
+          placeholder
         );
         if (!matchesPlaceholder) {
           this.mappingResult.unmatchedSourcePlaceholderElements.push(element);
@@ -255,8 +257,9 @@ export default class XmlPlaceholderHelper {
     element: ElementInfo,
     sourcePlaceholders: PlaceholderInfo[],
   ) {
+    const placeholder = element.getPlaceholderInfo()
     const fallbackPh = sourcePlaceholders.find(
-      (ph) => ph.idx === element.placeholder.idx,
+      (ph) => ph.idx === placeholder.idx,
     );
     const fallbackPosition = fallbackPh?.position || {
       x: 1000,
@@ -274,12 +277,13 @@ export default class XmlPlaceholderHelper {
   applyPlaceholderToElement(
     layoutPlaceholders: PlaceholderInfo[],
     element: ElementInfo,
+    placeholder: PlaceholderInfo
   ): PlaceholderInfo {
     const unusedPlaceholders = layoutPlaceholders.filter(
       (ph) => !this.mappingResult.usedPlaceholders.includes(ph),
     );
     const matchPlaceholders = unusedPlaceholders.filter((ph) => {
-      return ph.type === element.placeholder?.type;
+      return ph.type === placeholder?.type;
     });
 
     if (matchPlaceholders.length) {
@@ -481,16 +485,17 @@ export default class XmlPlaceholderHelper {
     availablePlaceholder: PlaceholderInfo,
     element: ElementInfo,
   ) {
+    const placeholder = element.getPlaceholderInfo()
     // Bonus points for matching size if available
     if (
-      element.placeholder?.sz &&
-      availablePlaceholder.sz === element.placeholder.sz
+      placeholder?.sz &&
+      availablePlaceholder.sz === placeholder.sz
     ) {
       score += 10;
     }
 
     // Bonus points for similar position if available
-    const position = element.placeholder?.position || element.position;
+    const position = placeholder?.position || element.position;
     if (position && availablePlaceholder.position) {
       score += this.calculateDistanceScore(
         position,

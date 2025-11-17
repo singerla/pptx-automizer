@@ -144,7 +144,7 @@ export type ElementInfo = {
   creationId: string;
   nameIdx: number;
   position: ElementPosition;
-  placeholder: PlaceholderInfo;
+  getPlaceholderInfo: () => PlaceholderInfo;
   hasTextBody: boolean;
   getText: () => string[];
   getParagraphs: () => TextParagraph[];
