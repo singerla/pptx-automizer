@@ -1161,16 +1161,23 @@ export default class HasShapes {
     targetPath: string,
     sourcePlaceholderTypes?: SlidePlaceholder[],
   ): Promise<void> {
-    const xml = await XmlHelper.getXmlFromArchive(
-      this.targetArchive,
-      targetPath,
-    );
+    const xml = await XmlHelper.getXmlFromArchive(this.targetArchive, targetPath);
 
     if (this.cleanupPlaceholders && sourcePlaceholderTypes) {
       this.removeDuplicatePlaceholders(xml, sourcePlaceholderTypes);
       this.normalizePlaceholderShapes(xml, sourcePlaceholderTypes);
     }
 
+    this.removeUnsupportedTags(xml);
+
+    XmlHelper.writeXmlToArchive(this.targetArchive, targetPath, xml);
+  }
+
+  /**
+   * Removes unsupported tags and (optionally) their now-empty parents.
+   * Parents will be removed only if they become empty AND are NOT `p:nvPr`.
+   */
+  private removeUnsupportedTags(xml: XmlDocument): void {
     this.unsupportedTags.forEach((tag) => {
       const drop = xml.getElementsByTagName(tag);
       const length = drop.length;
@@ -1178,9 +1185,9 @@ export default class HasShapes {
         console.log('Cleaning unsupported tag ' + tag);
 
         // First get parent elements before removing
-        const parents = [];
+        const parents: XmlElement[] = [];
         for (let i = 0; i < drop.length; i++) {
-          const parent = drop[i].parentNode;
+          const parent = drop[i].parentNode as XmlElement | null;
           if (parent && !parents.includes(parent)) {
             parents.push(parent);
           }
@@ -1190,16 +1197,16 @@ export default class HasShapes {
         XmlHelper.sliceCollection(drop, 0);
 
         // Check each parent and remove it if it has no children left
+        // but never remove <p:nvPr/>
         parents.forEach((parent) => {
-          if (parent.childNodes.length === 0) {
+          if (parent.childNodes.length === 0 && parent.nodeName !== 'p:nvPr') {
             XmlHelper.remove(parent);
           }
         });
       }
     });
-
-    XmlHelper.writeXmlToArchive(this.targetArchive, targetPath, xml);
   }
+
 
   /**
    * If you insert a placeholder shape on a target slide with an empty
