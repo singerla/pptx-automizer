@@ -86,20 +86,42 @@ export class MultiTextHelper {
 
   /**
    * Find or create the txBody element and ensure it has required child elements
+   *
+   * Notes:
+   * - Text boxes / shapes use `p:txBody`
+   * - Table cells (`a:tc`) use `a:txBody`
    */
   private getOrCreateTxBody(): XmlElement {
-    let txBody = this.element.getElementsByTagName('p:txBody')[0];
+    // 1) Find existing txBody for both shapes and table cells
+    let txBody =
+      this.element.getElementsByTagName('p:txBody')[0] ||
+      this.element.getElementsByTagName('a:txBody')[0];
 
+    // 2) If missing, create correct txBody depending on host element
     if (!txBody) {
-      txBody = this.document.createElement('p:txBody');
+      const isTableCell = this.element.tagName === 'a:tc';
+
+      // Table cell text lives in DrawingML (`a:*`), shape text in PresentationML (`p:*`)
+      txBody = this.document.createElement(isTableCell ? 'a:txBody' : 'p:txBody');
       this.element.appendChild(txBody);
+    }
 
-      // Create required bodyPr and lstStyle elements
-      const bodyPr = this.document.createElement('a:bodyPr');
-      txBody.appendChild(bodyPr);
+    // 3) Ensure required children exist (always DrawingML children)
+    let bodyPr = txBody.getElementsByTagName('a:bodyPr')[0];
+    if (!bodyPr) {
+      bodyPr = this.document.createElement('a:bodyPr');
+      txBody.insertBefore(bodyPr, txBody.firstChild);
+    }
 
-      const lstStyle = this.document.createElement('a:lstStyle');
-      txBody.appendChild(lstStyle);
+    let lstStyle = txBody.getElementsByTagName('a:lstStyle')[0];
+    if (!lstStyle) {
+      lstStyle = this.document.createElement('a:lstStyle');
+      const insertAfter = bodyPr.nextSibling;
+      if (insertAfter) {
+        txBody.insertBefore(lstStyle, insertAfter);
+      } else {
+        txBody.appendChild(lstStyle);
+      }
     }
 
     return txBody;
@@ -180,11 +202,17 @@ export class MultiTextHelper {
     // Set custom indentation
     if (paragraphProps.indent !== undefined) {
       pPr.setAttribute('indent', String(paragraphProps.indent));
+    } else if (paragraphProps.bullet) {
+      // Add default negative indent for bullets to create a gap (approx 0.25 inch)
+      pPr.setAttribute('indent', '-228600');
     }
 
     // Set left margin
     if (paragraphProps.marginLeft !== undefined) {
       pPr.setAttribute('marL', String(paragraphProps.marginLeft));
+    } else if (paragraphProps.bullet) {
+      // Add default left margin to push text to the right (approx 0.25 inch)
+      pPr.setAttribute('marL', '228600');
     }
 
     // Apply spacing properties

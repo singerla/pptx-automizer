@@ -25,6 +25,7 @@ test('create presentation, replace multi text.', async () => {
               {
                 text: 'Internal Hyperlink',
                 style: {
+                  isItalics: false,
                   color: {
                     type: 'srgbClr',
                     value: 'CCCCCC',
