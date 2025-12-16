@@ -58,7 +58,7 @@
     "typescript": "^4.9.4"
   },
   "dependencies": {
-    "@xmldom/xmldom": "^0.9.7",
+    "@xmldom/xmldom": "^0.9.8",
     "extract-zip": "^2.0.1",
     "jszip": "^3.10.1",
     "pptxgenjs": "^3.12.0",
