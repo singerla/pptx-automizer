@@ -4,6 +4,7 @@ import {
   AutomizerFile,
   AutomizerParams,
   AutomizerSummary,
+  MediaFileFromBuffer,
   PresentationInfo,
   SourceIdentifier,
   StatusTracker,
@@ -246,6 +247,7 @@ export default class Automizer implements IPresentationProps {
         throw `Can't load media: ${filepath} does not exist.`;
       }
       this.rootTemplate.mediaFiles.push({
+        source: 'path',
         file,
         directory,
         filepath,
@@ -253,6 +255,119 @@ export default class Automizer implements IPresentationProps {
         prefix,
       });
     });
+    return this;
+  }
+
+  /**
+   * Load media files from buffers to output presentation.
+   *
+   * This allows loading media from memory instead of filesystem,
+   * useful for dynamically generated images or when working with
+   * remote/cloud storage.
+   *
+   * @example
+   * // Load single image from buffer
+   * const imageBuffer = await fetch('https://example.com/logo.png')
+   *   .then(r => r.arrayBuffer())
+   *   .then(b => Buffer.from(b));
+   *
+   * automizer.loadMediaBuffer('logo.png', imageBuffer);
+   *
+   * @example
+   * // Load multiple images with prefix
+   * automizer.loadMediaBuffer(
+   *   ['logo.png', 'icon.png'],
+   *   [logoBuffer, iconBuffer],
+   *   'brand_'
+   * );
+   *
+   * @example
+   * // Use in slide with setRelationTarget
+   * automizer
+   *   .loadMediaBuffer('custom.png', myBuffer)
+   *   .addSlide('template', 1, (slide) => {
+   *     slide.modifyElement('image1', [
+   *       ModifyImageHelper.setRelationTarget('custom.png')
+   *     ]);
+   *   });
+   *
+   * @param filename - Filename(s) to use (must include extension like '.png')
+   * @param buffer - Buffer(s) containing the media data
+   * @param prefix - Optional prefix to prepend to filename in archive
+   * @returns Instance of Automizer for chaining
+   * @throws {Error} If filename has no extension
+   * @throws {Error} If buffer is invalid or empty
+   * @throws {Error} If filename already loaded
+   * @throws {Error} If arrays have mismatched lengths
+   * @throws {Error} If root template not loaded yet
+   */
+  public loadMediaBuffer(
+    filename: string | string[],
+    buffer: Buffer | Buffer[],
+    prefix?: string,
+  ): this {
+    const files = GeneralHelper.arrayify(filename);
+    const buffers = GeneralHelper.arrayify(buffer);
+
+    if (!this.rootTemplate) {
+      throw new Error(
+        "Can't load media, you need to load a root template first",
+      );
+    }
+
+    if (files.length !== buffers.length) {
+      throw new Error(
+        `Mismatched arrays: ${files.length} filename(s) but ${buffers.length} buffer(s)`,
+      );
+    }
+
+    files.forEach((file, index) => {
+      const buf = buffers[index];
+
+      // Validate buffer
+      if (!Buffer.isBuffer(buf)) {
+        throw new Error(`Invalid buffer for file: ${file}`);
+      }
+      if (buf.length === 0) {
+        throw new Error(`Empty buffer provided for file: ${file}`);
+      }
+
+      // Extract extension from filename
+      const extension = path
+        .extname(file)
+        .replace('.', '') as ContentTypeExtension;
+
+      if (!extension) {
+        throw new Error(
+          `Filename must include extension: ${file}. Example: 'logo.png'`,
+        );
+      }
+
+      // Check for duplicate filename
+      const archiveFilename = prefix ? prefix + file : file;
+      const slugifiedName = slugify(archiveFilename);
+      const duplicate = this.rootTemplate.mediaFiles.find((existing) => {
+        const existingArchiveFilename = existing.prefix
+          ? existing.prefix + existing.file
+          : existing.file;
+        return slugify(existingArchiveFilename) === slugifiedName;
+      });
+
+      if (duplicate) {
+        throw new Error(
+          `Media file '${archiveFilename}' already loaded. Use a different filename or prefix.`,
+        );
+      }
+
+      this.rootTemplate.mediaFiles.push({
+        source: 'buffer',
+        file,
+        buffer: buf,
+        extension,
+        prefix,
+      } as MediaFileFromBuffer);
+    });
+
     return this;
   }
 
@@ -509,16 +624,30 @@ export default class Automizer implements IPresentationProps {
    */
   public async writeMediaFiles(): Promise<void> {
     const mediaDir = 'ppt/media/';
+
     for (const file of this.rootTemplate.mediaFiles) {
-      const data = fs.readFileSync(file.filepath);
+      // Determine data source based on discriminator
+      let data: Buffer;
+
+      if (file.source === 'buffer') {
+        // Use buffer directly
+        data = file.buffer;
+      } else {
+        // Read from filesystem (backward compatible)
+        data = fs.readFileSync(file.filepath);
+      }
+
+      // Construct archive filename (same logic for both types)
       let archiveFilename = file.file;
       if (file.prefix) {
         archiveFilename = file.prefix + file.file;
       }
-
       archiveFilename = slugify(archiveFilename);
 
+      // Write to archive
       await this.rootTemplate.archive.write(mediaDir + archiveFilename, data);
+
+      // Register content type
       await XmlHelper.appendImageExtensionToContentType(
         this.rootTemplate.archive,
         file.extension,

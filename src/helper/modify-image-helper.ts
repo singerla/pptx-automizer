@@ -54,7 +54,15 @@ export default class ModifyImageHelper {
             'Media file not found in template archive in path: ' + filename,
           );
         }
-        const buffer = fs.readFileSync(mediaFile.filepath);
+
+        // Get buffer based on source type
+        let buffer: Buffer;
+        if (mediaFile.source === 'buffer') {
+          buffer = mediaFile.buffer;
+        } else {
+          buffer = fs.readFileSync(mediaFile.filepath);
+        }
+
         const _dimensions = imageSize(buffer);
         newImageDimensions.width = _dimensions.width;
         newImageDimensions.height = _dimensions.height;

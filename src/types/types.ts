@@ -193,13 +193,24 @@ export type FileInfo = {
   dir: string;
   isDir: boolean;
 };
-export type MediaFile = {
+export type MediaFileFromPath = {
+  source: 'path';
   file: string;
   directory: string;
   filepath: string;
   prefix?: string;
   extension: ContentTypeExtension;
 };
+
+export type MediaFileFromBuffer = {
+  source: 'buffer';
+  file: string;
+  buffer: Buffer;
+  prefix?: string;
+  extension: ContentTypeExtension;
+};
+
+export type MediaFile = MediaFileFromPath | MediaFileFromBuffer;
 export type TrackedFiles = Record<string, string[]>;
 export type TrackedRelationInfo = {
   base: string;
