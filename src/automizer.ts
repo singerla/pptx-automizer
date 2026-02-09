@@ -4,7 +4,6 @@ import {
   AutomizerFile,
   AutomizerParams,
   AutomizerSummary,
-  MediaFileFromBuffer,
   PresentationInfo,
   SourceIdentifier,
   StatusTracker,
@@ -365,7 +364,7 @@ export default class Automizer implements IPresentationProps {
         buffer: buf,
         extension,
         prefix,
-      } as MediaFileFromBuffer);
+      });
     });
 
     return this;
@@ -644,10 +643,7 @@ export default class Automizer implements IPresentationProps {
       }
       archiveFilename = slugify(archiveFilename);
 
-      // Write to archive
       await this.rootTemplate.archive.write(mediaDir + archiveFilename, data);
-
-      // Register content type
       await XmlHelper.appendImageExtensionToContentType(
         this.rootTemplate.archive,
         file.extension,

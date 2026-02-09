@@ -104,8 +104,8 @@ export default class ArchiveFs extends Archive implements IArchive {
       return files;
     }
 
-    let entries = await fsPromises.readdir(path, { withFileTypes: true });
-    for (let entry of entries) {
+    const entries = await fsPromises.readdir(path, { withFileTypes: true });
+    for (const entry of entries) {
       if (!entry.isDirectory()) {
         files.push({
           name: dir + '/' + entry.name,

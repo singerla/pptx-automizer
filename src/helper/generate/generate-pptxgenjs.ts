@@ -21,7 +21,7 @@ export default class GeneratePptxGenJs implements IGenerator {
   slides: ISlide[];
   generator: PptxGenJS;
   automizer: Automizer;
-  countSlides: number = 0;
+  countSlides = 0;
 
   constructor(automizer: Automizer, slides: ISlide[]) {
     this.automizer = automizer;

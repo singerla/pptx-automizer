@@ -162,11 +162,11 @@ export const makeDir = (dir: string) => {
 
 export const copyDir = async (src, dest) => {
   await fsPromises.mkdir(dest, { recursive: true });
-  let entries = await fsPromises.readdir(src, { withFileTypes: true });
+  const entries = await fsPromises.readdir(src, { withFileTypes: true });
 
-  for (let entry of entries) {
-    let srcPath = path.join(src, entry.name);
-    let destPath = path.join(dest, entry.name);
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
 
     entry.isDirectory()
       ? await copyDir(srcPath, destPath)
