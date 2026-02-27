@@ -16,8 +16,8 @@ export default class ModifyImageHelper {
    * @param filename name of target image in root template media folder.
    */
   static setRelationTarget = (filename: string) => {
-    return (element: XmlElement, arg1: XmlElement): void => {
-      arg1.setAttribute('Target', '../media/' + slugify(filename));
+    return (element: XmlElement, arg1?: XmlElement): void => {
+      arg1?.setAttribute('Target', '../media/' + slugify(filename));
     };
   };
 
@@ -35,7 +35,8 @@ export default class ModifyImageHelper {
     filename: string,
     pres: IPresentationProps,
   ) => {
-    return async (element: XmlElement, arg1: XmlElement): Promise<void> => {
+    return async (element: XmlElement, arg1?: XmlElement): Promise<void> => {
+      if (!arg1) return;
       const newTarget = '../media/' + slugify(filename);
       const originalTarget = arg1.getAttribute('Target');
       const originalTargetPath = originalTarget.replace('../', 'ppt/');
