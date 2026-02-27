@@ -10,6 +10,7 @@
   "license": "MIT",
   "private": false,
   "scripts": {
+    "prepare": "tsc --skipLibCheck",
     "build": "tsc",
     "dev": "nodemon -e ts --exec 'ts-node' src/dev.ts",
     "test": "npx jest",
