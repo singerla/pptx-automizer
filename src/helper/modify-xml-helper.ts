@@ -155,7 +155,7 @@ export default class ModifyXmlHelper {
         return
       }
 
-      valueElement[0].firstChild.textContent = String(value);
+      valueElement[0].firstChild.textContent = XmlHelper.sanitizeText(value);
       if (index !== undefined) {
         element.setAttribute('idx', String(index));
       }
@@ -164,12 +164,13 @@ export default class ModifyXmlHelper {
   static textContent =
     (value: number | string) =>
     (element: XmlElement): void => {
-      element.firstChild.textContent = String(value);
+      element.firstChild.textContent = XmlHelper.sanitizeText(value);
     };
   static attribute =
     (attribute: string, value: string | number) =>
     (element: XmlElement): void => {
-      if (value != undefined) element.setAttribute(attribute, String(value));
+      if (value != undefined)
+        element.setAttribute(attribute, XmlHelper.sanitizeAttr(value));
     };
 
   static booleanAttribute =
@@ -182,10 +183,11 @@ export default class ModifyXmlHelper {
     (series: number, length?: number) =>
     (element: XmlElement): void => {
       const range = element.firstChild.textContent;
-      element.firstChild.textContent = StringIdGenerator.setRange(
+      element.firstChild.textContent = XmlHelper.sanitizeText(
+        StringIdGenerator.setRange(
         range,
         series,
         length,
-      );
+      ));
     };
 }

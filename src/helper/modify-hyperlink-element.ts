@@ -1,3 +1,5 @@
+import { XmlHelper } from './xml-helper';
+
 export default class HyperlinkElement {
   private doc: Document;
   private relId: string;
@@ -38,7 +40,8 @@ export default class HyperlinkElement {
     const t = this.doc.createElement('a:t');
 
     rPr.appendChild(this.createHlinkClick());
-    t.textContent = text;
+    // Sanitize text for XML 1.0
+    t.textContent = XmlHelper.sanitizeText(text);
 
     run.appendChild(rPr);
     run.appendChild(t);

@@ -349,7 +349,8 @@ export class MultiTextHelper {
     }
 
     // Set text content
-    const textNode = this.document.createTextNode(text);
+    const sanitized = XmlHelper.sanitizeText(text);
+    const textNode = this.document.createTextNode(sanitized);
     t.appendChild(textNode);
   }
 

@@ -568,7 +568,9 @@ export class XmlHelper {
     stringValue: string,
   ): number {
     const strings = sharedStrings.getElementsByTagName('sst')[0];
-    const newLabel = sharedStrings.createTextNode(stringValue);
+    const newLabel = sharedStrings.createTextNode(
+      XmlHelper.sanitizeText(stringValue),
+    );
     const newText = sharedStrings.createElement('t');
     newText.appendChild(newLabel);
 
@@ -578,6 +580,25 @@ export class XmlHelper {
     strings.appendChild(newString);
 
     return strings.getElementsByTagName('si').length - 1;
+  }
+
+  /**
+   * Sanitize text for XML 1.0 compatibility.
+   * - Replace vertical tab (\u000B / \v) with a newline.
+   * - Remove other disallowed control characters (except TAB, LF, CR).
+   */
+  static sanitizeText(value: string | number | undefined | null): string {
+    if (value == null) return '';
+    return String(value)
+      .replace(/\u000B/g, '\n')
+      .replace(/[\u0000-\u0008\u000C\u000E-\u001F]/g, '');
+  }
+
+  /**
+   * Sanitize attribute values for XML 1.0. Uses same rules as sanitizeText.
+   */
+  static sanitizeAttr(value: string | number | undefined | null): string {
+    return XmlHelper.sanitizeText(value);
   }
 
   static insertAfter(

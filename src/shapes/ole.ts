@@ -147,7 +147,7 @@ export class OLEObject extends Shape {
     for (let i = 0; i < relationships.length; i++) {
       if (relationships[i].getAttribute('Id') === this.sourceRid) {
         relationships[i].setAttribute('Id', this.createdRid);
-        relationships[i].setAttribute('Target', newTarget);
+        relationships[i].setAttribute('Target', XmlHelper.sanitizeAttr(newTarget));
         relationshipUpdated = true;
         break;
       }
@@ -160,7 +160,7 @@ export class OLEObject extends Shape {
         'Type',
         'http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject',
       );
-      newRel.setAttribute('Target', newTarget);
+      newRel.setAttribute('Target', XmlHelper.sanitizeAttr(newTarget));
       relXml.documentElement.appendChild(newRel);
     }
 

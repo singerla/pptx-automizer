@@ -164,7 +164,10 @@ export class XmlRelationshipHelper {
             this.archive,
             targetPath + targetSuffix,
           );
-          xmlTarget.setAttribute('Target', targetFile + targetSuffix);
+          xmlTarget.setAttribute(
+            'Target',
+            XmlHelper.sanitizeAttr(targetFile + targetSuffix),
+          );
 
           await XmlHelper.appendImageExtensionToContentType(
             this.archive,
@@ -213,7 +216,7 @@ export class XmlRelationshipHelper {
       filenameBase,
       getTargetValue: () => target.element.getAttribute('Target'),
       updateTargetValue: (newTarget: string) => {
-        target.element.setAttribute('Target', newTarget);
+        target.element.setAttribute('Target', XmlHelper.sanitizeAttr(newTarget));
       },
       updateId: (newId: string) => {
         target.element.setAttribute('Id', newId);
@@ -250,7 +253,10 @@ export class XmlRelationshipHelper {
       prefix,
       subtype,
       updateTargetIndex: (newIndex: number) => {
-        target.element.setAttribute('Target', `${prefix}${newIndex}.xml`);
+        target.element.setAttribute(
+          'Target',
+          XmlHelper.sanitizeAttr(`${prefix}${newIndex}.xml`),
+        );
       },
     };
   }

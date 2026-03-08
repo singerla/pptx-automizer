@@ -110,6 +110,16 @@ test('create presentation, replace multi text.', async () => {
                   }
                 },
               },
+              {
+                // Include a vertical tab (\v / \u000B) which previously corrupted PPTX
+                text: 'Line A\u000BLine B',
+                style: {
+                  color: {
+                    type: 'srgbClr',
+                    value: '000000',
+                  },
+                },
+              },
             ],
           },
         ]),

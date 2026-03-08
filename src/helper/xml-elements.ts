@@ -143,10 +143,10 @@ export default class XmlElements {
     const r = this.runTemplate.cloneNode(true) as XmlElement;
     const t = r.getElementsByTagName('a:t')[0];
     if (t) {
-      t.textContent = text;
+      t.textContent = XmlHelper.sanitizeText(text);
     } else {
       const newT = this.document.createElement('a:t');
-      newT.textContent = text;
+      newT.textContent = XmlHelper.sanitizeText(text);
       r.appendChild(newT);
     }
 
