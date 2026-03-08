@@ -20,16 +20,16 @@ If you require commercial support for complex .pptx automation, you can explore 
   - [Shape Types](#shape-types)
   - [Chart Types](#chart-types)
   - [Animations](#animations)
-  - [Slide Masters and -Layouts](#slide-masters-and--layouts)
-  - [Direct Manipulation of Elements](#direct-manipulation-of-elements)
-  - [PowerPoint Version](#powerpoint-version)
+  - [Slide Masters and Layouts](#slide-masters-and-layouts)
+  - [Direct manipulation of elements](#direct-manipulation-of-elements)
+  - [PowerPoint version](#powerpoint-version)
 - [Installation](#installation)
   - [As a Cloned Repository](#as-a-cloned-repository)
   - [As a Package](#as-a-package)
 - [Usage](#usage)
 
   - [Basic Example](#basic-example)
-  - [How to Select Slides Shapes](#how-to-select-slides-shapes)
+  - [How to select slides and shapes](#how-to-select-slides-and-shapes)
     - [Select slide by number and shape by name](#select-slide-by-number-and-shape-by-name)
     - [Select slides by creationId](#select-slides-by-creationid)
   - [Find and Modify Shapes](#find-and-modify-shapes)
@@ -38,11 +38,19 @@ If you require commercial support for complex .pptx automation, you can explore 
   - [Modify Tables](#modify-tables)
   - [Modify Charts](#modify-charts)
   - [Modify Extended Charts](#modify-extended-charts)
-  - [Generate shapes with PptxGenJs](#generate-shapes-with-pptxgenjs)
+  - [Generate shapes with PptxGenJS](#generate-shapes-with-pptxgenjs)
   - [Remove elements from a slide](#remove-elements-from-a-slide)
   - [Hyperlink Management](#hyperlink-management)
 
-- [Tipps and Tricks](#tipps-and-tricks)
+  - [Helper Utilities](#helper-utilities)
+    - [Shape helpers](#shape-helpers)
+    - [Table helpers](#table-helpers)
+    - [Cleanup helpers](#cleanup-helpers)
+    - [Text helpers (MultiText/HTML)](#text-helpers-multitexthtml)
+    - [Image helpers](#image-helpers)
+    - [Advanced XML helpers (power users)](#advanced-xml-helpers-power-users)
+
+- [Tips and Tricks](#tips-and-tricks)
   - [Loop through the slides of a presentation](#loop-through-the-slides-of-a-presentation)
   - [Quickly get all slide numbers of a template](#quickly-get-all-slide-numbers-of-a-template)
   - [Find all text elements on a slide](#find-all-text-elements-on-a-slide)
@@ -72,17 +80,17 @@ Extended chart types, like waterfall or map charts, are basically supported. You
 
 Animations are currently out of scope of this library. You might get errors on opening an output .pptx when there are added or removed shapes. This is because `pptx-automizer` doesn't synchronize `id`-attributes of animations with the existing shapes on a slide.
 
-## Slide Masters and -Layouts
+## Slide Masters and Layouts
 
-`pptx-automizer` supports importing slide masters and their associated slide layouts into the output presentation. It is important to note that you cannot add, modify, or remove individual slideLayouts directly. However, you have the flexibility to modify the underlying slideMaster, which can serve as a workaround for certain changes.
+`pptx-automizer` supports importing slide masters and their associated slide layouts into the output presentation. It is important to note that you cannot add, modify, or remove individual slide layouts directly. However, you have the flexibility to modify the underlying slide master, which can serve as a workaround for certain changes.
 
-Please be aware that importing slideLayouts containing complex contents, such as charts and images, is currently not supported. For instance, if a slideLayout includes an icon that is not present on the slideMaster, this icon will break when the slideMaster is auto-imported into an output presentation. To avoid this issue, ensure that all images and charts are placed exclusively on a slideMaster and not on a slideLayout.
+Please be aware that importing slide layouts containing complex content, such as charts and images, is currently not supported. For instance, if a slide layout includes an icon that is not present on the slide master, this icon will break when the slide master is auto-imported into an output presentation. To avoid this issue, ensure that all images and charts are placed exclusively on a slide master and not on a slide layout.
 
-## Direct Manipulation of Elements
+## Direct manipulation of elements
 
 It is also important to know that `pptx-automizer` is currently limited to _adding_ things to the output presentation. If you require the ability to, for instance, modify a specific element on a slide within an existing presentation and leave the rest untouched, you will need to include all the other slides in the process. Find some workarounds [below](#loop-through-the-slides-of-a-presentation).
 
-## PowerPoint Version
+## PowerPoint version
 
 All testing focuses on PowerPoint 2019 .pptx file format.
 
@@ -147,7 +155,7 @@ const automizer = new Automizer({
   outputDir: `my/pptx/output`,
 
   // turn this to true if you want to generally use
-  // Powerpoint's creationIds instead of slide numbers
+  // PowerPoint's creationIds instead of slide numbers
   // or shape names:
   useCreationIds: false,
 
@@ -188,7 +196,7 @@ const automizer = new Automizer({
   // Remove all unused placeholders to prevent unwanted overlays:
   cleanupPlaceholders: false,
 
-  // Use a customized version of pptxGenJs if required:
+  // Use a customized version of PptxGenJS if required:
   // pptxGenJs: PptxGenJS,
 });
 
@@ -242,7 +250,7 @@ const finalJSZip = await pres.getJSZip();
 const base64 = await finalJSZip.generateAsync({ type: 'base64' });
 ```
 
-## How to Select Slides Shapes
+## How to select slides and shapes
 
 `pptx-automizer` needs a selector to find the required shape on a template slide. While an imported .pptx file is identified by filename or custom label, there are different ways to address its slides and shapes.
 
@@ -386,7 +394,7 @@ If you decide to use the `creationId` method, you are safe to add, remove and re
 
 ## Find and Modify Shapes
 
-There are basically to ways to access a target shape on a slide:
+There are basically two ways to access a target shape on a slide:
 
 - `slide.modifyElement(...)` requires an existing shape on the current slide,
 - `slide.addElement(...)` adds a shape from another slide to the current slide.
@@ -608,6 +616,223 @@ Find out more about formatting cells:
 - [Modify and style table cells](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-existing-table.test.ts)
 - [Insert data into table with empty cells](https://github.com/singerla/pptx-automizer/blob/main/__tests__/modify-existing-table-create-text.test.ts)
 
+## Helper Utilities
+
+This section documents handy helpers exposed by `pptx-automizer` that provide extra capabilities. You can import helpers directly from the package:
+
+```ts
+import {
+  ModifyShapeHelper,
+  ModifyTableHelper,
+  ModifyCleanupHelper,
+  ModifyTextHelper,
+  ModifyImageHelper,
+} from 'pptx-automizer';
+```
+
+### Shape helpers
+
+Use `ModifyShapeHelper` to quickly adjust common properties of shapes and text frames.
+
+- Solid fill color
+
+```ts
+slide.modifyElement('MyShape', [
+  ModifyShapeHelper.setSolidFill({ type: 'srgbClr', value: 'FF0000' }),
+]);
+```
+
+- Bullet list from strings
+
+```ts
+slide.modifyElement('MyTextBox', [
+  ModifyShapeHelper.setBulletList(['Item 1', 'Item 2', 'Item 3']),
+]);
+```
+
+- Replace text with options (regex, whole-word, case)
+
+```ts
+slide.modifyElement('MyTextBox', [
+  ModifyShapeHelper.replaceText(
+    [
+      { replace: 'Acme', by: 'Globex' },
+      { replace: /\b2024\b/, by: '2025' },
+    ],
+    { regex: true, wholeWord: true, matchCase: false }
+  ),
+]);
+```
+
+- Position, size, rotation, rounded corners
+
+```ts
+import { CmToDxa } from 'pptx-automizer';
+
+slide.modifyElement('MyShape', [
+  // set absolute position/size
+  ModifyShapeHelper.setPosition({ x: CmToDxa(2), y: CmToDxa(3), w: CmToDxa(6), h: CmToDxa(2) }),
+  // update only some props, leave others untouched
+  ModifyShapeHelper.updatePosition({ x: CmToDxa(4) }),
+  // rotate clockwise in degrees
+  ModifyShapeHelper.rotate(15),
+  // rounded rectangle corners (0-100000)
+  ModifyShapeHelper.roundedCorners(25000),
+]);
+```
+
+### Table helpers
+
+`ModifyTableHelper` provides rich control over existing tables.
+
+- Fill table data and auto-adjust size
+
+```ts
+slide.modifyElement('MyTable', [
+  ModifyTableHelper.setTable({
+    body: [
+      { label: 'r1', values: ['A', 1] },
+      { label: 'r2', values: ['B', 2] },
+    ],
+  }),
+]);
+```
+
+- Expand rows/columns by tag before filling
+
+```ts
+slide.modifyElement('MyTable', [
+  ModifyTableHelper.setTable(
+    {
+      body: [ /* ... */ ],
+    },
+    {
+      expand: [
+        { tag: '<<ROW>>', count: 3, mode: 'row' },
+        { tag: '<<COL>>', count: 2, mode: 'col' },
+      ],
+      adjustHeight: true,
+      adjustWidth: true,
+    }
+  ),
+]);
+```
+
+- Set fixed row heights / column widths
+
+```ts
+slide.modifyElement('MyTable', [
+  ModifyTableHelper.updateRowHeight(0, CmToDxa(1)),
+  ModifyTableHelper.updateColumnWidth(1, CmToDxa(3)),
+]);
+```
+
+- Apply a table style and header/column banding flags
+
+```ts
+slide.modifyElement('MyTable', [
+  ModifyTableHelper.setTableStyle('TableStyleMedium2', [
+    'firstRow', 'bandRow',
+  ]),
+]);
+```
+
+Additional convenience methods:
+
+- `ModifyTableHelper.setTableData(data)` – just set data without sizing
+- `ModifyTableHelper.adjustHeight(data)` / `adjustWidth(data)` – recompute sizes only
+
+### Cleanup helpers
+
+`ModifyCleanupHelper` helps remove formatting noise from shapes when you need a clean base.
+
+```ts
+slide.modifyElement('MyShape', [
+  ModifyCleanupHelper.removeBackground,
+  ModifyCleanupHelper.removeBorder,
+  ModifyCleanupHelper.removeEffects,
+  // text-level cleanup
+  ModifyCleanupHelper.clearTextUnderline,
+  ModifyCleanupHelper.clearTextBold,
+  ModifyCleanupHelper.clearTextSize,
+  // remove specific text color (e.g., red)
+  ModifyCleanupHelper.clearTextColor({ type: 'srgbClr', value: 'FF0000' }),
+]);
+```
+
+Other useful helpers include: `removeTextEffects`, `removeFillEffects`, `remove3dEffects`, `removeShadowEffects`, and `removeExtLst`.
+
+### Text helpers (MultiText/HTML)
+
+Generate complex text (multiple runs, links, bullets) either from a structured value or directly from HTML.
+
+```ts
+// From structured paragraphs
+slide.modifyElement('TextBox', [
+  ModifyTextHelper.setMultiText([
+    { runs: [{ text: 'Hello ', style: { bold: true } }, { text: 'World' }] },
+  ]),
+]);
+
+// From HTML
+const html = '<p><b>Bold</b> and <a href="https://example.com">link</a></p>';
+slide.modifyElement('TextBox', [ModifyTextHelper.htmlToMultiText(html)]);
+```
+
+`HtmlToMultiTextHelper` and `MultiTextHelper` also support hyperlinks (internal `#slideId` or external `https://...`). See tests:
+
+- [Replace text by MultiText objects](https://github.com/singerla/pptx-automizer/blob/main/__tests__/replace-multi-text.test.ts)
+- [Replace text by HTML](https://github.com/singerla/pptx-automizer/blob/main/__tests__/replace-multi-text-html.test.ts)
+
+### Image helpers
+
+Swap images and apply duotone overlays.
+
+```ts
+// Point an existing image to a different media file loaded via .loadMedia()
+slide.modifyElement('Image Placeholder', [
+  ModifyImageHelper.setRelationTarget('feather.png'),
+]);
+
+// Auto-crop to cover based on new image aspect ratio (uses template media)
+slide.modifyElement('Image Placeholder', [
+  ModifyImageHelper.setRelationTargetCover('feather.png', pres),
+]);
+
+// Duotone overlay on images/icons
+slide.modifyElement('Icon', [
+  ModifyImageHelper.setDuotoneFill({
+    color: { type: 'srgbClr', value: '00AAFF' },
+    tint: 70000, // 0-100000
+    satMod: 90000, // 0-100000
+  }),
+]);
+```
+
+### Advanced XML helpers (power users)
+
+For advanced scenarios, you can inspect slide XML and relationships. These are considered expert APIs and may change.
+
+Import directly from helper paths:
+
+```ts
+import { XmlSlideHelper } from 'pptx-automizer/src/helper/xml-slide-helper';
+import { XmlRelationshipHelper } from 'pptx-automizer/src/helper/xml-relationship-helper';
+```
+
+Examples:
+
+- Read all text element IDs on a slide: `new XmlSlideHelper(slideXml).getAllTextElementIds()`
+- Get named elements: `new XmlSlideHelper(slideXml).getNamedElements(['p:sp'])`
+- Table introspection: `XmlSlideHelper.readTableInfo(element)`
+- Relationship targets by type or prefix: `new XmlRelationshipHelper(relsXml).getTargetsByType(type)`
+
+See tests for practical usage:
+
+- [Find all text elements on a slide](https://github.com/singerla/pptx-automizer/blob/main/__tests__/get-all-text-element-ids.test.ts)
+- [Read shape/group info](https://github.com/singerla/pptx-automizer/blob/main/__tests__/read-shape-info.test.ts)
+- [Read group info](https://github.com/singerla/pptx-automizer/blob/main/__tests__/read-group-info.test.ts)
+
 ## Modify Charts
 
 All data and styles of a chart can be modified. Please note that if your template contains more data than your data object, Automizer will remove these extra nodes. Conversely, if you provide more data, new nodes will be cloned from the first existing one in the template.
@@ -664,15 +889,15 @@ pres.addSlide('charts', 2, (slide) => {
 });
 ```
 
-## Generate shapes with PptxGenJs
+## Generate shapes with PptxGenJS
 
-This library wraps around the [PptxGenJS](https://github.com/gitbrent/PptxGenJS) to generate shapes from scratch. It is possible to use the `pptxGenJS` wrapper to generate shapes on a slide.
+This library wraps around [PptxGenJS](https://github.com/gitbrent/PptxGenJS) to generate shapes from scratch. It is possible to use the `PptxGenJS` wrapper to generate shapes on a slide.
 
 Here's an example of how to use `pptxGenJS` to add a text shape to a slide:
 
 ```ts
 pres.addSlide('empty', 1, (slide) => {
-  // Use pptxgenjs to add text from scratch:
+  // Use PptxGenJS to add text from scratch:
   slide.generate((pptxGenJSSlide) => {
     pptxGenJSSlide.addText('Test 1', {
       x: 1,
@@ -702,7 +927,7 @@ const dataChartAreaLine = [
 ];
 
 pres.addSlide('empty', 1, (slide) => {
-  // Use pptxgenjs to add generated contents from scratch:
+  // Use PptxGenJS to add generated content from scratch:
   slide.generate((pSlide, pptxGenJs) => {
     pSlide.addChart(pptxGenJs.ChartType.line, dataChartAreaLine, {
       x: 1,
@@ -789,7 +1014,7 @@ slide.generate((pptxGenJSSlide) => {
 });
 ```
 
-# Tipps and Tricks
+# Tips and Tricks
 
 ## Loop through the slides of a presentation
 
@@ -826,10 +1051,10 @@ const run = async () => {
   let pres = automizer
     .loadRoot(`SlideWithShapes.pptx`)
     // We load it twice to make it available for modifying slides.
-    // Defining a "name" as second params makes it a little easier
+    // Defining a "name" as the second parameter makes it a little easier
     .load(`SlideWithShapes.pptx`, 'myTemplate');
 
-  // This is brandnew: get useful information about loaded templates:
+  // This is brand new: get useful information about loaded templates:
   const myTemplates = await pres.getInfo();
   const mySlides = myTemplates.slidesByTemplate(`myTemplate`);
 
@@ -861,12 +1086,12 @@ const run = async () => {
       ?.callback;
   };
 
-  // We can loop all slides an apply the callbacks if defined
+  // We can loop all slides and apply the callbacks if defined
   mySlides.forEach((mySlide) => {
     pres.addSlide('myTemplate', mySlide.number, getCallbacks(mySlide.number));
   });
 
-  // This will result to an output presentation containing all slides of "SlideWithShapes.pptx"
+  // This will result in an output presentation containing all slides of "SlideWithShapes.pptx"
   pres.write(`myOutputPresentation.pptx`).then((summary) => {
     console.log(summary);
   });
@@ -922,7 +1147,7 @@ pres.addSlide('myTemplate.pptx', 1, async (slide) => {
 
 There are three ways to arrange slides in an output presentation.
 
-1. By default, all slides will be appended to the existing slides in your root template. The order of `addSlide`-calls will define slide sortation in output presentation.
+1. By default, all slides will be appended to the existing slides in your root template. The order of `addSlide` calls will define slide sorting in the output presentation.
 
 2. You can alternatively remove all existing slides by setting the `removeExistingSlides` flag to true. The first slide added with `addSlide` will be first slide in the output presentation. If you want to insert slides from root template, you need to load it a second time.
 
@@ -939,7 +1164,7 @@ const automizer = new Automizer({
 
 let pres = automizer
   .loadRoot(`RootTemplate.pptx`)
-  // We load this twice to make it available for sorting slide
+  // We load this twice to make it available for sorting slides
   .load(`RootTemplate.pptx`, 'root')
   .load(`SlideWithShapes.pptx`, 'shapes')
   .load(`SlideWithGraph.pptx`, 'graph');
@@ -1079,7 +1304,7 @@ Take a look into [**tests**-directory](https://github.com/singerla/pptx-automize
 
 If you encounter problems when opening a `.pptx`-file modified by this library, you might worry about PowerPoint not giving any details about the error. It can be hard to find the cause, but there are some things you can check:
 
-- **Broken relation**: There are still unsupported shape types and `pptx-automizer` wil not copy required relations of those. You can inflate `.pptx`-output and check `ppt/slides/_rels/slide[#].xml.rels`-files to find possible missing files.
+- **Broken relation**: There are still unsupported shape types and `pptx-automizer` will not copy required relations of those. You can inflate `.pptx` output and check `ppt/slides/_rels/slide[#].xml.rels` files to find possible missing files.
 - **Unsupported media**: You can also take a look at the `ppt/media`-directory of an inflated `.pptx`-file. If you discover any unusual file formats, remove or replace the files by one of the [known types](https://github.com/singerla/pptx-automizer/blob/main/src/enums/content-type-map.ts).
 - **Broken animation**: Pay attention to modified/removed shapes which are part of an animation. In case of doubt, (temporarily) remove all animations from your template. (see [#78](https://github.com/singerla/pptx-automizer/issues/78))
 - **Proprietary/Binary contents** (e.g. ThinkCell): Walk through all slides, slideMasters and slideLayouts and seek for hidden Objects. Hit `ALT+F10` to toggle the sidebar.
