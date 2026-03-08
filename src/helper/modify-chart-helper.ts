@@ -547,7 +547,7 @@ export default class ModifyChartHelper {
       const chartTitle = chart.getElementsByTagName('c:title').item(0);
       const chartTitleText = chartTitle?.getElementsByTagName('a:t').item(0);
       if (chartTitleText) {
-        chartTitleText.textContent = newTitle;
+        chartTitleText.textContent = XmlHelper.sanitizeText(newTitle);
       }
     };
 

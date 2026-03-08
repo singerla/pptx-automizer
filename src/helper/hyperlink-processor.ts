@@ -236,7 +236,7 @@ export class HyperlinkProcessor {
             const newRelationship = targetRelXml.createElement('Relationship');
             newRelationship.setAttribute('Id', newRId);
             newRelationship.setAttribute('Type', relType);
-            newRelationship.setAttribute('Target', target);
+            newRelationship.setAttribute('Target', XmlHelper.sanitizeAttr(target));
             
             if (targetMode) {
               newRelationship.setAttribute('TargetMode', targetMode);
