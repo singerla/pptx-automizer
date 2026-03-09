@@ -279,16 +279,13 @@ export default class Automizer implements IPresentationProps {
     prefix?: string,
   ): this {
     const files = GeneralHelper.arrayify(filename);
-
     if (!this.rootTemplate) {
-      throw "Can't load media, you need to load a root template first";
+      throw new Error("Can't load media, you need to load a root template first");
     }
-
     files.forEach((file) => {
       const directory = dir || this.params.mediaDir;
       const filepath = path.join(directory, file);
       const extension = getValidatedExtension(file);
-
       try {
         fs.accessSync(filepath, fs.constants.F_OK);
       } catch (e) {
@@ -607,16 +604,13 @@ export default class Automizer implements IPresentationProps {
    */
   public async writeMediaFiles(): Promise<void> {
     const mediaDir = 'ppt/media/';
-
     for (const file of this.rootTemplate.mediaFiles) {
-      // Get buffer using helper (handles both path and buffer sources)
       const data = getMediaBuffer(file, fs.readFileSync);
-
-      // Construct archive filename (same logic for both types)
       let archiveFilename = file.file;
       if (file.prefix) {
         archiveFilename = file.prefix + file.file;
       }
+
       archiveFilename = slugify(archiveFilename);
 
       await this.rootTemplate.archive.write(mediaDir + archiveFilename, data);

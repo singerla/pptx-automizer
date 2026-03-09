@@ -55,7 +55,9 @@ export default class ModifyImageHelper {
           (file) => file.file === filename,
         );
         if (!mediaFile) {
-          throw 'Media file not found in template archive in path: ' + filename;
+          throw new Error(
+            'Media file not found in template archive in path: ' + filename,
+          );
         }
 
         const buffer = getMediaBuffer(mediaFile, fs.readFileSync);
@@ -82,9 +84,9 @@ export default class ModifyImageHelper {
           originalImageDimensions.width = _dimensions.width;
           originalImageDimensions.height = _dimensions.height;
         } else {
-          throw (
+          throw new Error(
             'Original image not found from template archive in path: ' +
-            originalTargetPath
+              originalTargetPath,
           );
         }
 
