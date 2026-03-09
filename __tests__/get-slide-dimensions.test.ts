@@ -13,7 +13,7 @@ describe('Slide - Get Dimensions', () => {
       .load(`SlideDimensions1.pptx`, '1')
       .load(`SlideDimensions2.pptx`, '2');
 
-    const dimensions1Promise = new Promise((resolve, reject) => {
+    let dimensions1Promise = new Promise((resolve, reject) => {
       pres.addSlide('1', 1, async (slide) => {
         try {
           const dimensions = await slide.getDimensions();
@@ -24,7 +24,7 @@ describe('Slide - Get Dimensions', () => {
       });
     });
 
-    const dimensions2Promise = new Promise((resolve, reject) => {
+    let dimensions2Promise = new Promise((resolve, reject) => {
       pres.addSlide('2', 1, async (slide) => {
         try {
           const dimensions = await slide.getDimensions();

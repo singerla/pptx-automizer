@@ -134,7 +134,7 @@ export default class ArchiveJszip extends Archive implements IArchive {
     const isBuffered = this.fromBuffer(file);
 
     if (!isBuffered) {
-      let xmlString = '';
+      let xmlString: string = '';
       if (this.params.decodeText) {
         const buffer = (await this.read(file, 'nodebuffer')) as Buffer;
         xmlString = new TextDecoder().decode(buffer);

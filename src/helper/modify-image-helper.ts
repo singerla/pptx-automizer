@@ -18,22 +18,11 @@ export default class ModifyImageHelper {
    * @param filename name of target image in root template media folder.
    */
   static setRelationTarget = (filename: string) => {
-<<<<<<< HEAD
-    return (element: XmlElement, arg1?: XmlElement): void => {
-      if (!arg1) {
-        throw new Error(
-          `setRelationTarget: relation element is undefined for image '${filename}'. ` +
-          `Ensure the element has an associated relation.`
-        );
-      }
-      arg1.setAttribute('Target', '../media/' + slugify(filename));
-=======
     return (element: XmlElement, arg1: XmlElement): void => {
       arg1.setAttribute(
         'Target',
         XmlHelper.sanitizeAttr('../media/' + slugify(filename)),
       );
->>>>>>> 3025827327a893ef913c9266b13581fb56b6a955
     };
   };
 

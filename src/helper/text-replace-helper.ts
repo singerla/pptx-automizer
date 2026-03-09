@@ -154,7 +154,7 @@ export default class TextReplaceHelper {
   ): void {
     const replace =
       this.options.openingTag + replaceText.replace + this.options.closingTag;
-    const textNode = this.getTextElement(textBlock);
+    let textNode = this.getTextElement(textBlock);
     const sourceText = textNode.firstChild?.textContent;
 
     if (sourceText?.includes(replace)) {
