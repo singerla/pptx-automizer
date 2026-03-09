@@ -44,7 +44,7 @@ const VALID_MEDIA_EXTENSIONS: readonly string[] = Object.keys(ContentTypeMap) as
  */
 function validateMediaExtension(extension: string, filename: string): asserts extension is ContentTypeExtension {
   if (!VALID_MEDIA_EXTENSIONS.includes(extension.toLowerCase())) {
-    throw new Error(
+    throw (
       `Unsupported media extension '${extension}' for file '${filename}'. ` +
       `Supported extensions: ${VALID_MEDIA_EXTENSIONS.join(', ')}`
     );
@@ -63,9 +63,7 @@ function getValidatedExtension(filename: string): ContentTypeExtension {
     .replace('.', '') as ContentTypeExtension;
 
   if (!extension) {
-    throw new Error(
-      `Filename must include extension: ${filename}. Example: 'logo.png'`,
-    );
+    throw `Filename must include extension: ${filename}. Example: 'logo.png'`;
   }
 
   validateMediaExtension(extension, filename);
@@ -230,7 +228,7 @@ export default class Automizer implements IPresentationProps {
     if (!name && typeof file !== 'object') {
       name = name === undefined ? file : name;
     } else if (typeof file === 'object' && !name) {
-      throw new Error('Name is required when loading a template from a Buffer');
+      throw 'Name is required when loading a template from a Buffer';
     }
     return this.loadTemplate(file, name);
   }
@@ -283,9 +281,7 @@ export default class Automizer implements IPresentationProps {
     const files = GeneralHelper.arrayify(filename);
 
     if (!this.rootTemplate) {
-      throw new Error(
-        "Can't load media, you need to load a root template first",
-      );
+      throw "Can't load media, you need to load a root template first";
     }
 
     files.forEach((file) => {
@@ -296,7 +292,7 @@ export default class Automizer implements IPresentationProps {
       try {
         fs.accessSync(filepath, fs.constants.F_OK);
       } catch (e) {
-        throw new Error(`Can't load media: ${filepath} does not exist.`);
+        throw `Can't load media: ${filepath} does not exist.`;
       }
 
       this.rootTemplate.mediaFiles.push({
@@ -326,27 +322,22 @@ export default class Automizer implements IPresentationProps {
   ): this {
     const files = GeneralHelper.arrayify(filename);
     const buffers = GeneralHelper.arrayify(buffer);
-
     if (!this.rootTemplate) {
-      throw new Error(
-        "Can't load media, you need to load a root template first",
-      );
+      throw "Can't load media, you need to load a root template first";
     }
 
     if (files.length !== buffers.length) {
-      throw new Error(
-        `Mismatched arrays: ${files.length} filename(s) but ${buffers.length} buffer(s)`,
-      );
+      throw `Mismatched arrays: ${files.length} filename(s) but ${buffers.length} buffer(s)`;
     }
 
     files.forEach((file, index) => {
       const buf = buffers[index];
 
       if (!Buffer.isBuffer(buf)) {
-        throw new Error(`Invalid buffer for file: ${file}`);
+        throw `Invalid buffer for file: ${file}`;
       }
       if (buf.length === 0) {
-        throw new Error(`Empty buffer provided for file: ${file}`);
+        throw `Empty buffer provided for file: ${file}`;
       }
 
       const extension = getValidatedExtension(file);
@@ -438,7 +429,7 @@ export default class Automizer implements IPresentationProps {
     callback?: (slide: ISlide) => void,
   ): this {
     if (this.rootTemplate === undefined) {
-      throw new Error('You have to set a root template first.');
+      throw 'You have to set a root template first.';
     }
 
     const template = this.getTemplate(name);
@@ -509,7 +500,7 @@ export default class Automizer implements IPresentationProps {
   public getTemplate(name: string): PresTemplate {
     const template = this.templates.find((t) => t.name === name);
     if (template === undefined) {
-      throw new Error(`Template not found: ${name}`);
+      throw `Template not found: ${name}`;
     }
     return template;
   }

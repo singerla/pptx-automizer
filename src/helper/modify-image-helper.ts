@@ -40,13 +40,7 @@ export default class ModifyImageHelper {
     filename: string,
     pres: IPresentationProps,
   ) => {
-    return async (element: XmlElement, arg1?: XmlElement): Promise<void> => {
-      if (!arg1) {
-        throw new Error(
-          `setRelationTargetCover: relation element is undefined for image '${filename}'. ` +
-          `Ensure the element has an associated relation.`
-        );
-      }
+    return async (element: XmlElement, arg1: XmlElement): Promise<void> => {
       const newTarget = '../media/' + slugify(filename);
       const originalTarget = arg1.getAttribute('Target');
       const originalTargetPath = originalTarget.replace('../', 'ppt/');
@@ -61,12 +55,9 @@ export default class ModifyImageHelper {
           (file) => file.file === filename,
         );
         if (!mediaFile) {
-          throw new Error(
-            'Media file not found in template archive in path: ' + filename,
-          );
+          throw 'Media file not found in template archive in path: ' + filename;
         }
 
-        // Get buffer using helper (handles both path and buffer sources)
         const buffer = getMediaBuffer(mediaFile, fs.readFileSync);
         const _dimensions = imageSize(buffer);
         newImageDimensions.width = _dimensions.width;
@@ -91,9 +82,9 @@ export default class ModifyImageHelper {
           originalImageDimensions.width = _dimensions.width;
           originalImageDimensions.height = _dimensions.height;
         } else {
-          throw new Error(
+          throw (
             'Original image not found from template archive in path: ' +
-              originalTargetPath,
+            originalTargetPath
           );
         }
 
