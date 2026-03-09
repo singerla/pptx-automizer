@@ -2,6 +2,7 @@ import { ModifyTableParams, TableData } from '../types/table-types';
 import { ModifyTable } from '../modify/modify-table';
 import { XmlDocument, XmlElement } from '../types/xml-types';
 import { XmlSlideHelper } from './xml-slide-helper';
+import { XmlHelper } from './xml-helper';
 
 export default class ModifyTableHelper {
   static setTable =
@@ -88,7 +89,7 @@ export default class ModifyTableHelper {
       const tblPr = element.getElementsByTagName('a:tblPr').item(0);
 
       const setTableStyleId = (tableStyleId: XmlElement, id: string) => {
-        tableStyleId.textContent = id;
+        tableStyleId.textContent = XmlHelper.sanitizeText(id);
       };
 
       const createTableStyleId = (tblPr: XmlElement) => {

@@ -5,6 +5,7 @@ import slugify from 'slugify';
 import { imageSize } from 'image-size';
 import fs from 'fs';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
+import { XmlHelper } from './xml-helper';
 import {
   computeSrcRectForNewImage,
   inferContainerAr,
@@ -17,6 +18,7 @@ export default class ModifyImageHelper {
    * @param filename name of target image in root template media folder.
    */
   static setRelationTarget = (filename: string) => {
+<<<<<<< HEAD
     return (element: XmlElement, arg1?: XmlElement): void => {
       if (!arg1) {
         throw new Error(
@@ -25,6 +27,13 @@ export default class ModifyImageHelper {
         );
       }
       arg1.setAttribute('Target', '../media/' + slugify(filename));
+=======
+    return (element: XmlElement, arg1: XmlElement): void => {
+      arg1.setAttribute(
+        'Target',
+        XmlHelper.sanitizeAttr('../media/' + slugify(filename)),
+      );
+>>>>>>> 3025827327a893ef913c9266b13581fb56b6a955
     };
   };
 
@@ -137,7 +146,7 @@ export default class ModifyImageHelper {
         );
       }
 
-      arg1.setAttribute('Target', newTarget);
+      arg1.setAttribute('Target', XmlHelper.sanitizeAttr(newTarget));
     };
   };
 

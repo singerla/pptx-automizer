@@ -62,7 +62,7 @@ export default class ModifyTextHelper {
     (label: number | string | undefined) =>
     (element: XmlElement): void => {
       if (label !== undefined && element.firstChild) {
-        element.firstChild.textContent = String(label);
+        element.firstChild.textContent = XmlHelper.sanitizeText(label);
       }
     };
 
