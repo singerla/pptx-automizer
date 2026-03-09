@@ -426,7 +426,7 @@ export default class Automizer implements IPresentationProps {
     callback?: (slide: ISlide) => void,
   ): this {
     if (this.rootTemplate === undefined) {
-      throw 'You have to set a root template first.';
+      throw new Error('You have to set a root template first.');
     }
 
     const template = this.getTemplate(name);
@@ -497,7 +497,7 @@ export default class Automizer implements IPresentationProps {
   public getTemplate(name: string): PresTemplate {
     const template = this.templates.find((t) => t.name === name);
     if (template === undefined) {
-      throw `Template not found: ${name}`;
+      throw new Error(`Template not found: ${name}`);
     }
     return template;
   }
