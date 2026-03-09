@@ -86,6 +86,19 @@ describe('loadMediaBuffer', () => {
     }).toThrow('Filename must include extension');
   });
 
+  test('throw error for unsupported extension', () => {
+    const buffer = fs.readFileSync(`${mediaDir}/test.png`);
+
+    const automizer = new Automizer({
+      templateDir,
+      outputDir,
+    }).loadRoot('RootTemplate.pptx');
+
+    expect(() => {
+      automizer.loadMediaBuffer('payload.exe', buffer);
+    }).toThrow('Unsupported media extension');
+  });
+
   test('throw error for empty buffer', () => {
     const automizer = new Automizer({
       templateDir,
@@ -106,22 +119,6 @@ describe('loadMediaBuffer', () => {
     expect(() => {
       automizer.loadMediaBuffer('logo.png', 'not a buffer' as any);
     }).toThrow('Invalid buffer for file');
-  });
-
-  test('throw error for duplicate filename', () => {
-    const buffer1 = fs.readFileSync(`${mediaDir}/test.png`);
-    const buffer2 = fs.readFileSync(`${mediaDir}/feather.png`);
-
-    const automizer = new Automizer({
-      templateDir,
-      outputDir,
-    }).loadRoot('RootTemplate.pptx');
-
-    automizer.loadMediaBuffer('logo.png', buffer1);
-
-    expect(() => {
-      automizer.loadMediaBuffer('logo.png', buffer2);
-    }).toThrow('already loaded');
   });
 
   test('throw error for mismatched arrays', () => {

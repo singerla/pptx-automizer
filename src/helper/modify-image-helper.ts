@@ -1,5 +1,6 @@
 import { XmlElement } from '../types/xml-types';
 import { ImageStyle } from '../types/modify-types';
+import { getMediaBuffer } from '../types/types';
 import slugify from 'slugify';
 import { imageSize } from 'image-size';
 import fs from 'fs';
@@ -17,7 +18,13 @@ export default class ModifyImageHelper {
    */
   static setRelationTarget = (filename: string) => {
     return (element: XmlElement, arg1?: XmlElement): void => {
-      arg1?.setAttribute('Target', '../media/' + slugify(filename));
+      if (!arg1) {
+        throw new Error(
+          `setRelationTarget: relation element is undefined for image '${filename}'. ` +
+          `Ensure the element has an associated relation.`
+        );
+      }
+      arg1.setAttribute('Target', '../media/' + slugify(filename));
     };
   };
 
@@ -36,7 +43,12 @@ export default class ModifyImageHelper {
     pres: IPresentationProps,
   ) => {
     return async (element: XmlElement, arg1?: XmlElement): Promise<void> => {
-      if (!arg1) return;
+      if (!arg1) {
+        throw new Error(
+          `setRelationTargetCover: relation element is undefined for image '${filename}'. ` +
+          `Ensure the element has an associated relation.`
+        );
+      }
       const newTarget = '../media/' + slugify(filename);
       const originalTarget = arg1.getAttribute('Target');
       const originalTargetPath = originalTarget.replace('../', 'ppt/');
@@ -56,14 +68,8 @@ export default class ModifyImageHelper {
           );
         }
 
-        // Get buffer based on source type
-        let buffer: Buffer;
-        if (mediaFile.source === 'buffer') {
-          buffer = mediaFile.buffer;
-        } else {
-          buffer = fs.readFileSync(mediaFile.filepath);
-        }
-
+        // Get buffer using helper (handles both path and buffer sources)
+        const buffer = getMediaBuffer(mediaFile, fs.readFileSync);
         const _dimensions = imageSize(buffer);
         newImageDimensions.width = _dimensions.width;
         newImageDimensions.height = _dimensions.height;

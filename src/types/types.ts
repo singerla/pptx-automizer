@@ -211,6 +211,22 @@ export type MediaFileFromBuffer = {
 };
 
 export type MediaFile = MediaFileFromPath | MediaFileFromBuffer;
+
+/**
+ * Gets the buffer data from a MediaFile, handling both path-based and buffer-based sources.
+ * @param file - The media file to get buffer from
+ * @param fsReadFileSync - The fs.readFileSync function (passed to avoid circular imports)
+ * @returns Buffer containing the media data
+ */
+export function getMediaBuffer(
+  file: MediaFile,
+  fsReadFileSync: (path: string) => Buffer,
+): Buffer {
+  if (file.source === 'buffer') {
+    return file.buffer;
+  }
+  return fsReadFileSync(file.filepath);
+}
 export type TrackedFiles = Record<string, string[]>;
 export type TrackedRelationInfo = {
   base: string;
