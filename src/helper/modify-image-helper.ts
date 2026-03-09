@@ -59,7 +59,6 @@ export default class ModifyImageHelper {
             'Media file not found in template archive in path: ' + filename,
           );
         }
-
         const buffer = getMediaBuffer(mediaFile, fs.readFileSync);
         const _dimensions = imageSize(buffer);
         newImageDimensions.width = _dimensions.width;

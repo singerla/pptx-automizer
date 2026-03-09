@@ -71,13 +71,6 @@ function getValidatedExtension(filename: string): ContentTypeExtension {
 }
 
 /**
- * Media source configuration for loading media files.
- */
-type MediaSource =
-  | { source: 'path'; dir?: string; prefix?: string }
-  | { source: 'buffer'; buffer: Buffer | Buffer[]; prefix?: string };
-
-/**
  * Automizer
  *
  * The basic class for `pptx-automizer` package.
@@ -228,7 +221,7 @@ export default class Automizer implements IPresentationProps {
     if (!name && typeof file !== 'object') {
       name = name === undefined ? file : name;
     } else if (typeof file === 'object' && !name) {
-      throw 'Name is required when loading a template from a Buffer';
+      throw new Error('Name is required when loading a template from a Buffer');
     }
     return this.loadTemplate(file, name);
   }
@@ -280,7 +273,7 @@ export default class Automizer implements IPresentationProps {
   ): this {
     const files = GeneralHelper.arrayify(filename);
     if (!this.rootTemplate) {
-      throw new Error("Can't load media, you need to load a root template first");
+      throw "Can't load media, you need to load a root template first";
     }
     files.forEach((file) => {
       const directory = dir || this.params.mediaDir;
@@ -291,7 +284,6 @@ export default class Automizer implements IPresentationProps {
       } catch (e) {
         throw `Can't load media: ${filepath} does not exist.`;
       }
-
       this.rootTemplate.mediaFiles.push({
         source: 'path',
         file,
