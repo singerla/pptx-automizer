@@ -87,8 +87,18 @@ export default class ModifyXmlHelper {
         const lastSibling = collection[collection.length - 1];
 
         let sourceSibling = lastSibling;
-        if (modifier.fromIndex && collection.item(modifier.fromIndex)) {
-          sourceSibling = collection.item(modifier.fromIndex);
+        if (modifier.fromIndex !== undefined && modifier.fromIndex !== null && collection.item(modifier.fromIndex)) {
+          // Store a clean template from the source element before it gets
+          // modified, so that subsequent clones start from the original state.
+          // Include a parent identifier in the key so that each parent context
+          // (e.g. each c:dLbls within different c:ser) gets its own template.
+          const parentId = (parent as XmlElement).tagName || 'root';
+          const parentIndex = this.getParentIndex(parent as XmlElement);
+          const fromIndexKey = parentId + '[' + parentIndex + ']:' + tag + ':fromIndex:' + modifier.fromIndex;
+          if (!this.templates[fromIndexKey]) {
+            this.templates[fromIndexKey] = collection.item(modifier.fromIndex).cloneNode(true) as XmlElement;
+          }
+          sourceSibling = this.templates[fromIndexKey];
         } else if (modifier.fromPrevious && collection.item(index - 1)) {
           sourceSibling = collection.item(index - 1);
         }
@@ -114,6 +124,15 @@ export default class ModifyXmlHelper {
     return false;
   }
 
+  getParentIndex(element: XmlElement): number {
+    if (!element.parentNode) return 0;
+    const siblings = (element.parentNode as XmlElement).getElementsByTagName(element.tagName);
+    for (let i = 0; i < siblings.length; i++) {
+      if (siblings[i] === element) return i;
+    }
+    return 0;
+  }
+
   createElement(parent: XmlDocument | XmlElement, tag: string): boolean {
     switch (tag) {
       case 'a:t':
@@ -124,6 +143,9 @@ export default class ModifyXmlHelper {
         return true;
       case 'c:spPr':
         new XmlElements(parent).shapeProperties();
+        return true;
+      case 'c:dLbls':
+        new XmlElements(parent).dataPointLabels();
         return true;
       case 'c:dLbl':
         new XmlElements(parent).dataPointLabel();

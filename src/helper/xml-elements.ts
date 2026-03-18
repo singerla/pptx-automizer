@@ -229,6 +229,25 @@ export default class XmlElements {
       'val',
       this.params?.color?.value || this.defaultValues.color,
     );
+
+    if (this.params?.color?.alpha !== undefined) {
+      const alpha = this.document.createElement('a:alpha');
+      const rawAlpha = Number(this.params.color.alpha);
+      // Normalize alpha to OOXML thousandths of percent (0-100000):
+      // 0-1 (exclusive): fraction (e.g. 0.5 → 50000)
+      // 1-100: percentage (e.g. 50 → 50000)
+      // >100: already in thousandths of percent
+      let alphaVal: number;
+      if (rawAlpha > 0 && rawAlpha < 1) {
+        alphaVal = Math.round(rawAlpha * 100000);
+      } else if (rawAlpha >= 1 && rawAlpha <= 100) {
+        alphaVal = Math.round(rawAlpha * 1000);
+      } else {
+        alphaVal = Math.round(rawAlpha);
+      }
+      alpha.setAttribute('val', String(alphaVal));
+      colorType.appendChild(alpha);
+    }
   }
 
   dataPoint(): this {
@@ -293,6 +312,17 @@ export default class XmlElements {
   shapeProperties() {
     const spPr = this.spPr();
     this.element.appendChild(spPr);
+  }
+
+  dataPointLabels() {
+    const doc = new DOMParser().parseFromString(dLblXml, 'application/xml');
+    const ele = doc.getElementsByTagName('c:dLbls')[0] as unknown as Node;
+    const nextSibling = this.element.getElementsByTagName('c:cat')[0];
+    if (nextSibling) {
+      nextSibling.parentNode.insertBefore(ele.cloneNode(true), nextSibling);
+    } else {
+      this.element.appendChild(ele.cloneNode(true));
+    }
   }
 
   dataPointLabel() {

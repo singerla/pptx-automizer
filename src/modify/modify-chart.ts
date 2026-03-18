@@ -21,7 +21,7 @@ import { Workbook } from '../types/types';
 import ModifyXmlHelper from '../helper/modify-xml-helper';
 import ModifyTextHelper from '../helper/modify-text-helper';
 import ModifyColorHelper from '../helper/modify-color-helper';
-import { XmlDocument } from '../types/xml-types';
+import { XmlDocument, XmlElement } from '../types/xml-types';
 import { modify } from '../index';
 import ModifyChartHelper from '../helper/modify-chart-helper';
 import { vd } from '../helper/general-helper';
@@ -187,18 +187,22 @@ export class ModifyChart {
 
   setPointStyles(): void {
     const count = {};
+    const labelCount = {};
     this.data.categories.forEach((category, c) => {
       if (category.styles) {
         category.styles.forEach((style, s) => {
           if (style === null || !Object.values(style).length) return;
+
           count[s] = !count[s] ? 0 : count[s];
+          labelCount[s] = !labelCount[s] ? 0 : labelCount[s];
           this.chart.modify(
             this.series(s, this.chartPoint(count[s], c, style)),
           );
           if (style.label) {
             this.chart.modify(
-              this.series(s, this.chartPointLabel(count[s], c, style.label)),
+              this.series(s, this.chartPointLabel(labelCount[s], c, style.label)),
             );
+            labelCount[s]++;
           }
           count[s]++;
         });
@@ -433,12 +437,120 @@ export class ModifyChart {
   ): ModificationTags => {
     if (!labelStyle) return;
 
+    const suffixModify = labelStyle.suffix
+      ? [
+          (element: XmlElement): void => {
+            const doc = element.ownerDocument;
+
+            // Convert c:txPr to c:tx > c:rich so PowerPoint renders text runs.
+            const txPr = element.getElementsByTagName('c:txPr')[0];
+            if (txPr) {
+              const tx = doc.createElement('c:tx');
+              const rich = doc.createElement('c:rich');
+
+              while (txPr.firstChild) {
+                rich.appendChild(txPr.firstChild);
+              }
+
+              tx.appendChild(rich);
+              txPr.parentNode.insertBefore(tx, txPr);
+              txPr.parentNode.removeChild(txPr);
+            }
+
+            const paragraphs = element.getElementsByTagName('a:p');
+            if (!paragraphs.length) return;
+            const p = paragraphs[0];
+
+            // Remove any existing a:r and a:fld elements that may have been
+            // carried over from cloning a previously modified c:dLbl.
+            const existingRuns = Array.from(p.getElementsByTagName('a:r'));
+            existingRuns.forEach((run) => run.parentNode.removeChild(run));
+            const existingFlds = Array.from(p.getElementsByTagName('a:fld'));
+            existingFlds.forEach((fld) => fld.parentNode.removeChild(fld));
+
+            // Add a:fld element to display the chart value
+            const endParaRPr = p.getElementsByTagName('a:endParaRPr')[0];
+            const defRPr = p.getElementsByTagName('a:defRPr')[0];
+
+            const fld = doc.createElement('a:fld');
+            fld.setAttribute('type', 'VALUE');
+            fld.setAttribute(
+              'id',
+              '{AABBCCDD-1234-5678-9012-' +
+                String(idx).padStart(12, '0') +
+                '}',
+            );
+
+            const fldRPr = doc.createElement('a:rPr');
+            fldRPr.setAttribute('lang', 'en-US');
+            if (defRPr) {
+              Array.from(defRPr.childNodes).forEach((child) => {
+                fldRPr.appendChild(child.cloneNode(true));
+              });
+              Array.from(defRPr.attributes).forEach((attr) => {
+                if (attr.name !== 'sz' && attr.name !== 'b') {
+                  fldRPr.setAttribute(attr.name, attr.value);
+                }
+              });
+            }
+            fld.appendChild(fldRPr);
+
+            const fldT = doc.createElement('a:t');
+            fldT.textContent = '[VALUE]';
+            fld.appendChild(fldT);
+
+            if (endParaRPr) {
+              p.insertBefore(fld, endParaRPr);
+            } else {
+              p.appendChild(fld);
+            }
+
+            // Add the suffix a:r
+            const r = doc.createElement('a:r');
+            const rPr = doc.createElement('a:rPr');
+            rPr.setAttribute('lang', 'en-US');
+            rPr.setAttribute('dirty', '0');
+
+            if (labelStyle.suffix.color) {
+              const color = { ...labelStyle.suffix.color };
+              if (color.value.indexOf('#') === 0) {
+                color.value = color.value.replace('#', '');
+              }
+              const solidFill = doc.createElement('a:solidFill');
+              const colorEl = doc.createElement('a:' + color.type);
+              colorEl.setAttribute('val', color.value);
+              solidFill.appendChild(colorEl);
+              rPr.appendChild(solidFill);
+            }
+
+            r.appendChild(rPr);
+            const t = doc.createElement('a:t');
+            t.textContent = labelStyle.suffix.text;
+            r.appendChild(t);
+
+            const endParaRPr2 = p.getElementsByTagName('a:endParaRPr')[0];
+            if (endParaRPr2) {
+              p.insertBefore(r, endParaRPr2);
+            } else {
+              p.appendChild(r);
+            }
+
+            // Prevent line breaks in the data label by setting wrap="none"
+            const bodyPrs = element.getElementsByTagName('a:bodyPr');
+            if (bodyPrs.length) {
+              bodyPrs[0].setAttribute('wrap', 'none');
+            }
+          },
+        ]
+      : [];
+
     return {
       'c:dLbls': {
         children: {
           'c:dLbl': {
             index: index,
             fromIndex: 0,
+            modify: suffixModify,
             children: {
               'c:idx': {
                 modify: ModifyXmlHelper.attribute('val', String(idx)),
