@@ -100,6 +100,8 @@ export type ChartDataLabelAttributes = {
   showBubbleSize?: boolean;
   showLeaderLines?: boolean;
   solidFill?: Color;
+  formatCode?: string;
+  sourceLinked?: boolean;
   suffix?: {
     text: string;
     color?: Color;
