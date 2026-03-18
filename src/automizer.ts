@@ -4,6 +4,7 @@ import {
   AutomizerFile,
   AutomizerParams,
   AutomizerSummary,
+  getMediaBuffer,
   PresentationInfo,
   SourceIdentifier,
   StatusTracker,
@@ -26,8 +27,48 @@ import {
 import JSZip from 'jszip';
 import { ISlide } from './interfaces/islide';
 import { IMaster } from './interfaces/imaster';
-import { ContentTypeExtension } from './enums/content-type-map';
+import { ContentTypeExtension, ContentTypeMap } from './enums/content-type-map';
 import slugify from 'slugify';
+
+/**
+ * Valid media file extensions based on ContentTypeMap.
+ * Used to validate file extensions before processing.
+ */
+const VALID_MEDIA_EXTENSIONS: readonly string[] = Object.keys(ContentTypeMap) as readonly ContentTypeExtension[];
+
+/**
+ * Validates that a file extension is a supported media type.
+ * @param extension - The file extension to validate (without leading dot)
+ * @param filename - The original filename (for error message)
+ * @throws {Error} If the extension is not supported
+ */
+function validateMediaExtension(extension: string, filename: string): asserts extension is ContentTypeExtension {
+  if (!VALID_MEDIA_EXTENSIONS.includes(extension.toLowerCase())) {
+    throw (
+      `Unsupported media extension '${extension}' for file '${filename}'. ` +
+      `Supported extensions: ${VALID_MEDIA_EXTENSIONS.join(', ')}`
+    );
+  }
+}
+
+/**
+ * Extracts and validates file extension.
+ * @param filename - The filename to extract extension from
+ * @returns The validated extension
+ * @throws {Error} If filename has no extension or extension is not supported
+ */
+function getValidatedExtension(filename: string): ContentTypeExtension {
+  const extension = path
+    .extname(filename)
+    .replace('.', '') as ContentTypeExtension;
+
+  if (!extension) {
+    throw `Filename must include extension: ${filename}. Example: 'logo.png'`;
+  }
+
+  validateMediaExtension(extension, filename);
+  return extension;
+}
 
 /**
  * Automizer
@@ -237,15 +278,14 @@ export default class Automizer implements IPresentationProps {
     files.forEach((file) => {
       const directory = dir || this.params.mediaDir;
       const filepath = path.join(directory, file);
-      const extension = path
-        .extname(file)
-        .replace('.', '') as ContentTypeExtension;
+      const extension = getValidatedExtension(file);
       try {
         fs.accessSync(filepath, fs.constants.F_OK);
       } catch (e) {
         throw `Can't load media: ${filepath} does not exist.`;
       }
       this.rootTemplate.mediaFiles.push({
+        source: 'path',
         file,
         directory,
         filepath,
@@ -253,6 +293,53 @@ export default class Automizer implements IPresentationProps {
         prefix,
       });
     });
+
+    return this;
+  }
+
+  /**
+   * Load media files from buffers to output presentation.
+   * @returns Instance of Automizer
+   * @param filename Filename(s) to use (must include extension).
+   * @param buffer Buffer(s) containing the media data.
+   * @param prefix Optional prefix to prepend to filename in archive.
+   */
+  public loadMediaBuffer(
+    filename: string | string[],
+    buffer: Buffer | Buffer[],
+    prefix?: string,
+  ): this {
+    const files = GeneralHelper.arrayify(filename);
+    const buffers = GeneralHelper.arrayify(buffer);
+    if (!this.rootTemplate) {
+      throw "Can't load media, you need to load a root template first";
+    }
+
+    if (files.length !== buffers.length) {
+      throw `Mismatched arrays: ${files.length} filename(s) but ${buffers.length} buffer(s)`;
+    }
+
+    files.forEach((file, index) => {
+      const buf = buffers[index];
+
+      if (!Buffer.isBuffer(buf)) {
+        throw `Invalid buffer for file: ${file}`;
+      }
+      if (buf.length === 0) {
+        throw `Empty buffer provided for file: ${file}`;
+      }
+
+      const extension = getValidatedExtension(file);
+
+      this.rootTemplate.mediaFiles.push({
+        source: 'buffer',
+        file,
+        buffer: buf,
+        extension,
+        prefix,
+      });
+    });
+
     return this;
   }
 
@@ -510,7 +597,7 @@ export default class Automizer implements IPresentationProps {
   public async writeMediaFiles(): Promise<void> {
     const mediaDir = 'ppt/media/';
     for (const file of this.rootTemplate.mediaFiles) {
-      const data = fs.readFileSync(file.filepath);
+      const data = getMediaBuffer(file, fs.readFileSync);
       let archiveFilename = file.file;
       if (file.prefix) {
         archiveFilename = file.prefix + file.file;

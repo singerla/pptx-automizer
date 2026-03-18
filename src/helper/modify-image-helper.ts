@@ -1,5 +1,6 @@
 import { XmlElement } from '../types/xml-types';
 import { ImageStyle } from '../types/modify-types';
+import { getMediaBuffer } from '../types/types';
 import slugify from 'slugify';
 import { imageSize } from 'image-size';
 import fs from 'fs';
@@ -58,7 +59,7 @@ export default class ModifyImageHelper {
             'Media file not found in template archive in path: ' + filename,
           );
         }
-        const buffer = fs.readFileSync(mediaFile.filepath);
+        const buffer = getMediaBuffer(mediaFile, fs.readFileSync);
         const _dimensions = imageSize(buffer);
         newImageDimensions.width = _dimensions.width;
         newImageDimensions.height = _dimensions.height;
