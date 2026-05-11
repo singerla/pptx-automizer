@@ -1182,7 +1182,7 @@ export default class HasShapes {
       const drop = xml.getElementsByTagName(tag);
       const length = drop.length;
       if (length && length > 0) {
-        console.log('Cleaning unsupported tag ' + tag);
+        console.debug('Cleaning unsupported tag ' + tag);
 
         // First get parent elements before removing
         const parents: XmlElement[] = [];
