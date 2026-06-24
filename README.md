@@ -38,6 +38,8 @@ If you require commercial support for complex .pptx automation, you can explore 
   - [Modify Tables](#modify-tables)
   - [Modify Charts](#modify-charts)
   - [Modify Extended Charts](#modify-extended-charts)
+  - [Additional chart modifiers](#additional-chart-modifiers)
+  - [Read chart data](#read-chart-data)
   - [Generate shapes with PptxGenJS](#generate-shapes-with-pptxgenjs)
   - [Remove elements from a slide](#remove-elements-from-a-slide)
   - [Hyperlink Management](#hyperlink-management)
@@ -48,6 +50,8 @@ If you require commercial support for complex .pptx automation, you can explore 
     - [Cleanup helpers](#cleanup-helpers)
     - [Text helpers (MultiText/HTML)](#text-helpers-multitexthtml)
     - [Image helpers](#image-helpers)
+    - [Unit conversion helpers](#unit-conversion-helpers)
+    - [Generic / debugging helpers](#generic--debugging-helpers)
     - [Advanced XML helpers (power users)](#advanced-xml-helpers-power-users)
 
 - [Tips and Tricks](#tips-and-tricks)
@@ -809,6 +813,37 @@ slide.modifyElement('Icon', [
 ]);
 ```
 
+### Unit conversion helpers
+
+PowerPoint stores coordinates and sizes in the `dxa` (EMU) unit. Use the exported converters to work with centimeters instead:
+
+```ts
+import { CmToDxa, DxaToCm } from 'pptx-automizer';
+
+// centimeters -> dxa (e.g. when setting position/size)
+const widthInDxa = CmToDxa(6); // 2160000
+
+// dxa -> centimeters (e.g. when reading shape coordinates)
+const widthInCm = DxaToCm(2160000); // 6
+```
+
+### Generic / debugging helpers
+
+`ModifyHelper` (also available through the `modify` namespace) offers low-level callbacks that are handy for debugging or custom XML tweaks:
+
+```ts
+import { modify } from 'pptx-automizer';
+
+slide.modifyElement('MyShape', [
+  // print the element's XML to the console
+  modify.dump,
+  // print the related chart XML to the console
+  modify.dumpChart,
+  // set an attribute on the first matching tag (optionally by index)
+  modify.setAttribute('a:off', 'x', 1000000),
+]);
+```
+
 ### Advanced XML helpers (power users)
 
 For advanced scenarios, you can inspect slide XML and relationships. These are considered expert APIs and may change.
@@ -887,6 +922,111 @@ pres.addSlide('charts', 2, (slide) => {
     }),
   ]);
 });
+```
+
+## Additional chart modifiers
+
+Besides `modify.setChartData` and `modify.setExtendedChartData`, the `modify` namespace exposes a number of helpers to fine-tune chart appearance and special chart types. Each of them returns a modification callback that can be passed to `slide.modifyElement()`.
+
+- Chart title (requires an already existing, manually edited title)
+
+```ts
+slide.modifyElement('ColumnChart', [modify.setChartTitle('My new title')]);
+```
+
+- Axis range and number format. Only manually scaled (non-"Auto") min/max values can be altered.
+
+```ts
+slide.modifyElement('ColumnChart', [
+  modify.setAxisRange({
+    axisIndex: 0, // index of c:valAx, defaults to 0
+    min: 0,
+    max: 100,
+    majorUnit: 20,
+    minorUnit: 5,
+    formatCode: '0.0',
+    sourceLinked: false,
+  }),
+]);
+```
+
+- Legend position and visibility. Legend coordinates are shares of the chart coordinates (e.g. `w: 0.5` means "half of chart width").
+
+```ts
+slide.modifyElement('ColumnChart', [
+  // move/resize the legend
+  modify.setLegendPosition({ x: 0.8, y: 0.1, w: 0.2, h: 0.3 }),
+  // set legend coordinates to zero so a user can maximize it easily
+  modify.minimizeChartLegend(),
+  // completely remove the legend (PowerPoint will maximize the chart space)
+  modify.removeChartLegend(),
+]);
+```
+
+- Plot area. Requires a `c:manualLayout` element, which only exists if the plot area was edited manually in PowerPoint before. Coordinates are shares of the chart coordinates.
+
+```ts
+slide.modifyElement('ColumnChart', [
+  modify.setPlotArea({ x: 0.1, y: 0.1, w: 0.8, h: 0.8 }),
+]);
+```
+
+- Data labels
+
+```ts
+slide.modifyElement('ColumnChart', [
+  // format the data labels of all series (or a single series by index)
+  modify.setDataLabelAttributes({
+    applyToSeries: 0, // omit to apply to all series
+    dLblPos: 'outEnd',
+    formatCode: '0.0%',
+    sourceLinked: false,
+    showVal: true,
+    showSerName: false,
+    showCatName: false,
+    showPercent: false,
+    showLegendKey: false,
+  }),
+  // or remove all data labels
+  modify.removeDataLabels(),
+]);
+```
+
+- Waterfall total column. Mark the last column (or a specific index) of an extended waterfall chart as a total.
+
+```ts
+slide.modifyElement('Waterfall 1', [
+  modify.setWaterFallColumnTotalToLast(), // or pass an index, e.g. (3)
+]);
+```
+
+- Special chart types. Use dedicated modifiers for scatter, combo, bubble and vertical line charts. They accept the same `ChartData` object as `setChartData`.
+
+```ts
+slide.modifyElement('ScatterChart', [modify.setChartScatter(chartData)]);
+slide.modifyElement('ComboChart', [modify.setChartCombo(chartData)]);
+slide.modifyElement('BubbleChart', [modify.setChartBubbles(chartData)]);
+slide.modifyElement('VerticalLineChart', [
+  modify.setChartVerticalLines(chartData),
+]);
+```
+
+## Read chart data
+
+The `read` namespace provides callbacks to read information out of a chart without modifying it. They populate the object you pass in (see `__tests__/read-chart-data.test.js`).
+
+```ts
+import { read } from 'pptx-automizer';
+
+const workbookData = [];
+const chartInfo = { series: [] };
+
+slide.modifyElement('ColumnChart', [
+  // read the raw rows of the embedded workbook into workbookData
+  read.readWorkbookData(workbookData),
+  // read series colors and the detected chart type into chartInfo
+  read.readChartInfo(chartInfo),
+]);
 ```
 
 ## Generate shapes with PptxGenJS
@@ -983,6 +1123,24 @@ slide.modifyElement('TextShape', (element, relation) => {
 ```
 
 The `addHyperlink` function will automatically detect whether the target is an external URL or an internal slide number and set up the appropriate relationship type and attributes.
+
+### Update or remove existing hyperlinks
+
+Use `modify.setHyperlinkTarget` to change the target of a hyperlink that already exists on a shape. The second argument controls whether the new target is external (default, `true`) or an internal slide link (`false`):
+
+```ts
+// Point an existing hyperlink to a new external URL
+slide.modifyElement('TextShape', modify.setHyperlinkTarget('https://example.com'));
+
+// Point an existing hyperlink to an internal slide (e.g. slide 5)
+slide.modifyElement('TextShape', modify.setHyperlinkTarget(5, false));
+```
+
+Use `modify.removeHyperlink` to strip the hyperlink from a shape while keeping its text:
+
+```ts
+slide.modifyElement('TextShape', modify.removeHyperlink());
+```
 
 ### Create a new hyperlinked text shape with pptxGenJS
 
