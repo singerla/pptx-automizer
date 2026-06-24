@@ -10,7 +10,7 @@ test('create presentation, add vertical lines chart, add a series, add categorie
   .loadRoot(`RootTemplate.pptx`)
   .load(`ChartBarsStacked.pptx`, 'charts');
 
-  const data = {
+  const data: ChartData = {
     series: [
       { label: 'series s1' },
       { label: 'series s2' },
@@ -18,14 +18,14 @@ test('create presentation, add vertical lines chart, add a series, add categorie
       { label: 'series s4' },
     ],
     categories: [
-      { label: 'item test r1', values: [ 10, 16, 12, 15 ] },
-      { label: 'item test r2', values: [ 12, 18, 15, 15 ] },
-      { label: 'item test r3', values: [ 14, 12, 11, 15 ] },
-      { label: 'item test r4', values: [ 8, 11, 9, 15 ] },
-      { label: 'item test r5', values: [ 6, 15, 7, 15 ] },
-      { label: 'item test r6', values: [ 16, 16, 9, 3 ] },
+      { label: 'item test r1', values: [10, 16, 12, 15] },
+      { label: 'item test r2', values: [12, 18, 15, 15] },
+      { label: 'item test r3', values: [14, 12, 11, 15] },
+      { label: 'item test r4', values: [8, 11, 9, 15] },
+      { label: 'item test r5', values: [6, 15, 7, 15] },
+      { label: 'item test r6', values: [16, 16, 9, 3] },
     ],
-  }
+  };
 
   const dataSmaller: ChartData = {
     series: [

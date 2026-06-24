@@ -186,25 +186,19 @@ export class ModifyChart {
   }
 
   setPointStyles(): void {
-    const count = {};
-    const labelCount = {};
     this.data.categories.forEach((category, c) => {
       if (category.styles) {
         category.styles.forEach((style, s) => {
           if (style === null || !Object.values(style).length) return;
 
-          count[s] = !count[s] ? 0 : count[s];
-          labelCount[s] = !labelCount[s] ? 0 : labelCount[s];
           this.chart.modify(
-            this.series(s, this.chartPoint(count[s], c, style)),
+            this.series(s, this.chartPoint(c, c, style)),
           );
           if (style.label) {
             this.chart.modify(
-              this.series(s, this.chartPointLabel(labelCount[s], c, style.label)),
+              this.series(s, this.chartPointLabel(c, c, style.label)),
             );
-            labelCount[s]++;
           }
-          count[s]++;
         });
       }
     });
@@ -238,11 +232,11 @@ export class ModifyChart {
 
   setSeriesDataLabels = (): void => {
     this.data.series.forEach((series, s) => {
-      this.chart.modify(
-        this.series(s, this.seriesDataLabel(s, series.style?.label)),
-      );
-
       if (series.style?.label) {
+        this.chart.modify(
+          this.series(s, this.seriesDataLabel(s, series.style?.label)),
+        );
+
         // Apply style for all label props helper if required
         modify.setDataLabelAttributes({
           applyToSeries: s,

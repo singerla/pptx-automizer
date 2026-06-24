@@ -552,6 +552,18 @@ export default class ModifyChartHelper {
       }
     };
 
+  /**
+   * Remove datalabels of a chart.
+   */
+  static removeDataLabels =
+    (): ChartModificationCallback =>
+    (element: XmlElement, chart: XmlDocument): void => {
+      const dLbls = chart.getElementsByTagName('c:dLbls');
+      Array.from(dLbls).forEach((dLbl) => {
+        dLbl.parentNode.removeChild(dLbl);
+      });
+    };
+
   static setPointLabelSuffix = (
     element: XmlElement,
     idx: number,
@@ -708,6 +720,7 @@ export default class ModifyChartHelper {
         modify: [ModifyColorHelper.solidFill(dataLabel.solidFill)],
       },
       'c:numFmt': {
+        isRequired: false,
         modify: [
           ModifyXmlHelper.attribute('formatCode', dataLabel.formatCode),
           ModifyXmlHelper.booleanAttribute(
@@ -717,37 +730,45 @@ export default class ModifyChartHelper {
         ],
       },
       'c:dLblPos': {
+        isRequired: false,
         modify: [ModifyXmlHelper.attribute('val', dataLabel.dLblPos)],
       },
       'c:showLegendKey': {
+        isRequired: false,
         modify: [
           ModifyXmlHelper.booleanAttribute('val', dataLabel.showLegendKey),
         ],
       },
       'c:showVal': {
+        isRequired: false,
         modify: [ModifyXmlHelper.booleanAttribute('val', dataLabel.showVal)],
       },
       'c:showCatName': {
+        isRequired: false,
         modify: [
           ModifyXmlHelper.booleanAttribute('val', dataLabel.showCatName),
         ],
       },
       'c:showSerName': {
+        isRequired: false,
         modify: [
           ModifyXmlHelper.booleanAttribute('val', dataLabel.showSerName),
         ],
       },
       'c:showPercent': {
+        isRequired: false,
         modify: [
           ModifyXmlHelper.booleanAttribute('val', dataLabel.showPercent),
         ],
       },
       'c:showBubbleSize': {
+        isRequired: false,
         modify: [
           ModifyXmlHelper.booleanAttribute('val', dataLabel.showBubbleSize),
         ],
       },
       'c:showLeaderLines': {
+        isRequired: false,
         modify: [
           ModifyXmlHelper.booleanAttribute('val', dataLabel.showLeaderLines),
         ],

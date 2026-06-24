@@ -86,6 +86,7 @@ const setWaterFallColumnTotalToLast =
   ModifyChartHelper.setWaterFallColumnTotalToLast;
 const setChartTitle = ModifyChartHelper.setChartTitle;
 const setDataLabelAttributes = ModifyChartHelper.setDataLabelAttributes;
+const removeDataLabels = ModifyChartHelper.removeDataLabels;
 const readWorkbookData = ModifyChartHelper.readWorkbookData;
 const readChartInfo = ModifyChartHelper.readChartInfo;
 
@@ -162,6 +163,7 @@ export const modify = {
   setWaterFallColumnTotalToLast,
   setChartTitle,
   setDataLabelAttributes,
+  removeDataLabels,
   setHyperlinkTarget,
   addHyperlink,
   removeHyperlink,

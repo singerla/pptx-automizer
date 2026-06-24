@@ -18,7 +18,7 @@ test('create presentation, add and modify a vertical lines chart.', async () => 
         style: {
           color: {
             type: 'schemeClr',
-            value: 'accent1',
+            value: 'accent2',
           },
           // Disable labels for this series
           label: {
@@ -31,7 +31,7 @@ test('create presentation, add and modify a vertical lines chart.', async () => 
         style: {
           color: {
             type: 'schemeClr',
-            value: 'accent1',
+            value: 'accent3',
           },
           // All labels of a series can be styled
           // Notice: first, activate Datalabels in your template chart
