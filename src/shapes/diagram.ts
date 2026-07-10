@@ -125,7 +125,7 @@ export class Diagram extends Shape {
 
   async clone(): Promise<void> {
     await this.setTargetElement();
-    this.applyCallbacks(this.callbacks, this.targetElement);
+    await this.applyCallbacks(this.callbacks, this.targetElement);
   }
 
   async updateRelIds() {

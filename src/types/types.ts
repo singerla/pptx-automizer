@@ -31,7 +31,7 @@ export type ShapeModificationCallback = (
   element: XmlElement,
   relation?: XmlElement,
   info?: ElementInfo
-) => void;
+) => void | Promise<void>;
 export type ChartModificationCallback = (
   element: XmlElement,
   chart?: XmlDocument,

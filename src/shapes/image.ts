@@ -82,7 +82,7 @@ export class Image extends Shape implements IImage {
     await this.updateTargetElementRelId();
     await this.processImageRelations(targetTemplate, targetSlideNumber);
 
-    this.applyImageCallbacks();
+    await this.applyImageCallbacks();
 
     await this.replaceIntoSlideTree();
 
@@ -99,7 +99,7 @@ export class Image extends Shape implements IImage {
     await this.updateTargetElementRelId();
     await this.processImageRelations(targetTemplate, targetSlideNumber);
 
-    this.applyImageCallbacks();
+    await this.applyImageCallbacks();
 
     await this.appendToSlideTree();
 
@@ -208,8 +208,8 @@ export class Image extends Shape implements IImage {
    * Third argument this.createdRelation is necessery to directly
    * manipulate relation Target and change the image.
    */
-  applyImageCallbacks() {
-    this.applyCallbacks(
+  async applyImageCallbacks(): Promise<void> {
+    await this.applyCallbacks(
       this.callbacks,
       this.targetElement,
       this.createdRelation,

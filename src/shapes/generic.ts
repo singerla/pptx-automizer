@@ -65,7 +65,7 @@ export class GenericShape extends Shape {
 
     // Pass both the element and the relation to applyCallbacks
     // Use the documentElement property to get the root element of the XML document
-    this.applyCallbacks(this.callbacks, this.targetElement, slideRelXml.documentElement as XmlElement);
+    await this.applyCallbacks(this.callbacks, this.targetElement, slideRelXml.documentElement as XmlElement);
   }
 
   /**

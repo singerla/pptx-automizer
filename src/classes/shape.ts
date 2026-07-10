@@ -234,20 +234,20 @@ export class Shape {
       .setAttribute(this.relAttribute, this.createdRid);
   }
 
-  applyCallbacks(
+  async applyCallbacks(
     callbacks: ShapeModificationCallback[],
     element: XmlElement,
     relation?: XmlElement,
-  ): void {
-    callbacks.forEach((callback) => {
+  ): Promise<void> {
+    for (const callback of callbacks) {
       if (typeof callback === 'function') {
         try {
-          callback(element, relation);
+          await callback(element, relation);
         } catch (e) {
           console.warn(e);
         }
       }
-    });
+    }
   }
 
   applyChartCallbacks(
