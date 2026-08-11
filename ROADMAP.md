@@ -8,7 +8,7 @@ Legend: 🐛 bug · 🔧 tooling · 🏗 architecture · 🧪 testing · 📖 do
 
 ---
 
-## Phase 0 — Correctness & tooling quick wins (hours, not days)
+## Phase 0 — Correctness & tooling quick wins (hours, not days) — ✅ done 2026-08-11
 
 These are small, independent fixes. Do them first; they cost nothing and remove
 noise from every later change.
