@@ -54,3 +54,17 @@ export const CmToDxa = (cm: number): number => {
 export const DxaToCm = (dxa: number): number => {
   return dxa / 360000;
 };
+
+/*
+  Convert points to ppt's dxa unit, e.g. for outline weights
+ */
+export const PtToEmu = (pt: number): number => {
+  return Math.round(pt * 12700);
+};
+
+/*
+  Convert ppt's dxa unit to points
+ */
+export const EmuToPt = (emu: number): number => {
+  return emu / 12700;
+};

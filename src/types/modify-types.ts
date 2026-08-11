@@ -46,6 +46,32 @@ export type Border = {
   weight?: number;
   color?: Color;
 };
+
+/**
+ * Outline (a.k.a. line/border) of a shape, picture or placeholder.
+ * Mirrors the vocabulary of `Border` (used for table cells), minus the
+ * cell-specific `tag`: a shape has exactly one outline.
+ */
+export type ShapeOutline = {
+  /**
+   * Line width in EMU, same unit as `Border.weight`.
+   * 1pt = 12700 EMU, 1cm = 360000 EMU. Use `PtToEmu()`/`CmToDxa()`.
+   */
+  weight?: number;
+  /** Dash style, rendered as <a:prstDash val="..."/> */
+  type?:
+    | 'solid'
+    | 'dot'
+    | 'sysDot'
+    | 'dash'
+    | 'sysDash'
+    | 'lgDash'
+    | 'dashDot'
+    | 'lgDashDot'
+    | 'lgDashDotDot'
+    | string;
+  color?: Color;
+};
 export type HyperlinkInfo = {
   target: string | number;
   isInternal?: boolean;

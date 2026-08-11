@@ -1,4 +1,4 @@
-import { Color } from '../types/modify-types';
+import { Color, ShapeOutline } from '../types/modify-types';
 import { XmlHelper } from './xml-helper';
 import { DOMParser } from '@xmldom/xmldom';
 import { dLblXml } from './xml/dLbl';
@@ -7,7 +7,29 @@ import { XmlDocument, XmlElement } from '../types/xml-types';
 
 export type XmlElementParams = {
   color?: Color;
+  outline?: ShapeOutline;
 };
+
+/**
+ * Children of <a:ln>, in OOXML schema order (CT_LineProperties).
+ * Required to insert new children at a valid position: a wrong sequence
+ * makes PowerPoint ask to repair the file.
+ */
+const LINE_FILL_TAGS = [
+  'a:noFill',
+  'a:solidFill',
+  'a:gradFill',
+  'a:pattFill',
+];
+const LINE_DASH_TAGS = ['a:prstDash', 'a:custDash'];
+const LINE_AFTER_DASH_TAGS = [
+  'a:round',
+  'a:bevel',
+  'a:miter',
+  'a:headEnd',
+  'a:tailEnd',
+  'a:extLst',
+];
 
 export default class XmlElements {
   element: XmlDocument | XmlElement;
@@ -207,6 +229,58 @@ export default class XmlElements {
     const ln = this.document.createElement('a:ln');
     const noFill = this.document.createElement('a:noFill');
     ln.appendChild(noFill);
+    return ln;
+  }
+
+  /**
+   * Create an <a:ln> shape outline from this.params.outline
+   */
+  outline(): XmlElement {
+    const ln = this.document.createElement('a:ln');
+    return this.applyOutline(ln);
+  }
+
+  /**
+   * Apply this.params.outline to an existing (or freshly created) <a:ln>.
+   * Only given properties are touched, the rest is left to the template.
+   * Insertion respects the schema sequence of CT_LineProperties:
+   * fill -> dash -> join -> head/tailEnd -> extLst
+   *
+   * @param ln - The <a:ln> element to update
+   */
+  applyOutline(ln: XmlElement): XmlElement {
+    const outline = this.params?.outline;
+    if (!outline) return ln;
+
+    if (outline.weight !== undefined) {
+      ln.setAttribute('w', String(Math.round(outline.weight)));
+    }
+
+    if (outline.color) {
+      this.params.color = outline.color;
+      const solidFill = this.solidFill();
+      const currentFill = XmlHelper.getFirstDirectChild(ln, LINE_FILL_TAGS);
+
+      if (currentFill) {
+        ln.replaceChild(solidFill, currentFill);
+      } else {
+        ln.insertBefore(solidFill, ln.firstChild);
+      }
+    }
+
+    if (outline.type) {
+      const prstDash = this.prstDash();
+      prstDash.setAttribute('val', outline.type);
+      const currentDash = XmlHelper.getFirstDirectChild(ln, LINE_DASH_TAGS);
+
+      if (currentDash) {
+        ln.replaceChild(prstDash, currentDash);
+      } else {
+        const anchor = XmlHelper.getFirstDirectChild(ln, LINE_AFTER_DASH_TAGS);
+        anchor ? ln.insertBefore(prstDash, anchor) : ln.appendChild(prstDash);
+      }
+    }
+
     return ln;
   }
 

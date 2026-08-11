@@ -646,6 +646,26 @@ slide.modifyElement('MyShape', [
 ]);
 ```
 
+- Outline (line) width, color and dash style
+
+```ts
+import { PtToEmu } from 'pptx-automizer';
+
+slide.modifyElement('MyShape', [
+  ModifyShapeHelper.setOutline({
+    weight: PtToEmu(2), // EMU, 1pt = 12700
+    color: { type: 'srgbClr', value: 'FF0000' },
+    type: 'sysDash', // any a:prstDash value, e.g. solid, dash, dot
+  }),
+]);
+```
+
+Only the given properties are modified. An outline is created if the shape has
+none, which is the case whenever it was never overridden in PowerPoint and is
+inherited from the theme or shape style. If the outline was explicitly switched
+off in PowerPoint, a `weight` alone stays invisible — pass a `color`, too. Use
+`ModifyCleanupHelper.removeBorder` to remove an outline.
+
 - Bullet list from strings
 
 ```ts
@@ -825,6 +845,15 @@ const widthInDxa = CmToDxa(6); // 2160000
 
 // dxa -> centimeters (e.g. when reading shape coordinates)
 const widthInCm = DxaToCm(2160000); // 6
+```
+
+Line weights are usually given in points, use `PtToEmu`/`EmuToPt` for those:
+
+```ts
+import { PtToEmu, EmuToPt } from 'pptx-automizer';
+
+const weight = PtToEmu(1.5); // 19050
+const inPoints = EmuToPt(19050); // 1.5
 ```
 
 ### Generic / debugging helpers
