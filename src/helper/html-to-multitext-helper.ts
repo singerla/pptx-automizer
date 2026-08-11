@@ -1,7 +1,7 @@
 import { TextStyle } from '../types/modify-types';
 import { MultiTextParagraph } from '../interfaces/imulti-text';
 import { DOMParser, Node } from '@xmldom/xmldom';
-import { log } from './general-helper';
+import { log } from './logger';
 
 type TextRun = { text: string; style?: TextStyle };
 
@@ -32,7 +32,7 @@ export class HtmlToMultiTextHelper {
         }
       });
     } else {
-      log('You need to provide a <body> tag for HtmlToMultiText', 0);
+      log.error('You need to provide a <body> tag for HtmlToMultiText');
     }
 
     return paragraphs;

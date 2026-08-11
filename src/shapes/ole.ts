@@ -1,3 +1,4 @@
+import { log } from '../helper/logger';
 import { FileHelper } from '../helper/file-helper';
 import { XmlHelper } from '../helper/xml-helper';
 import { Shape } from '../classes/shape';
@@ -95,7 +96,7 @@ export class OLEObject extends Shape {
         targetFileName,
       );
     } catch (error) {
-      console.error('Error copying OLE object file:', error);
+      log.error('Error copying OLE object file:', error);
       throw error;
     }
   }

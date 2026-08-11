@@ -1,3 +1,4 @@
+import { ArchiveError } from '../../errors';
 import Archive from './archive';
 import { promises as fsPromises } from 'fs';
 import JSZip, { InputType } from 'jszip';
@@ -174,7 +175,7 @@ export default class ArchiveFs extends Archive implements IArchive {
     if (!isBuffered) {
       const buffer = await this.read(file);
       if (!buffer) {
-        throw 'no buffer: ' + file;
+        throw new ArchiveError('No buffer for file: ' + file, { file });
       }
 
       const xmlString = buffer.toString();

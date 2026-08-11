@@ -10,7 +10,7 @@ import { IMaster } from '../interfaces/imaster';
 import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import HasShapes from './has-shapes';
 import { Layout } from './layout';
-import { log } from '../helper/general-helper';
+import { log } from '../helper/logger';
 
 export class Master extends HasShapes implements IMaster {
   targetType: ShapeTargetType = 'slideMaster';
@@ -56,7 +56,7 @@ export class Master extends HasShapes implements IMaster {
     this.targetRelsPath = `ppt/slideMasters/_rels/slideMaster${this.targetNumber}.xml.rels`;
     this.sourceArchive = await this.sourceTemplate.archive;
 
-    log('Importing slideMaster ' + this.targetNumber, 2);
+    log.info('Importing slideMaster ' + this.targetNumber);
 
     await this.copySlideMasterFiles();
     await this.copyRelatedLayouts();

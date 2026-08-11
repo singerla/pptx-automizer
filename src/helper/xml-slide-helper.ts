@@ -1,3 +1,4 @@
+import { log } from './logger';
 import {
   ElementInfo,
   ElementPosition,
@@ -108,7 +109,7 @@ export class XmlSlideHelper {
         );
       });
     } catch (error) {
-      console.error(error);
+      log.error(error);
       throw new Error(`Failed to retrieve elements: ${error.message}`);
     }
 
@@ -129,7 +130,7 @@ export class XmlSlideHelper {
           .map((element) => (useCreationIds ? element.id : element.name)),
       );
     } catch (error) {
-      console.error(error);
+      log.error(error);
       throw new Error(`Failed to retrieve text element IDs: ${error.message}`);
     }
 
@@ -607,7 +608,7 @@ export class XmlSlideHelper {
       );
       if (dimensions) return dimensions;
     } catch (error) {
-      console.error(`Error while fetching slide dimensions: ${error}`);
+      log.error(`Error while fetching slide dimensions: ${error}`);
       throw error;
     }
   }
@@ -633,7 +634,7 @@ export class XmlSlideHelper {
       }
       return null;
     } catch (error) {
-      console.warn(`Error while fetching XML from path ${path}: ${error}`);
+      log.warn(`Error while fetching XML from path ${path}: ${error}`);
       return null;
     }
   };
@@ -642,7 +643,7 @@ export class XmlSlideHelper {
     const info = <TableInfo[]>[];
     const rows = element.getElementsByTagName('a:tr');
     if (!rows) {
-      console.error("Can't find a table row.");
+      log.error("Can't find a table row.");
       return info;
     }
 

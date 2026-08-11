@@ -20,7 +20,7 @@ import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { contentTracker } from '../helper/content-tracker';
 import IArchive from '../interfaces/iarchive';
 import { ContentTypeExtension } from '../enums/content-type-map';
-import { log } from '../helper/general-helper';
+import { log } from '../helper/logger';
 
 export class Chart extends Shape implements IChart {
   sourceWorksheet: number | string;
@@ -238,7 +238,7 @@ export class Chart extends Shape implements IChart {
 
       await this.copyWorksheetFile();
     } else {
-      log('Chart has no worksheet: ' + this.wbRelsPath, 2);
+      log.info('Chart has no worksheet: ' + this.wbRelsPath);
     }
 
     await this.editTargetWorksheetRel();
@@ -508,7 +508,7 @@ export class Chart extends Shape implements IChart {
       this.targetArchive,
       targetFile,
     ).catch((e) => {
-      log(e, 2);
+      log.warn(e);
     });
   }
 

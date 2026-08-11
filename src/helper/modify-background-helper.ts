@@ -1,3 +1,4 @@
+import { ElementNotFoundError } from '../errors';
 import { XmlDocument } from '../types/xml-types';
 import ModifyColorHelper from './modify-color-helper';
 import { Color } from '../types/modify-types';
@@ -15,7 +16,10 @@ export default class ModifyBackgroundHelper {
       if (bgPr) {
         ModifyColorHelper.solidFill(color)(bgPr);
       } else {
-        throw 'No background properties for slideMaster';
+        throw new ElementNotFoundError(
+          'No background properties (p:bgPr) found on slideMaster',
+          { selector: 'p:bgPr' },
+        );
       }
     };
 
@@ -54,7 +58,10 @@ export default class ModifyBackgroundHelper {
         .getAttribute('r:embed');
       return blip;
     } else {
-      throw 'No background properties for slideMaster';
+      throw new ElementNotFoundError(
+          'No background properties (p:bgPr) found on slideMaster',
+          { selector: 'p:bgPr' },
+        );
     }
   };
 }

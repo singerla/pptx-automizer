@@ -1,3 +1,4 @@
+import { log } from '../logger';
 import Archive from './archive';
 import fs from 'fs';
 import JSZip, { InputType } from 'jszip';
@@ -95,7 +96,7 @@ export default class ArchiveJszip extends Archive implements IArchive {
     const content = await this.getContent(params);
 
     await fs.promises.writeFile(location, content).catch((err) => {
-      console.error(err);
+      log.error(err);
       throw new Error(`Could not write output file: ${location}`);
     });
   }

@@ -1,6 +1,6 @@
 import { XmlElement } from '../types/xml-types';
 import { XmlHelper } from './xml-helper';
-import { Logger } from './general-helper';
+import { log } from './logger';
 import IArchive from '../interfaces/iarchive';
 import { Target } from '../types/types';
 
@@ -43,7 +43,7 @@ export class HyperlinkProcessor {
         }
       }
     } catch (error) {
-      Logger.log(`Error finding hyperlinks: ${error}`, 1);
+      log.warn(`Error finding hyperlinks: ${error}`);
     }
 
     return hyperlinks;
@@ -102,7 +102,7 @@ export class HyperlinkProcessor {
         type: 'hyperlink'
       } as Target;
     } catch (error) {
-      Logger.log(`Error getting primary hyperlink target: ${error}`, 1);
+      log.warn(`Error getting primary hyperlink target: ${error}`);
       return null;
     }
   }
@@ -139,7 +139,7 @@ export class HyperlinkProcessor {
         }
       });
     } catch (error) {
-      Logger.log(`Error updating hyperlink relationship IDs: ${error}`, 1);
+      log.warn(`Error updating hyperlink relationship IDs: ${error}`);
     }
   }
 
@@ -151,7 +151,7 @@ export class HyperlinkProcessor {
     
     // Only process if there's exactly one hyperlink
     if (hyperlinks.length !== 1) {
-      Logger.log(`Expected single hyperlink, found ${hyperlinks.length}`, 1);
+      log.warn(`Expected single hyperlink, found ${hyperlinks.length}`);
       return;
     }
 
@@ -183,7 +183,7 @@ export class HyperlinkProcessor {
     const sourceRelDoc = await XmlHelper.getXmlFromArchive(sourceArchive, sourceRelPath);
     
     if (!sourceRelDoc) {
-      Logger.log(`Source relationships not found: ${sourceRelPath}`, 1);
+      log.warn(`Source relationships not found: ${sourceRelPath}`);
       return;
     }
 
@@ -191,7 +191,7 @@ export class HyperlinkProcessor {
     const targetRelXml = await XmlHelper.getXmlFromArchive(targetArchive, targetSlideRelFile);
     
     if (!targetRelXml) {
-      Logger.log(`Target relationships not found: ${targetSlideRelFile}`, 1);
+      log.warn(`Target relationships not found: ${targetSlideRelFile}`);
       return;
     }
 

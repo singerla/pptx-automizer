@@ -1,3 +1,4 @@
+import { log } from './logger';
 import { XmlElement } from '../types/xml-types';
 import { ImageStyle } from '../types/modify-types';
 import { getMediaBuffer } from '../types/types';
@@ -64,7 +65,7 @@ export default class ModifyImageHelper {
         newImageDimensions.width = _dimensions.width;
         newImageDimensions.height = _dimensions.height;
       } catch (_error) {
-        console.warn("Couldn't find media file in template archive in path.");
+        log.warn("Couldn't find media file in template archive in path.");
       }
 
       // Find the original image dimensions using the original target path from the original slide
@@ -122,7 +123,7 @@ export default class ModifyImageHelper {
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : String(error);
-        console.warn(
+        log.warn(
           'Skipped setting relation target cropped due to an error: ' +
             errorMessage,
         );

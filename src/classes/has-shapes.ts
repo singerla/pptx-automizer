@@ -1,3 +1,5 @@
+import { ElementNotFoundError, SlideNotFoundError } from '../errors';
+import { log } from '../helper/logger';
 import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import IArchive from '../interfaces/iarchive';
 import { PresTemplate } from '../interfaces/pres-template';
@@ -422,11 +424,12 @@ export default class HasShapes {
         return matchCreationId.number;
       }
 
-      throw (
+      throw new SlideNotFoundError(
         'Could not find slide number for creationId: ' +
-        slideIdentifier +
-        '@' +
-        template.name
+          slideIdentifier +
+          '@' +
+          template.name,
+        { slideIdentifier, templateName: template.name },
       );
     }
 
@@ -442,6 +445,12 @@ export default class HasShapes {
   async getUniqueImportedElements(): Promise<ImportElement[]> {
     for (const element of this.importElements) {
       const info = await this.getElementInfo(element);
+
+      // getElementInfo only returns undefined with params.continueOnError;
+      // skip the unresolvable element in that case.
+      if (!info) {
+        continue;
+      }
 
       if(element.mode === 'append') {
         element.info = info;
@@ -579,11 +588,20 @@ export default class HasShapes {
     );
 
     if (!sourceElement) {
-      console.error(
-        `Can't find element on slide ${slideNumber} in ${importElement.presName}: `,
-      );
-      console.log(importElement);
-      return;
+      const message = `Can't find element on slide ${slideNumber} in ${importElement.presName} (selector: ${JSON.stringify(
+        importElement.selector,
+      )})`;
+      if (this.presentation.params.continueOnError === true) {
+        log.warn(message);
+        return;
+      }
+      throw new ElementNotFoundError(message, {
+        selector:
+          typeof importElement.selector === 'string'
+            ? importElement.selector
+            : JSON.stringify(importElement.selector),
+        file: sourcePath,
+      });
     }
 
     const appendElementParams = await this.analyzeElement(
@@ -603,6 +621,7 @@ export default class HasShapes {
       callback: importElement.callback,
       target: appendElementParams.target,
       type: appendElementParams.type,
+      continueOnError: this.presentation.params.continueOnError === true,
     };
   }
 
@@ -1094,7 +1113,7 @@ export default class HasShapes {
           } as AnalyzedElementType;
         }
       } catch (error) {
-        console.warn('Error finding hyperlink target:', error);
+        log.warn('Error finding hyperlink target:', error);
       }
     }
     return {
@@ -1180,7 +1199,7 @@ export default class HasShapes {
       const drop = xml.getElementsByTagName(tag);
       const length = drop.length;
       if (length && length > 0) {
-        console.debug('Cleaning unsupported tag ' + tag);
+        log.debug('Cleaning unsupported tag ' + tag);
 
         // First get parent elements before removing
         const parents: XmlElement[] = [];

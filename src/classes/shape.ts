@@ -1,5 +1,7 @@
 import { XmlHelper } from '../helper/xml-helper';
 import { GeneralHelper } from '../helper/general-helper';
+import { log } from '../helper/logger';
+import { CallbackError } from '../errors';
 import { HyperlinkProcessor } from '../helper/hyperlink-processor';
 import {
   ChartModificationCallback,
@@ -159,7 +161,7 @@ export class Shape {
     );
 
     if (!sourceElementOnTargetSlide?.parentNode) {
-      console.error(`Can't modify slide tree for ${this.name}`);
+      log.error(`Can't modify slide tree for ${this.name}`);
       return;
     }
 
@@ -244,7 +246,7 @@ export class Shape {
         try {
           await callback(element, relation);
         } catch (e) {
-          console.warn(e);
+          this.handleCallbackError(e);
         }
       }
     }
@@ -261,10 +263,25 @@ export class Shape {
         try {
           callback(element, chart, workbook);
         } catch (e) {
-          console.warn(e);
+          this.handleCallbackError(e);
         }
       }
     });
+  }
+
+  /**
+   * A throwing modification callback fails the run by default.
+   * With `AutomizerParams.continueOnError`, it is logged and skipped.
+   */
+  private handleCallbackError(e: unknown): void {
+    if (this.shape.continueOnError === true) {
+      log.warn(
+        `Modification callback failed on element "${this.name}" (${this.targetSlideFile}):`,
+        e,
+      );
+      return;
+    }
+    throw new CallbackError(this.name, this.targetSlideFile, e);
   }
 
   appendImageExtensionToContentType(

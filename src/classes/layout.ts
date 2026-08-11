@@ -7,7 +7,7 @@ import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import HasShapes from './has-shapes';
 import { ILayout } from '../interfaces/ilayout';
-import { log } from '../helper/general-helper';
+import { log } from '../helper/logger';
 
 export class Layout extends HasShapes implements ILayout {
   targetType: ShapeTargetType = 'slideLayout';
@@ -43,7 +43,7 @@ export class Layout extends HasShapes implements ILayout {
     this.targetRelsPath = `ppt/slideLayouts/_rels/slideLayout${this.targetNumber}.xml.rels`;
     this.sourceArchive = await this.sourceTemplate.archive;
 
-    log('Importing slideLayout ' + this.targetNumber, 2);
+    log.info('Importing slideLayout ' + this.targetNumber);
 
     await this.copySlideLayoutFiles();
     await this.copyRelatedContent();

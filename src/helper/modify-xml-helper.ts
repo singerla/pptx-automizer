@@ -1,3 +1,4 @@
+import { ElementNotFoundError } from '../errors';
 import { Modification, ModificationTags } from '../types/modify-types';
 import StringIdGenerator from './cell-id-helper';
 import { GeneralHelper } from './general-helper';
@@ -170,7 +171,9 @@ export default class ModifyXmlHelper {
       const valueElement = element.getElementsByTagName('c:v');
       if (!valueElement.length) {
         XmlHelper.dump(element);
-        throw 'Unable to set value @index: ' + index;
+        throw new ElementNotFoundError('Unable to set value @index: ' + index, {
+          selector: 'c:v',
+        });
       }
 
       if(!valueElement[0].firstChild) {

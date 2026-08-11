@@ -1,3 +1,4 @@
+import { log } from './logger';
 import { Target } from '../types/types';
 import {
   LayoutInfo,
@@ -55,7 +56,7 @@ export class XmlTemplateHelper {
           'ppt/' + slideRel.file,
         );
         if (!slideXml) {
-          console.warn(`slideXml is undefined for file ${slideRel.file}`);
+          log.warn(`slideXml is undefined for file ${slideRel.file}`);
           continue;
         }
 
@@ -68,7 +69,7 @@ export class XmlTemplateHelper {
 
         const creationIdSlide = slideHelper.getSlideCreationId();
         if (!creationIdSlide) {
-          console.warn(`No creationId found in ${slideRel.file}`);
+          log.warn(`No creationId found in ${slideRel.file}`);
         }
 
         const slideInfo = await this.getSlideInfo(
@@ -84,7 +85,7 @@ export class XmlTemplateHelper {
           info: slideInfo,
         });
       } catch (err) {
-        console.error(
+        log.error(
           `An error occurred while processing ${slideRel.file}:`,
           err,
         );
@@ -162,7 +163,7 @@ export class XmlTemplateHelper {
         }
       }
     } catch (error) {
-      console.error(`Error getting slide layout information: ${error.message}`);
+      log.error(`Error getting slide layout information: ${error.message}`);
     }
   }
 
