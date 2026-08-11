@@ -196,5 +196,7 @@ export type {
   XmlDocument,
 };
 
+export { AutomizerError, TemplateNotFoundError } from './errors';
+
 export { ITemplate, IMaster, ISlide, IPptxGenJSSlide };
 export default Automizer;

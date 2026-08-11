@@ -9,7 +9,6 @@ import {
 import IArchive, { ArchivedFile } from '../../interfaces/iarchive';
 import { XmlDocument } from '../../types/xml-types';
 import path from 'path';
-import { vd } from '../general-helper';
 
 export default class ArchiveJszip extends Archive implements IArchive {
   archive: JSZip;

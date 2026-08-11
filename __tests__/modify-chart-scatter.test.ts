@@ -1,6 +1,5 @@
 import Automizer, {
   ChartValueStyle,
-  LabelPosition,
   modify,
 } from '../src/index';
 import { ChartData } from '../dist';

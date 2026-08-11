@@ -1,5 +1,4 @@
 import Automizer from '../src/automizer';
-import { ChartData, modify } from '../src';
 
 test('insert a table with pptxgenjs on a template slide', async () => {
   const automizer = new Automizer({

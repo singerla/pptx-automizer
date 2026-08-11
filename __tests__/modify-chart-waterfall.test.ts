@@ -1,5 +1,4 @@
 import Automizer, { modify } from '../src/index';
-import { ChartData } from '../src/types/chart-types';
 
 const data = {
   series: [{ label: 'series 1' }, { label: 'series 2' }, { label: 'series 3' }],

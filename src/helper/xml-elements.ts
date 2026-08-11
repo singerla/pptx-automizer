@@ -277,7 +277,11 @@ export default class XmlElements {
         ln.replaceChild(prstDash, currentDash);
       } else {
         const anchor = XmlHelper.getFirstDirectChild(ln, LINE_AFTER_DASH_TAGS);
-        anchor ? ln.insertBefore(prstDash, anchor) : ln.appendChild(prstDash);
+        if (anchor) {
+          ln.insertBefore(prstDash, anchor);
+        } else {
+          ln.appendChild(prstDash);
+        }
       }
     }
 

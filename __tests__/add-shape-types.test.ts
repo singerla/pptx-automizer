@@ -1,6 +1,5 @@
-import Automizer, { XmlElement, XmlHelper } from '../src/index';
+import Automizer, { XmlElement } from '../src/index';
 import { ModifyShapeHelper } from '../src';
-import { vd } from '../src/helper/general-helper';
 
 test('add all implemented shape types to an empty slide', async () => {
   const automizer = new Automizer({

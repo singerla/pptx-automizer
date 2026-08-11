@@ -63,7 +63,7 @@ export default class ModifyImageHelper {
         const _dimensions = imageSize(buffer);
         newImageDimensions.width = _dimensions.width;
         newImageDimensions.height = _dimensions.height;
-      } catch (error) {
+      } catch (_error) {
         console.warn("Couldn't find media file in template archive in path.");
       }
 
@@ -75,10 +75,11 @@ export default class ModifyImageHelper {
       // This results in the image being cropped in the image container to match the aspect ratio of the new image.
       try {
         if (pres.rootTemplate.archive.fileExists(originalTargetPath)) {
-          const originalImage = await pres.rootTemplate.archive.read(
+          // read(..., 'nodebuffer') always yields a Buffer despite the wider return type
+          const originalImage = (await pres.rootTemplate.archive.read(
             originalTargetPath,
             'nodebuffer',
-          );
+          )) as Buffer;
           const _dimensions = imageSize(originalImage);
           originalImageDimensions.width = _dimensions.width;
           originalImageDimensions.height = _dimensions.height;

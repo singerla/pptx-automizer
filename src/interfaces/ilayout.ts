@@ -1,9 +1,6 @@
 import { RootPresTemplate } from './root-pres-template';
 import {
-  FindElementSelector,
-  ShapeModificationCallback,
   SlideModificationCallback,
-  SourceIdentifier,
 } from '../types/types';
 import IArchive from './iarchive';
 

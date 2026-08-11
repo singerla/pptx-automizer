@@ -3,7 +3,6 @@ import {
   FindElementSelector,
   ShapeModificationCallback,
   SlideModificationCallback,
-  SourceIdentifier,
 } from '../types/types';
 import IArchive from './iarchive';
 import { ModifyXmlCallback } from '../types/xml-types';

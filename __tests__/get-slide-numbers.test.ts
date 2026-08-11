@@ -1,4 +1,4 @@
-import Automizer, { modify } from '../src/index';
+import Automizer from '../src/index';
 
 test('create presentation, add all slides from template using getAllSlideNumbers.', async () => {
   const automizer = new Automizer({

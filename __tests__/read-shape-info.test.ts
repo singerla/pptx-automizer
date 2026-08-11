@@ -1,6 +1,4 @@
-import Automizer, { modify, read, XmlHelper } from '../src/index';
-import { vd } from '../src/helper/general-helper';
-import { XmlSlideHelper } from '../src/helper/xml-slide-helper';
+import Automizer, { modify } from '../src/index';
 import { ElementInfo } from '../src/types/xml-types';
 
 test('read and re-use shape info, e.g. shape coordinates', async () => {

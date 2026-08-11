@@ -11,7 +11,6 @@ import { XmlHelper } from './xml-helper';
 import { RelationshipAttribute } from '../types/xml-types';
 import { contentTrack } from '../constants/constants';
 import IArchive from '../interfaces/iarchive';
-import { vd } from './general-helper';
 
 export class ContentTracker {
   archive: IArchive;

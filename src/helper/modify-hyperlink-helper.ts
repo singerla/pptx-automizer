@@ -237,7 +237,7 @@ export default class ModifyHyperlinkHelper {
    */
   static removeHyperlink =
     (): ShapeModificationCallback =>
-    async (element: XmlElement, relation?: XmlElement): Promise<void> => {
+    async (element: XmlElement, _relation?: XmlElement): Promise<void> => {
       if (!element) return;
 
       try {

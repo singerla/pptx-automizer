@@ -1,6 +1,5 @@
 import Automizer from '../src/automizer';
-import { ModifyImageHelper, ModifyShapeHelper } from '../src';
-import { CmToDxa } from '../src/helper/modify-helper';
+import { ModifyImageHelper } from '../src';
 
 test('Add image and set duotone fill', async () => {
   const automizer = new Automizer({

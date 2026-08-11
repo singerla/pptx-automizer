@@ -11,14 +11,13 @@ import {
 import { TargetByRelIdMap } from '../constants/constants';
 import { XmlPrettyPrint } from './xml-pretty-print';
 import { GetRelationshipsCallback, Target } from '../types/types';
-import { log, vd } from './general-helper';
+import { log } from './general-helper';
 import { contentTracker } from './content-tracker';
 import IArchive from '../interfaces/iarchive';
 import {
   ContentTypeExtension,
   ContentTypeMap,
 } from '../enums/content-type-map';
-import { createHash } from 'node:crypto';
 
 export class XmlHelper {
   static async modifyXmlInArchive(
@@ -102,7 +101,7 @@ export class XmlHelper {
 
     const collection = xml.getElementsByTagName(element.tag);
     const toRemove: XmlElement[] = [];
-    XmlHelper.modifyCollection(collection, (item: XmlElement, index) => {
+    XmlHelper.modifyCollection(collection, (item: XmlElement) => {
       if (element.clause(xml, item)) {
         toRemove.push(item);
       }
@@ -589,9 +588,13 @@ export class XmlHelper {
    */
   static sanitizeText(value: string | number | undefined | null): string {
     if (value == null) return '';
-    return String(value)
-      .replace(/\u000B/g, '\n')
-      .replace(/[\u0000-\u0008\u000C\u000E-\u001F]/g, '');
+    return (
+      String(value)
+        // eslint-disable-next-line no-control-regex -- stripping control chars is the point here
+        .replace(/\u000B/g, '\n')
+        // eslint-disable-next-line no-control-regex -- stripping control chars is the point here
+        .replace(/[\u0000-\u0008\u000C\u000E-\u001F]/g, '')
+    );
   }
 
   /**

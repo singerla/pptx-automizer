@@ -1,6 +1,5 @@
 import Automizer from '../src/automizer';
-import { ModifyImageHelper, ModifyShapeHelper } from '../src';
-import { CmToDxa } from '../src/helper/modify-helper';
+import { ModifyImageHelper } from '../src';
 
 test('Load external media, modify image target on slide master', async () => {
   const automizer = new Automizer({

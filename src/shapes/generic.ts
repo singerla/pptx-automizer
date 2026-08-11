@@ -8,7 +8,6 @@ import { Shape } from '../classes/shape';
 import { XmlElement } from '../types/xml-types';
 import { XmlHelper } from '../helper/xml-helper';
 import { HyperlinkProcessor } from '../helper/hyperlink-processor';
-import { vd } from '../helper/general-helper';
 
 export class GenericShape extends Shape {
   sourceElement: XmlElement;
@@ -71,7 +70,7 @@ export class GenericShape extends Shape {
   /**
    * Copy hyperlink relationships from source slide to target slide
    */
-  async copyHyperlinkRelationships(targetSlideNumber: number): Promise<void> {
+  async copyHyperlinkRelationships(_targetSlideNumber: number): Promise<void> {
     if (!this.targetElement) return;
 
     await HyperlinkProcessor.copyMultipleHyperlinks(

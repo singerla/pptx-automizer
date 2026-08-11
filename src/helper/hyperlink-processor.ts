@@ -1,4 +1,4 @@
-import { XmlElement, XmlDocument } from '../types/xml-types';
+import { XmlElement } from '../types/xml-types';
 import { XmlHelper } from './xml-helper';
 import { Logger } from './general-helper';
 import IArchive from '../interfaces/iarchive';

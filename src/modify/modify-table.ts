@@ -15,7 +15,7 @@ import {
 import ModifyTextHelper from '../helper/modify-text-helper';
 import { ModifyColorHelper } from '../index';
 import { XmlDocument, XmlElement } from '../types/xml-types';
-import { GeneralHelper, vd } from '../helper/general-helper';
+import { GeneralHelper } from '../helper/general-helper';
 
 export class ModifyTable {
   data: TableData;

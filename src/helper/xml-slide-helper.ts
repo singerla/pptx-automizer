@@ -17,8 +17,7 @@ import { TableInfo } from '../types/table-types';
 import IArchive from '../interfaces/iarchive';
 import { XmlTemplateHelper } from './xml-template-helper';
 import XmlPlaceholderHelper from './xml-placeholder-helper';
-import { vd } from './general-helper';
-import { FindElementMultiSelector, FindElementSelector } from '../types/types';
+import { FindElementMultiSelector } from '../types/types';
 
 export const nsMain =
   'http://schemas.openxmlformats.org/presentationml/2006/main';

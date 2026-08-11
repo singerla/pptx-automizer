@@ -4,15 +4,13 @@ import { ISlide } from '../interfaces/islide';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
 import { PresTemplate } from '../interfaces/pres-template';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
-import { last, Logger, vd } from '../helper/general-helper';
+import { last, Logger } from '../helper/general-helper';
 import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import { IMaster } from '../interfaces/imaster';
 import HasShapes from './has-shapes';
 import { Master } from './master';
 import ModifyPresentationHelper from '../helper/modify-presentation-helper';
 import XmlPlaceholderHelper from '../helper/xml-placeholder-helper';
-import { XmlSlideHelper } from '../helper/xml-slide-helper';
-import { XmlTemplateHelper } from '../helper/xml-template-helper';
 
 export class Slide extends HasShapes implements ISlide {
   targetType: ShapeTargetType = 'slide';

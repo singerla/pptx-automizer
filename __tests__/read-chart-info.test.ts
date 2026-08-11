@@ -1,5 +1,4 @@
-import Automizer, { read, XmlHelper } from '../src/index';
-import { vd } from '../src/helper/general-helper';
+import Automizer, { read } from '../src/index';
 
 test('read chart info from workbook, e.g. series color', async () => {
   const automizer = new Automizer({

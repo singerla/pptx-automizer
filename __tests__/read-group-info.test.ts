@@ -1,7 +1,5 @@
-import Automizer, { modify, read, XmlHelper } from '../src/index';
-import { vd } from '../src/helper/general-helper';
+import Automizer from '../src/index';
 import { XmlSlideHelper } from '../src/helper/xml-slide-helper';
-import { ElementInfo } from '../src/types/xml-types';
 
 test('read shape group info', async () => {
   const automizer = new Automizer({

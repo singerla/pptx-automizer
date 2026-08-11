@@ -4,7 +4,6 @@ import { MultiTextParagraph } from '../interfaces/imulti-text';
 import ModifyTextHelper from './modify-text-helper';
 import { XmlHelper } from './xml-helper';
 import HyperlinkElement from './modify-hyperlink-element';
-import { Logger, vd } from './general-helper';
 
 type TextRun = { text: string; style?: TextStyle; hyperlink?: HyperlinkInfo };
 

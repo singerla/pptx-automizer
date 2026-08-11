@@ -1,5 +1,4 @@
 import Automizer from '../src/automizer';
-import { ModifyImageHelper, ModifyTextHelper, XmlHelper } from '../src';
 import ModifyBackgroundHelper from '../src/helper/modify-background-helper';
 
 test('Auto-import source slideLayout and -master and modify background image', async () => {

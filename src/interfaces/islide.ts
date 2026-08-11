@@ -11,9 +11,6 @@ import IArchive from './iarchive';
 import {
   ElementInfo,
   ModifyXmlCallback,
-  PlaceholderInfo,
-  SlideInfo,
-  TemplateSlideInfo,
 } from '../types/xml-types';
 
 export interface ISlide {

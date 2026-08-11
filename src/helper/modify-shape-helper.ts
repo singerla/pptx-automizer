@@ -3,7 +3,6 @@
  * through XML modifications.
  */
 import {
-  Color,
   ReplaceText,
   ReplaceTextOptions,
   ShapeOutline,
@@ -117,7 +116,11 @@ export default class ModifyShapeHelper {
 
       const line = new XmlElements(spPr, { outline }).outline();
       const anchor = XmlHelper.getFirstDirectChild(spPr, SPPR_AFTER_LINE_TAGS);
-      anchor ? spPr.insertBefore(line, anchor) : spPr.appendChild(line);
+      if (anchor) {
+        spPr.insertBefore(line, anchor);
+      } else {
+        spPr.appendChild(line);
+      }
     };
 
   /**

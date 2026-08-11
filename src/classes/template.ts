@@ -8,7 +8,6 @@ import { ITemplate } from '../interfaces/itemplate';
 import { XmlTemplateHelper } from '../helper/xml-template-helper';
 import { ContentMap, SlideInfo } from '../types/xml-types';
 import { XmlHelper } from '../helper/xml-helper';
-import { ContentTracker } from '../helper/content-tracker';
 import IArchive from '../interfaces/iarchive';
 import { ArchiveParams, AutomizerFile, MediaFile } from '../types/types';
 

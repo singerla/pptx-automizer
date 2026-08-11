@@ -1,5 +1,4 @@
 import Automizer, { modify } from '../src/index';
-import { vd } from '../src/helper/general-helper';
 
 test('delete internal hyperlink - using removeHyperlink helper', async () => {
   const automizer = new Automizer({
