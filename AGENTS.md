@@ -37,7 +37,13 @@ src/
   dev.ts                   Manual dev playground (not part of the API, but currently compiled to dist/)
   classes/
     template.ts            Template = archive wrapper. Dual role: root (output) OR source template
-    has-shapes.ts          ⚠ 1300-line base class of Slide/Master/Layout — element import pipeline
+    has-shapes.ts          Base class of Slide/Master/Layout: source/target context + deferred
+                           queues; delegates the actual work to collaborators (Phase 2):
+    element-importer.ts      element queue, getElementInfo/findElementOnSlide, typed dispatch
+    related-content-copier.ts  copyRelatedContent (charts/images/diagrams/OLE/hyperlinks)
+    slide-notes-copier.ts    notesSlide copy + number remapping
+    placeholder-normalizer.ts  cleanSlide, duplicate/orphan placeholder cleanup
+    content-type-registry.ts   presentation.xml slide lists + [Content_Types].xml entries
     slide.ts               Slide append logic, layout selection, placeholder merging
     master.ts, layout.ts   SlideMaster / SlideLayout import
     shape.ts               Base class for copyable shapes
@@ -77,13 +83,17 @@ Consequences for agents:
   earlier. Trace the queue (`importElements`, `modifications`, `relModifications`).
 - Errors thrown inside user shape callbacks are **swallowed** (`console.warn` in
   `shape.ts:applyCallbacks`). Silent failure is a known design weakness.
-- Element type detection is tag-sniffing in `has-shapes.ts:analyzeElement()`
-  (`c:chart`, `p:nvPicPr`, `dgm:relIds`, `p:oleObj`, hyperlink detection, else generic shape).
+- Element type detection is a tag-sniffing detector registry in
+  `helper/shape-type-detector.ts` (`c:chart`, `p:nvPicPr`, `dgm:relIds`,
+  `p:oleObj`, hyperlink detection, else generic shape). New shape types are
+  one registry entry. Dispatch to the shape classes goes through the
+  `IShapeAction` interface (`append`/`modify`/`remove`, called explicitly).
 
 ## Conventions & gotchas
 
-- **OOXML paths are built inline everywhere** (`ppt/slides/slide${n}.xml`,
-  `ppt/slides/_rels/slide${n}.xml.rels`). There is no central path builder yet.
+- **OOXML part paths come from `helper/ppt-paths.ts`** (`PptPaths.slide(n)`,
+  `PptPaths.slideRels(n)`, `PptPaths.chartPart('chart', n)`, …). Don't build
+  `ppt/...` strings inline — add a helper to `PptPaths` if none fits.
   Slide/master/layout numbering is 1-based and file-name-driven.
 - **Relationship IDs**: newly created rels get an `rId<max+1>-created` suffix
   (`xml-helper.ts:getNextRelId`). Don't "fix" this casually; cleanup logic depends on it.

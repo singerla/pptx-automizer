@@ -1,8 +1,8 @@
 import Automizer, {
+  ChartData,
   ChartValueStyle,
   modify,
 } from '../src/index';
-import { ChartData } from '../dist';
 
 test('create presentation, add and modify a scatter chart.', async () => {
   const automizer = new Automizer({

@@ -1,4 +1,5 @@
 import { XmlHelper } from './xml-helper';
+import { PptPaths } from './ppt-paths';
 import { contentTracker as Tracker } from './content-tracker';
 import { FileHelper } from './file-helper';
 import IArchive from '../interfaces/iarchive';
@@ -83,7 +84,7 @@ export default class ModifyPresentationHelper {
 
         const slideMasterXml = await XmlHelper.getXmlFromArchive(
           archive,
-          `ppt/slideMasters/slideMaster${masterId}.xml`,
+          PptPaths.slideMaster(masterId),
         );
 
         const slideLayouts =

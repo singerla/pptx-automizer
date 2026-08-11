@@ -8,11 +8,12 @@ import {
 } from '../types/types';
 import { XmlElement } from '../types/xml-types';
 import IArchive from '../interfaces/iarchive';
+import { IShapeAction } from '../interfaces/ishape-action';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import ModifyHyperlinkHelper from '../helper/modify-hyperlink-helper';
 import { log } from '../helper/logger';
 
-export class Hyperlink extends Shape {
+export class Hyperlink extends Shape implements IShapeAction {
   private hyperlinkType: 'internal' | 'external';
   private hyperlinkTarget: string;
   callbacks: ShapeModificationCallback[];

@@ -1,5 +1,4 @@
-import Automizer, { modify } from '../src/index';
-import {ChartData} from '../dist';
+import Automizer, { ChartData, modify } from '../src/index';
 
 test('create presentation, add and modify a bubble chart.', async () => {
   const automizer = new Automizer({

@@ -1,4 +1,5 @@
 import { FileHelper } from '../helper/file-helper';
+import { PptPaths } from '../helper/ppt-paths';
 import { ShapeTargetType, SourceIdentifier } from '../types/types';
 import { ISlide } from '../interfaces/islide';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
@@ -29,8 +30,8 @@ export class Slide extends HasShapes implements ISlide {
       params.slideIdentifier,
     );
 
-    this.sourcePath = `ppt/slides/slide${this.sourceNumber}.xml`;
-    this.relsPath = `ppt/slides/_rels/slide${this.sourceNumber}.xml.rels`;
+    this.sourcePath = PptPaths.slide(this.sourceNumber);
+    this.relsPath = PptPaths.slideRels(this.sourceNumber);
   }
 
   /**
@@ -44,8 +45,8 @@ export class Slide extends HasShapes implements ISlide {
 
     this.targetArchive = await targetTemplate.archive;
     this.targetNumber = targetTemplate.incrementCounter('slides');
-    this.targetPath = `ppt/slides/slide${this.targetNumber}.xml`;
-    this.targetRelsPath = `ppt/slides/_rels/slide${this.targetNumber}.xml.rels`;
+    this.targetPath = PptPaths.slide(this.targetNumber);
+    this.targetRelsPath = PptPaths.slideRels(this.targetNumber);
     this.sourceArchive = await this.sourceTemplate.archive;
 
     this.status.info = 'Appending slide ' + this.targetNumber;
@@ -53,16 +54,7 @@ export class Slide extends HasShapes implements ISlide {
     await this.copySlideFiles();
     await this.copyRelatedContent();
     await this.addToPresentation();
-
-    const sourceNotesNumber = await this.getSlideNoteSourceNumber();
-    if (sourceNotesNumber) {
-      await this.copySlideNoteFiles(sourceNotesNumber);
-      await this.updateSlideNoteFile(sourceNotesNumber);
-      await this.appendNotesToContentType(
-        this.targetArchive,
-        this.targetNumber,
-      );
-    }
+    await this.notes.copySlideNotes();
 
     const placeholderTypes = await this.parsePlaceholders();
 
@@ -274,16 +266,16 @@ export class Slide extends HasShapes implements ISlide {
   async copySlideFiles(): Promise<void> {
     await FileHelper.zipCopy(
       this.sourceArchive,
-      `ppt/slides/slide${this.sourceNumber}.xml`,
+      PptPaths.slide(this.sourceNumber),
       this.targetArchive,
-      `ppt/slides/slide${this.targetNumber}.xml`,
+      PptPaths.slide(this.targetNumber),
     );
 
     await FileHelper.zipCopy(
       this.sourceArchive,
-      `ppt/slides/_rels/slide${this.sourceNumber}.xml.rels`,
+      PptPaths.slideRels(this.sourceNumber),
       this.targetArchive,
-      `ppt/slides/_rels/slide${this.targetNumber}.xml.rels`,
+      PptPaths.slideRels(this.targetNumber),
     );
   }
 

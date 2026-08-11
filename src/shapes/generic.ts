@@ -3,13 +3,14 @@ import {
   ShapeModificationCallback,
   ShapeTargetType,
 } from '../types/types';
+import { IShapeAction } from '../interfaces/ishape-action';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { Shape } from '../classes/shape';
 import { XmlElement } from '../types/xml-types';
 import { XmlHelper } from '../helper/xml-helper';
 import { HyperlinkProcessor } from '../helper/hyperlink-processor';
 
-export class GenericShape extends Shape {
+export class GenericShape extends Shape implements IShapeAction {
   sourceElement: XmlElement;
   callbacks: ShapeModificationCallback[];
 

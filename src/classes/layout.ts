@@ -1,4 +1,5 @@
 import { FileHelper } from '../helper/file-helper';
+import { PptPaths } from '../helper/ppt-paths';
 import { XmlHelper } from '../helper/xml-helper';
 import { ShapeTargetType, SourceIdentifier, Target } from '../types/types';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
@@ -24,8 +25,8 @@ export class Layout extends HasShapes implements ILayout {
     this.sourceNumber = Number(params.sourceIdentifier);
     this.targetMaster = params.targetMaster;
 
-    this.sourcePath = `ppt/slideLayouts/slideLayout${this.sourceNumber}.xml`;
-    this.relsPath = `ppt/slideLayouts/_rels/slideLayout${this.sourceNumber}.xml.rels`;
+    this.sourcePath = PptPaths.slideLayout(this.sourceNumber);
+    this.relsPath = PptPaths.slideLayoutRels(this.sourceNumber);
   }
 
   /**
@@ -39,8 +40,8 @@ export class Layout extends HasShapes implements ILayout {
 
     this.targetArchive = await targetTemplate.archive;
     this.targetNumber = targetTemplate.incrementCounter('layouts');
-    this.targetPath = `ppt/slideLayouts/slideLayout${this.targetNumber}.xml`;
-    this.targetRelsPath = `ppt/slideLayouts/_rels/slideLayout${this.targetNumber}.xml.rels`;
+    this.targetPath = PptPaths.slideLayout(this.targetNumber);
+    this.targetRelsPath = PptPaths.slideLayoutRels(this.targetNumber);
     this.sourceArchive = await this.sourceTemplate.archive;
 
     log.info('Importing slideLayout ' + this.targetNumber);
@@ -62,16 +63,16 @@ export class Layout extends HasShapes implements ILayout {
   async copySlideLayoutFiles(): Promise<void> {
     await FileHelper.zipCopy(
       this.sourceArchive,
-      `ppt/slideLayouts/slideLayout${this.sourceNumber}.xml`,
+      PptPaths.slideLayout(this.sourceNumber),
       this.targetArchive,
-      `ppt/slideLayouts/slideLayout${this.targetNumber}.xml`,
+      PptPaths.slideLayout(this.targetNumber),
     );
 
     await FileHelper.zipCopy(
       this.sourceArchive,
-      `ppt/slideLayouts/_rels/slideLayout${this.sourceNumber}.xml.rels`,
+      PptPaths.slideLayoutRels(this.sourceNumber),
       this.targetArchive,
-      `ppt/slideLayouts/_rels/slideLayout${this.targetNumber}.xml.rels`,
+      PptPaths.slideLayoutRels(this.targetNumber),
     );
   }
 
@@ -89,7 +90,7 @@ export class Layout extends HasShapes implements ILayout {
   async getName(): Promise<string> {
     const slideLayoutXml = await XmlHelper.getXmlFromArchive(
       this.sourceArchive,
-      `ppt/slideLayouts/slideLayout${this.sourceNumber}.xml`,
+      PptPaths.slideLayout(this.sourceNumber),
     );
 
     const layout = slideLayoutXml.getElementsByTagName('p:cSld')?.item(0);

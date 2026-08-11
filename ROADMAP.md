@@ -60,31 +60,37 @@ to a half-finished `Logger` singleton.
   route all `console.*` through it. Keeps library output silent by default when
   embedded in servers.
 
-## Phase 2 — Decompose `HasShapes` and centralize OOXML paths
+## Phase 2 — Decompose `HasShapes` and centralize OOXML paths — ✅ done 2026-08-11
 
 `src/classes/has-shapes.ts` is a 1300-line base class mixing at least six
 concerns. It's where most future features will land, so pay this debt first.
 
-- 🏗 Extract collaborators (composition over inheritance):
+- 🏗 ✅ Extract collaborators (composition over inheritance) — `HasShapes` keeps
+  its (undocumented) public surface and delegates; collaborators live in
+  `src/classes/` and read their context from the owning instance:
   - `ElementImporter` — queueing + `getElementInfo`/`findElementOnSlide`/dispatch
     (the `importedSelectedElements` switch)
   - `RelatedContentCopier` — `copyRelatedContent` (charts/images/diagrams/OLE/hyperlinks)
   - `SlideNotesCopier` — the notesSlide number remapping trio
   - `PlaceholderNormalizer` — `removeDuplicatePlaceholders`/`normalizePlaceholderShapes`/`cleanSlide`
   - `ContentTypeRegistry` — the `appendToContentType`/`appendToSlideList` family
-- 🏗 **Central `PptPaths` helper**: `ppt/slides/slide${n}.xml` and friends are
-  string-built in ~20 places (has-shapes, slide, shape, file-helper, ole, …).
-  One typo-prone convention, zero reuse. A tiny module with
-  `slide(n)`, `slideRels(n)`, `master(n)`, `layout(n)`, `chart(n)`, `notesSlide(n)`
-  removes a whole bug class and makes the `fs`-archive mode auditable.
-- 🏗 Replace the `analyzeElement` if-chain with a **shape-type detector registry**
-  (`[{ match: (el) => el.getElementsByTagName('c:chart').length, type: Chart, relType: 'chart' }, …]`).
-  New shape types (video/audio are on the wish list) become one registry entry
-  instead of another branch in a 110-line method.
-- 🏗 The dynamic dispatch `new Chart(info, …)[info.mode](…)` (calling `append`/
-  `modify`/`remove` by string) defeats type checking. Give shapes an explicit
-  interface: `IShapeAction { append(...); modify(...); remove(...) }` and call
-  methods directly.
+    (now also owns the notes + theme content-type entries)
+- 🏗 ✅ **Central `PptPaths` helper** (`src/helper/ppt-paths.ts`): `slide(n)`,
+  `slideRels(n)`, `slideMaster(n)`, `slideLayout(n)`, `notesSlide(n)`,
+  `chartPart(name, n)`, `media(file)`, `embedding(file)`, generic
+  `part(type, n)`/`partRels(type, n)`, relative rel-target variants and
+  `partName()` for `[Content_Types].xml`. Replaced ~40 inline template strings
+  across classes, shapes and helpers.
+- 🏗 ✅ Shape-type detector registry (`src/helper/shape-type-detector.ts`)
+  replaces the `analyzeElement` if-chain. New shape types (video/audio are on
+  the wish list) become one registry entry; hyperlinks keep their custom
+  `analyze` handler.
+- 🏗 ✅ `IShapeAction { append; modify; remove }`
+  (`src/interfaces/ishape-action.ts`), implemented by all shape classes;
+  dispatch calls methods explicitly, `ImportElement.mode` is typed
+  `ShapeActionMode`. Behavior note: `OLEObject.append/modify` now throw a
+  descriptive `AutomizerError` instead of crashing with an opaque `TypeError`
+  (OLE still supports `remove` only).
 
 ## Phase 3 — Kill global state (enables concurrent instances)
 

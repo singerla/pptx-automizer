@@ -12,6 +12,7 @@ import { ContentTypeExtension } from '../enums/content-type-map';
 import PptxGenJS from 'pptxgenjs';
 import { ILogger, Verbosity } from '../helper/logger';
 import { IPptxGenJSSlide } from '../interfaces/ipptxgenjs-slide';
+import { ShapeActionMode } from '../interfaces/ishape-action';
 import HasShapes from '../classes/has-shapes';
 import { ISlide } from '../interfaces/islide';
 import { IMaster } from '../interfaces/imaster';
@@ -281,7 +282,7 @@ export type ImportElement = {
   presName: string;
   slideNumber: number;
   selector: FindElementSelector;
-  mode: string;
+  mode: ShapeActionMode;
   callback?: ShapeModificationCallback | ShapeModificationCallback[];
   info?: ImportedElement;
 };
@@ -317,7 +318,7 @@ export type FindElementStrategy = {
   nameIdx?: number;
 };
 export type ImportedElement = {
-  mode: string;
+  mode: ShapeActionMode;
   name?: string;
   selector?: FindElementMultiSelector;
   hasCreationId?: boolean;

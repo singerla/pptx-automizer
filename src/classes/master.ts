@@ -1,11 +1,10 @@
 import { FileHelper } from '../helper/file-helper';
+import { PptPaths } from '../helper/ppt-paths';
 import { XmlHelper } from '../helper/xml-helper';
 import { ShapeTargetType, SourceIdentifier, Target } from '../types/types';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
 import { PresTemplate } from '../interfaces/pres-template';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
-import { XmlElement } from '../types/xml-types';
-import IArchive from '../interfaces/iarchive';
 import { IMaster } from '../interfaces/imaster';
 import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import HasShapes from './has-shapes';
@@ -33,8 +32,8 @@ export class Master extends HasShapes implements IMaster {
 
     this.key = Master.getKey(this.sourceNumber, params.template.name);
 
-    this.sourcePath = `ppt/slideMasters/slideMaster${this.sourceNumber}.xml`;
-    this.relsPath = `ppt/slideMasters/_rels/slideMaster${this.sourceNumber}.xml.rels`;
+    this.sourcePath = PptPaths.slideMaster(this.sourceNumber);
+    this.relsPath = PptPaths.slideMasterRels(this.sourceNumber);
   }
 
   static getKey(slideLayoutNumber: number, templateName: string) {
@@ -52,8 +51,8 @@ export class Master extends HasShapes implements IMaster {
 
     this.targetArchive = await targetTemplate.archive;
     this.targetNumber = targetTemplate.incrementCounter('masters');
-    this.targetPath = `ppt/slideMasters/slideMaster${this.targetNumber}.xml`;
-    this.targetRelsPath = `ppt/slideMasters/_rels/slideMaster${this.targetNumber}.xml.rels`;
+    this.targetPath = PptPaths.slideMaster(this.targetNumber);
+    this.targetRelsPath = PptPaths.slideMasterRels(this.targetNumber);
     this.sourceArchive = await this.sourceTemplate.archive;
 
     log.info('Importing slideMaster ' + this.targetNumber);
@@ -115,7 +114,7 @@ export class Master extends HasShapes implements IMaster {
   async copyThemeFiles() {
     const targets = await XmlHelper.getRelationshipTargetsByPrefix(
       this.targetArchive,
-      `ppt/slideMasters/_rels/slideMaster${this.targetNumber}.xml.rels`,
+      PptPaths.slideMasterRels(this.targetNumber),
       '../theme/theme',
     );
 
@@ -130,20 +129,20 @@ export class Master extends HasShapes implements IMaster {
 
     await FileHelper.zipCopy(
       this.sourceArchive,
-      `ppt/theme/theme${themeSourceId}.xml`,
+      PptPaths.theme(themeSourceId),
       this.targetArchive,
-      `ppt/theme/theme${themeTargetId}.xml`,
+      PptPaths.theme(themeTargetId),
     );
 
-    await this.appendThemeToContentType(this.targetArchive, themeTargetId);
+    await this.contentTypes.appendThemeToContentType(themeTargetId);
 
     await XmlHelper.replaceAttribute(
       this.targetArchive,
-      `ppt/slideMasters/_rels/slideMaster${this.targetNumber}.xml.rels`,
+      PptPaths.slideMasterRels(this.targetNumber),
       'Relationship',
       'Id',
       themeTarget.rId,
-      `../theme/theme${themeTargetId}.xml`,
+      PptPaths.relative.theme(themeTargetId),
       'Target',
     );
   }
@@ -155,28 +154,16 @@ export class Master extends HasShapes implements IMaster {
   async copySlideMasterFiles(): Promise<void> {
     await FileHelper.zipCopy(
       this.sourceArchive,
-      `ppt/slideMasters/slideMaster${this.sourceNumber}.xml`,
+      PptPaths.slideMaster(this.sourceNumber),
       this.targetArchive,
-      `ppt/slideMasters/slideMaster${this.targetNumber}.xml`,
+      PptPaths.slideMaster(this.targetNumber),
     );
 
     await FileHelper.zipCopy(
       this.sourceArchive,
-      `ppt/slideMasters/_rels/slideMaster${this.sourceNumber}.xml.rels`,
+      PptPaths.slideMasterRels(this.sourceNumber),
       this.targetArchive,
-      `ppt/slideMasters/_rels/slideMaster${this.targetNumber}.xml.rels`,
-    );
-  }
-
-  appendThemeToContentType(
-    rootArchive: IArchive,
-    themeCount: string | number,
-  ): Promise<XmlElement> {
-    return XmlHelper.append(
-      XmlHelper.createContentTypeChild(rootArchive, {
-        PartName: `/ppt/theme/theme${themeCount}.xml`,
-        ContentType: `application/vnd.openxmlformats-officedocument.theme+xml`,
-      }),
+      PptPaths.slideMasterRels(this.targetNumber),
     );
   }
 }
