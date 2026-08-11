@@ -41,7 +41,7 @@ export default class Archive {
     }
   }
 
-  toBuffer(relativePath, content): void {
+  toBuffer(relativePath: string, content: XmlDocument): void {
     const existing = this.fromBuffer(relativePath);
     if (!existing) {
       this.buffer.push({
@@ -61,7 +61,7 @@ export default class Archive {
     }
   }
 
-  fromBuffer(relativePath) {
+  fromBuffer(relativePath: string): ArchivedFile | undefined {
     return this.buffer.find((file) => file.relativePath === relativePath);
   }
 }
