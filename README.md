@@ -227,7 +227,12 @@ let pres = automizer
 // Get useful information about loaded templates:
 /*
 const presInfo = await pres.getInfo();
+// The visible slides of a template, in presentation order. Slides that were
+// removed from the presentation (e.g. by 'removeExistingSlides') are skipped,
+// even if their slide file is still contained in the .pptx.
 const mySlides = presInfo.slidesByTemplate('shapes');
+// 'slide.number' is the number of the slide file inside the .pptx and can be
+// passed to addSlide(); it is not necessarily the position in the deck.
 const mySlide = presInfo.slideByNumber('shapes', 2);
 const myShape = presInfo.elementByName('shapes', 2, 'Cloud');
 */

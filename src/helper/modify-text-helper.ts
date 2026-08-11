@@ -8,6 +8,38 @@ import { MultiTextHelper } from './multitext-helper';
 import { HtmlToMultiTextHelper } from './html-to-multitext-helper';
 import { XmlHelper } from './xml-helper';
 
+/**
+ * Children of <a:rPr>/<a:defRPr>, in OOXML schema order
+ * (CT_TextCharacterProperties). The style setters below are called from several
+ * independent code paths (fill, highlight, typeface, hyperlink), so the final
+ * child set is reordered instead of relying on insertion order - a wrong
+ * sequence makes PowerPoint ask to repair the file.
+ */
+const RPR_CHILD_ORDER = [
+  'a:ln',
+  'a:noFill',
+  'a:solidFill',
+  'a:gradFill',
+  'a:blipFill',
+  'a:pattFill',
+  'a:grpFill',
+  'a:effectLst',
+  'a:effectDag',
+  'a:highlight',
+  'a:uLnTx',
+  'a:uLn',
+  'a:uFillTx',
+  'a:uFill',
+  'a:latin',
+  'a:ea',
+  'a:cs',
+  'a:sym',
+  'a:hlinkClick',
+  'a:hlinkMouseOver',
+  'a:rtl',
+  'a:extLst',
+];
+
 export default class ModifyTextHelper {
   /**
    * Set text content of first paragraph and remove remaining block/paragraph elements.
@@ -93,6 +125,18 @@ export default class ModifyTextHelper {
       if (style.isSubscript !== undefined) {
         ModifyTextHelper.setSubscript(style.isSubscript)(element);
       }
+      if (style.isStrike !== undefined) {
+        ModifyTextHelper.setStrike(style.isStrike)(element);
+      }
+      if (style.fontFamily !== undefined) {
+        ModifyTextHelper.setFontFamily(style.fontFamily)(element);
+      }
+      if (style.highlight !== undefined) {
+        ModifyTextHelper.setHighlight(style.highlight)(element);
+      }
+
+      // The setters above append; the schema wants a fixed sequence
+      XmlHelper.sortChildrenBySchema(element, RPR_CHILD_ORDER);
     };
 
   /**
@@ -160,6 +204,56 @@ export default class ModifyTextHelper {
       (element: XmlElement): void => {
         ModifyXmlHelper.attribute('baseline', isSubscript ? '-25000' : '0')(element);
       };
+
+  /**
+   * Set strikethrough attribute on text
+   */
+  static setStrike =
+    (isStrike: boolean) =>
+    (element: XmlElement): void => {
+      ModifyXmlHelper.attribute(
+        'strike',
+        isStrike ? 'sngStrike' : 'noStrike',
+      )(element);
+    };
+
+  /**
+   * Set the typeface of text inside an <a:rPr> element.
+   * Only the latin script slot is set - `a:ea`/`a:cs` stay inherited.
+   */
+  static setFontFamily =
+    (fontFamily: string) =>
+    (element: XmlElement): void => {
+      if (!fontFamily) return;
+
+      let latin = XmlHelper.getFirstDirectChild(element, ['a:latin']);
+      if (!latin) {
+        latin = element.ownerDocument.createElement('a:latin');
+        XmlHelper.insertInSchemaOrder(element, latin, RPR_CHILD_ORDER);
+      }
+
+      latin.setAttribute('typeface', XmlHelper.sanitizeAttr(fontFamily));
+    };
+
+  /**
+   * Set the highlight (marker pen) color of text inside an <a:rPr> element
+   */
+  static setHighlight =
+    (color: Color) =>
+    (element: XmlElement): void => {
+      if (!color || !color.type) return;
+
+      ModifyColorHelper.normalizeColorObject(color);
+
+      let highlight = XmlHelper.getFirstDirectChild(element, ['a:highlight']);
+      if (!highlight) {
+        highlight = element.ownerDocument.createElement('a:highlight');
+        XmlHelper.insertInSchemaOrder(element, highlight, RPR_CHILD_ORDER);
+      }
+
+      XmlHelper.removeAllChildren(highlight);
+      highlight.appendChild(new XmlElements(element, { color }).colorType());
+    };
 
   /**
    * Set bullet type (font and character) for bullet points

@@ -9,6 +9,7 @@ import { ITemplate } from '../interfaces/itemplate';
 import { XmlTemplateHelper } from '../helper/xml-template-helper';
 import { ContentMap, SlideInfo } from '../types/xml-types';
 import { XmlHelper } from '../helper/xml-helper';
+import { PptPaths } from '../helper/ppt-paths';
 import IArchive from '../interfaces/iarchive';
 import { ArchiveParams, AutomizerFile, MediaFile } from '../types/types';
 
@@ -206,24 +207,65 @@ export class Template implements ITemplate {
     }
   }
 
+  /**
+   * Remove the slides that came with the root template from the presentation,
+   * keeping the slides added by automizer. Used by `removeExistingSlides`.
+   *
+   * Along with the `p:sldId` entries, the corresponding relationships in
+   * ppt/_rels/presentation.xml.rels are dropped: a slide part that is still
+   * related to the presentation counts as a slide for anything reading the
+   * output (including automizer's own `getInfo()`), even if it is not listed
+   * in `p:sldIdLst` (see #166). The slide parts themselves are removed by
+   * `ModifyPresentationHelper.removeUnusedFiles` if `cleanup` is enabled.
+   */
   async truncate(): Promise<void> {
     if (this.existingSlides > 0) {
       const xml = await this.getSlideIdList();
       const existingSlides = xml.getElementsByTagName('p:sldId');
+
+      const removedRelIds: string[] = [];
+      const removeCount = Math.min(this.existingSlides, existingSlides.length);
+      for (let i = 0; i < removeCount; i++) {
+        removedRelIds.push(existingSlides[i].getAttribute('r:id'));
+      }
+
       XmlHelper.sliceCollection(existingSlides, this.existingSlides, 0);
       XmlHelper.writeXmlToArchive(
         await this.archive,
-        `ppt/presentation.xml`,
+        PptPaths.presentation,
         xml,
       );
+
+      await this.removeSlideRelations(removedRelIds);
+
+      // The slides counter was initialized before appending and still
+      // includes the removed slides.
+      CountHelper.decrement('slides', this.counter, removeCount);
     }
+  }
+
+  /**
+   * Remove the given relationship ids from ppt/_rels/presentation.xml.rels.
+   */
+  async removeSlideRelations(removedRelIds: string[]): Promise<void> {
+    if (!removedRelIds.length) {
+      return;
+    }
+
+    await XmlHelper.removeIf({
+      archive: await this.archive,
+      file: PptPaths.presentationRels,
+      tag: 'Relationship',
+      clause: (xml, element) =>
+        removedRelIds.includes(element.getAttribute('Id')),
+    });
   }
 
   async getSlideIdList(): Promise<Document> {
     const archive = await this.archive;
     const xml = await XmlHelper.getXmlFromArchive(
       archive,
-      `ppt/presentation.xml`,
+      PptPaths.presentation,
     );
     return xml;
   }

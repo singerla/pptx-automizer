@@ -19,6 +19,15 @@ export class CountHelper implements ICounter {
     return CountHelper.getCounterByName(name, counters)._increment();
   }
 
+  /**
+   * Lower a counter, e.g. after slides have been removed from the archive.
+   */
+  static decrement(name: string, counters: ICounter[], by = 1): number {
+    const counter = CountHelper.getCounterByName(name, counters);
+    counter.count = Math.max(0, counter.count - by);
+    return counter.count;
+  }
+
   static count(name: string, counters: ICounter[]): number {
     return CountHelper.getCounterByName(name, counters).get();
   }

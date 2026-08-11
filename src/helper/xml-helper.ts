@@ -654,6 +654,92 @@ export class XmlHelper {
     }
   }
 
+  /**
+   * Insert a child element at the position required by an OOXML schema
+   * sequence. Most DrawingML property containers (`a:pPr`, `a:rPr`, `a:ln`, …)
+   * declare their children as an ordered <xsd:sequence>: appending in call
+   * order instead of schema order is what makes PowerPoint offer to repair the
+   * file.
+   *
+   * The new child is inserted before the first existing direct child that
+   * ranks *after* it in `order`. Tags missing from `order` are treated as
+   * "ranks last" and therefore never displace a known tag.
+   *
+   * @param parent - The property container
+   * @param child - The element to insert
+   * @param order - Tag names in schema sequence order
+   */
+  static insertInSchemaOrder(
+    parent: XmlElement,
+    child: XmlElement,
+    order: string[],
+  ): XmlElement {
+    const rank = (tagName: string): number => {
+      const index = order.indexOf(tagName);
+      return index === -1 ? order.length : index;
+    };
+
+    const childRank = rank(child.nodeName);
+
+    for (let i = 0; i < parent.childNodes.length; i++) {
+      const existing = parent.childNodes.item(i) as XmlElement;
+      if (existing.nodeType !== 1) {
+        continue;
+      }
+      if (rank(existing.nodeName) > childRank) {
+        return parent.insertBefore(child, existing);
+      }
+    }
+
+    return parent.appendChild(child);
+  }
+
+  /**
+   * Reorder the direct element children of a property container into the
+   * OOXML schema sequence given by `order`, keeping the relative order of
+   * equally-ranked and unknown tags (stable).
+   *
+   * Useful when several independent helpers append to the same container and
+   * no single one of them can know the final child set - e.g. `a:rPr`, which
+   * collects a fill, a highlight, a typeface and a hyperlink from four
+   * different code paths.
+   *
+   * @param parent - The property container
+   * @param order - Tag names in schema sequence order
+   */
+  static sortChildrenBySchema(parent: XmlElement, order: string[]): void {
+    if (!parent?.childNodes) {
+      return;
+    }
+
+    const children: XmlElement[] = [];
+    for (let i = 0; i < parent.childNodes.length; i++) {
+      const child = parent.childNodes.item(i) as XmlElement;
+      if (child.nodeType === 1) {
+        children.push(child);
+      }
+    }
+
+    const rank = (element: XmlElement): number => {
+      const index = order.indexOf(element.nodeName);
+      return index === -1 ? order.length : index;
+    };
+
+    const sorted = children
+      .map((child, index) => ({ child, index }))
+      .sort((a, b) => rank(a.child) - rank(b.child) || a.index - b.index)
+      .map((entry) => entry.child);
+
+    const alreadySorted = sorted.every(
+      (child, index) => child === children[index],
+    );
+    if (alreadySorted) {
+      return;
+    }
+
+    sorted.forEach((child) => parent.appendChild(child));
+  }
+
   static getClosestParent(tag: string, element: XmlElement): XmlElement {
     if (element.parentNode) {
       if (element.parentNode.nodeName === tag) {

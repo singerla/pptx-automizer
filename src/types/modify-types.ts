@@ -78,6 +78,7 @@ export type HyperlinkInfo = {
 };
 
 export type TextStyle = {
+  /** Font size in 1/100 pt (e.g. 1400 = 14pt) */
   size?: number;
   color?: Color;
   isBold?: boolean;
@@ -85,6 +86,12 @@ export type TextStyle = {
   isUnderlined?: boolean;
   isSuperscript?: boolean;
   isSubscript?: boolean;
+  /** Strikethrough, rendered as strike="sngStrike" */
+  isStrike?: boolean;
+  /** Typeface name, rendered as <a:latin typeface="..."/> */
+  fontFamily?: string;
+  /** Text highlight (marker pen), rendered as <a:highlight> */
+  highlight?: Color;
   hyperlink?: HyperlinkInfo;
 };
 

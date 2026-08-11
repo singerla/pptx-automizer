@@ -1,320 +1,568 @@
 import { TextStyle } from '../types/modify-types';
-import { MultiTextParagraph } from '../interfaces/imulti-text';
+import {
+  MultiTextAutoNumberType,
+  MultiTextParagraph,
+  MultiTextRun,
+} from '../interfaces/imulti-text';
 import { DOMParser, Node } from '@xmldom/xmldom';
 import { log } from './logger';
+import {
+  normalizeCssColor,
+  parseCssFontFamily,
+  parseCssFontSize,
+  parseCssFontStyle,
+  parseCssFontWeight,
+  parseCssTextAlign,
+  parseCssTextDecoration,
+  parseInlineCss,
+} from './css-style-parser';
 
-type TextRun = { text: string; style?: TextStyle };
+type Alignment = MultiTextParagraph['paragraph']['alignment'];
+
+/**
+ * Everything a paragraph inherits from its *block* ancestors. Block elements
+ * never nest in the output: an inner block flushes the current paragraph and
+ * opens a new one carrying these properties.
+ */
+type BlockContext = {
+  /** List nesting stack, one entry per open <ul>/<ol> ('ul' | 'ol') */
+  listTypes: ('ul' | 'ol')[];
+  alignment?: Alignment;
+  /** Style contributed by the block itself (e.g. h1 size, pre monospace) */
+  blockStyle: TextStyle;
+};
+
+/** The paragraph currently being filled. */
+type OpenParagraph = {
+  block: BlockContext;
+  runs: MultiTextRun[];
+};
+
+/**
+ * Tags whose empty form is a deliberate blank line rather than a wrapper:
+ * `<p></p>` and `<p>&nbsp;</p>` are how editors express "empty line", while an
+ * empty `<div>` is just structure.
+ */
+const PRESERVE_EMPTY_TAGS = ['p', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+
+/** Inline tags that only ever contribute character properties. */
+const INLINE_TAGS = [
+  'a',
+  'abbr',
+  'b',
+  'big',
+  'cite',
+  'code',
+  'del',
+  'em',
+  'font',
+  'i',
+  'ins',
+  'kbd',
+  'mark',
+  'q',
+  's',
+  'samp',
+  'small',
+  'span',
+  'strike',
+  'strong',
+  'sub',
+  'sup',
+  'tt',
+  'u',
+  'var',
+];
+
+/** Block tags that open a paragraph of their own. */
+const BLOCK_TAGS = [
+  'address',
+  'article',
+  'aside',
+  'blockquote',
+  'div',
+  'dd',
+  'dt',
+  'figcaption',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'header',
+  'footer',
+  'main',
+  'p',
+  'pre',
+  'section',
+];
+
+/** Headings: paragraph level styling, relative to a 12pt body default. */
+const HEADING_SIZES: Record<string, number> = {
+  h1: 2400,
+  h2: 2000,
+  h3: 1800,
+  h4: 1600,
+  h5: 1400,
+  h6: 1200,
+};
+
+const MONOSPACE_FONT = 'Consolas';
+
+/**
+ * PowerPoint varies the numbering scheme per outline level; mirror the
+ * familiar 1. / a. / i. cascade and cycle beyond level 3.
+ */
+const AUTO_NUMBER_TYPES: MultiTextAutoNumberType[] = [
+  'arabicPeriod',
+  'alphaLcPeriod',
+  'romanLcPeriod',
+];
 
 export class HtmlToMultiTextHelper {
+  private paragraphs: MultiTextParagraph[] = [];
+  private open?: OpenParagraph;
+
   /**
-   * Converts HTML string to MultiTextParagraph array
+   * Converts an HTML string to a MultiTextParagraph array.
+   *
+   * The input contract is XHTML-ish markup as produced by WYSIWYG editors
+   * (CKEditor/TinyMCE): tags closed, attributes quoted. `@xmldom/xmldom` is an
+   * XML parser - real-world tag soup (unclosed `<br>`, bare `&nbsp;`) does not
+   * parse. Common editor quirks that *are* handled: sibling-nested lists
+   * (`<ul><li/><ul>…</ul></ul>`), block-inside-block, and inline styles on any
+   * element.
+   *
    * @param html HTML string to convert
    * @returns Array of MultiTextParagraph objects
    */
   public run(html: string): MultiTextParagraph[] {
-    const paragraphs: MultiTextParagraph[] = [];
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    const currentBulletLevel = 0;
+    this.paragraphs = [];
+    this.open = undefined;
 
-    // Get the body element using getElementsByTagName
-    const bodyElement = doc.getElementsByTagName('body')[0];
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const body = doc.getElementsByTagName('body')[0];
 
-    // Process all top-level elements
-    if (bodyElement) {
-      Array.from(bodyElement.childNodes).forEach((node) => {
-        if (node.nodeType === Node.ELEMENT_NODE) {
-          this.processNode(
-            node as unknown as Element,
-            currentBulletLevel,
-            paragraphs,
-          );
-        }
-      });
-    } else {
+    if (!body) {
       log.error('You need to provide a <body> tag for HtmlToMultiText');
+      return this.paragraphs;
     }
 
-    return paragraphs;
+    const rootBlock: BlockContext = { listTypes: [], blockStyle: {} };
+
+    this.walkChildren(body as unknown as Element, rootBlock, {});
+    this.flush();
+
+    return this.paragraphs;
   }
 
   /**
-   * Processes an HTML node and converts it to MultiTextParagraph objects
+   * Single traversal pass. Two accumulators travel down the tree:
+   * `block` (list depth, alignment, block styling) and `inline` (character
+   * properties). Neither is ever mutated in place - each level gets its own
+   * copy, which is what makes both list-nesting shapes converge.
    */
-  private processNode(
-    node: ChildNode,
-    level = 0,
-    paragraphs: MultiTextParagraph[],
-    bulletLevel: { value: number } = { value: 0 },
-  ): void {
-    const tagName = node.nodeName.toLowerCase();
-
-    switch (tagName) {
-      case 'p':
-        this.processParagraph(node, paragraphs);
-        break;
-
-      case 'ul':
-      case 'ol':
-        this.processList(node, paragraphs, bulletLevel);
-        break;
-
-      case 'li':
-        this.processListItem(node, level, paragraphs);
-        break;
-
-      default:
-        // For other elements, process their children
-        Array.from(node.childNodes).forEach((child) => {
-          this.processNode(child, level, paragraphs, bulletLevel);
-        });
-    }
-  }
-
-  /**
-   * Processes a paragraph element
-   */
-  private processParagraph(
-    node: ChildNode,
-    paragraphs: MultiTextParagraph[],
-  ): void {
-    const textRuns = this.createTextRuns(node);
-
-    // If no text runs were created, add an empty one
-    if (textRuns.length === 0) {
-      textRuns.push({ text: '' });
-    }
-
-    // Create the paragraph
-    paragraphs.push({
-      paragraph: {
-        level: 0,
-        bullet: false,
-        alignment: 'l',
-      },
-      textRuns,
-    });
-  }
-
-  /**
-   * Processes a list (ul/ol) element
-   */
-  private processList(
-    node: ChildNode,
-    paragraphs: MultiTextParagraph[],
-    bulletLevel: { value: number },
-  ): void {
-    // Increase bullet level for nested lists
-    bulletLevel.value++;
-
-    // Process all list items
-    Array.from(node.childNodes).forEach((child) => {
-      this.processNode(child, bulletLevel.value, paragraphs, bulletLevel);
-    });
-
-    // Decrease bullet level after processing list
-    bulletLevel.value--;
-  }
-
-  /**
-   * Processes a list item element
-   */
-  private processListItem(
-    node: ChildNode,
-    level: number,
-    paragraphs: MultiTextParagraph[],
-  ): void {
-    const textRuns: TextRun[] = [];
-
-    // Process all child nodes to create text runs (except nested lists)
-    Array.from(node.childNodes).forEach((child) => {
-      // Skip nested lists, they'll be processed separately
-      if (
-        child.nodeType === Node.ELEMENT_NODE &&
-        (child.nodeName.toLowerCase() === 'ul' ||
-          child.nodeName.toLowerCase() === 'ol')
-      ) {
-        return;
-      }
-
-      const result = this.processTextNode(child);
-      if (Array.isArray(result)) {
-        textRuns.push(...result.filter((run) => run.text));
-      } else if (result.text) {
-        textRuns.push(result);
-      }
-    });
-
-    // If no text runs were created, add an empty one
-    if (textRuns.length === 0) {
-      textRuns.push({ text: '' });
-    }
-
-    // Create the paragraph for the list item
-    paragraphs.push({
-      paragraph: {
-        level,
-        bullet: true,
-        alignment: 'l',
-      },
-      textRuns,
-    });
-
-    // Process nested lists if any
-    Array.from(node.childNodes).forEach((child) => {
-      if (
-        child.nodeName.toLowerCase() === 'ul' ||
-        child.nodeName.toLowerCase() === 'ol'
-      ) {
-        const bulletLevel = { value: level };
-        this.processNode(child, level + 1, paragraphs, bulletLevel);
-      }
-    });
-  }
-
-  /**
-   * Creates text runs from an element's child nodes
-   */
-  private createTextRuns(node: ChildNode): TextRun[] {
-    const textRuns: TextRun[] = [];
-
-    // Process all child nodes to create text runs
-    // Using Array.from to convert NodeList to array that has forEach
-    Array.from(node.childNodes).forEach((child) => {
-      const result = this.processTextNode(child);
-      if (Array.isArray(result)) {
-        textRuns.push(...result.filter((run) => run.text));
-      } else if (result.text) {
-        textRuns.push(result);
-      }
-    });
-
-    return textRuns;
-  }
-
-  /**
-   * Processes a text node and creates a TextRun or array of TextRuns
-   */
-  private processTextNode(
-    node: ChildNode,
-    style: TextStyle = {},
-  ): TextRun | TextRun[] {
-    // If this is a text node, return its content
+  private walk(node: ChildNode, block: BlockContext, inline: TextStyle): void {
     if (node.nodeType === Node.TEXT_NODE) {
-      const text = node.textContent || '';
-      if (text.trim() === '') {
-        return { text: text, style };
-      }
-      return { text, style };
+      this.appendText(node.textContent || '', block, inline);
+      return;
     }
 
-    // If this is an element, handle specific styling
-    if (node.nodeType === Node.ELEMENT_NODE) {
-      const element = node as Element;
-      const newStyle = this.applyElementStyles(element, { ...style });
-
-      // For leaf nodes (no children), just return the text content with style
-      if (element.childNodes.length === 0) {
-        return { text: element.textContent || '', style: newStyle };
-      }
-
-      // For nodes with children, recursively process children
-      return this.processElementWithChildren(element, newStyle);
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+      return;
     }
 
-    return { text: '' };
-  }
-
-  /**
-   * Applies styles based on the element type and attributes
-   */
-  private applyElementStyles(element: Element, style: TextStyle): TextStyle {
-    const newStyle = { ...style };
-
+    const element = node as Element;
     const tagName = element.tagName.toLowerCase();
 
-    // Handle styling based on element type
-    if (tagName === 'strong' || tagName === 'b') {
-      newStyle.isBold = true;
-    } else if (tagName === 'em' || tagName === 'i') {
-      newStyle.isItalics = true;
-    } else if (tagName === 'ins') {
-      newStyle.isUnderlined = true;
-    } else if (tagName === 'a') {
-      this.processHyperlink(element, newStyle);
-    } else if (tagName === 'span') {
-      this.processSpanStyles(element, newStyle);
-    }
+    switch (true) {
+      case tagName === 'br':
+        this.appendBreak(block, inline);
+        return;
 
-    return newStyle;
+      case tagName === 'ul' || tagName === 'ol':
+        // A list interrupts its parent paragraph: <li>text<ul>… must not merge
+        this.flush();
+        this.walkChildren(
+          element,
+          this.pushList(element, block, tagName),
+          inline,
+        );
+        return;
+
+      case tagName === 'li':
+      case BLOCK_TAGS.includes(tagName):
+        this.walkBlock(element, tagName, block, inline);
+        return;
+
+      case INLINE_TAGS.includes(tagName):
+        this.walkChildren(element, block, this.inlineStyleFor(element, tagName, inline));
+        return;
+
+      default:
+        // Unknown/structural elements (table, span-like customs, …): keep their
+        // text instead of dropping it
+        this.walkChildren(element, block, inline);
+    }
   }
 
   /**
-   * Processes anchor element for hyperlinks
+   * A block element (incl. `<li>`) opens exactly one paragraph. If its children
+   * turn out to be blocks themselves, *they* become the paragraphs and this one
+   * stays empty - the innermost block wins, ancestors only contribute
+   * properties. Only a block that emitted nothing at all may end up as a
+   * deliberate blank line.
    */
-  private processHyperlink(element: Element, style: TextStyle): void {
+  private walkBlock(
+    element: Element,
+    tagName: string,
+    block: BlockContext,
+    inline: TextStyle,
+  ): void {
+    // A block starts a paragraph of its own - whatever text was collected
+    // before it (loose text, a preceding inline run) ends here
+    this.flush();
+
+    const blockContext = this.blockContextFor(element, tagName, block);
+    const paragraphsBefore = this.paragraphs.length;
+
+    this.openParagraph(blockContext);
+    this.walkChildren(element, blockContext, inline);
+
+    const emittedNothing = this.paragraphs.length === paragraphsBefore;
+    this.flush(PRESERVE_EMPTY_TAGS.includes(tagName) && emittedNothing);
+  }
+
+  private walkChildren(
+    element: Element,
+    block: BlockContext,
+    inline: TextStyle,
+  ): void {
+    Array.from(element.childNodes).forEach((child) =>
+      this.walk(child as ChildNode, block, inline),
+    );
+  }
+
+  /** Push one list level, taking the list type from the tag. */
+  private pushList(
+    element: Element,
+    block: BlockContext,
+    tagName: 'ul' | 'ol',
+  ): BlockContext {
+    const withCss = this.applyElementCss(element, block);
+
+    return {
+      ...withCss,
+      listTypes: [...withCss.listTypes, tagName],
+    };
+  }
+
+  /** Block context of a non-list block element, incl. heading/pre styling. */
+  private blockContextFor(
+    element: Element,
+    tagName: string,
+    block: BlockContext,
+  ): BlockContext {
+    const context = this.applyElementCss(element, block);
+    const blockStyle: TextStyle = { ...context.blockStyle };
+
+    if (HEADING_SIZES[tagName]) {
+      blockStyle.size = HEADING_SIZES[tagName];
+      blockStyle.isBold = true;
+    }
+
+    if (tagName === 'pre') {
+      blockStyle.fontFamily = MONOSPACE_FONT;
+    }
+
+    return { ...context, blockStyle };
+  }
+
+  /** Merge an element's inline CSS into the block context (alignment, style). */
+  private applyElementCss(element: Element, block: BlockContext): BlockContext {
+    const css = parseInlineCss(element.getAttribute('style') || '');
+    if (Object.keys(css).length === 0) {
+      return block;
+    }
+
+    const alignment = css['text-align']
+      ? parseCssTextAlign(css['text-align'])
+      : undefined;
+
+    return {
+      ...block,
+      alignment: alignment ?? block.alignment,
+      blockStyle: this.cssToTextStyle(css, block.blockStyle),
+    };
+  }
+
+  /** Character properties contributed by one inline element. */
+  private inlineStyleFor(
+    element: Element,
+    tagName: string,
+    inline: TextStyle,
+  ): TextStyle {
+    const style: TextStyle = { ...inline };
+
+    switch (tagName) {
+      case 'strong':
+      case 'b':
+        style.isBold = true;
+        break;
+      case 'em':
+      case 'i':
+      case 'cite':
+      case 'var':
+        style.isItalics = true;
+        break;
+      case 'u':
+      case 'ins':
+        style.isUnderlined = true;
+        break;
+      case 's':
+      case 'strike':
+      case 'del':
+        style.isStrike = true;
+        break;
+      case 'sub':
+        style.isSubscript = true;
+        break;
+      case 'sup':
+        style.isSuperscript = true;
+        break;
+      case 'code':
+      case 'kbd':
+      case 'samp':
+      case 'tt':
+        style.fontFamily = MONOSPACE_FONT;
+        break;
+      case 'mark':
+        style.highlight = { type: 'srgbClr', value: 'FFFF00' };
+        break;
+      case 'a':
+        this.applyHyperlink(element, style);
+        break;
+      case 'font':
+        this.applyFontAttributes(element, style);
+        break;
+    }
+
+    return this.cssToTextStyle(
+      parseInlineCss(element.getAttribute('style') || ''),
+      style,
+    );
+  }
+
+  /** Map the supported CSS subset onto TextStyle. */
+  private cssToTextStyle(
+    css: Record<string, string>,
+    base: TextStyle,
+  ): TextStyle {
+    if (Object.keys(css).length === 0) {
+      return base;
+    }
+
+    const style: TextStyle = { ...base };
+
+    const size = css['font-size']
+      ? parseCssFontSize(css['font-size'])
+      : undefined;
+    if (size !== undefined) {
+      style.size = size;
+    }
+
+    const color = css['color'] ? normalizeCssColor(css['color']) : undefined;
+    if (color) {
+      style.color = { type: 'srgbClr', value: color };
+    }
+
+    const highlight = css['background-color']
+      ? normalizeCssColor(css['background-color'])
+      : undefined;
+    if (highlight) {
+      style.highlight = { type: 'srgbClr', value: highlight };
+    }
+
+    const isBold = css['font-weight']
+      ? parseCssFontWeight(css['font-weight'])
+      : undefined;
+    if (isBold !== undefined) {
+      style.isBold = isBold;
+    }
+
+    const isItalics = css['font-style']
+      ? parseCssFontStyle(css['font-style'])
+      : undefined;
+    if (isItalics !== undefined) {
+      style.isItalics = isItalics;
+    }
+
+    const decoration =
+      css['text-decoration'] ?? css['text-decoration-line'] ?? undefined;
+    if (decoration !== undefined) {
+      const { isUnderlined, isStrike } = parseCssTextDecoration(decoration);
+      if (isUnderlined !== undefined) {
+        style.isUnderlined = isUnderlined;
+      }
+      if (isStrike !== undefined) {
+        style.isStrike = isStrike;
+      }
+    }
+
+    const fontFamily = css['font-family']
+      ? parseCssFontFamily(css['font-family'])
+      : undefined;
+    if (fontFamily) {
+      style.fontFamily = fontFamily;
+    }
+
+    return style;
+  }
+
+  /**
+   * `<a href>`: a purely numeric href is treated as an internal slide number,
+   * anything else as an external target.
+   */
+  private applyHyperlink(element: Element, style: TextStyle): void {
     const href = element.getAttribute('href');
     if (!href) return;
 
-    if (!isNaN(parseInt(href))) {
-      // Internal slide link: <a href="3">Link to slide 3</a>
-      const slideNumber = parseInt(href);
+    if (/^\d+$/.test(href.trim())) {
       style.hyperlink = {
-        target: slideNumber,
+        target: parseInt(href, 10),
         isInternal: true,
       };
-    } else {
-      // External link: <a href="https://example.com">Link</a>
-      style.hyperlink = {
-        target: href,
-        isInternal: false,
-      };
+      return;
     }
+
+    style.hyperlink = {
+      target: href,
+      isInternal: false,
+    };
   }
 
-  /**
-   * Processes span element styles
-   */
-  private processSpanStyles(element: Element, style: TextStyle): void {
-    const styleAttr = element.getAttribute('style');
-    if (!styleAttr) return;
-
-    // Extract font size
-    const fontSizeMatch = styleAttr.match(/font-size:\s*(\d+)px/i);
-    if (fontSizeMatch && fontSizeMatch[1]) {
-      style.size = parseInt(fontSizeMatch[1]) * 100; // Convert px to points (100ths of point)
-    }
-
-    // Extract color
-    const colorMatch = styleAttr.match(/color:\s*([^;]+)/i);
-    if (colorMatch && colorMatch[1]) {
-      style.color = {
-        type: 'srgbClr',
-        value: colorMatch[1].trim(),
-      };
-    }
-  }
-
-  /**
-   * Processes an element with child nodes
-   */
-  private processElementWithChildren(
-    element: Element,
-    style: TextStyle,
-  ): TextRun[] {
-    const runs: TextRun[] = [];
-
-    Array.from(element.childNodes).forEach((child) => {
-      const childRun = this.processTextNode(child, style);
-      if (Array.isArray(childRun)) {
-        // If the result is an array of runs, add them all
-        runs.push(...childRun.filter((run) => run.text));
-      } else if (childRun.text) {
-        // If it's a single run, add it
-        runs.push(childRun);
+  /** Legacy `<font color size face>` - still emitted by some editors. */
+  private applyFontAttributes(element: Element, style: TextStyle): void {
+    const color = element.getAttribute('color');
+    if (color) {
+      const normalized = normalizeCssColor(color);
+      if (normalized) {
+        style.color = { type: 'srgbClr', value: normalized };
       }
-    });
+    }
 
-    return runs;
+    const face = element.getAttribute('face');
+    if (face) {
+      const fontFamily = parseCssFontFamily(face);
+      if (fontFamily) {
+        style.fontFamily = fontFamily;
+      }
+    }
+  }
+
+  /**
+   * Append text to the open paragraph, applying CSS whitespace collapsing:
+   * runs of whitespace become a single space, and a space is dropped at the
+   * start of a paragraph. `&nbsp;` (U+00A0) is not whitespace and survives.
+   */
+  private appendText(
+    text: string,
+    block: BlockContext,
+    inline: TextStyle,
+  ): void {
+    const collapsed = text.replace(/[ \t\r\n\f]+/g, ' ');
+
+    if (collapsed === '') {
+      return;
+    }
+
+    // Whitespace between block elements is layout, not content
+    if (collapsed === ' ' && !this.open) {
+      return;
+    }
+
+    this.openParagraph(block);
+
+    const isParagraphStart = this.open.runs.length === 0;
+    const text_ = isParagraphStart ? collapsed.replace(/^ /, '') : collapsed;
+
+    if (text_ === '') {
+      return;
+    }
+
+    this.open.runs.push({ text: text_, style: this.runStyle(block, inline) });
+  }
+
+  private appendBreak(block: BlockContext, inline: TextStyle): void {
+    this.openParagraph(block);
+    this.open.runs.push({ break: true, style: this.runStyle(block, inline) });
+  }
+
+  /** Block styling is the base, inline styling wins. */
+  private runStyle(block: BlockContext, inline: TextStyle): TextStyle {
+    return { ...block.blockStyle, ...inline };
+  }
+
+  private openParagraph(block: BlockContext): void {
+    if (this.open) {
+      return;
+    }
+    this.open = { block, runs: [] };
+  }
+
+  /**
+   * Close the open paragraph and project its block context onto the flat PPTX
+   * paragraph properties.
+   *
+   * @param allowEmpty - Emit the paragraph even without runs (blank line)
+   */
+  private flush(allowEmpty = false): void {
+    if (!this.open) {
+      return;
+    }
+
+    const { block, runs } = this.open;
+    this.open = undefined;
+
+    // Trailing collapsed whitespace is layout, not content
+    const lastRun = runs[runs.length - 1];
+    if (lastRun?.text !== undefined) {
+      lastRun.text = lastRun.text.replace(/ +$/, '');
+      if (lastRun.text === '') {
+        runs.pop();
+      }
+    }
+
+    if (runs.length === 0) {
+      if (!allowEmpty) {
+        return;
+      }
+      runs.push({ text: '' });
+    }
+
+    const listDepth = block.listTypes.length;
+    const listType = block.listTypes[listDepth - 1];
+    // PPTX `lvl` is 0-based: the outermost list level is 0, like a plain
+    // paragraph - the bullet, not the level, is what sets a list item apart
+    const level = listDepth > 0 ? Math.min(listDepth - 1, 8) : 0;
+
+    this.paragraphs.push({
+      paragraph: {
+        level,
+        bullet: listDepth > 0,
+        ...(listType === 'ol'
+          ? {
+              bulletType: 'number' as const,
+              autoNumberType:
+                AUTO_NUMBER_TYPES[level % AUTO_NUMBER_TYPES.length],
+            }
+          : {}),
+        // Only set when the HTML says so: an unaligned paragraph inherits from
+        // the shape's layout, the same way HTML inherits from its container
+        ...(block.alignment ? { alignment: block.alignment } : {}),
+      },
+      textRuns: runs,
+    });
   }
 }

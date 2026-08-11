@@ -99,8 +99,10 @@ const summary = await pres.write('report.pptx'); // don't forget the await!
 
 ```ts
 const info = await pres.getInfo();
-const slides = info.slidesByTemplate('content'); // slide numbers + elements
+const slides = info.slidesByTemplate('content'); // visible slides, in deck order
 const shape  = info.elementByName('content', 1, 'Title');
+// slide.number is the number of the slide file (use it with addSlide),
+// not the position in the deck.
 // Or per slide inside a callback:
 // const elements = await slide.getAllElements();
 // const dims = await slide.getDimensions();

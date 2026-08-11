@@ -1,11 +1,41 @@
 import { HyperlinkInfo, TextStyle } from '../types/modify-types';
 import { XmlElement } from '../types/xml-types';
-import { MultiTextParagraph } from '../interfaces/imulti-text';
+import { MultiTextParagraph, MultiTextRun } from '../interfaces/imulti-text';
 import ModifyTextHelper from './modify-text-helper';
 import { XmlHelper } from './xml-helper';
 import HyperlinkElement from './modify-hyperlink-element';
 
-type TextRun = { text: string; style?: TextStyle; hyperlink?: HyperlinkInfo };
+type TextRun = MultiTextRun & { hyperlink?: HyperlinkInfo };
+
+/**
+ * Children of <a:pPr>, in OOXML schema order (CT_TextParagraphProperties).
+ * Spacing comes before the bullet properties: appending bullets first is what
+ * used to make PowerPoint offer to repair the file.
+ */
+const PPR_CHILD_ORDER = [
+  'a:lnSpc',
+  'a:spcBef',
+  'a:spcAft',
+  'a:buClrTx',
+  'a:buClr',
+  'a:buSzTx',
+  'a:buSzPct',
+  'a:buSzPts',
+  'a:buFontTx',
+  'a:buFont',
+  'a:buNone',
+  'a:buAutoNum',
+  'a:buChar',
+  'a:tabLst',
+  'a:defRPr',
+  'a:extLst',
+];
+
+/** Default bullet indent step, approx. 0.25 inch in EMU. */
+const BULLET_INDENT = 228600;
+
+/** Typeface carrying the default '•' glyph. */
+const BULLET_FONT = 'Arial';
 
 export class MultiTextHelper {
   private element: XmlElement;
@@ -29,7 +59,13 @@ export class MultiTextHelper {
   }
 
   /**
-   * Extract default style from existing paragraphs
+   * Extract the fallback style from the existing text, so generated runs keep
+   * the template's look where the caller says nothing.
+   *
+   * Restricted to size and color on purpose: bold/italic of the template's
+   * first run are a property of *that* text, not of the shape, and inheriting
+   * them made every generated run bold as soon as the placeholder was
+   * (e.g. a title). Callers who want bold pass it in their TextStyle.
    */
   private extractDefaultStyle(txBody: XmlElement): TextStyle {
     const defaultStyle: TextStyle = {};
@@ -67,16 +103,6 @@ export class MultiTextHelper {
           }
         }
 
-        // Extract bold and italic if they exist
-        const bold = rPr.getAttribute('b');
-        if (bold === '1') {
-          defaultStyle.isBold = true;
-        }
-
-        const italic = rPr.getAttribute('i');
-        if (italic === '1') {
-          defaultStyle.isItalics = true;
-        }
       }
     }
 
@@ -184,14 +210,19 @@ export class MultiTextHelper {
   /**
    * Apply paragraph styling properties
    */
-  private applyParagraphProperties(pPr: XmlElement, paragraphProps: any): void {
+  private applyParagraphProperties(
+    pPr: XmlElement,
+    paragraphProps: MultiTextParagraph['paragraph'],
+  ): void {
+    const level = paragraphProps.level ?? 0;
+
     // Set bullet level
     if (paragraphProps.level !== undefined) {
       pPr.setAttribute('lvl', String(paragraphProps.level));
     }
 
     // Set bullet configuration
-    this.applyBulletConfiguration(pPr, paragraphProps);
+    this.applyBulletConfiguration(pPr, paragraphProps, level);
 
     // Set alignment
     if (paragraphProps.alignment !== undefined) {
@@ -202,31 +233,62 @@ export class MultiTextHelper {
     if (paragraphProps.indent !== undefined) {
       pPr.setAttribute('indent', String(paragraphProps.indent));
     } else if (paragraphProps.bullet) {
-      // Add default negative indent for bullets to create a gap (approx 0.25 inch)
-      pPr.setAttribute('indent', '-228600');
+      // Hanging indent, so wrapped lines align with the text, not the bullet
+      pPr.setAttribute('indent', String(-BULLET_INDENT));
     }
 
     // Set left margin
     if (paragraphProps.marginLeft !== undefined) {
       pPr.setAttribute('marL', String(paragraphProps.marginLeft));
     } else if (paragraphProps.bullet) {
-      // Add default left margin to push text to the right (approx 0.25 inch)
-      pPr.setAttribute('marL', '228600');
+      // Indent per level: a constant margin renders every nested bullet at the
+      // same x-position unless the target layout happens to define a lstStyle
+      pPr.setAttribute('marL', String((level + 1) * BULLET_INDENT));
     }
 
     // Apply spacing properties
     this.applySpacingProperties(pPr, paragraphProps);
+
+    // The steps above append in call order; the schema wants a fixed sequence
+    XmlHelper.sortChildrenBySchema(pPr, PPR_CHILD_ORDER);
   }
 
   /**
-   * Apply bullet configuration to paragraph properties
+   * Apply bullet configuration to paragraph properties.
+   *
+   * PPTX has no list object - a list item is a paragraph with bullet
+   * properties, either a literal glyph (`a:buChar`) or automatic numbering
+   * (`a:buAutoNum`).
    */
-  private applyBulletConfiguration(pPr: XmlElement, paragraphProps: any): void {
+  private applyBulletConfiguration(
+    pPr: XmlElement,
+    paragraphProps: MultiTextParagraph['paragraph'],
+    level: number,
+  ): void {
     if (paragraphProps.bullet) {
+      if (paragraphProps.bulletType === 'number') {
+        const buAutoNum = this.document.createElement('a:buAutoNum');
+        buAutoNum.setAttribute(
+          'type',
+          paragraphProps.autoNumberType || 'arabicPeriod',
+        );
+        pPr.appendChild(buAutoNum);
+        return;
+      }
+
+      // A glyph bullet needs the typeface that actually carries the glyph
+      const buFont = this.document.createElement('a:buFont');
+      buFont.setAttribute('typeface', BULLET_FONT);
+      pPr.appendChild(buFont);
+
       const buChar = this.document.createElement('a:buChar');
-      buChar.setAttribute('char', '•'); // Default bullet character
+      buChar.setAttribute('char', paragraphProps.bulletChar || '•');
       pPr.appendChild(buChar);
-    } else if (paragraphProps.level === 0 || paragraphProps.bullet === false) {
+      return;
+    }
+
+    if (paragraphProps.bullet === false || paragraphProps.level === 0) {
+      // Suppress a bullet the layout's lstStyle would otherwise inherit
       const buNone = this.document.createElement('a:buNone');
       pPr.appendChild(buNone);
     }
@@ -235,7 +297,10 @@ export class MultiTextHelper {
   /**
    * Apply spacing properties to paragraph properties
    */
-  private applySpacingProperties(pPr: XmlElement, paragraphProps: any): void {
+  private applySpacingProperties(
+    pPr: XmlElement,
+    paragraphProps: MultiTextParagraph['paragraph'],
+  ): void {
     // Set line spacing
     if (paragraphProps.lineSpacing !== undefined) {
       const lnSpc = this.document.createElement('a:lnSpc');
@@ -283,6 +348,12 @@ export class MultiTextHelper {
   ): void {
     textRuns.forEach((run) => {
       const mergedStyle = this.mergeStyles(defaultStyle, run.style);
+
+      // An explicit break is an element between runs, not a run with text
+      if (run.break) {
+        this.appendLineBreak(p, mergedStyle);
+        return;
+      }
 
       // Check if this text run needs a hyperlink
       if (mergedStyle?.hyperlink && this.relationElement) {

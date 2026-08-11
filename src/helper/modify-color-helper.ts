@@ -2,6 +2,7 @@ import { Color } from '../types/modify-types';
 import XmlElements from './xml-elements';
 import { XmlHelper } from './xml-helper';
 import { ShapeBackgroundInfo, XmlElement } from '../types/xml-types';
+import { normalizeCssColor } from './css-style-parser';
 
 export default class ModifyColorHelper {
   /**
@@ -58,14 +59,20 @@ export default class ModifyColorHelper {
       }
     };
 
+  /**
+   * Bring a Color value into the notation OOXML expects: `srgbClr` wants
+   * 6-digit RRGGBB without a leading `#`. CSS notations (`#abc`, `rgb(…)`,
+   * named colors) are converted; anything unconvertible falls back to the
+   * default gray rather than emitting an invalid attribute value.
+   */
   static normalizeColorObject = (color: Color) => {
-    if (color.value.indexOf('#') === 0) {
-      color.value = color.value.replace('#', '');
+    if (color?.value === undefined || color.type !== 'srgbClr') {
+      return color;
     }
-    if (color.value.toLowerCase().indexOf('rgb(') === 0) {
-      // TODO: convert RGB to HEX
-      color.value = 'cccccc';
-    }
+
+    const normalized = normalizeCssColor(String(color.value));
+    color.value = normalized ?? 'CCCCCC';
+
     return color;
   };
 

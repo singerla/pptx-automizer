@@ -13,6 +13,7 @@ import IArchive from '../interfaces/iarchive';
 import { XmlRelationshipHelper } from './xml-relationship-helper';
 import { XmlSlideHelper } from './xml-slide-helper';
 import XmlPlaceholderHelper from './xml-placeholder-helper';
+import { PptPaths } from './ppt-paths';
 
 export class XmlTemplateHelper {
   archive: IArchive;
@@ -42,14 +43,10 @@ export class XmlTemplateHelper {
       this.relType,
     );
 
-    // ToDo: The slide list is based on the relations from this.path
-    // which contains non-visible slides, too.
-    // Should be either:
-    //  a.) remove unused slides on generation
-    //  b.) use slides list from 'p:sldIdLst' in `ppt/presentation.xml`
+    const slideRels = await this.filterVisibleSlides(relationships);
 
     const creationIds: SlideInfo[] = [];
-    for (const slideRel of relationships) {
+    for (const slideRel of slideRels) {
       try {
         const slideXml = await XmlHelper.getXmlFromArchive(
           archive,
@@ -92,9 +89,57 @@ export class XmlTemplateHelper {
       }
     }
 
-    return creationIds.sort((slideA, slideB) =>
-      slideA.number < slideB.number ? -1 : 1,
+    return creationIds;
+  }
+
+  /**
+   * A .pptx can contain slide parts that are not part of the presentation:
+   * both PowerPoint and automizer's `removeExistingSlides` only drop the
+   * entries from `p:sldIdLst` in `ppt/presentation.xml`, while the slide part
+   * and its relationship remain in the archive. Listing slides by relationship
+   * alone would therefore also return these invisible leftovers (see #166).
+   *
+   * `p:sldIdLst` is the authoritative list: it contains the visible slides, in
+   * presentation order. It is used to filter and sort the incoming slide
+   * relationships; if it cannot be read (or is empty), all slide relationships
+   * are returned, sorted by slide number.
+   *
+   * @param relationships All slide targets of ppt/_rels/presentation.xml.rels
+   * @returns The visible slide targets, in presentation order
+   */
+  async filterVisibleSlides(relationships: Target[]): Promise<Target[]> {
+    const byNumber = () =>
+      [...relationships].sort((relA, relB) =>
+        this.parseSlideRelFile(relA.file) < this.parseSlideRelFile(relB.file)
+          ? -1
+          : 1,
+      );
+
+    if (!this.archive.fileExists(PptPaths.presentation)) {
+      return byNumber();
+    }
+
+    const presentationXml = await XmlHelper.getXmlFromArchive(
+      this.archive,
+      PptPaths.presentation,
     );
+    const slideIds = presentationXml?.getElementsByTagName('p:sldId');
+    if (!slideIds?.length) {
+      return byNumber();
+    }
+
+    const visibleSlides: Target[] = [];
+    for (let i = 0; i < slideIds.length; i++) {
+      const rId = slideIds[i].getAttribute('r:id');
+      const slideRel = relationships.find((relation) => relation.rId === rId);
+      if (!slideRel) {
+        log.warn(`No slide relationship found for ${rId} in p:sldIdLst`);
+        continue;
+      }
+      visibleSlides.push(slideRel);
+    }
+
+    return visibleSlides;
   }
 
   parseSlideRelFile(slideRelFile: string): number {
@@ -268,8 +313,10 @@ export class XmlTemplateHelper {
         'slides/slide',
       )) as Target[];
 
+      const visibleSlides = await this.filterVisibleSlides(allSlides);
+
       // Extract slide numbers from each slide using the 'number' property and sort the array of integers.
-      const slideNumbers = allSlides.map((slide) => slide.number);
+      const slideNumbers = visibleSlides.map((slide) => slide.number);
       slideNumbers.sort((a, b) => a - b);
 
       return slideNumbers;
