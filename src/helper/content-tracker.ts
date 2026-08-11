@@ -119,7 +119,7 @@ export class ContentTracker {
   }
 
   getRelationTag(source: string): TrackedRelationTag {
-    return contentTracker.relationTags.find(
+    return this.relationTags.find(
       (relationTag) => relationTag.source === source,
     );
   }
@@ -190,7 +190,7 @@ export class ContentTracker {
 
     this.addCreatedRelationsFunctions(
       addTargets,
-      contentTracker.relations[relationTagInfo.relationsKey],
+      this.relations[relationTagInfo.relationsKey],
       relationTagInfo,
     );
 
@@ -290,5 +290,3 @@ export class ContentTracker {
     return relations.filter((rel) => rel.attributes.Target === target);
   }
 }
-
-export const contentTracker = new ContentTracker();

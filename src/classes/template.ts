@@ -1,4 +1,5 @@
 import { FileHelper } from '../helper/file-helper';
+import { ContentTracker } from '../helper/content-tracker';
 import { CountHelper } from '../helper/count-helper';
 import { ICounter } from '../interfaces/icounter';
 import { ISlide } from '../interfaces/islide';
@@ -103,8 +104,8 @@ export class Template implements ITemplate {
         new CountHelper('themes', newTemplate),
         new CountHelper('oleObjects', newTemplate),
       ];
-      // TODO: refactor content tracker, let root template have an instance
-      // newTemplate.content = new ContentTracker();
+      newTemplate.content = automizer?.content ?? new ContentTracker();
+      newTemplate.archive.contentTracker = newTemplate.content;
     }
 
     return newTemplate;

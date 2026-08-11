@@ -1,3 +1,5 @@
+import { AsyncLocalStorage } from 'async_hooks';
+
 /**
  * Logging verbosity:
  * 0: errors only
@@ -64,22 +66,37 @@ export class NullLogger implements ILogger {
   debug(): void {}
 }
 
-// The active logger is module-level state so that static helpers can log
-// without holding an Automizer instance. It is replaced by the instance
-// configured on Automizer. ROADMAP Phase 3 threads it through instead.
-let activeLogger: ILogger = new ConsoleLogger();
+// Static helpers log without holding an Automizer instance, and public
+// modifier signatures cannot carry a logger. The instance configured on an
+// Automizer is therefore scoped to its async call tree via AsyncLocalStorage:
+// each Automizer wraps its entry points in runWithLogger(), so two instances
+// running concurrently each log through their own logger.
+const activeLogger = new AsyncLocalStorage<ILogger>();
 
-export const setActiveLogger = (logger: ILogger): void => {
-  activeLogger = logger;
+// Fallback for calls outside any Automizer entry point.
+const defaultLogger: ILogger = new ConsoleLogger();
+
+/**
+ * Runs `fn` with `logger` as the active logger for everything (a)waited
+ * inside it. Used by Automizer to scope its configured logger to its own
+ * pipeline; safe to nest.
+ */
+export const runWithLogger = <T>(logger: ILogger, fn: () => T): T => {
+  return activeLogger.run(logger, fn);
 };
 
 /**
- * Logging facade for library internals: always delegates to the
- * logger currently configured on Automizer.
+ * Logging facade for library internals: delegates to the logger of the
+ * Automizer instance whose call tree we are in, or to a default
+ * ConsoleLogger outside any instance context.
  */
 export const log: ILogger = {
-  error: (message, ...details) => activeLogger.error(message, ...details),
-  warn: (message, ...details) => activeLogger.warn(message, ...details),
-  info: (message, ...details) => activeLogger.info(message, ...details),
-  debug: (message, ...details) => activeLogger.debug(message, ...details),
+  error: (message, ...details) =>
+    (activeLogger.getStore() ?? defaultLogger).error(message, ...details),
+  warn: (message, ...details) =>
+    (activeLogger.getStore() ?? defaultLogger).warn(message, ...details),
+  info: (message, ...details) =>
+    (activeLogger.getStore() ?? defaultLogger).info(message, ...details),
+  debug: (message, ...details) =>
+    (activeLogger.getStore() ?? defaultLogger).debug(message, ...details),
 };

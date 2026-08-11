@@ -2,7 +2,6 @@ import fs from 'fs';
 import { promises as fsPromises } from 'fs';
 import path from 'path';
 import { FileInfo, ArchiveParams, AutomizerFile } from '../types/types';
-import { contentTracker } from './content-tracker';
 import IArchive, {
   ArchivedFolderCallback,
 } from '../interfaces/iarchive';
@@ -126,7 +125,7 @@ export class FileHelper {
     targetFile?: string,
   ): Promise<IArchive> {
     FileHelper.check(sourceArchive, sourceFile);
-    contentTracker.trackFile(targetFile);
+    targetArchive.contentTracker?.trackFile(targetFile);
 
     const content = await sourceArchive
       .read(sourceFile, 'nodebuffer')

@@ -1,4 +1,5 @@
 import ArchiveJszip from '../helper/archive/archive-jszip';
+import type { ContentTracker } from '../helper/content-tracker';
 import { ArchiveParams, AutomizerFile, AutomizerParams } from '../types/types';
 import JSZip, { InputType } from 'jszip';
 import { XmlDocument } from '../types/xml-types';
@@ -18,6 +19,12 @@ export type ArchiveInput = InputType;
 export default interface IArchive {
   filename: AutomizerFile;
   params: ArchiveParams;
+  /**
+   * Tracker owned by the root template this archive belongs to.
+   * Only set on the output archive; helpers writing to an archive use it to
+   * record created files/relations. Absent on source template archives.
+   */
+  contentTracker?: ContentTracker;
   read: (
     file: string,
     type: 'string' | 'nodebuffer',
