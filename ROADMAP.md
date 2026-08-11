@@ -455,16 +455,44 @@ Collected from TODOs and limitations, ordered by user value:
 6. Animation id synchronization (README "Limitations").
 7. `getLocation`/template resolution for URL sources; browser build is
    explicitly out of scope for now.
-8. HTML → text conversion (`modify.htmlToMultiText`) is incomplete and partly
-   incorrect — see the dedicated feature track below.
+8. ~~HTML → text conversion (`modify.htmlToMultiText`) is incomplete and partly
+   incorrect~~ — done, see the feature track below.
 
 ---
 
-## Feature track — HTML → PPTX text (`htmlToMultiText`)
+## Feature track — HTML → PPTX text (`htmlToMultiText`) — ✅ done 2026-08-11
 
 Audit date: 2026-08-11. Scope: `src/helper/html-to-multitext-helper.ts`
 (HTML → `MultiTextParagraph[]`) and `src/helper/multitext-helper.ts`
 (→ DrawingML). Independent of the refactor phases; can proceed in parallel.
+
+**Outcome** (prioritized on customer request): all 10 bugs below are fixed and
+the coverage gaps closed. The converter is a single-pass `walk()` over
+`(blockCtx, inlineStyle)` accumulators, the CSS subset lives in the standalone
+`helper/css-style-parser.ts`, and schema-order insertion is now a shared
+primitive (`XmlHelper.insertInSchemaOrder` / `sortChildrenBySchema`) used for
+both `a:pPr` and `a:rPr`. New public surface (all additive): `TextStyle` gained
+`isStrike`/`fontFamily`/`highlight`, `MultiTextParagraph.paragraph` gained
+`bulletType`/`bulletChar`/`autoNumberType`, and a text run may be
+`{ break: true }`. Tests: `__tests__/html-to-multitext-converter.test.ts`
+(32 conversion-rule assertions) and a rewritten
+`__tests__/replace-multi-text-html.test.ts` (6 output-XML suites, replacing the
+`// TODO` that asserted nothing).
+
+Two behavior changes worth knowing about:
+
+- `extractDefaultStyle` no longer inherits bold/italic from the template's first
+  run (bug 10), which changed one `a:br` assertion in
+  `replace-multi-text-linebreaks.test.ts`.
+- Paragraph alignment is only written when the HTML specifies `text-align`;
+  previously every paragraph was forced to `algn="l"`, overriding the layout.
+
+**Resolved scoping question:** the input contract is *WYSIWYG editor output*
+(CKEditor/TinyMCE). No `htmlparser2` dependency was added — `@xmldom/xmldom` in
+`text/html` mode turned out to handle the cases that mattered (`&nbsp;`, bare
+`&`, unclosed `<br>`); CKEditor's invalid sibling-nested lists are handled in
+the converter instead. If arbitrary web tag soup ever becomes a requirement,
+swapping in a forgiving parse layer is a change to `run()` alone.
 
 **Guiding principle:** PPTX text is strictly flat and two-level — a `txBody` is
 a flat list of `<a:p>` paragraphs, each a flat list of `<a:r>` runs. There is no

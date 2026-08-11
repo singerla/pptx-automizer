@@ -34,6 +34,7 @@ If you require commercial support for complex .pptx automation, you can explore 
     - [Select slides by creationId](#select-slides-by-creationid)
   - [Find and Modify Shapes](#find-and-modify-shapes)
   - [Modify Text](#modify-text)
+    - [What HTML is supported](#what-html-is-supported)
   - [Modify Images](#modify-images)
   - [Modify Tables](#modify-tables)
   - [Modify Charts](#modify-charts)
@@ -539,15 +540,61 @@ import { modify } from 'pptx-automizer';
 
 const html =
   '<html><body>' +
+  '<h2 style="text-align: center">Quarterly report</h2>' +
+  '<p>Plain text with <strong>bold</strong>, <em>italics</em> and ' +
+  '<span style="color: #ff0000; font-size: 12pt">styling</span>.</p>' +
   '<ul>' +
-  '<li><span style="font-size: 14px;">bullet 1 level 1</span></li>' +
+  '<li>bullet level 0' +
+  '<ul><li>bullet level 1</li></ul>' +
+  '</li>' +
   '</ul>' +
+  '<ol><li>numbered</li><li>list</li></ol>' +
+  '<p><a href="https://example.com">external link</a> and ' +
+  '<a href="3">a link to slide 3</a></p>' +
   '</body></html>';
 
 pres.addSlide('TextReplace.pptx', 1, (slide) => {
   slide.modifyElement('setText', modify.htmlToMultiText(html));
 });
 ```
+
+#### What HTML is supported
+
+PPTX text is strictly flat: a text body is a list of paragraphs, each a list of
+text runs, with no nesting anywhere. HTML hierarchy is therefore *projected*
+onto that — nested inline tags become one run with accumulated character
+properties, nested lists become paragraphs with a 0-based level, and a block
+inside a block (`<li><p>…</p></li>`) yields a single paragraph, with the
+innermost block winning.
+
+| | Supported |
+|---|---|
+| Paragraphs | `<p>`, `<div>`, `<h1>`–`<h6>`, `<blockquote>`, `<pre>`, `<section>` & friends |
+| Lists | `<ul>`, `<ol>`, `<li>`, nested to 9 levels. `<ol>` renders as real automatic numbering (1. / a. / i. per level) |
+| Inline | `<strong>`/`<b>`, `<em>`/`<i>`, `<u>`/`<ins>`, `<s>`/`<strike>`/`<del>`, `<sub>`, `<sup>`, `<code>`/`<kbd>`/`<samp>` (monospace), `<mark>`, `<br>`, `<span>`, `<a>`, `<font>` |
+| Links | `<a href="https://…">` external, `<a href="3">` to slide 3 |
+| CSS (on any element) | `font-size` (`px` converted at 96dpi, or `pt`), `color`, `background-color` (highlight), `font-weight`, `font-style`, `text-decoration`, `font-family`, `text-align` |
+
+Both list-nesting styles work and produce identical output — properly nested
+(`<li>text<ul>…</ul></li>`) and the sibling form CKEditor emits
+(`<ul><li/><ul>…</ul></ul>`).
+
+Good to know:
+
+- The input has to be wrapped in `<html><body>…</body></html>`, and is parsed as
+  XML: quote your attributes and close your container tags, as WYSIWYG editors
+  do. `&nbsp;`, `&amp;` and an unclosed `<br>` are fine.
+- Colors can be written in any CSS notation (`#f00`, `red`, `rgb(255,0,0)`) and
+  are normalized to the 6-digit hex OOXML requires.
+- Relative font sizes (`em`, `%`) are ignored rather than guessed, leaving the
+  size inherited from the template.
+- Whitespace collapses the way a browser collapses it; `&nbsp;` survives.
+- Alignment is only written when the HTML asks for it — otherwise the target
+  shape's layout keeps deciding.
+- Font size and color of the target shape's existing text are used as the
+  fallback style, so generated text keeps the template's look.
+- `<table>` markup has no equivalent in a single text shape: the cell text is
+  kept, but flattened into one paragraph. Use `modify.setTableData` for tables.
 
 Find out more about text replacement:
 
@@ -813,19 +860,31 @@ Generate complex text (multiple runs, links, bullets) either from a structured v
 // From structured paragraphs
 slide.modifyElement('TextBox', [
   ModifyTextHelper.setMultiText([
-    { runs: [{ text: 'Hello ', style: { bold: true } }, { text: 'World' }] },
+    {
+      paragraph: { bullet: false },
+      textRuns: [
+        { text: 'Hello ', style: { isBold: true } },
+        { text: 'World' },
+      ],
+    },
   ]),
 ]);
 
-// From HTML
-const html = '<p><b>Bold</b> and <a href="https://example.com">link</a></p>';
+// From HTML - note the required <html><body> wrapper
+const html =
+  '<html><body><p><b>Bold</b> and ' +
+  '<a href="https://example.com">link</a></p></body></html>';
 slide.modifyElement('TextBox', [ModifyTextHelper.htmlToMultiText(html)]);
 ```
 
-`HtmlToMultiTextHelper` and `MultiTextHelper` also support hyperlinks (internal `#slideId` or external `https://...`). See tests:
+`HtmlToMultiTextHelper` and `MultiTextHelper` also support hyperlinks: an
+external target (`<a href="https://...">`) or a slide number for an internal
+link (`<a href="3">`). See [What HTML is supported](#what-html-is-supported)
+above for the full tag and CSS coverage, and the tests:
 
 - [Replace text by MultiText objects](https://github.com/singerla/pptx-automizer/blob/main/__tests__/replace-multi-text.test.ts)
 - [Replace text by HTML](https://github.com/singerla/pptx-automizer/blob/main/__tests__/replace-multi-text-html.test.ts)
+- [HTML conversion rules, unit level](https://github.com/singerla/pptx-automizer/blob/main/__tests__/html-to-multitext-converter.test.ts)
 
 ### Image helpers
 

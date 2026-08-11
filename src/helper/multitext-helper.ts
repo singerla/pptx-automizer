@@ -222,7 +222,7 @@ export class MultiTextHelper {
     }
 
     // Set bullet configuration
-    this.applyBulletConfiguration(pPr, paragraphProps, level);
+    this.applyBulletConfiguration(pPr, paragraphProps);
 
     // Set alignment
     if (paragraphProps.alignment !== undefined) {
@@ -263,7 +263,6 @@ export class MultiTextHelper {
   private applyBulletConfiguration(
     pPr: XmlElement,
     paragraphProps: MultiTextParagraph['paragraph'],
-    level: number,
   ): void {
     if (paragraphProps.bullet) {
       if (paragraphProps.bulletType === 'number') {

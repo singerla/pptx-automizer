@@ -117,9 +117,13 @@ Consequences for agents:
   DrawingML property containers) must follow the schema sequence — e.g. in
   `a:pPr`: `lnSpc` → `spcBef` → `spcAft` → `buClr`/`buFont`/`buChar`/`buNone` →
   `defRPr`. Appending in call order instead of schema order is what triggers
-  PowerPoint's "repair" prompt. `multitext-helper.ts` currently violates this
-  (see ROADMAP). When creating property elements, insert schema-aware, don't
-  just `appendChild`.
+  PowerPoint's "repair" prompt. Don't just `appendChild` — use
+  `XmlHelper.insertInSchemaOrder(parent, child, order)` when you add a single
+  element, or `XmlHelper.sortChildrenBySchema(parent, order)` when several
+  independent code paths contribute to the same container (how `a:pPr` in
+  `multitext-helper.ts` and `a:rPr` in `ModifyTextHelper.style` do it; the
+  sequences live next to those call sites as `PPR_CHILD_ORDER` /
+  `RPR_CHILD_ORDER`).
 - **PPTX text is flat, never nested**: `txBody` → list of `a:p` → list of `a:r`.
   Anything hierarchical (HTML, nested lists) must be projected: inline nesting →
   accumulated run properties, list nesting → 0-based `lvl` attribute (0–8) per

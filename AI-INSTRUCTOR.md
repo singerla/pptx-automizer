@@ -142,20 +142,41 @@ returns for a Shift+Enter) become a **soft line break** (`<a:br/>`) within the
 same paragraph. Use a new `MultiTextParagraph` when you want a real paragraph
 (with its own bullet, level and alignment) instead.
 
-**`htmlToMultiText` caveats (current state):** it supports a limited subset —
-`<p>`, `<ul>`/`<ol>` (both render as `•` bullets), `<li>`, `<strong>`/`<b>`,
-`<em>`/`<i>`, `<ins>` (underline), `<a href="url">` / `<a href="3">` (slide
-link), and `<span style="font-size: Npx; color: …">`. Input must be
-**well-formed XHTML wrapped in `<html><body>…</body></html>`** (the parser is
-an XML parser: close every tag, no `&nbsp;`). Quirks to work around: write
-colors as 6-digit hex **without `#`** (`color: FF0000`) and note that `font-size`
-px values are applied as points. Not supported yet: `<br>`, `<u>`, `<s>`,
-`<sub>`/`<sup>`, headings, `text-align`, numbered-list rendering. For anything
-beyond this subset, build the paragraphs with `setMultiText` directly.
+**`htmlToMultiText` — input contract:** wrap the markup in
+`<html><body>…</body></html>` (without a `<body>` you get an empty result and an
+error log). The parser is an XML parser, so the input should be the well-formed
+markup a WYSIWYG editor produces — quote attributes, close container tags.
+`&nbsp;`, `&amp;` and an unclosed `<br>` do work.
+
+Supported: `<p>`, `<div>`, `<h1>`–`<h6>`, `<blockquote>`, `<pre>` (paragraphs);
+`<ul>`/`<ol>` + `<li>`, nested either properly (`<li>a<ul>…</ul></li>`) or in
+CKEditor's sibling form (`<ul><li/><ul>…</ul></ul>`) — both give the same
+result, with `<ol>` rendering as real automatic numbering (1. / a. / i. per
+level); `<strong>`/`<b>`, `<em>`/`<i>`, `<u>`/`<ins>`, `<s>`/`<strike>`/`<del>`,
+`<sub>`, `<sup>`, `<code>`/`<kbd>` (monospace), `<mark>` (highlight), `<br>`,
+`<a href="url">` / `<a href="3">` (slide link), `<font color size face>`.
+CSS on *any* element: `font-size` (px→pt at 96dpi, or `pt`), `color` and
+`background-color` (hex, `rgb()`, `rgba()`, named), `font-weight`, `font-style`,
+`text-decoration`, `font-family`, `text-align`.
+
+Notes: colors may be written any CSS way (`#f00`, `red`, `rgb(255,0,0)`) — they
+are normalized to OOXML's 6-digit hex. Relative font sizes (`em`, `%`) are
+*ignored* rather than guessed, so the size stays inherited. Whitespace is
+collapsed like a browser does; `&nbsp;` survives. Text alignment is only set
+when the HTML says so, otherwise the shape's layout decides. Unsupported CSS is
+skipped silently. For anything beyond this, build paragraphs with `setMultiText`
+directly.
 
 `TextStyle`: `{ size?, color?: {type: 'srgbClr'|'schemeClr', value}, isBold?,
-isItalics?, isUnderlined?, hyperlink? … }`. Colors are hex without `#`
-(`'FF0000'`) or scheme names (`{ type: 'schemeClr', value: 'accent1' }`).
+isItalics?, isUnderlined?, isStrike?, isSubscript?, isSuperscript?, fontFamily?,
+highlight?, hyperlink? … }`. `size` is in 1/100 pt (`1400` = 14pt). Colors are
+hex without `#` (`'FF0000'`) or scheme names
+(`{ type: 'schemeClr', value: 'accent1' }`).
+
+A `MultiTextParagraph`'s `paragraph` takes `{ level (0-based, 0-8), bullet,
+bulletType: 'char'|'number', bulletChar, autoNumberType, alignment, lineSpacing,
+spaceBefore, spaceAfter, indent, marginLeft }`. A run may carry
+`{ break: true }` instead of text to emit a soft line break explicitly.
 
 ### Position & style
 

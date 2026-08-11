@@ -53,8 +53,11 @@ test('setMultiText converts soft line breaks into <a:br/>', async () => {
   // No line break may remain inside a text node
   expect(xml).not.toMatch(/<a:t>[^<]*[\r\n][^<]*<\/a:t>/);
 
-  // The <a:br/> inherits the run style, so the line height stays intact
-  expect(xml).toContain('<a:br><a:rPr sz="2000" i="1"/></a:br>');
+  // The <a:br/> inherits the run style, so the line height stays intact.
+  // Only size/color are inherited from the template: the italics of the
+  // template's first run are a property of that text, not of the shape
+  // (see ROADMAP, HTML -> text track, `extractDefaultStyle`).
+  expect(xml).toContain('<a:br><a:rPr sz="2000"/></a:br>');
 });
 
 test('setMultiText keeps a hyperlink across a soft line break', async () => {
