@@ -15,16 +15,13 @@ import { RootPresTemplate } from './interfaces/root-pres-template';
 import { Template } from './classes/template';
 import { ModifyXmlCallback, TemplateInfo } from './types/xml-types';
 import { GeneralHelper } from './helper/general-helper';
-import { ConsoleLogger, ILogger, setActiveLogger } from './helper/logger';
+import { ConsoleLogger, ILogger, runWithLogger } from './helper/logger';
 import { Master } from './classes/master';
 import path from 'path';
 import * as fs from 'fs';
 import { XmlHelper } from './helper/xml-helper';
 import ModifyPresentationHelper from './helper/modify-presentation-helper';
-import {
-  contentTracker as Tracker,
-  ContentTracker,
-} from './helper/content-tracker';
+import { ContentTracker } from './helper/content-tracker';
 import JSZip from 'jszip';
 import { ISlide } from './interfaces/islide';
 import { IMaster } from './interfaces/imaster';
@@ -115,7 +112,6 @@ export default class Automizer implements IPresentationProps {
     this.params = params;
 
     this.logger = params.logger ?? new ConsoleLogger(params.verbosity ?? 1);
-    setActiveLogger(this.logger);
 
     this.templateDir = params?.templateDir ? params.templateDir + '/' : '';
     this.templateFallbackDir = params?.templateFallbackDir
@@ -364,17 +360,19 @@ export default class Automizer implements IPresentationProps {
    * @returns Promise<TemplateInfo[]>
    */
   public async setCreationIds(): Promise<TemplateInfo[]> {
-    const templateCreationId = [];
-    for (const template of this.templates) {
-      const creationIds =
-        template.creationIds || (await template.setCreationIds());
-      template.useCreationIds = this.params.useCreationIds;
-      templateCreationId.push({
-        name: template.name,
-        slides: creationIds,
-      });
-    }
-    return templateCreationId;
+    return runWithLogger(this.logger, async () => {
+      const templateCreationId = [];
+      for (const template of this.templates) {
+        const creationIds =
+          template.creationIds || (await template.setCreationIds());
+        template.useCreationIds = this.params.useCreationIds;
+        templateCreationId.push({
+          name: template.name,
+          slides: creationIds,
+        });
+      }
+      return templateCreationId;
+    });
   }
 
   /**
@@ -514,26 +512,28 @@ export default class Automizer implements IPresentationProps {
    * @returns summary object.
    */
   public async write(location: string): Promise<AutomizerSummary> {
-    await this.finalizePresentation();
+    return runWithLogger(this.logger, async () => {
+      await this.finalizePresentation();
 
-    await this.rootTemplate.archive.output(
-      this.getLocation(location, 'output'),
-      this.params,
-    );
+      await this.rootTemplate.archive.output(
+        this.getLocation(location, 'output'),
+        this.params,
+      );
 
-    const duration: number = (Date.now() - this.timer) / 1000;
+      const duration: number = (Date.now() - this.timer) / 1000;
 
-    return {
-      status: 'finished',
-      duration,
-      file: location,
-      filename: path.basename(location),
-      templates: this.templates.length,
-      slides: this.rootTemplate.count('slides'),
-      charts: this.rootTemplate.count('charts'),
-      images: this.rootTemplate.count('images'),
-      masters: this.rootTemplate.count('masters'),
-    };
+      return {
+        status: 'finished',
+        duration,
+        file: location,
+        filename: path.basename(location),
+        templates: this.templates.length,
+        slides: this.rootTemplate.count('slides'),
+        charts: this.rootTemplate.count('charts'),
+        images: this.rootTemplate.count('images'),
+        masters: this.rootTemplate.count('masters'),
+      };
+    });
   }
 
   /**
@@ -544,13 +544,17 @@ export default class Automizer implements IPresentationProps {
   public async stream(
     generatorOptions?: JSZip.JSZipGeneratorOptions<'nodebuffer'>,
   ): Promise<NodeJS.ReadableStream> {
-    await this.finalizePresentation();
+    return runWithLogger(this.logger, async () => {
+      await this.finalizePresentation();
 
-    if (!this.rootTemplate.archive.stream) {
-      throw new OutputError('Streaming is not implemented for current archive type');
-    }
+      if (!this.rootTemplate.archive.stream) {
+        throw new OutputError(
+          'Streaming is not implemented for current archive type',
+        );
+      }
 
-    return this.rootTemplate.archive.stream(this.params, generatorOptions);
+      return this.rootTemplate.archive.stream(this.params, generatorOptions);
+    });
   }
 
   /**
@@ -558,26 +562,29 @@ export default class Automizer implements IPresentationProps {
    * @returns Promise<NodeJS.ReadableStream>
    */
   public async getJSZip(): Promise<JSZip> {
-    await this.finalizePresentation();
+    return runWithLogger(this.logger, async () => {
+      await this.finalizePresentation();
 
-    if (!this.rootTemplate.archive.getFinalArchive) {
-      throw new OutputError(
-        'GetFinalArchive is not implemented for current archive type',
-      );
-    }
+      if (!this.rootTemplate.archive.getFinalArchive) {
+        throw new OutputError(
+          'GetFinalArchive is not implemented for current archive type',
+        );
+      }
 
-    return this.rootTemplate.archive.getFinalArchive();
+      return this.rootTemplate.archive.getFinalArchive();
+    });
   }
 
   async finalizePresentation() {
-    await this.writeMasterSlides();
-    await this.writeSlides();
-    await this.writeMediaFiles();
-    await this.normalizePresentation();
-    await this.applyModifyPresentationCallbacks();
+    return runWithLogger(this.logger, async () => {
+      await this.writeMasterSlides();
+      await this.writeSlides();
+      await this.writeMediaFiles();
+      await this.normalizePresentation();
+      await this.applyModifyPresentationCallbacks();
 
-    // TODO: refactor content tracker, move this to root template
-    Tracker.reset();
+      this.content.reset();
+    });
   }
 
   /**

@@ -1,6 +1,5 @@
 import { XmlHelper } from './xml-helper';
 import { PptPaths } from './ppt-paths';
-import { contentTracker as Tracker } from './content-tracker';
 import { FileHelper } from './file-helper';
 import IArchive from '../interfaces/iarchive';
 import { XmlDocument, XmlElement } from '../types/xml-types';
@@ -98,7 +97,7 @@ export default class ModifyPresentationHelper {
   };
 
   /**
-   * Tracker.files includes all files that have been
+   * The content tracker's files include all files that have been
    * copied to the root template by automizer. We remove all other files.
    */
   static async removeUnusedFiles(
@@ -106,6 +105,10 @@ export default class ModifyPresentationHelper {
     i: number,
     archive: IArchive,
   ): Promise<void> {
+    const tracker = archive.contentTracker;
+    if (!tracker) {
+      return;
+    }
     // Need to skip some dirs until masters and layouts are handled properly
     const skipDirs = [
       'ppt/slideMasters',
@@ -113,11 +116,11 @@ export default class ModifyPresentationHelper {
       'ppt/slideLayouts',
       'ppt/slideLayouts/_rels',
     ];
-    for (const dir in Tracker.files) {
+    for (const dir in tracker.files) {
       if (skipDirs.includes(dir)) {
         continue;
       }
-      const requiredFiles = Tracker.files[dir];
+      const requiredFiles = tracker.files[dir];
       await FileHelper.removeFromDirectory(archive, dir, (file) => {
         return !requiredFiles.includes(file.relativePath);
       });
@@ -151,14 +154,18 @@ export default class ModifyPresentationHelper {
     i: number,
     archive: IArchive,
   ): Promise<void> {
-    await Tracker.analyzeContents(archive);
+    const tracker = archive.contentTracker;
+    if (!tracker) {
+      return;
+    }
+    await tracker.analyzeContents(archive);
 
     const extensions = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'emf'];
     const keepFiles = [];
 
-    await Tracker.collect('ppt/slides', 'image', keepFiles);
-    await Tracker.collect('ppt/slideMasters', 'image', keepFiles);
-    await Tracker.collect('ppt/slideLayouts', 'image', keepFiles);
+    await tracker.collect('ppt/slides', 'image', keepFiles);
+    await tracker.collect('ppt/slideMasters', 'image', keepFiles);
+    await tracker.collect('ppt/slideLayouts', 'image', keepFiles);
 
     await FileHelper.removeFromDirectory(archive, 'ppt/media', (file) => {
       const info = FileHelper.getFileInfo(file.name);

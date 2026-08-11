@@ -13,7 +13,6 @@ import { TargetByRelIdMap } from '../constants/constants';
 import { XmlPrettyPrint } from './xml-pretty-print';
 import { GetRelationshipsCallback, Target } from '../types/types';
 import { log } from './logger';
-import { contentTracker } from './content-tracker';
 import IArchive from '../interfaces/iarchive';
 import {
   ContentTypeExtension,
@@ -77,7 +76,7 @@ export class XmlHelper {
       newElement.setAttribute(attribute, setValue);
     }
 
-    contentTracker.trackRelation(
+    element.archive.contentTracker?.trackRelation(
       element.file,
       element.attributes as RelationshipAttribute,
     );
@@ -344,7 +343,7 @@ export class XmlHelper {
       }
 
       if (element.getAttribute !== undefined) {
-        contentTracker.trackRelation(path, {
+        archive.contentTracker?.trackRelation(path, {
           Id: element.getAttribute('Id'),
           Target: element.getAttribute('Target'),
           Type: element.getAttribute('Type'),
@@ -534,7 +533,7 @@ export class XmlHelper {
     targetRelFile: string,
     attributes: RelationshipAttribute,
   ): HelperElement {
-    contentTracker.trackRelation(targetRelFile, attributes);
+    archive.contentTracker?.trackRelation(targetRelFile, attributes);
 
     return {
       archive,

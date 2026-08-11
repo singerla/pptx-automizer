@@ -19,7 +19,6 @@ import {
 import { IChart } from '../interfaces/ichart';
 import { IShapeAction } from '../interfaces/ishape-action';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
-import { contentTracker } from '../helper/content-tracker';
 import IArchive from '../interfaces/iarchive';
 import { ContentTypeExtension } from '../enums/content-type-map';
 import { log } from '../helper/logger';
@@ -471,7 +470,7 @@ export class Chart extends Shape implements IChart, IShapeAction {
             );
             break;
         }
-        contentTracker.trackRelation(targetRelFile, {
+        this.targetArchive.contentTracker?.trackRelation(targetRelFile, {
           Id: element.getAttribute('Id'),
           Target: element.getAttribute('Target'),
           Type: element.getAttribute('Type'),
