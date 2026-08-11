@@ -28,6 +28,7 @@ import JSZip from 'jszip';
 import { ISlide } from './interfaces/islide';
 import { IMaster } from './interfaces/imaster';
 import { ContentTypeExtension, ContentTypeMap } from './enums/content-type-map';
+import { TemplateNotFoundError } from './errors';
 import slugify from 'slugify';
 
 /**
@@ -281,7 +282,7 @@ export default class Automizer implements IPresentationProps {
       const extension = getValidatedExtension(file);
       try {
         fs.accessSync(filepath, fs.constants.F_OK);
-      } catch (e) {
+      } catch (_e) {
         throw `Can't load media: ${filepath} does not exist.`;
       }
       this.rootTemplate.mediaFiles.push({
@@ -507,7 +508,7 @@ export default class Automizer implements IPresentationProps {
       this.params,
     );
 
-    const duration: number = (Date.now() - this.timer) / 600;
+    const duration: number = (Date.now() - this.timer) / 1000;
 
     return {
       status: 'finished',
@@ -664,16 +665,11 @@ export default class Automizer implements IPresentationProps {
         } else if (fs.existsSync(this.templateFallbackDir + location)) {
           return this.templateFallbackDir + location;
         } else {
-          if (typeof location === 'string') {
-            log('No file matches "' + location + '"', 0);
-          } else {
-            log('Invalid filename', 0);
-          }
-
-          log('@templateDir: ' + this.templateDir, 2);
-          log('@templateFallbackDir: ' + this.templateFallbackDir, 2);
+          throw new TemplateNotFoundError(location, [
+            this.templateDir,
+            this.templateFallbackDir,
+          ]);
         }
-        break;
       case 'output':
         return this.outputDir + location;
       default:
