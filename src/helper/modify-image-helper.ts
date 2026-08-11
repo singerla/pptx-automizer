@@ -63,7 +63,7 @@ export default class ModifyImageHelper {
         const _dimensions = imageSize(buffer);
         newImageDimensions.width = _dimensions.width;
         newImageDimensions.height = _dimensions.height;
-      } catch (error) {
+      } catch (_error) {
         console.warn("Couldn't find media file in template archive in path.");
       }
 

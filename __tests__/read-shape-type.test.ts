@@ -1,4 +1,4 @@
-import Automizer, { XmlElement, XmlHelper } from '../src/index';
+import Automizer, { XmlElement } from '../src/index';
 import { ModifyShapeHelper } from '../src';
 import { ElementVisualType } from '../src/types/xml-types';
 

@@ -1,14 +1,12 @@
-import { GeneralHelper, vd } from './general-helper';
+import { GeneralHelper } from './general-helper';
 import escape from 'regexp.escape';
 import { XmlHelper } from './xml-helper';
 import {
   ReplaceText,
   ReplaceTextOptions,
-  TextStyle,
 } from '../types/modify-types';
 import ModifyTextHelper from './modify-text-helper';
-import { XmlDocument, XmlElement } from '../types/xml-types';
-import XmlElements from './xml-elements';
+import { XmlElement } from '../types/xml-types';
 
 type Expressions = {
   openingTag: string;
@@ -150,11 +148,11 @@ export default class TextReplaceHelper {
   applyReplacement(
     replaceText: ReplaceText,
     textBlock: XmlElement,
-    currentIndex: number,
+    _currentIndex: number,
   ): void {
     const replace =
       this.options.openingTag + replaceText.replace + this.options.closingTag;
-    let textNode = this.getTextElement(textBlock);
+    const textNode = this.getTextElement(textBlock);
     const sourceText = textNode.firstChild?.textContent;
 
     if (sourceText?.includes(replace)) {

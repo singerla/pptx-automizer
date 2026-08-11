@@ -1,6 +1,5 @@
-import Automizer, { modify, XmlElement, XmlHelper } from '../src/index';
+import Automizer, { XmlElement } from '../src/index';
 import { MultiTextHelper } from '../src/helper/multitext-helper';
-import { vd } from '../src/helper/general-helper';
 import { MultiTextParagraph } from '../src/interfaces/imulti-text';
 
 test('replace multi text in a table cell (creates a:txBody when missing).', async () => {

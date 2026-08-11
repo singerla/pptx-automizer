@@ -1,5 +1,4 @@
 import Automizer from '../src/automizer';
-import { ModifyTextHelper } from '../src';
 
 test('Auto-import source slideLayout and -master', async () => {
   const automizer = new Automizer({

@@ -20,7 +20,6 @@ export const vd = (v: any, keys?: boolean): void => {
     v = Object.keys(v);
   }
   console.log('--------- [pptx-automizer] ---------');
-  // @ts-ignore
   console.log(new Error().stack.split('\n')[2].trim());
   console.dir(v, { depth: 10 });
 };

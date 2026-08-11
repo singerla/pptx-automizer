@@ -1,5 +1,4 @@
 import Automizer, { modify } from '../src/index';
-import { vd } from '../src/helper/general-helper';
 
 test('create presentation, modify text elements using getAllTextElementIds.', async () => {
   const automizer = new Automizer({

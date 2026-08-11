@@ -27,7 +27,6 @@ import {
   PlaceholderInfo,
   RelationshipAttribute,
   SlideListAttribute,
-  TemplateSlideInfo,
   XmlDocument,
   XmlElement,
 } from '../types/xml-types';
@@ -42,8 +41,7 @@ import { OLEObject } from '../shapes/ole';
 import { Hyperlink } from '../shapes/hyperlink';
 import { HyperlinkProcessor } from '../helper/hyperlink-processor';
 import { Diagram } from '../shapes/diagram';
-import { ISlide } from '../interfaces/islide';
-import { GeneralHelper, vd } from '../helper/general-helper';
+import { GeneralHelper } from '../helper/general-helper';
 
 export default class HasShapes {
   /**

@@ -14,7 +14,6 @@ import { ElementType } from '../enums/element-type';
 import IArchive from '../interfaces/iarchive';
 import { ContentTypeExtension } from '../enums/content-type-map';
 import { TargetByRelIdMap } from '../constants/constants';
-import { vd } from '../helper/general-helper';
 
 export class Image extends Shape implements IImage {
   extension: ContentTypeExtension;

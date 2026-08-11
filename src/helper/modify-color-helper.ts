@@ -1,9 +1,7 @@
-import { Color, ImageStyle } from '../types/modify-types';
+import { Color } from '../types/modify-types';
 import XmlElements from './xml-elements';
 import { XmlHelper } from './xml-helper';
 import { ShapeBackgroundInfo, XmlElement } from '../types/xml-types';
-import { vd } from './general-helper';
-import { ModifyShapeHelper } from '../index';
 
 export default class ModifyColorHelper {
   /**

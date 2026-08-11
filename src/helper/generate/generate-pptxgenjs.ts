@@ -10,7 +10,6 @@ import {
 } from '../../types/types';
 import { IGenerator } from '../../interfaces/igenerator';
 import { IPptxGenJSSlide } from '../../interfaces/ipptxgenjs-slide';
-import fs from 'fs';
 
 /**
  * Using pptxGenJs on an automizer ISlide will create a temporary pptx template

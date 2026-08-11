@@ -2,7 +2,6 @@ import { XmlDocument } from '../types/xml-types';
 import ModifyColorHelper from './modify-color-helper';
 import { Color } from '../types/modify-types';
 import { XmlHelper } from './xml-helper';
-import { vd } from './general-helper';
 import { IMaster, ModifyImageHelper } from '../index';
 
 export default class ModifyBackgroundHelper {

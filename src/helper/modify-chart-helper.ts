@@ -265,7 +265,7 @@ export default class ModifyChartHelper {
    */
   static readChartInfo =
     (info: any): ChartModificationCallback =>
-    (element: XmlElement, chart?: XmlDocument, workbook?: Workbook): void => {
+    (element: XmlElement, chart?: XmlDocument, _workbook?: Workbook): void => {
       const series = chart.getElementsByTagName('c:ser');
       XmlHelper.modifyCollection(series, (tmpSeries: XmlElement, s: number) => {
         const solidFill = tmpSeries.getElementsByTagName('a:solidFill').item(0);

@@ -3,7 +3,6 @@ import { contentTracker as Tracker } from './content-tracker';
 import { FileHelper } from './file-helper';
 import IArchive from '../interfaces/iarchive';
 import { XmlDocument, XmlElement } from '../types/xml-types';
-import { vd } from './general-helper';
 
 export default class ModifyPresentationHelper {
   /**

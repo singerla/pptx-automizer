@@ -1,9 +1,8 @@
 import Archive from './archive';
-import fs, { promises as fsPromises } from 'fs';
+import { promises as fsPromises } from 'fs';
 import JSZip, { InputType } from 'jszip';
 import {
   ArchiveParams,
-  AutomizerFile,
   AutomizerParams,
 } from '../../types/types';
 import IArchive, { ArchivedFile } from '../../interfaces/iarchive';
@@ -16,7 +15,6 @@ import {
   FileHelper,
   makeDirIfNotExists,
 } from '../file-helper';
-import { vd } from '../general-helper';
 import extract from 'extract-zip';
 import { compressFolder } from '../jszip-helper';
 
@@ -104,8 +102,8 @@ export default class ArchiveFs extends Archive implements IArchive {
       return files;
     }
 
-    let entries = await fsPromises.readdir(path, { withFileTypes: true });
-    for (let entry of entries) {
+    const entries = await fsPromises.readdir(path, { withFileTypes: true });
+    for (const entry of entries) {
       if (!entry.isDirectory()) {
         files.push({
           name: dir + '/' + entry.name,

@@ -36,7 +36,7 @@ export default class CellIdHelper {
     this._nextId.push(0);
   }
 
-  // eslint-disable-next-line
+   
   *[Symbol.iterator]() {
     while (true) {
       yield this.next();

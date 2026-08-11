@@ -1,5 +1,4 @@
 import Automizer, { modify } from '../src/index';
-import { vd } from '../src/helper/general-helper';
 
 test('create presentation, add and modify an existing table by FindElementSelector', async () => {
   const automizer = new Automizer({

@@ -24,7 +24,6 @@ import ModifyColorHelper from '../helper/modify-color-helper';
 import { XmlDocument, XmlElement } from '../types/xml-types';
 import { modify } from '../index';
 import ModifyChartHelper from '../helper/modify-chart-helper';
-import { vd } from '../helper/general-helper';
 
 export class ModifyChart {
   data: ChartData;
@@ -171,7 +170,7 @@ export class ModifyChart {
     this.data.categories.forEach((category, c) => {
       this.columns
         .filter((col) => col.chart)
-        .forEach((col, s) => {
+        .forEach((col) => {
           if (category.values[col.series] === undefined) {
             throw new Error(
               `No value for category "${category.label}" at series "${col.label}".`,

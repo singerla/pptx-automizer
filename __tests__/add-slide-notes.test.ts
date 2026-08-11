@@ -1,5 +1,4 @@
 import Automizer from '../src/automizer';
-import { vd } from '../src/helper/general-helper';
 
 test('create presentation and append slides with notes', async () => {
   const automizer = new Automizer({

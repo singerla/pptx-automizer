@@ -4,7 +4,6 @@ import { ICounter } from '../interfaces/icounter';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { XmlHelper } from './xml-helper';
 import { XmlElement } from '../types/xml-types';
-import { FileHelper } from './file-helper';
 
 export class CountHelper implements ICounter {
   template: RootPresTemplate;

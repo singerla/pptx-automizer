@@ -3,7 +3,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as JSZip from 'jszip';
 import { DOMParser } from '@xmldom/xmldom';
-import { modify } from '../src/index';
 
 test('Modify an existing external hyperlink', async () => {
   const automizer = new Automizer({

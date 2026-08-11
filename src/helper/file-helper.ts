@@ -5,11 +5,9 @@ import { FileInfo, ArchiveParams, AutomizerFile } from '../types/types';
 import { contentTracker } from './content-tracker';
 import IArchive, {
   ArchivedFolderCallback,
-  ArchiveMode,
 } from '../interfaces/iarchive';
 import ArchiveJszip from './archive/archive-jszip';
 import ArchiveFs from './archive/archive-fs';
-import { vd } from './general-helper';
 import { ContentTypeExtension } from '../enums/content-type-map';
 
 export class FileHelper {
@@ -151,26 +149,24 @@ export const makeDirIfNotExists = (dir: string) => {
 };
 
 export const makeDir = (dir: string) => {
-  try {
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir);
-    }
-  } catch (err) {
-    throw err;
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir);
   }
 };
 
 export const copyDir = async (src, dest) => {
   await fsPromises.mkdir(dest, { recursive: true });
-  let entries = await fsPromises.readdir(src, { withFileTypes: true });
+  const entries = await fsPromises.readdir(src, { withFileTypes: true });
 
-  for (let entry of entries) {
-    let srcPath = path.join(src, entry.name);
-    let destPath = path.join(dest, entry.name);
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
 
-    entry.isDirectory()
-      ? await copyDir(srcPath, destPath)
-      : await fsPromises.copyFile(srcPath, destPath);
+    if (entry.isDirectory()) {
+      await copyDir(srcPath, destPath);
+    } else {
+      await fsPromises.copyFile(srcPath, destPath);
+    }
   }
 };
 

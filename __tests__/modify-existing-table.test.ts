@@ -1,4 +1,4 @@
-import Automizer, { modify, XmlHelper } from '../src/index';
+import Automizer, { modify } from '../src/index';
 import { TableRow, TableRowStyle } from '../src/index';
 
 test('create presentation, add and modify an existing table.', async () => {

@@ -2,7 +2,7 @@ import { XmlDocument, XmlElement } from '../types/xml-types';
 import { Target } from '../types/types';
 import IArchive from '../interfaces/iarchive';
 import { XmlHelper } from './xml-helper';
-import { last, vd } from './general-helper';
+import { last } from './general-helper';
 import { ElementSubtype } from '../enums/element-type';
 import { FileHelper } from './file-helper';
 import { randomBytes } from 'crypto';
