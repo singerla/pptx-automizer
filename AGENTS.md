@@ -55,7 +55,7 @@ src/
                            Rich-text pipeline: HTML → MultiTextParagraph[] → DrawingML
                            (known bugs + rework plan: see ROADMAP "HTML → PPTX text" track)
     xml-slide-helper.ts    Read-side slide introspection (getAllElements, dimensions, …)
-    content-tracker.ts     ⚠ Global singleton tracking copied files/relations (used by cleanup)
+    content-tracker.ts     ContentTracker: per-instance tracking of copied files/relations (used by cleanup)
     archive/               IArchive impls: archive-jszip.ts (default), archive-fs.ts (debugging)
     generate/              PptxGenJS bridge for `slide.generate(...)`
   types/                   Public + internal type defs (chart-types, table-types, modify-types, …)
@@ -97,9 +97,13 @@ Consequences for agents:
   Slide/master/layout numbering is 1-based and file-name-driven.
 - **Relationship IDs**: newly created rels get an `rId<max+1>-created` suffix
   (`xml-helper.ts:getNextRelId`). Don't "fix" this casually; cleanup logic depends on it.
-- **Global state**: `contentTracker` (content-tracker.ts) and `Logger`
-  (general-helper.ts) are module-level singletons. Two concurrent `Automizer`
-  instances interfere with each other. Known issue, see ROADMAP.
+- **No module-level state** (ROADMAP Phase 3): the `ContentTracker` instance is
+  owned by `Automizer`/root template and reached via `archive.contentTracker`
+  on the **output** archive (optional — absent on source archives, tracking
+  calls no-op). The `log` facade resolves the active logger per async call
+  tree (`AsyncLocalStorage`; `Automizer` entry points wrap themselves in
+  `runWithLogger`). Don't reintroduce singletons — concurrent `Automizer`
+  instances are supported and guarded by `__tests__/concurrent-instances.test.ts`.
 - **Error style is inconsistent** (string throws vs `Error` objects vs
   `console.error` + `return undefined`). When touching code, prefer `throw new Error(...)`,
   but don't mass-convert in an unrelated PR.

@@ -92,21 +92,31 @@ concerns. It's where most future features will land, so pay this debt first.
   descriptive `AutomizerError` instead of crashing with an opaque `TypeError`
   (OLE still supports `remove` only).
 
-## Phase 3 — Kill global state (enables concurrent instances)
+## Phase 3 — Kill global state (enables concurrent instances) — ✅ done 2026-08-11
 
-- 🏗 `contentTracker` is a module-level singleton (`content-tracker.ts:295`,
-  reset via `Tracker.reset()` in `automizer.ts:finalizePresentation`). Two
-  `Automizer` instances running concurrently — the obvious server use case, and
-  Ensemblio's — share and corrupt each other's tracking state. The code already
-  has two TODOs for this. Move the instance onto the root `Template` (it already
-  exists as `automizer.content`; the remaining offenders are the direct
-  `contentTracker` imports in `xml-helper.ts` and `file-helper.ts` — thread it
-  through instead).
-- 🏗 Same for the module-level active logger in `helper/logger.ts`
-  (`setActiveLogger`): thread the `Automizer`-owned instance through to the
-  static helpers instead.
-- 🧪 Add a regression test: two Automizer instances built in parallel
-  (`Promise.all([presA.write(...), presB.write(...)])`) produce valid output.
+- 🏗 ✅ `contentTracker` module-level singleton removed. The instance is owned
+  by `Automizer` (`automizer.content`), shared with the root `Template`
+  (`rootTemplate.content`) and attached to the **output archive**
+  (`IArchive.contentTracker`, optional) — which is exactly the object every
+  former direct importer (`xml-helper.ts`, `file-helper.ts`, `chart.ts`,
+  `modify-presentation-helper.ts`) already had in scope. Source-template
+  archives carry no tracker; tracking calls no-op there. Also fixed
+  `ContentTracker.getRelationTag`/`pushRelationTagTargets` referencing the
+  singleton instead of `this`.
+- 🏗 ✅ Module-level `setActiveLogger` removed. The `log` facade resolves the
+  active logger per async call tree via `AsyncLocalStorage`: `Automizer` wraps
+  its entry points (`write`, `stream`, `getJSZip`, `finalizePresentation`,
+  `setCreationIds`) in `runWithLogger(this.logger, …)`, so concurrent
+  instances log through their own logger. Explicit threading was ruled out
+  because public `modify.*` signatures cannot carry a logger (see the
+  no-signature-changes rule). Outside any instance context, `log` falls back
+  to a default `ConsoleLogger`.
+- 🧪 ✅ Regression test `__tests__/concurrent-instances.test.ts`: two
+  instances (charts deck / images deck, `cleanup: true`) written via
+  `Promise.all` must produce archives part-for-part identical to their
+  sequentially built twins, plus a logger-isolation test. On the pre-Phase-3
+  code this test crashes with `Could not find file ppt/charts/chart1.xml@RootTemplate.pptx`
+  — instance B tripping over instance A's tracked relations.
 
 ## Phase 4 — Template & archive layer clarity
 
