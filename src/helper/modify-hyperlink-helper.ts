@@ -76,7 +76,7 @@ export default class ModifyHyperlinkHelper {
   }
 
   private static addHyperlinkToParagraph(
-    paragraph: Element,
+    paragraph: XmlElement,
     hyperlinkElement: HyperlinkElement,
   ): void {
     const existingText = paragraph.getElementsByTagName('a:t')[0];
@@ -91,7 +91,7 @@ export default class ModifyHyperlinkHelper {
   }
 
   private static createNewTextStructure(
-    txBody: Element,
+    txBody: XmlElement,
     hyperlinkElement: HyperlinkElement,
   ): void {
     const p = txBody.ownerDocument.createElement('a:p');

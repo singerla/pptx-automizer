@@ -5,6 +5,7 @@ import {
   MultiTextRun,
 } from '../interfaces/imulti-text';
 import { DOMParser, Node } from '@xmldom/xmldom';
+import type { Element } from '@xmldom/xmldom';
 import { log } from './logger';
 import {
   normalizeCssColor,
@@ -163,7 +164,7 @@ export class HtmlToMultiTextHelper {
    * properties). Neither is ever mutated in place - each level gets its own
    * copy, which is what makes both list-nesting shapes converge.
    */
-  private walk(node: ChildNode, block: BlockContext, inline: TextStyle): void {
+  private walk(node: Node, block: BlockContext, inline: TextStyle): void {
     if (node.nodeType === Node.TEXT_NODE) {
       this.appendText(node.textContent || '', block, inline);
       return;
@@ -240,7 +241,7 @@ export class HtmlToMultiTextHelper {
     inline: TextStyle,
   ): void {
     Array.from(element.childNodes).forEach((child) =>
-      this.walk(child as ChildNode, block, inline),
+      this.walk(child as Node, block, inline),
     );
   }
 

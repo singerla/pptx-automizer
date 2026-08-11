@@ -1,10 +1,10 @@
-import { XmlElement } from './xml-types';
+import { XmlElement, XmlElementCollection } from './xml-types';
 
 export type ModifyCallback = {
   (element: XmlElement): void;
 };
 export type ModifyCollectionCallback = {
-  (collection: HTMLCollectionOf<XmlElement>): void;
+  (collection: XmlElementCollection): void;
 };
 /**
  * A Modification is applied to xml elements by ModificationTags.

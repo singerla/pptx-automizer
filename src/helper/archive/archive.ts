@@ -29,9 +29,9 @@ export default class Archive {
     ) as unknown as XmlDocument;
   }
 
-  serializeXml(XmlDocument: XMLDocument | Node) {
+  serializeXml(xml: XmlDocument | Node) {
     const s = new XMLSerializer();
-    return s.serializeToString(<Node>XmlDocument);
+    return s.serializeToString(<Node>xml);
   }
 
   async writeBuffer(archiveType: ArchiveType) {

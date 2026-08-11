@@ -9,7 +9,7 @@
     "sourceMap": true,
     "outDir": "dist",
     "baseUrl": "/",
-    "lib": ["es2020", "dom"],
+    "lib": ["es2020"],
     "declaration": true,
     "declarationDir": "./dist",
     "types": ["jest", "node"]

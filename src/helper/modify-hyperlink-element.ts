@@ -1,17 +1,18 @@
 import { XmlHelper } from './xml-helper';
+import { XmlDocument, XmlElement } from '../types/xml-types';
 
 export default class HyperlinkElement {
-  private doc: Document;
+  private doc: XmlDocument;
   private relId: string;
   private isInternal: boolean;
 
-  constructor(doc: Document, relId: string, isInternal: boolean) {
+  constructor(doc: XmlDocument, relId: string, isInternal: boolean) {
     this.doc = doc;
     this.relId = relId;
     this.isInternal = isInternal;
   }
 
-  createHlinkClick(): Element {
+  createHlinkClick(): XmlElement {
     const hlinkClick = this.doc.createElement('a:hlinkClick');
     hlinkClick.setAttribute('r:id', this.relId);
     hlinkClick.setAttribute(
@@ -34,7 +35,7 @@ export default class HyperlinkElement {
     return hlinkClick;
   }
 
-  createTextRun(text: string): Element {
+  createTextRun(text: string): XmlElement {
     const run = this.doc.createElement('a:r');
     const rPr = this.doc.createElement('a:rPr');
     const t = this.doc.createElement('a:t');

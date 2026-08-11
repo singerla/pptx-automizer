@@ -1,3 +1,9 @@
+import type {
+  Document as XmldomDocument,
+  Element as XmldomElement,
+  LiveNodeList,
+  NodeList as XmldomNodeList,
+} from '@xmldom/xmldom';
 import IArchive from '../interfaces/iarchive';
 import { TableInfo } from './table-types';
 import { Color } from './modify-types';
@@ -23,8 +29,15 @@ export type OverrideAttribute = {
   ContentType: string;
 };
 
-export type XmlDocument = XMLDocument;
-export type XmlElement = Element;
+export type XmlDocument = XmldomDocument;
+export type XmlElement = XmldomElement;
+/**
+ * Live collection returned by getElementsByTagName; xmldom's NodeList
+ * supports numeric indexing, `item()`, `length` and iteration.
+ */
+export type XmlElementCollection = LiveNodeList<XmldomElement>;
+/** Node collection, e.g. `element.childNodes`. */
+export type XmlNodeCollection = XmldomNodeList;
 
 export type HelperElement = {
   archive: IArchive;

@@ -4,7 +4,7 @@ import StringIdGenerator from './cell-id-helper';
 import { GeneralHelper } from './general-helper';
 import { XmlHelper } from './xml-helper';
 import XmlElements from './xml-elements';
-import { XmlDocument, XmlElement } from '../types/xml-types';
+import { XmlDocument, XmlElement, XmlElementCollection } from '../types/xml-types';
 
 export default class ModifyXmlHelper {
   root: XmlDocument | XmlElement;
@@ -75,7 +75,7 @@ export default class ModifyXmlHelper {
   }
 
   assertElement(
-    collection: HTMLCollectionOf<Element>,
+    collection: XmlElementCollection,
     index: number,
     tag: string,
     parent: XmlDocument | XmlElement,

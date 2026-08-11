@@ -1,7 +1,7 @@
 import { Color } from '../types/modify-types';
 import XmlElements from './xml-elements';
 import { XmlHelper } from './xml-helper';
-import { ShapeBackgroundInfo, XmlElement } from '../types/xml-types';
+import { ShapeBackgroundInfo, XmlElement, XmlElementCollection } from '../types/xml-types';
 import { normalizeCssColor } from './css-style-parser';
 
 export default class ModifyColorHelper {
@@ -44,7 +44,7 @@ export default class ModifyColorHelper {
       }).colorType();
 
       XmlHelper.sliceCollection(
-        solidFill.childNodes as unknown as HTMLCollectionOf<XmlElement>,
+        solidFill.childNodes as unknown as XmlElementCollection,
         0,
       );
       solidFill.appendChild(colorType);

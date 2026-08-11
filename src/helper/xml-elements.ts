@@ -1,6 +1,7 @@
 import { BulletListContent, Color, ShapeOutline } from '../types/modify-types';
 import { XmlHelper } from './xml-helper';
 import { DOMParser } from '@xmldom/xmldom';
+import type { Node } from '@xmldom/xmldom';
 import { dLblXml } from './xml/dLbl';
 import { lnLRTB } from './xml/lnLRTB';
 import { XmlDocument, XmlElement } from '../types/xml-types';

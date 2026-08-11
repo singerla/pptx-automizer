@@ -21,7 +21,7 @@ import { Workbook } from '../types/types';
 import ModifyXmlHelper from '../helper/modify-xml-helper';
 import ModifyTextHelper from '../helper/modify-text-helper';
 import ModifyColorHelper from '../helper/modify-color-helper';
-import { XmlDocument, XmlElement } from '../types/xml-types';
+import { XmlDocument, XmlElement, XmlElementCollection } from '../types/xml-types';
 import { modify } from '../index';
 import ModifyChartHelper from '../helper/modify-chart-helper';
 
@@ -758,7 +758,7 @@ export class ModifyChart {
     return {
       children: {
         [tag]: {
-          collection: (collection: HTMLCollectionOf<Element>) => {
+          collection: (collection: XmlElementCollection) => {
             XmlHelper.sliceCollection(collection, length);
           },
         },

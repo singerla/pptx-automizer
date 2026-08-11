@@ -1,4 +1,5 @@
 import { FileHelper } from '../helper/file-helper';
+import { XmlDocument } from '../types/xml-types';
 import { PptPaths } from '../helper/ppt-paths';
 import { ShapeTargetType, SourceIdentifier } from '../types/types';
 import { ISlide } from '../interfaces/islide';
@@ -81,7 +82,7 @@ export class Slide extends HasShapes implements ISlide {
    * @param layoutId
    */
   useSlideLayout(layoutId?: number | string): this {
-    this.relModifications.push(async (slideRelXml: XMLDocument) => {
+    this.relModifications.push(async (slideRelXml: XmlDocument) => {
       let targetLayoutId: number;
 
       if (typeof layoutId === 'string') {
