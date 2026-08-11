@@ -150,7 +150,20 @@ modify.setPosition({ x: CmToDxa(2), y: CmToDxa(1), w: CmToDxa(10), h: CmToDxa(5)
 modify.updatePosition({ x: CmToDxa(1) });   // only given props, relative-safe
 modify.rotateShape(45);
 modify.setSolidFill({ type: 'srgbClr', value: '00FF00' });
+
+// Outline/border of a shape: width (EMU, 1pt = 12700), color, dash style.
+// Only given props are touched; an a:ln is created if the shape has none.
+import { PtToEmu } from 'pptx-automizer';
+modify.setOutline({
+  weight: PtToEmu(2),
+  color: { type: 'srgbClr', value: 'FF0000' },
+  type: 'sysDash', // any a:prstDash value: solid, dot, dash, lgDashDot, …
+});
 ```
+
+If a shape's outline was switched off in PowerPoint, `weight` alone stays
+invisible — pass a `color` too. `ModifyCleanupHelper.removeBorder` removes an
+outline entirely.
 
 ### Tables
 
@@ -260,6 +273,10 @@ Rules for hand-written callbacks:
 
 ### Worked example: shape outline (weight + color)
 
+> Outlines now have a dedicated modifier — use `modify.setOutline(...)` from the
+> cheat sheet above for real work. The example is kept because it shows the
+> general technique on a realistic property.
+
 ```ts
 import Automizer, { XmlElement } from 'pptx-automizer';
 
@@ -321,7 +338,7 @@ OOXML uses no single unit. When writing raw XML:
 | What | Unit | Conversion |
 |---|---|---|
 | Position/size (`a:off`, `a:ext`), line width `a:ln/@w`, corner radius | EMU | 1 cm = 360000 · 1 inch = 914400 · 1 pt = 12700 |
-| `modify.setPosition` / `updatePosition` | same EMU values | helpers `CmToDxa(cm)` / `DxaToCm(v)` (name says Dxa, value is EMU) |
+| `modify.setPosition` / `updatePosition` / `setOutline` | same EMU values | helpers `CmToDxa(cm)` / `DxaToCm(v)` (name says Dxa, value is EMU), `PtToEmu(pt)` / `EmuToPt(v)` |
 | Rotation (`a:xfrm/@rot`) | 1/60000 degree | 45° = 2700000 |
 | Font size (`a:rPr/@sz`, `TextStyle.size`) | 1/100 pt | 18pt = 1800 |
 | Percentages (`a:alpha/@val`, `a:lumMod`, …) | 1/1000 % | 50% = 50000 |

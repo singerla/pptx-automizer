@@ -627,6 +627,28 @@ export class XmlHelper {
     }
   }
 
+  /**
+   * Find the first *direct* child of an element matching one of the given
+   * tag names. Unlike getElementsByTagName, this will not descend into
+   * grandchildren - e.g. an <a:ln> inside <p:spPr> is the shape outline,
+   * while an <a:ln> found anywhere below <p:sp> might belong to a text run.
+   *
+   * @param element - The parent element to scan
+   * @param tagNames - Tag names to look for, in no particular order
+   * @returns The first matching child element, or undefined
+   */
+  static getFirstDirectChild(
+    element: XmlElement,
+    tagNames: string[],
+  ): XmlElement | undefined {
+    for (let i = 0; i < element.childNodes.length; i++) {
+      const child = element.childNodes.item(i) as XmlElement;
+      if (tagNames.includes(child.nodeName)) {
+        return child;
+      }
+    }
+  }
+
   static getClosestParent(tag: string, element: XmlElement): XmlElement {
     if (element.parentNode) {
       if (element.parentNode.nodeName === tag) {

@@ -1,6 +1,11 @@
 import Automizer from './automizer';
 
-import ModifyHelper, { CmToDxa, DxaToCm } from './helper/modify-helper';
+import ModifyHelper, {
+  CmToDxa,
+  DxaToCm,
+  EmuToPt,
+  PtToEmu,
+} from './helper/modify-helper';
 import ModifyShapeHelper from './helper/modify-shape-helper';
 import ModifyCleanupHelper from './helper/modify-cleanup-helper';
 import ModifyTableHelper from './helper/modify-table-helper';
@@ -33,6 +38,7 @@ import {
   HyperlinkInfo,
   ImageStyle,
   ReplaceText,
+  ShapeOutline,
   TextStyle,
 } from './types/modify-types';
 import { ShapeCoordinates, ShapeValueStyle } from './types/shape-types';
@@ -52,6 +58,7 @@ const dumpChart = ModifyHelper.dumpChart;
 const setAttribute = ModifyHelper.setAttribute;
 
 const setSolidFill = ModifyShapeHelper.setSolidFill;
+const setOutline = ModifyShapeHelper.setOutline;
 const setText = ModifyShapeHelper.setText;
 const setMultiText = ModifyTextHelper.setMultiText;
 const htmlToMultiText = ModifyTextHelper.htmlToMultiText;
@@ -108,6 +115,7 @@ export type {
   ChartValueStyle,
   Color,
   Border,
+  ShapeOutline,
   ShapeValueStyle,
   ShapeCoordinates,
   ReplaceText,
@@ -133,6 +141,7 @@ export const modify = {
   dumpChart,
   setAttribute,
   setSolidFill,
+  setOutline,
   setText,
   setMultiText,
   htmlToMultiText,
@@ -174,7 +183,7 @@ export const read = {
   readChartInfo,
 };
 
-export { CmToDxa, DxaToCm };
+export { CmToDxa, DxaToCm, PtToEmu, EmuToPt };
 
 export type {
   AutomizerFile,

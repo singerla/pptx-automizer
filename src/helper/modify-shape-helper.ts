@@ -2,7 +2,13 @@
  * @file ModifyShapeHelper provides utility functions for manipulating PowerPoint shapes
  * through XML modifications.
  */
-import { Color, ReplaceText, ReplaceTextOptions } from '../types/modify-types';
+import {
+  Color,
+  ReplaceText,
+  ReplaceTextOptions,
+  ShapeOutline,
+} from '../types/modify-types';
+import XmlElements from './xml-elements';
 import { ShapeCoordinates } from '../types/shape-types';
 import { GeneralHelper } from './general-helper';
 import TextReplaceHelper from './text-replace-helper';
@@ -45,6 +51,18 @@ const map = {
 };
 
 /**
+ * Children of <p:spPr> that must stay behind <a:ln>, in OOXML schema order.
+ * Used to insert a new outline at a schema-valid position.
+ */
+const SPPR_AFTER_LINE_TAGS = [
+  'a:effectLst',
+  'a:effectDag',
+  'a:scene3d',
+  'a:sp3d',
+  'a:extLst',
+];
+
+/**
  * Helper class for modifying PowerPoint shapes in XML structure
  * Provides various methods for manipulating shape appearance, position, and content
  */
@@ -60,6 +78,47 @@ export default class ModifyShapeHelper {
       .getElementsByTagName('a:schemeClr')[0]
       .setAttribute('val', 'accent6');
   };
+
+  /**
+   * Set outline (line) properties of an existing shape, picture or
+   * placeholder: width, dash style and color.
+   *
+   * Creates an <a:ln> element if the shape has none, which is the case
+   * whenever the outline was never overridden in PowerPoint and is
+   * inherited from the theme or the shape style.
+   *
+   * Note: if the shape's outline was explicitly switched off in PowerPoint
+   * (<a:ln><a:noFill/></a:ln>), a weight alone stays invisible - pass a
+   * color as well. Use ModifyCleanupHelper.removeBorder to drop an outline.
+   *
+   * @param outline - Width (EMU, 1pt = 12700), dash type and/or color
+   * @returns Function that accepts an XML element to modify
+   */
+  static setOutline =
+    (outline: ShapeOutline) =>
+    (element: XmlElement): void => {
+      // For grouped shapes, this targets the first child shape;
+      // modify the members of a group individually instead.
+      const spPr =
+        element.getElementsByTagName('p:spPr')[0] ||
+        element.getElementsByTagName('a:spPr')[0];
+
+      if (!spPr) {
+        return; // e.g. a graphicFrame (table/chart) has no shape properties
+      }
+
+      // Direct child only: <a:ln> also occurs in text run properties.
+      const existingLine = XmlHelper.getFirstDirectChild(spPr, ['a:ln']);
+
+      if (existingLine) {
+        new XmlElements(spPr, { outline }).applyOutline(existingLine);
+        return;
+      }
+
+      const line = new XmlElements(spPr, { outline }).outline();
+      const anchor = XmlHelper.getFirstDirectChild(spPr, SPPR_AFTER_LINE_TAGS);
+      anchor ? spPr.insertBefore(line, anchor) : spPr.appendChild(line);
+    };
 
   /**
    * Set text content of a shape
