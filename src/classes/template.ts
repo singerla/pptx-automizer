@@ -18,7 +18,6 @@ import Automizer from '../automizer';
 import { IMaster } from '../interfaces/imaster';
 import { ILayout } from '../interfaces/ilayout';
 import { IGenerator } from '../interfaces/igenerator';
-import GeneratePptxGenJs from '../helper/generate/generate-pptxgenjs';
 
 /**
  * Shared base for the two template roles: a source template provides
@@ -309,11 +308,23 @@ export class OutputTemplate extends Template implements RootPresTemplate {
   }
 
   async runExternalGenerator() {
+    const requiresGenerator = this.slides.some(
+      (slide) => slide.getGeneratedElements().length > 0,
+    );
+    if (!requiresGenerator) {
+      return;
+    }
+
+    // Lazy import: pptxgenjs is a heavy dependency that pure
+    // "modify existing pptx" runs never need.
+    const { default: GeneratePptxGenJs } = await import(
+      '../helper/generate/generate-pptxgenjs'
+    );
     this.generator = new GeneratePptxGenJs(this.automizer, this.slides);
     await this.generator.generateSlides();
   }
 
   async cleanupExternalGenerator() {
-    await this.generator.cleanup();
+    await this.generator?.cleanup();
   }
 }

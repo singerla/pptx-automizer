@@ -9,7 +9,7 @@ import {
 } from './xml-types';
 import IArchive, { ArchiveMode } from '../interfaces/iarchive';
 import { ContentTypeExtension } from '../enums/content-type-map';
-import PptxGenJS from 'pptxgenjs';
+import type PptxGenJS from 'pptxgenjs';
 import { ILogger, Verbosity } from '../helper/logger';
 import { IPptxGenJSSlide } from '../interfaces/ipptxgenjs-slide';
 import { ShapeActionMode } from '../interfaces/ishape-action';
