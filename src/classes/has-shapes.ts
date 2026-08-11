@@ -1,19 +1,14 @@
-import { ElementNotFoundError, SlideNotFoundError } from '../errors';
-import { log } from '../helper/logger';
+import { SlideNotFoundError } from '../errors';
 import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import IArchive from '../interfaces/iarchive';
 import { PresTemplate } from '../interfaces/pres-template';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
 import {
-  AnalyzedElementType,
   AutomizerParams,
-  ElementOnSlide,
   FindElementSelector,
-  FindElementStrategy,
   GenerateElements,
   GenerateOnSlideCallback,
-  ImportedElement,
   ImportElement,
   ShapeModificationCallback,
   ShapeTargetType,
@@ -27,24 +22,27 @@ import {
   ElementInfo,
   ModifyXmlCallback,
   PlaceholderInfo,
-  RelationshipAttribute,
-  SlideListAttribute,
-  XmlDocument,
-  XmlElement,
 } from '../types/xml-types';
 import { XmlHelper } from '../helper/xml-helper';
-import { FileHelper } from '../helper/file-helper';
-import { Chart } from '../shapes/chart';
-import { Image } from '../shapes/image';
-import { ElementType } from '../enums/element-type';
-import { GenericShape } from '../shapes/generic';
+import { PptPaths } from '../helper/ppt-paths';
 import { XmlSlideHelper } from '../helper/xml-slide-helper';
-import { OLEObject } from '../shapes/ole';
-import { Hyperlink } from '../shapes/hyperlink';
-import { HyperlinkProcessor } from '../helper/hyperlink-processor';
-import { Diagram } from '../shapes/diagram';
-import { GeneralHelper } from '../helper/general-helper';
+import { ContentTypeRegistry } from './content-type-registry';
+import { ElementImporter } from './element-importer';
+import { PlaceholderNormalizer } from './placeholder-normalizer';
+import { RelatedContentCopier } from './related-content-copier';
+import { SlideNotesCopier } from './slide-notes-copier';
 
+/**
+ * Base class of Slide, Master and Layout: holds the source/target context
+ * of a copied part and the queues of deferred modifications.
+ *
+ * The actual work is done by collaborators (ROADMAP Phase 2):
+ * - ElementImporter — queued element import/modify/remove
+ * - RelatedContentCopier — charts/images/diagrams/OLE/hyperlinks
+ * - SlideNotesCopier — notesSlide copy + number remapping
+ * - PlaceholderNormalizer — placeholder cleanup, unsupported tags
+ * - ContentTypeRegistry — presentation.xml + [Content_Types].xml entries
+ */
 export default class HasShapes {
   /**
    * Source template of slide
@@ -102,11 +100,6 @@ export default class HasShapes {
    */
   relModifications: ModifyXmlCallback[];
   /**
-   * Import elements of slide
-   * @internal
-   */
-  importElements: ImportElement[];
-  /**
    * Generate elements on slide with PptxGenJS
    * @internal
    */
@@ -156,6 +149,16 @@ export default class HasShapes {
 
   cleanupPlaceholders = false;
 
+  /**
+   * Collaborators doing the actual work on write (ROADMAP Phase 2).
+   * @internal
+   */
+  elementImporter: ElementImporter;
+  relatedContent: RelatedContentCopier;
+  notes: SlideNotesCopier;
+  placeholderNormalizer: PlaceholderNormalizer;
+  contentTypes: ContentTypeRegistry;
+
   constructor(params: {
     presentation: IPresentationProps;
     template: PresTemplate;
@@ -165,7 +168,6 @@ export default class HasShapes {
     this.preparations = [];
     this.modifications = [];
     this.relModifications = [];
-    this.importElements = [];
     this.generateElements = [];
 
     this.presentation = params.presentation;
@@ -174,6 +176,20 @@ export default class HasShapes {
     this.content = params.presentation.content;
 
     this.cleanupPlaceholders = params.presentation.params.cleanupPlaceholders;
+
+    this.elementImporter = new ElementImporter(this);
+    this.relatedContent = new RelatedContentCopier(this);
+    this.notes = new SlideNotesCopier(this);
+    this.placeholderNormalizer = new PlaceholderNormalizer(this);
+    this.contentTypes = new ContentTypeRegistry(this);
+  }
+
+  /**
+   * Queued element imports/modifications/removals of this slide.
+   * @internal
+   */
+  get importElements(): ImportElement[] {
+    return this.elementImporter.queue;
   }
 
   /**
@@ -302,12 +318,9 @@ export default class HasShapes {
     selector: FindElementSelector,
     callback: ShapeModificationCallback | ShapeModificationCallback[],
   ): this {
-    const presName = this.sourceTemplate.name;
-    const slideNumber = this.sourceNumber;
-
-    this.addElementToModificationsList(
-      presName,
-      slideNumber,
+    this.elementImporter.add(
+      this.sourceTemplate.name,
+      this.sourceNumber,
       selector,
       'modify',
       callback,
@@ -343,7 +356,7 @@ export default class HasShapes {
     selector: FindElementSelector,
     callback?: ShapeModificationCallback | ShapeModificationCallback[],
   ): this {
-    this.addElementToModificationsList(
+    this.elementImporter.add(
       presName,
       slideNumber,
       selector,
@@ -359,44 +372,15 @@ export default class HasShapes {
    * @param {string} selector - Element's name on the slide.
    */
   removeElement(selector: FindElementSelector): this {
-    const presName = this.sourceTemplate.name;
-    const slideNumber = this.sourceNumber;
-
-    this.addElementToModificationsList(
-      presName,
-      slideNumber,
+    this.elementImporter.add(
+      this.sourceTemplate.name,
+      this.sourceNumber,
       selector,
       'remove',
       undefined,
     );
 
     return this;
-  }
-
-  /**
-   * Adds element to modifications list
-   * @internal
-   * @param presName
-   * @param slideNumber
-   * @param selector
-   * @param mode
-   * @param [callback]
-   * @returns element to modifications list
-   */
-  private addElementToModificationsList(
-    presName: string,
-    slideNumber: number,
-    selector: FindElementSelector,
-    mode: string,
-    callback?: ShapeModificationCallback | ShapeModificationCallback[],
-  ): void {
-    this.importElements.push({
-      presName,
-      slideNumber,
-      selector,
-      mode,
-      callback,
-    });
   }
 
   /**
@@ -437,249 +421,11 @@ export default class HasShapes {
   }
 
   /**
-   * Processes and updates the list of imported elements by ensuring their uniqueness based on a generated hash.
-   * If duplicate elements are found, their callbacks are merged.
-   *
-   * @return {Promise<void>} Resolves when the process of identifying and updating unique imported elements is complete.
-   */
-  async getUniqueImportedElements(): Promise<ImportElement[]> {
-    for (const element of this.importElements) {
-      const info = await this.getElementInfo(element);
-
-      // getElementInfo only returns undefined with params.continueOnError;
-      // skip the unresolvable element in that case.
-      if (!info) {
-        continue;
-      }
-
-      if(element.mode === 'append') {
-        element.info = info;
-        continue
-      }
-
-      const selector = XmlSlideHelper.getSelector(info.sourceElement);
-      const eleHash = JSON.stringify(selector);
-      const alreadyImported = this.importElements.find(
-        (ele) => ele.info?.hash === eleHash,
-      );
-      if (alreadyImported) {
-        const existingCallbacks = GeneralHelper.arrayify(element.callback);
-        const pushCallbacks = GeneralHelper.arrayify(alreadyImported.info.callback)
-        alreadyImported.info.callback = [
-          ...existingCallbacks,
-          ...pushCallbacks
-        ]
-      } else {
-        info.hash = eleHash;
-        element.info = info;
-      }
-    }
-
-    return this.importElements.filter((ele) => {
-      return ele.info;
-    });
-  }
-
-  /**
    * Imported selected elements while merging multiple element modifications
    * @internal
    */
   async importedSelectedElements(): Promise<void> {
-    const importElements = await this.getUniqueImportedElements();
-
-    for (const element of importElements) {
-      const info = element.info;
-      switch (info?.type) {
-        case ElementType.Chart:
-          await new Chart(info, this.targetType)[info.mode](
-            this.targetTemplate,
-            this.targetNumber,
-            this.targetType,
-          );
-          break;
-        case ElementType.Image:
-          await new Image(info, this.targetType)[info.mode](
-            this.targetTemplate,
-            this.targetNumber,
-            this.targetType,
-          );
-          break;
-        case ElementType.Shape:
-          await new GenericShape(info, this.targetType)[info.mode](
-            this.targetTemplate,
-            this.targetNumber,
-            this.targetType,
-          );
-          break;
-        case ElementType.Diagram:
-          await new Diagram(info, this.targetType)[info.mode](
-            this.targetTemplate,
-            this.targetNumber,
-            this.targetType,
-          );
-          break;
-        case ElementType.OLEObject:
-          await new OLEObject(info, this.targetType, this.sourceArchive)[
-            info.mode
-          ](this.targetTemplate, this.targetNumber, this.targetType);
-          break;
-        case ElementType.Hyperlink:
-          // For hyperlinks, we need to handle them differently
-          if (info.target) {
-            await new Hyperlink(
-              info,
-              this.targetType,
-              this.sourceArchive,
-              info.target.isExternal ? 'external' : 'internal',
-              info.target.file,
-            )[info.mode](this.targetTemplate, this.targetNumber);
-          }
-          break;
-        default:
-          break;
-      }
-    }
-  }
-
-  /**
-   * Gets element info
-   * @internal
-   * @param importElement
-   * @returns element info
-   */
-  async getElementInfo(importElement: ImportElement): Promise<ImportedElement> {
-    const template = this.root.getTemplate(importElement.presName);
-
-    const slideNumber =
-      importElement.mode === 'append'
-        ? this.getSlideNumber(template, importElement.slideNumber)
-        : importElement.slideNumber;
-
-    let currentMode = 'slideToSlide';
-    if (this.targetType === 'slideMaster') {
-      if (importElement.mode === 'append') {
-        currentMode = 'slideToMaster';
-      } else {
-        currentMode = 'onMaster';
-      }
-    }
-
-    // It is possible to import shapes from loaded slides to slideMaster,
-    // as well as to modify an existing shape on current slideMaster
-    const sourcePath =
-      currentMode === 'onMaster'
-        ? `ppt/slideMasters/slideMaster${slideNumber}.xml`
-        : `ppt/slides/slide${slideNumber}.xml`;
-
-    const sourceRelPath =
-      currentMode === 'onMaster'
-        ? `ppt/slideMasters/_rels/slideMaster${slideNumber}.xml.rels`
-        : `ppt/slides/_rels/slide${slideNumber}.xml.rels`;
-
-    const sourceArchive = await template.archive;
-    const useCreationIds =
-      template.useCreationIds === true && template.creationIds !== undefined;
-
-    const { sourceElement, selector, mode } = await this.findElementOnSlide(
-      importElement.selector,
-      sourceArchive,
-      sourcePath,
-      useCreationIds,
-    );
-
-    if (!sourceElement) {
-      const message = `Can't find element on slide ${slideNumber} in ${importElement.presName} (selector: ${JSON.stringify(
-        importElement.selector,
-      )})`;
-      if (this.presentation.params.continueOnError === true) {
-        log.warn(message);
-        return;
-      }
-      throw new ElementNotFoundError(message, {
-        selector:
-          typeof importElement.selector === 'string'
-            ? importElement.selector
-            : JSON.stringify(importElement.selector),
-        file: sourcePath,
-      });
-    }
-
-    const appendElementParams = await this.analyzeElement(
-      sourceElement,
-      sourceArchive,
-      sourceRelPath,
-    );
-
-    return {
-      mode: importElement.mode,
-      name: selector,
-      selector: XmlSlideHelper.getSelector(sourceElement),
-      hasCreationId: mode === 'findByElementCreationId',
-      sourceArchive,
-      sourceSlideNumber: slideNumber,
-      sourceElement,
-      callback: importElement.callback,
-      target: appendElementParams.target,
-      type: appendElementParams.type,
-      continueOnError: this.presentation.params.continueOnError === true,
-    };
-  }
-
-  /**
-   * @param selector
-   * @param sourceArchive
-   * @param sourcePath
-   * @param useCreationIds
-   */
-  async findElementOnSlide(
-    selector: FindElementSelector,
-    sourceArchive: IArchive,
-    sourcePath: string,
-    useCreationIds: boolean,
-  ): Promise<ElementOnSlide> {
-    const strategies: FindElementStrategy[] = [];
-    if (typeof selector === 'string') {
-      if (useCreationIds) {
-        strategies.push({
-          mode: 'findByElementCreationId',
-          selector: selector,
-        });
-      }
-      strategies.push({
-        mode: 'findByElementName',
-        selector: selector,
-      });
-    } else {
-      if (selector.creationId) {
-        strategies.push({
-          mode: 'findByElementCreationId',
-          selector: selector.creationId,
-        });
-      }
-
-      strategies.push({
-        mode: 'findByElementName',
-        selector: selector.name,
-        nameIdx: selector.nameIdx,
-      });
-    }
-
-    for (const findElement of strategies) {
-      const mode = findElement.mode;
-
-      const sourceElement = await XmlHelper[mode](
-        sourceArchive,
-        sourcePath,
-        findElement.selector,
-        findElement.nameIdx,
-      );
-
-      if (sourceElement) {
-        return { sourceElement, selector: findElement.selector, mode };
-      }
-    }
-
-    return { sourceElement: undefined, selector: JSON.stringify(selector) };
+    await this.elementImporter.importSelected();
   }
 
   async checkIntegrity(info: boolean, assert: boolean): Promise<void> {
@@ -699,208 +445,7 @@ export default class HasShapes {
    * @returns slide to presentation
    */
   async addToPresentation(): Promise<void> {
-    const relId = await XmlHelper.getNextRelId(
-      this.targetArchive,
-      'ppt/_rels/presentation.xml.rels',
-    );
-    await this.appendToSlideRel(this.targetArchive, relId, this.targetNumber);
-
-    if (this.targetType === 'slide') {
-      await this.appendToSlideList(this.targetArchive, relId);
-    } else if (this.targetType === 'slideMaster') {
-      await this.appendToSlideMasterList(this.targetArchive, relId);
-    } else if (this.targetType === 'slideLayout') {
-      // No changes to ppt/presentation.xml required for slideLayouts
-    }
-
-    await this.appendToContentType(this.targetArchive, this.targetNumber);
-  }
-
-  /**
-   * Appends to slide rel
-   * @internal
-   * @param rootArchive
-   * @param relId
-   * @param slideCount
-   * @returns to slide rel
-   */
-  appendToSlideRel(
-    rootArchive: IArchive,
-    relId: string,
-    slideCount: number,
-  ): Promise<XmlElement> {
-    return XmlHelper.append({
-      archive: rootArchive,
-      file: `ppt/_rels/presentation.xml.rels`,
-      parent: (xml: XmlDocument) =>
-        xml.getElementsByTagName('Relationships')[0],
-      tag: 'Relationship',
-      attributes: {
-        Id: relId,
-        Type: `http://schemas.openxmlformats.org/officeDocument/2006/relationships/${this.targetType}`,
-        Target: `${this.targetType}s/${this.targetType}${slideCount}.xml`,
-      } as RelationshipAttribute,
-    });
-  }
-
-  /**
-   * Appends a new slide to slide list in presentation.xml.
-   * If rootArchive has no slides, a new node will be created.
-   * "id"-attribute of 'p:sldId'-element must be greater than 255.
-   * @internal
-   * @param rootArchive
-   * @param relId
-   * @returns to slide list
-   */
-  appendToSlideList(rootArchive: IArchive, relId: string): Promise<XmlElement> {
-    return XmlHelper.append({
-      archive: rootArchive,
-      file: `ppt/presentation.xml`,
-      assert: async (xml: XmlDocument) => {
-        if (xml.getElementsByTagName('p:sldIdLst').length === 0) {
-          XmlHelper.insertAfter(
-            xml.createElement('p:sldIdLst'),
-            xml.getElementsByTagName('p:sldMasterIdLst')[0],
-          );
-        }
-      },
-      parent: (xml: XmlDocument) => xml.getElementsByTagName('p:sldIdLst')[0],
-      tag: 'p:sldId',
-      attributes: {
-        'r:id': relId,
-      } as SlideListAttribute,
-    });
-  }
-
-  /**
-   * Appends a new slide to slide list in presentation.xml.
-   * If rootArchive has no slides, a new node will be created.
-   * "id"-attribute of 'p:sldId'-element must be greater than 255.
-   * @internal
-   * @param rootArchive
-   * @param relId
-   * @returns to slide list
-   */
-  appendToSlideMasterList(
-    rootArchive: IArchive,
-    relId: string,
-  ): Promise<XmlElement> {
-    return XmlHelper.append({
-      archive: rootArchive,
-      file: `ppt/presentation.xml`,
-      parent: (xml: XmlDocument) =>
-        xml.getElementsByTagName('p:sldMasterIdLst')[0],
-      tag: 'p:sldMasterId',
-      attributes: {
-        'r:id': relId,
-      } as SlideListAttribute,
-    });
-  }
-
-  /**
-   * Appends slide to content type
-   * @internal
-   * @param rootArchive
-   * @param slideCount
-   * @returns slide to content type
-   */
-  appendToContentType(
-    rootArchive: IArchive,
-    count: number,
-  ): Promise<XmlElement> {
-    return XmlHelper.append(
-      XmlHelper.createContentTypeChild(rootArchive, {
-        PartName: `/ppt/${this.targetType}s/${this.targetType}${count}.xml`,
-        ContentType: `application/vnd.openxmlformats-officedocument.presentationml.${this.targetType}+xml`,
-      }),
-    );
-  }
-
-  /**
-   * slideNote numbers differ from slide numbers if presentation
-   * contains slides without notes. We need to find out
-   * the proper enumeration of slideNote xml files.
-   * @internal
-   * @returns slide note file number
-   */
-  async getSlideNoteSourceNumber(): Promise<number | undefined> {
-    const targets = await XmlHelper.getTargetsByRelationshipType(
-      this.sourceArchive,
-      `ppt/slides/_rels/slide${this.sourceNumber}.xml.rels`,
-      'http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide',
-    );
-
-    if (targets.length) {
-      const targetNumber = targets[0].file
-        .replace('../notesSlides/notesSlide', '')
-        .replace('.xml', '');
-      return Number(targetNumber);
-    }
-  }
-
-  /**
-   * Copys slide note files
-   * @internal
-   * @returns slide note files
-   */
-  async copySlideNoteFiles(sourceNotesNumber: number): Promise<void> {
-    await FileHelper.zipCopy(
-      this.sourceArchive,
-      `ppt/notesSlides/notesSlide${sourceNotesNumber}.xml`,
-      this.targetArchive,
-      `ppt/notesSlides/notesSlide${this.targetNumber}.xml`,
-    );
-
-    await FileHelper.zipCopy(
-      this.sourceArchive,
-      `ppt/notesSlides/_rels/notesSlide${sourceNotesNumber}.xml.rels`,
-      this.targetArchive,
-      `ppt/notesSlides/_rels/notesSlide${this.targetNumber}.xml.rels`,
-    );
-  }
-
-  /**
-   * Updates slide note file
-   * @internal
-   * @returns slide note file
-   */
-  async updateSlideNoteFile(sourceNotesNumber: number): Promise<void> {
-    await XmlHelper.replaceAttribute(
-      this.targetArchive,
-      `ppt/notesSlides/_rels/notesSlide${this.targetNumber}.xml.rels`,
-      'Relationship',
-      'Target',
-      `../slides/slide${this.sourceNumber}.xml`,
-      `../slides/slide${this.targetNumber}.xml`,
-    );
-
-    await XmlHelper.replaceAttribute(
-      this.targetArchive,
-      `ppt/slides/_rels/slide${this.targetNumber}.xml.rels`,
-      'Relationship',
-      'Target',
-      `../notesSlides/notesSlide${sourceNotesNumber}.xml`,
-      `../notesSlides/notesSlide${this.targetNumber}.xml`,
-    );
-  }
-
-  /**
-   * Appends notes to content type
-   * @internal
-   * @param rootArchive
-   * @param slideCount
-   * @returns notes to content type
-   */
-  appendNotesToContentType(
-    rootArchive: IArchive,
-    slideCount: number,
-  ): Promise<XmlElement> {
-    return XmlHelper.append(
-      XmlHelper.createContentTypeChild(rootArchive, {
-        PartName: `/ppt/notesSlides/notesSlide${slideCount}.xml`,
-        ContentType: `application/vnd.openxmlformats-officedocument.presentationml.notesSlide+xml`,
-      }),
-    );
+    await this.contentTypes.addToPresentation();
   }
 
   /**
@@ -909,216 +454,7 @@ export default class HasShapes {
    * @returns related content
    */
   async copyRelatedContent(): Promise<void> {
-    const charts = await Chart.getAllOnSlide(this.sourceArchive, this.relsPath);
-    for (const chart of charts) {
-      await new Chart(
-        {
-          mode: 'append',
-          target: chart,
-          sourceArchive: this.sourceArchive,
-          sourceSlideNumber: this.sourceNumber,
-        },
-        this.targetType,
-      ).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);
-    }
-
-    const images = await Image.getAllOnSlide(this.sourceArchive, this.relsPath);
-    for (const image of images) {
-      await new Image(
-        {
-          mode: 'append',
-          target: image,
-          sourceArchive: this.sourceArchive,
-          sourceSlideNumber: this.sourceNumber,
-        },
-        this.targetType,
-      ).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);
-    }
-
-    const diagrams = await Diagram.getAllOnSlide(
-      this.sourceArchive,
-      this.relsPath,
-    );
-    for (const diagram of diagrams) {
-      await new Diagram(
-        {
-          mode: 'append',
-          target: diagram,
-          sourceArchive: this.sourceArchive,
-          sourceSlideNumber: this.sourceNumber,
-        },
-        this.targetType,
-      ).modifyOnAddedSlide(this.targetTemplate, this.targetNumber);
-    }
-
-    const oleObjects = await OLEObject.getAllOnSlide(
-      this.sourceArchive,
-      this.relsPath,
-    );
-    for (const oleObject of oleObjects) {
-      await new OLEObject(
-        {
-          mode: 'append',
-          target: oleObject,
-          sourceArchive: this.sourceArchive,
-          sourceSlideNumber: this.sourceNumber,
-        },
-        this.targetType,
-        this.sourceArchive,
-      ).modifyOnAddedSlide(this.targetTemplate, this.targetNumber, oleObjects);
-    }
-
-    // Copy hyperlinks
-    const hyperlinks = await Hyperlink.getAllOnSlide(
-      this.sourceArchive,
-      this.relsPath,
-    );
-    for (const hyperlink of hyperlinks) {
-      // Create a new hyperlink with the correct target information
-      const hyperlinkInstance = new Hyperlink(
-        {
-          mode: 'append',
-          target: hyperlink,
-          sourceArchive: this.sourceArchive,
-          sourceSlideNumber: this.sourceNumber,
-          sourceRid: hyperlink.rId,
-        },
-        this.targetType,
-        this.sourceArchive,
-        hyperlink.isExternal ? 'external' : 'internal',
-        hyperlink.file,
-      );
-
-      // Ensure the target property is properly set
-      hyperlinkInstance.target = hyperlink;
-
-      // Process the hyperlink
-      await hyperlinkInstance.modifyOnAddedSlide(
-        this.targetTemplate,
-        this.targetNumber,
-      );
-    }
-  }
-
-  /**
-   * Analyzes element
-   * @internal
-   * @param sourceElement
-   * @param sourceArchive
-   * @param slideNumber
-   * @returns element
-   */
-  async analyzeElement(
-    sourceElement: XmlElement,
-    sourceArchive: IArchive,
-    relsPath: string,
-  ): Promise<AnalyzedElementType> {
-    const isChart = sourceElement.getElementsByTagName('c:chart');
-
-    if (isChart.length) {
-      const target = await XmlHelper.getTargetByRelId(
-        sourceArchive,
-        relsPath,
-        sourceElement,
-        'chart',
-      );
-
-      return {
-        type: ElementType.Chart,
-        target: target,
-      } as AnalyzedElementType;
-    }
-
-    const isChartEx = sourceElement.getElementsByTagName('cx:chart');
-    if (isChartEx.length) {
-      const target = await XmlHelper.getTargetByRelId(
-        sourceArchive,
-        relsPath,
-        sourceElement,
-        'chartEx',
-      );
-
-      return {
-        type: ElementType.Chart,
-        target: target,
-      } as AnalyzedElementType;
-    }
-
-    const isImage = sourceElement.getElementsByTagName('p:nvPicPr');
-    if (isImage.length) {
-      return {
-        type: ElementType.Image,
-        target: await XmlHelper.getTargetByRelId(
-          sourceArchive,
-          relsPath,
-          sourceElement,
-          'image',
-        ),
-      } as AnalyzedElementType;
-    }
-
-    const isDiagram = sourceElement.getElementsByTagName('dgm:relIds');
-    if (isDiagram.length) {
-      return {
-        type: ElementType.Diagram,
-        target: await XmlHelper.getTargetByRelId(
-          sourceArchive,
-          relsPath,
-          sourceElement,
-          'diagram',
-        ),
-      } as AnalyzedElementType;
-    }
-
-    const isOLEObject = sourceElement.getElementsByTagName('p:oleObj');
-    if (isOLEObject.length) {
-      const target = await XmlHelper.getTargetByRelId(
-        sourceArchive,
-        relsPath,
-        sourceElement,
-        'oleObject',
-      );
-
-      return {
-        type: ElementType.OLEObject,
-        target: target,
-      } as AnalyzedElementType;
-    }
-
-    // Check for hyperlinks using the centralized processor
-    const hasHyperlink = HyperlinkProcessor.hasHyperlinks(sourceElement);
-
-    if (hasHyperlink) {
-      try {
-        // Check if this element has multiple hyperlinks
-        if (HyperlinkProcessor.hasMultipleHyperlinks(sourceElement)) {
-          // For elements with multiple hyperlinks (like tables), treat as generic shape
-          // The GenericShape class will handle copying the hyperlink relationships properly
-          return {
-            type: ElementType.Shape,
-          } as AnalyzedElementType;
-        } else {
-          // Single hyperlink - use existing logic
-          const target = await XmlHelper.getTargetByRelId(
-            sourceArchive,
-            relsPath,
-            sourceElement,
-            'hyperlink',
-          );
-
-          return {
-            type: ElementType.Hyperlink,
-            target: target,
-            element: sourceElement,
-          } as AnalyzedElementType;
-        }
-      } catch (error) {
-        log.warn('Error finding hyperlink target:', error);
-      }
-    }
-    return {
-      type: ElementType.Shape,
-    } as AnalyzedElementType;
+    await this.relatedContent.copy();
   }
 
   /**
@@ -1163,131 +499,24 @@ export default class HasShapes {
   async applyRelModifications(): Promise<void> {
     await XmlHelper.modifyXmlInArchive(
       this.targetArchive,
-      `ppt/${this.targetType}s/_rels/${this.targetType}${this.targetNumber}.xml.rels`,
+      PptPaths.partRels(this.targetType, this.targetNumber),
       this.relModifications,
     );
   }
 
   /**
-   * Removes all unsupported tags from slide xml.
-   * E.g. added relations & tags by Thinkcell cannot
-   * be processed by pptx-automizer at the moment.
+   * Removes all unsupported tags from slide xml and (optionally)
+   * normalizes placeholder shapes.
    * @internal
    */
   async cleanSlide(
     targetPath: string,
     sourcePlaceholderTypes?: SlidePlaceholder[],
   ): Promise<void> {
-    const xml = await XmlHelper.getXmlFromArchive(this.targetArchive, targetPath);
-
-    if (this.cleanupPlaceholders && sourcePlaceholderTypes) {
-      this.removeDuplicatePlaceholders(xml, sourcePlaceholderTypes);
-      this.normalizePlaceholderShapes(xml, sourcePlaceholderTypes);
-    }
-
-    this.removeUnsupportedTags(xml);
-
-    XmlHelper.writeXmlToArchive(this.targetArchive, targetPath, xml);
-  }
-
-  /**
-   * Removes unsupported tags and (optionally) their now-empty parents.
-   * Parents will be removed only if they become empty AND are NOT `p:nvPr`.
-   */
-  private removeUnsupportedTags(xml: XmlDocument): void {
-    this.unsupportedTags.forEach((tag) => {
-      const drop = xml.getElementsByTagName(tag);
-      const length = drop.length;
-      if (length && length > 0) {
-        log.debug('Cleaning unsupported tag ' + tag);
-
-        // First get parent elements before removing
-        const parents: XmlElement[] = [];
-        for (let i = 0; i < drop.length; i++) {
-          const parent = drop[i].parentNode as XmlElement | null;
-          if (parent && !parents.includes(parent)) {
-            parents.push(parent);
-          }
-        }
-
-        // Remove the unsupported tags
-        XmlHelper.sliceCollection(drop, 0);
-
-        // Check each parent and remove it if it has no children left
-        // but never remove <p:nvPr/>
-        parents.forEach((parent) => {
-          if (parent.childNodes.length === 0 && parent.nodeName !== 'p:nvPr') {
-            XmlHelper.remove(parent);
-          }
-        });
-      }
-    });
-  }
-
-
-  /**
-   * If you insert a placeholder shape on a target slide with an empty
-   * placeholder of the same type, we need to remove the existing
-   * placeholder.
-   *
-   * @param xml
-   * @param sourcePlaceholderTypes
-   */
-  removeDuplicatePlaceholders(
-    xml: XmlDocument,
-    sourcePlaceholderTypes: SlidePlaceholder[],
-  ) {
-    const placeholders = xml.getElementsByTagName('p:ph');
-    const usedTypes = {};
-    XmlHelper.modifyCollection(placeholders, (placeholder: XmlElement) => {
-      const type = placeholder.getAttribute('type');
-      usedTypes[type] = usedTypes[type] || 0;
-      usedTypes[type]++;
-    });
-
-    for (const usedType in usedTypes) {
-      const count = usedTypes[usedType];
-      if (count > 1) {
-        // TODO: in case more than two placeholders are of a kind,
-        // this will likely remove more than intended. Should also match by id.
-        const removePlaceholders = sourcePlaceholderTypes.filter(
-          (sourcePlaceholder) => sourcePlaceholder.type === usedType,
-        );
-        removePlaceholders.forEach((removePlaceholder) => {
-          const parentShapeTag = 'p:sp';
-          const parentShape = XmlHelper.getClosestParent(
-            parentShapeTag,
-            removePlaceholder.xml,
-          );
-          if (parentShape) {
-            XmlHelper.remove(parentShape);
-          }
-        });
-      }
-    }
-  }
-
-  /**
-   * If a placeholder shape was inserted on a slide without a corresponding
-   * placeholder, powerPoint will usually smash the shape's formatting.
-   * This function removes the placeholder tag.
-   * @param xml
-   * @param sourcePlaceholderTypes
-   */
-  normalizePlaceholderShapes(
-    xml: XmlDocument,
-    sourcePlaceholderTypes: SlidePlaceholder[],
-  ) {
-    const placeholders = xml.getElementsByTagName('p:ph');
-    XmlHelper.modifyCollection(placeholders, (placeholder: XmlElement) => {
-      const usedType = placeholder.getAttribute('type');
-      const existingPlaceholder = sourcePlaceholderTypes.find(
-        (sourcePlaceholder) => sourcePlaceholder.type === usedType,
-      );
-      if (!existingPlaceholder) {
-        XmlHelper.remove(placeholder);
-      }
-    });
+    await this.placeholderNormalizer.cleanSlide(
+      targetPath,
+      sourcePlaceholderTypes,
+    );
   }
 
   /**
@@ -1308,19 +537,6 @@ export default class HasShapes {
   }
 
   async parsePlaceholders(): Promise<SlidePlaceholder[]> {
-    const xml = await XmlHelper.getXmlFromArchive(
-      this.targetArchive,
-      this.targetPath,
-    );
-    const placeholderTypes = [];
-    const placeholders = xml.getElementsByTagName('p:ph');
-    XmlHelper.modifyCollection(placeholders, (placeholder: XmlElement) => {
-      placeholderTypes.push({
-        type: placeholder.getAttribute('type'),
-        id: placeholder.getAttribute('id'),
-        xml: placeholder,
-      });
-    });
-    return placeholderTypes;
+    return this.placeholderNormalizer.parsePlaceholders();
   }
 }

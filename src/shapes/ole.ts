@@ -1,14 +1,17 @@
 import { log } from '../helper/logger';
+import { AutomizerError } from '../errors';
 import { FileHelper } from '../helper/file-helper';
+import { PptPaths } from '../helper/ppt-paths';
 import { XmlHelper } from '../helper/xml-helper';
 import { Shape } from '../classes/shape';
 import { ImportedElement, ShapeTargetType, Target } from '../types/types';
 import { XmlElement } from '../types/xml-types';
 import IArchive from '../interfaces/iarchive';
+import { IShapeAction } from '../interfaces/ishape-action';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import path from 'path';
 
-export class OLEObject extends Shape {
+export class OLEObject extends Shape implements IShapeAction {
   private readonly oleObjectPath: string;
 
   constructor(
@@ -18,9 +21,9 @@ export class OLEObject extends Shape {
   ) {
     super(shape, targetType);
     this.sourceArchive = sourceArchive;
-    this.oleObjectPath = `ppt/embeddings/${
-      this.sourceRid
-    }${this.getFileExtension(shape.target?.file)}`;
+    this.oleObjectPath = PptPaths.embedding(
+      `${this.sourceRid}${this.getFileExtension(shape.target?.file)}`,
+    );
     this.relRootTag = 'p:oleObj';
     this.relAttribute = 'r:id';
   }
@@ -35,7 +38,23 @@ export class OLEObject extends Shape {
       : '.bin';
   }
 
-  // NOTE: modify() and append() won't be implemented.
+  /**
+   * Appending OLE objects is not supported; only remove() is implemented.
+   */
+  async append(): Promise<OLEObject> {
+    throw new AutomizerError(
+      'OLE objects cannot be appended to a slide; only remove() is supported.',
+    );
+  }
+
+  /**
+   * Modifying OLE objects is not supported; only remove() is implemented.
+   */
+  async modify(): Promise<OLEObject> {
+    throw new AutomizerError(
+      'OLE objects cannot be modified; only remove() is supported.',
+    );
+  }
 
   // TODO: remove is not currently properly implemented,
   //  suggest we delete the file from the archive as well as removing the relationship.
@@ -71,7 +90,7 @@ export class OLEObject extends Shape {
       throw new Error(`OLE object with rId ${this.sourceRid} not found.`);
     }
 
-    const sourceFilePath = `ppt/embeddings/${oleObject.file.split('/').pop()}`;
+    const sourceFilePath = PptPaths.embedding(oleObject.file.split('/').pop());
 
     this.createdRid = await XmlHelper.getNextRelId(
       this.targetArchive,
@@ -86,7 +105,7 @@ export class OLEObject extends Shape {
 
   private async copyOleObjectFile(sourceFilePath: string): Promise<void> {
     const fileExtension = this.getFileExtension(sourceFilePath);
-    const targetFileName = `ppt/embeddings/oleObject${this.createdRid}${fileExtension}`;
+    const targetFileName = PptPaths.embedding(`oleObject${this.createdRid}${fileExtension}`);
 
     try {
       await FileHelper.zipCopy(
@@ -110,7 +129,9 @@ export class OLEObject extends Shape {
 
     const types = contentTypesXml.getElementsByTagName('Types')[0];
     const fileExtension = this.getFileExtension(this.oleObjectPath);
-    const partName = `/ppt/embeddings/oleObject${this.createdRid}${fileExtension}`;
+    const partName = PptPaths.partName(
+      PptPaths.embedding(`oleObject${this.createdRid}${fileExtension}`),
+    );
     const existingOverride = Array.from(
       types.getElementsByTagName('Override'),
     ).find((override) => override.getAttribute('PartName') === partName);
@@ -173,7 +194,7 @@ export class OLEObject extends Shape {
   }
 
   private async updateSlideXml(): Promise<void> {
-    const slideXmlPath = `ppt/slides/slide${this.targetSlideNumber}.xml`;
+    const slideXmlPath = PptPaths.slide(this.targetSlideNumber);
     const slideXml = await XmlHelper.getXmlFromArchive(
       this.targetArchive,
       slideXmlPath,
@@ -221,7 +242,7 @@ export class OLEObject extends Shape {
 
   private async removeOleObjectFile(): Promise<void> {
     const fileExtension = this.getFileExtension(this.oleObjectPath);
-    const fileName = `ppt/embeddings/oleObject${this.createdRid}${fileExtension}`;
+    const fileName = PptPaths.embedding(`oleObject${this.createdRid}${fileExtension}`);
     await this.targetArchive.remove(fileName);
   }
 
@@ -234,7 +255,9 @@ export class OLEObject extends Shape {
 
     const types = contentTypesXml.getElementsByTagName('Types')[0];
     const fileExtension = this.getFileExtension(this.oleObjectPath);
-    const partName = `/ppt/embeddings/oleObject${this.createdRid}${fileExtension}`;
+    const partName = PptPaths.partName(
+      PptPaths.embedding(`oleObject${this.createdRid}${fileExtension}`),
+    );
     const overrideToRemove = Array.from(
       types.getElementsByTagName('Override'),
     ).find((override) => override.getAttribute('PartName') === partName);

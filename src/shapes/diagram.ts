@@ -9,11 +9,12 @@ import {
   ShapeTargetType,
   Target,
 } from '../types/types';
+import { IShapeAction } from '../interfaces/ishape-action';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import IArchive from '../interfaces/iarchive';
 import { TargetByRelIdMap } from '../constants/constants';
 
-export class Diagram extends Shape {
+export class Diagram extends Shape implements IShapeAction {
   sourceElement: XmlElement;
   relTypeColors: string;
   relTypeData: string;

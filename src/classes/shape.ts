@@ -1,5 +1,6 @@
 import { XmlHelper } from '../helper/xml-helper';
 import { GeneralHelper } from '../helper/general-helper';
+import { PptPaths } from '../helper/ppt-paths';
 import { log } from '../helper/logger';
 import { CallbackError } from '../errors';
 import { HyperlinkProcessor } from '../helper/hyperlink-processor';
@@ -66,7 +67,7 @@ export class Shape {
 
     this.sourceArchive = shape.sourceArchive;
     this.sourceSlideNumber = shape.sourceSlideNumber;
-    this.sourceSlideFile = `ppt/slides/slide${this.sourceSlideNumber}.xml`;
+    this.sourceSlideFile = PptPaths.slide(this.sourceSlideNumber);
     this.sourceElement = shape.sourceElement;
     this.hasCreationId = shape.hasCreationId;
 
@@ -90,8 +91,11 @@ export class Shape {
     this.targetTemplate = targetTemplate;
     this.targetArchive = await this.targetTemplate.archive;
     this.targetSlideNumber = targetSlideNumber;
-    this.targetSlideFile = `ppt/${targetType}s/${targetType}${this.targetSlideNumber}.xml`;
-    this.targetSlideRelFile = `ppt/${targetType}s/_rels/${targetType}${this.targetSlideNumber}.xml.rels`;
+    this.targetSlideFile = PptPaths.part(targetType, this.targetSlideNumber);
+    this.targetSlideRelFile = PptPaths.partRels(
+      targetType,
+      this.targetSlideNumber,
+    );
   }
 
   async setTargetElement(): Promise<void> {

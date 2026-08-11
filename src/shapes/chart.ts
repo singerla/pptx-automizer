@@ -1,4 +1,5 @@
 import { FileHelper } from '../helper/file-helper';
+import { PptPaths } from '../helper/ppt-paths';
 import { XmlHelper } from '../helper/xml-helper';
 import { Shape } from '../classes/shape';
 import path from 'path';
@@ -16,13 +17,14 @@ import {
   Workbook,
 } from '../types/types';
 import { IChart } from '../interfaces/ichart';
+import { IShapeAction } from '../interfaces/ishape-action';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { contentTracker } from '../helper/content-tracker';
 import IArchive from '../interfaces/iarchive';
 import { ContentTypeExtension } from '../enums/content-type-map';
 import { log } from '../helper/logger';
 
-export class Chart extends Shape implements IChart {
+export class Chart extends Shape implements IChart, IShapeAction {
   sourceWorksheet: number | string;
   targetWorksheet: number | string;
   worksheetFilePrefix: string;
@@ -119,7 +121,7 @@ export class Chart extends Shape implements IChart {
     await this.setTarget(targetTemplate, targetSlideNumber);
 
     this.targetNumber = this.targetTemplate.incrementCounter('charts');
-    this.wbRelsPath = `ppt/charts/_rels/${this.subtype}${this.sourceNumber}.xml.rels`;
+    this.wbRelsPath = PptPaths.chartPartRels(this.subtype, this.sourceNumber);
 
     await this.copyFiles();
     await this.copyChartStyleFiles();
@@ -140,7 +142,7 @@ export class Chart extends Shape implements IChart {
 
     const chartXml = await XmlHelper.getXmlFromArchive(
       this.targetArchive,
-      `ppt/charts/${this.subtype}${this.targetNumber}.xml`,
+      PptPaths.chartPart(this.subtype, this.targetNumber),
     );
 
     const workbook = await this.readWorkbook();
@@ -154,14 +156,16 @@ export class Chart extends Shape implements IChart {
 
     XmlHelper.writeXmlToArchive(
       this.targetArchive,
-      `ppt/charts/${this.subtype}${this.targetNumber}.xml`,
+      PptPaths.chartPart(this.subtype, this.targetNumber),
       chartXml,
     );
     await this.writeWorkbook(workbook);
   }
 
   async readWorkbook(): Promise<Workbook> {
-    const workbookFilename = `ppt/embeddings/${this.worksheetFilePrefix}${this.targetWorksheet}${this.wbExtension}`;
+    const workbookFilename = PptPaths.embedding(
+      `${this.worksheetFilePrefix}${this.targetWorksheet}${this.wbExtension}`,
+    );
     const archive = await this.targetArchive.extract(workbookFilename);
 
     const sheet = await XmlHelper.getXmlFromArchive(
@@ -212,7 +216,9 @@ export class Chart extends Shape implements IChart {
 
     const worksheet = await workbook.archive.getContent({});
     await this.targetArchive.write(
-      `ppt/embeddings/${this.worksheetFilePrefix}${this.targetWorksheet}${this.wbExtension}`,
+      PptPaths.embedding(
+      `${this.worksheetFilePrefix}${this.targetWorksheet}${this.wbExtension}`,
+    ),
       worksheet,
     );
   }
@@ -271,16 +277,16 @@ export class Chart extends Shape implements IChart {
   async copyChartFiles(): Promise<void> {
     await FileHelper.zipCopy(
       this.sourceArchive,
-      `ppt/charts/${this.subtype}${this.sourceNumber}.xml`,
+      PptPaths.chartPart(this.subtype, this.sourceNumber),
       this.targetArchive,
-      `ppt/charts/${this.subtype}${this.targetNumber}.xml`,
+      PptPaths.chartPart(this.subtype, this.targetNumber),
     );
 
     await FileHelper.zipCopy(
       this.sourceArchive,
-      `ppt/charts/_rels/${this.subtype}${this.sourceNumber}.xml.rels`,
+      PptPaths.chartPartRels(this.subtype, this.sourceNumber),
       this.targetArchive,
-      `ppt/charts/_rels/${this.subtype}${this.targetNumber}.xml.rels`,
+      PptPaths.chartPartRels(this.subtype, this.targetNumber),
     );
   }
 
@@ -292,7 +298,7 @@ export class Chart extends Shape implements IChart {
         this.sourceArchive,
         `ppt/charts/${this.styleRelationFiles.relTypeChartStyle[0]}`,
         this.targetArchive,
-        `ppt/charts/style${this.targetNumber}.xml`,
+        PptPaths.chartPart('style', this.targetNumber),
       );
     }
 
@@ -301,7 +307,7 @@ export class Chart extends Shape implements IChart {
         this.sourceArchive,
         `ppt/charts/${this.styleRelationFiles.relTypeChartColorStyle[0]}`,
         this.targetArchive,
-        `ppt/charts/colors${this.targetNumber}.xml`,
+        PptPaths.chartPart('colors', this.targetNumber),
       );
     }
 
@@ -403,7 +409,7 @@ export class Chart extends Shape implements IChart {
   }
 
   async editTargetWorksheetRel(): Promise<void> {
-    const targetRelFile = `ppt/charts/_rels/${this.subtype}${this.targetNumber}.xml.rels`;
+    const targetRelFile = PptPaths.chartPartRels(this.subtype, this.targetNumber);
     const relXml = await XmlHelper.getXmlFromArchive(
       this.targetArchive,
       targetRelFile,
@@ -491,16 +497,22 @@ export class Chart extends Shape implements IChart {
       .replace('.', '') as ContentTypeExtension;
 
     return {
-      source: `ppt/media/${file}`,
-      target: `ppt/media/${file}-chart-${this.targetNumber}.${extension}`,
+      source: PptPaths.media(file),
+      target: PptPaths.media(
+        `${file}-chart-${this.targetNumber}.${extension}`,
+      ),
       rel: `../media/${file}-chart-${this.targetNumber}.${extension}`,
       extension: extension,
     };
   }
 
   async copyWorksheetFile(): Promise<void> {
-    const sourceFile = `ppt/embeddings/${this.worksheetFilePrefix}${this.sourceWorksheet}${this.wbExtension}`;
-    const targetFile = `ppt/embeddings/${this.worksheetFilePrefix}${this.targetWorksheet}${this.wbExtension}`;
+    const sourceFile = PptPaths.embedding(
+      `${this.worksheetFilePrefix}${this.sourceWorksheet}${this.wbExtension}`,
+    );
+    const targetFile = PptPaths.embedding(
+      `${this.worksheetFilePrefix}${this.targetWorksheet}${this.wbExtension}`,
+    );
 
     await FileHelper.zipCopy(
       this.sourceArchive,
@@ -532,7 +544,9 @@ export class Chart extends Shape implements IChart {
 
     return XmlHelper.append(
       XmlHelper.createContentTypeChild(this.targetArchive, {
-        PartName: `/ppt/charts/${this.subtype}${this.targetNumber}.xml`,
+        PartName: PptPaths.partName(
+          PptPaths.chartPart(this.subtype, this.targetNumber),
+        ),
         ContentType: contentType,
       }),
     );
@@ -541,7 +555,9 @@ export class Chart extends Shape implements IChart {
   appendColorToContentType(): Promise<XmlElement> {
     return XmlHelper.append(
       XmlHelper.createContentTypeChild(this.targetArchive, {
-        PartName: `/ppt/charts/colors${this.targetNumber}.xml`,
+        PartName: PptPaths.partName(
+          PptPaths.chartPart('colors', this.targetNumber),
+        ),
         ContentType: `application/vnd.ms-office.chartcolorstyle+xml`,
       }),
     );
@@ -550,7 +566,9 @@ export class Chart extends Shape implements IChart {
   appendStyleToContentType(): Promise<XmlElement> {
     return XmlHelper.append(
       XmlHelper.createContentTypeChild(this.targetArchive, {
-        PartName: `/ppt/charts/style${this.targetNumber}.xml`,
+        PartName: PptPaths.partName(
+          PptPaths.chartPart('style', this.targetNumber),
+        ),
         ContentType: `application/vnd.ms-office.chartstyle+xml`,
       }),
     );

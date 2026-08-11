@@ -1,4 +1,5 @@
 import { FileHelper } from '../helper/file-helper';
+import { PptPaths } from '../helper/ppt-paths';
 import { XmlHelper } from '../helper/xml-helper';
 import { Shape } from '../classes/shape';
 import { RelationshipAttribute, XmlElement } from '../types/xml-types';
@@ -9,13 +10,14 @@ import {
   Target,
 } from '../types/types';
 import { IImage } from '../interfaces/iimage';
+import { IShapeAction } from '../interfaces/ishape-action';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { ElementType } from '../enums/element-type';
 import IArchive from '../interfaces/iarchive';
 import { ContentTypeExtension } from '../enums/content-type-map';
 import { TargetByRelIdMap } from '../constants/constants';
 
-export class Image extends Shape implements IImage {
+export class Image extends Shape implements IImage, IShapeAction {
   extension: ContentTypeExtension;
   createdRelation: XmlElement;
   callbacks: ShapeModificationCallback[];
@@ -164,7 +166,7 @@ export class Image extends Shape implements IImage {
     targetSlideNumber: number,
     sourceMode: ImportedElement['sourceMode'],
   ) {
-    const relsPath = `ppt/slides/_rels/slide${this.sourceSlideNumber}.xml.rels`;
+    const relsPath = PptPaths.slideRels(this.sourceSlideNumber);
 
     const target = await XmlHelper.getTargetByRelId(
       this.sourceArchive,
@@ -242,9 +244,9 @@ export class Image extends Shape implements IImage {
   async copyFiles(): Promise<void> {
     await FileHelper.zipCopy(
       this.sourceArchive,
-      `ppt/media/${this.sourceFile}`,
+      PptPaths.media(this.sourceFile),
       this.targetArchive,
-      `ppt/media/${this.targetFile}`,
+      PptPaths.media(this.targetFile),
     );
   }
 
