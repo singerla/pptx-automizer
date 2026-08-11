@@ -9,6 +9,9 @@
   "author": "Thomas Singer <tsinger@gmx.de> (github.com/singerla)",
   "license": "MIT",
   "private": false,
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "rm -rf dist && tsc",
     "dev": "nodemon -e ts --exec 'ts-node' src/dev.ts",

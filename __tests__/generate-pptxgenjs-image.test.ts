@@ -19,7 +19,7 @@ test('insert an image with pptxgenjs on a template slide', async () => {
         y: 2,
       });
       pptxGenJSSlide.addImage({
-        path: `${__dirname}/images/test.svg`,
+        path: `${__dirname}/media/test.svg`,
         x: 1,
         y: 2,
       });
