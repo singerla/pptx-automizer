@@ -233,21 +233,43 @@ export class Image extends Shape implements IImage, IShapeAction {
   ): Promise<void> {
     await this.setTarget(targetTemplate, targetSlideNumber);
 
-    this.targetNumber = this.targetTemplate.incrementCounter('images');
-    this.targetFile = this.getTargetFileName();
-
     await this.copyFiles();
     await this.appendTypes();
     await this.appendToSlideRels();
   }
 
+  /**
+   * Add the source media file to the output archive - unless an identical
+   * file is already there. Re-using it keeps the output small; the relation
+   * created by appendToSlideRels() is specific to this shape either way.
+   */
   async copyFiles(): Promise<void> {
+    const sourcePath = PptPaths.media(this.sourceFile);
+    const content = (await this.sourceArchive.read(
+      sourcePath,
+      'nodebuffer',
+    )) as Buffer;
+
+    const existingFile = await this.targetTemplate.mediaDeduplicator.find(
+      content,
+    );
+
+    if (existingFile) {
+      this.targetFile = existingFile;
+      return;
+    }
+
+    this.targetNumber = this.targetTemplate.incrementCounter('images');
+    this.targetFile = this.getTargetFileName();
+
     await FileHelper.zipCopy(
       this.sourceArchive,
-      PptPaths.media(this.sourceFile),
+      sourcePath,
       this.targetArchive,
       PptPaths.media(this.targetFile),
     );
+
+    this.targetTemplate.mediaDeduplicator.add(content, this.targetFile);
   }
 
   getTargetFileName(): string {
@@ -274,12 +296,10 @@ export class Image extends Shape implements IImage, IShapeAction {
       targetRelFile,
     );
 
-    const targetFileName = this.getTargetFileName();
-
     const attributes = {
       Id: this.createdRid,
       Type: this.relType,
-      Target: `../media/${targetFileName}`,
+      Target: `../media/${this.targetFile}`,
     } as RelationshipAttribute;
 
     this.createdRelation = await XmlHelper.append(

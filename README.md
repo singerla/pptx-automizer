@@ -179,6 +179,10 @@ const automizer = new Automizer({
   // Higher compression levels produce smaller files.
   compression: 0,
 
+  // Please note: An image that is imported more than once (e.g. a logo on
+  // several slides) is stored only once in the output file. There is no
+  // setting for that, identical media files are always shared.
+
   // You can enable 'archiveType' and set mode: 'fs'.
   // This will extract all templates and output to disk.
   // It will not improve performance, but it can help debugging:

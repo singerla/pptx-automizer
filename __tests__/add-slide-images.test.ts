@@ -14,5 +14,6 @@ test('create presentation and append slides with images', async () => {
 
   const result = await pres.write(`add-slide-images.test.pptx`);
 
-  expect(result.images).toBe(5);
+  // Both slides use the same jpg, it is imported once
+  expect(result.images).toBe(4);
 });

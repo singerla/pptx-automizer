@@ -6,12 +6,14 @@ import Automizer from '../automizer';
 import { IMaster } from './imaster';
 import { ILayout } from './ilayout';
 import { MediaFile } from '../types/types';
+import { MediaDeduplicator } from '../helper/media-deduplicator';
 
 export interface RootPresTemplate extends ITemplate {
   slides: ISlide[];
   masters: IMaster[];
   counter: ICounter[];
   mediaFiles: MediaFile[];
+  mediaDeduplicator: MediaDeduplicator;
   mapContents: (
     type: string,
     key: string,

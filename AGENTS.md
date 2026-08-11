@@ -56,6 +56,8 @@ src/
                            (known bugs + rework plan: see ROADMAP "HTML → PPTX text" track)
     xml-slide-helper.ts    Read-side slide introspection (getAllElements, dimensions, …)
     content-tracker.ts     ContentTracker: per-instance tracking of copied files/relations (used by cleanup)
+    media-deduplicator.ts  Checksum index of ppt/media on the root template: an
+                           identical image is copied once and shared by all relations
     archive/               IArchive impls: archive-jszip.ts (default), archive-fs.ts (debugging)
     generate/              PptxGenJS bridge for `slide.generate(...)`
   types/                   Public + internal type defs (chart-types, table-types, modify-types, …)

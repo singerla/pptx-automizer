@@ -21,5 +21,6 @@ test('create presentation and append slides with images', async () => {
 
   const result = await pres.write(`add-svg-images.test.pptx`);
 
-  expect(result.images).toBe(10);
+  // 'Heart' and 'Leaf' (png + svg each) are imported twice, but stored once
+  expect(result.images).toBe(6);
 });

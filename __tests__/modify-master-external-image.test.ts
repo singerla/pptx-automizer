@@ -24,5 +24,6 @@ test('Load external media, modify image target on slide master', async () => {
   // Expect imported slide master (#2) to have swapped (left top) background image
   const result = await pres.write(`modify-master-add-external-image.test.pptx`);
 
-  expect(result.images).toBe(8);
+  // The imported master uses the images the root template already contains
+  expect(result.images).toBe(3);
 });

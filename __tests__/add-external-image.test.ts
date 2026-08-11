@@ -45,5 +45,6 @@ test('Load external media, add/modify image and set image target', async () => {
   // expect a 5x3cm light-blue duotone feather instead of imagePNG cord loop on page 1
   // expect imagePNG cord loop on page 2 instead of cut tree jpg
 
-  expect(result.images).toBe(5);
+  // The three slides share the same template images
+  expect(result.images).toBe(2);
 });

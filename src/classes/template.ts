@@ -10,6 +10,7 @@ import { XmlTemplateHelper } from '../helper/xml-template-helper';
 import { ContentMap, SlideInfo } from '../types/xml-types';
 import { XmlHelper } from '../helper/xml-helper';
 import { PptPaths } from '../helper/ppt-paths';
+import { MediaDeduplicator } from '../helper/media-deduplicator';
 import IArchive from '../interfaces/iarchive';
 import { ArchiveParams, AutomizerFile, MediaFile } from '../types/types';
 
@@ -69,6 +70,12 @@ export class Template implements ITemplate {
   contentMap: ContentMap[] = [];
   mediaFiles: MediaFile[] = [];
 
+  /**
+   * Checksum index of the media files of the output archive, used to import
+   * each distinct image only once. Root template only.
+   */
+  mediaDeduplicator: MediaDeduplicator;
+
   automizer: Automizer;
   generator: IGenerator;
 
@@ -107,6 +114,9 @@ export class Template implements ITemplate {
       ];
       newTemplate.content = automizer?.content ?? new ContentTracker();
       newTemplate.archive.contentTracker = newTemplate.content;
+      newTemplate.mediaDeduplicator = new MediaDeduplicator(
+        newTemplate.archive,
+      );
     }
 
     return newTemplate;
