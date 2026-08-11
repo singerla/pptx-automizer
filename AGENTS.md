@@ -166,6 +166,11 @@ Recurring OOXML pitfalls when implementing such a helper:
 
 ## Testing rules
 
+> A four-tier testing model (XML assertions → package invariants → OOXML schema
+> validation → visual regression via pptx-thumbnailer) is specified in
+> ROADMAP Phase 5. As tiers land, this section gets updated to reflect them —
+> until then, the rules below are the current practice.
+
 - Tests are integration-style: build a real presentation from `__tests__/pptx-templates/`,
   write it to `__tests__/pptx-output/`, and assert on the summary (slide/chart counts).
   They verify "does not crash / counts match", **not** XML correctness. When fixing an
