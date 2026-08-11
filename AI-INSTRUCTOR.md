@@ -218,6 +218,119 @@ modify.addHyperlink(3);                       // internal → slide 3
 modify.removeHyperlink();
 ```
 
+## Escape hatch: raw XML callbacks
+
+Not every OOXML property has a `modify.*` helper (outline weight, `cap`/`cmpd`
+line attributes, custom geometry, `a:effectLst`, …). Any callback you pass to
+`modifyElement`/`addElement` receives the shape's XML element — the `<p:sp>`,
+`<p:pic>` or `<p:graphicFrame>` node — so you can edit it directly:
+
+```ts
+import { XmlElement } from 'pptx-automizer';
+
+slide.modifyElement('MyBox', (element: XmlElement) => {
+  // ...manipulate the DOM node...
+});
+```
+
+Rules for hand-written callbacks:
+
+1. **Scope your lookups.** `element.getElementsByTagName('a:ln')` searches *all*
+   descendants of the shape, including text run properties (`a:rPr`) — where
+   `a:ln` also occurs. Reach the container first
+   (`element.getElementsByTagName('p:spPr')[0]`), then prefer a **direct child**
+   scan over another `getElementsByTagName`.
+2. **A missing element is the normal case.** If a property was never overridden
+   in PowerPoint, it is inherited from the theme/shape style and simply absent
+   from the slide XML. Always handle "modify existing" *and* "create new".
+3. **Child order follows the schema, not your call order.** Appending in the
+   wrong order is what makes PowerPoint show the "repair" prompt on open. For
+   `p:spPr` the sequence is `a:xfrm` → geometry (`a:prstGeom`/`a:custGeom`) →
+   fill → `a:ln` → `a:effectLst` → `a:scene3d` → `a:sp3d` → `a:extLst`; inside
+   `a:ln` it is fill → `a:prstDash` → join (`a:round`/`a:bevel`/`a:miter`) →
+   `a:headEnd` → `a:tailEnd`.
+4. **Inspect before you guess:** `slide.modifyElement('MyBox', modify.dump)`
+   prints the shape's current XML to the console. Do that first when unsure what
+   the template actually contains.
+5. **Exceptions inside callbacks are swallowed** (logged via `console.warn`), and
+   the deck is still written. A silent no-op means: read the console.
+6. Use `XmlHelper` (exported) for common DOM chores: `XmlHelper.remove(node)`,
+   `insertAfter(new, ref)`, `getClosestParent('p:sp', node)`,
+   `appendClone(node, parent)`, `dump(node)`.
+
+### Worked example: shape outline (weight + color)
+
+```ts
+import Automizer, { XmlElement } from 'pptx-automizer';
+
+// p:spPr children that must stay AFTER a:ln
+const AFTER_LN = ['a:effectLst', 'a:effectDag', 'a:scene3d', 'a:sp3d', 'a:extLst'];
+const childByName = (parent: XmlElement, names: string[]) =>
+  Array.from(parent.childNodes as any).find((n: any) =>
+    names.includes(n.nodeName),
+  ) as XmlElement | undefined;
+
+const setOutline =
+  (outline: { weight?: number; color?: string }) =>
+  (element: XmlElement) => {
+    const spPr = element.getElementsByTagName('p:spPr')[0];
+    if (!spPr) return;
+
+    // Direct child only — a:ln also lives inside text run properties.
+    let ln = childByName(spPr, ['a:ln']);
+    if (!ln) {
+      ln = spPr.ownerDocument.createElement('a:ln');
+      const anchor = childByName(spPr, AFTER_LN);
+      anchor ? spPr.insertBefore(ln, anchor) : spPr.appendChild(ln);
+    }
+
+    if (outline.weight !== undefined) {
+      // a:ln/@w is EMU: 1pt = 12700
+      ln.setAttribute('w', String(Math.round(outline.weight * 12700)));
+    }
+
+    if (outline.color) {
+      const solidFill = ln.ownerDocument.createElement('a:solidFill');
+      const srgbClr = ln.ownerDocument.createElement('a:srgbClr');
+      srgbClr.setAttribute('val', outline.color.replace('#', '')); // no '#'!
+      solidFill.appendChild(srgbClr);
+
+      // Fill is the FIRST child of a:ln — replace whatever fill is there.
+      const currentFill = childByName(ln, [
+        'a:noFill', 'a:solidFill', 'a:gradFill', 'a:pattFill',
+      ]);
+      currentFill
+        ? ln.replaceChild(solidFill, currentFill)
+        : ln.insertBefore(solidFill, ln.firstChild);
+    }
+  };
+
+slide.modifyElement('MyBox', setOutline({ weight: 2, color: 'FFFFFF' }));
+```
+
+Produces `<a:ln w="25400"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:ln>`.
+Caveat worth knowing: if the shape's existing `a:ln` contains `<a:noFill/>`
+(outline explicitly turned off in PowerPoint), setting only the weight yields
+`<a:ln w="…"><a:noFill/></a:ln>` — a thick *invisible* line. Set a color too, or
+replace the `a:noFill` node.
+
+### Units reference
+
+OOXML uses no single unit. When writing raw XML:
+
+| What | Unit | Conversion |
+|---|---|---|
+| Position/size (`a:off`, `a:ext`), line width `a:ln/@w`, corner radius | EMU | 1 cm = 360000 · 1 inch = 914400 · 1 pt = 12700 |
+| `modify.setPosition` / `updatePosition` | same EMU values | helpers `CmToDxa(cm)` / `DxaToCm(v)` (name says Dxa, value is EMU) |
+| Rotation (`a:xfrm/@rot`) | 1/60000 degree | 45° = 2700000 |
+| Font size (`a:rPr/@sz`, `TextStyle.size`) | 1/100 pt | 18pt = 1800 |
+| Percentages (`a:alpha/@val`, `a:lumMod`, …) | 1/1000 % | 50% = 50000 |
+| Colors (`a:srgbClr/@val`) | 6-digit hex | `'FF0000'`, never `'#FF0000'` |
+| PptxGenJS `slide.generate(...)` | inches | (different world — see below) |
+
+If you write a raw callback that turns out to be generally useful, it is a good
+candidate for a `modify.*` helper — see AGENTS.md in the repository.
+
 ## Generating shapes from scratch (PptxGenJS bridge)
 
 For content with no template shape (rare — prefer templates):

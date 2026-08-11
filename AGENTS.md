@@ -116,6 +116,54 @@ Consequences for agents:
 - Language niceties: some template files/tests use German shape/layout names
   (e.g. `'Titel und Inhalt'`) — that's intentional, they mirror real templates.
 
+## Adding a new `modify.*` helper
+
+The most common contribution (and the most common AI-agent task) is "make
+property X of shape type Y modifiable". It is additive and low-risk — but only
+if all five steps are done. A helper that exists but isn't exported, tested and
+documented is invisible.
+
+1. **Implement it next to its peers.** Shape geometry/appearance →
+   `helper/modify-shape-helper.ts`; text → `modify-text-helper.ts`; colors →
+   `modify-color-helper.ts`; charts/tables/images → the respective helper. The
+   signature is curried: `static setFoo = (params) => (element: XmlElement): void => {}`.
+   Create new XML nodes through `helper/xml-elements.ts` (`XmlElements`) rather
+   than ad-hoc `createElement` chains, and add a factory there if none fits.
+2. **Reuse the existing vocabulary.** Check `types/modify-types.ts` /
+   `shape-types.ts` first — e.g. `Color`, `Border { tag, type, weight, color }`,
+   `TextStyle`, `ShapeCoordinates`. Two conventions for the same concept (say,
+   line weight on table cells vs. on shapes) is a worse outcome than a slightly
+   awkward reuse. New public types must be exported from `src/index.ts`.
+3. **Wire it into the public surface**: `src/index.ts` — add the `const setFoo =
+   XHelper.setFoo;` line *and* the entry in the `modify` namespace object. Both,
+   or the helper is unreachable for users.
+4. **Test it** in `__tests__/`, following the existing suites (e.g.
+   `modify-shapes.test.ts`). Reuse a template from `__tests__/pptx-templates/`
+   instead of adding a binary. Per the testing rules below, assert on the
+   resulting **XML** read back from the output archive — not just
+   `expect(result.slides).toBe(n)`.
+5. **Document it in both places**: `README.md` (in the matching modifier
+   section) and `AI-INSTRUCTOR.md` (one line in the cheat sheet). ROADMAP Phase 6
+   makes this a rule: `AI-INSTRUCTOR.md` is updated in the same PR as any
+   `modify.*` API change.
+
+Then run `yarn test` and `npx tsc --noEmit` — there is no CI, local green is the
+gate — and name the output .pptx that should be opened in PowerPoint to verify.
+
+Recurring OOXML pitfalls when implementing such a helper:
+
+- **The element usually isn't there.** Unmodified properties are inherited from
+  theme/master/shape style and absent from the slide XML. Handle "modify
+  existing" and "create missing" both.
+- **Scope lookups to the right container.** `element.getElementsByTagName('a:ln')`
+  on a `<p:sp>` also finds line properties inside `a:rPr`. Get `p:spPr` first,
+  then scan its direct children.
+- **Respect schema child order** (see "Conventions & gotchas" above) — wrong
+  order produces a file PowerPoint offers to repair, which no test catches today.
+- **Units differ per attribute**: EMU for geometry and line width (1pt = 12700,
+  1cm = 360000), 1/60000° for rotation, 1/100pt for font size, 1/1000% for
+  percentages. Document the unit your parameter expects.
+
 ## Testing rules
 
 - Tests are integration-style: build a real presentation from `__tests__/pptx-templates/`,
