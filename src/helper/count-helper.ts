@@ -50,7 +50,7 @@ export class CountHelper implements ICounter {
   }
 
   async set(): Promise<void> {
-    this.count = await this.calculateCount(await this.template.archive);
+    this.count = await this.calculateCount(this.template.archive);
   }
 
   get(): number {

@@ -89,7 +89,7 @@ export class Shape {
     const targetType = this.targetType;
 
     this.targetTemplate = targetTemplate;
-    this.targetArchive = await this.targetTemplate.archive;
+    this.targetArchive = this.targetTemplate.archive;
     this.targetSlideNumber = targetSlideNumber;
     this.targetSlideFile = PptPaths.part(targetType, this.targetSlideNumber);
     this.targetSlideRelFile = PptPaths.partRels(

@@ -49,11 +49,11 @@ export class Master extends HasShapes implements IMaster {
   async append(targetTemplate: RootPresTemplate): Promise<void> {
     this.targetTemplate = targetTemplate;
 
-    this.targetArchive = await targetTemplate.archive;
+    this.targetArchive = targetTemplate.archive;
     this.targetNumber = targetTemplate.incrementCounter('masters');
     this.targetPath = PptPaths.slideMaster(this.targetNumber);
     this.targetRelsPath = PptPaths.slideMasterRels(this.targetNumber);
-    this.sourceArchive = await this.sourceTemplate.archive;
+    this.sourceArchive = this.sourceTemplate.archive;
 
     log.info('Importing slideMaster ' + this.targetNumber);
 

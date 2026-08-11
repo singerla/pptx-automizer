@@ -33,9 +33,8 @@ export class XmlRelationshipHelper {
     this.archive = archive;
     this.file = file;
     this.path = path + '/';
-    const fileProxy = await this.archive;
     this.xml = await XmlHelper.getXmlFromArchive(
-      fileProxy,
+      this.archive,
       this.path + this.file,
     );
 

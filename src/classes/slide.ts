@@ -43,11 +43,11 @@ export class Slide extends HasShapes implements ISlide {
   async append(targetTemplate: RootPresTemplate): Promise<void> {
     this.targetTemplate = targetTemplate;
 
-    this.targetArchive = await targetTemplate.archive;
+    this.targetArchive = targetTemplate.archive;
     this.targetNumber = targetTemplate.incrementCounter('slides');
     this.targetPath = PptPaths.slide(this.targetNumber);
     this.targetRelsPath = PptPaths.slideRels(this.targetNumber);
-    this.sourceArchive = await this.sourceTemplate.archive;
+    this.sourceArchive = this.sourceTemplate.archive;
 
     this.status.info = 'Appending slide ' + this.targetNumber;
 

@@ -14,9 +14,23 @@ import path from 'path';
 export default class ArchiveJszip extends Archive implements IArchive {
   archive: JSZip;
   file: Buffer;
+  private opened: Promise<this>;
 
   constructor(filename: AutomizerFile, params: ArchiveParams) {
     super(filename, params);
+  }
+
+  /**
+   * Opens the underlying zip on first use. Idempotent; every method that
+   * needs the loaded archive awaits this. `extract()` creates instances with
+   * a preloaded `archive`, so an already present archive short-circuits.
+   */
+  private ensureOpen(): Promise<this> {
+    if (this.archive) {
+      return Promise.resolve(this);
+    }
+    this.opened = this.opened ?? this.initialize();
+    return this.opened;
   }
 
   private async initialize() {
@@ -39,6 +53,7 @@ export default class ArchiveJszip extends Archive implements IArchive {
   }
 
   async folder(dir: string): Promise<ArchivedFile[]> {
+    await this.ensureOpen();
     const files = <ArchivedFile[]>[];
     this.archive.folder(dir).forEach((relativePath, file) => {
       if (!relativePath.includes('/')) {
@@ -55,9 +70,7 @@ export default class ArchiveJszip extends Archive implements IArchive {
     file: string,
     type: 'string' | 'nodebuffer',
   ): Promise<string | Buffer> {
-    if (!this.archive) {
-      await this.initialize();
-    }
+    await this.ensureOpen();
 
     if (!this.archive.files[file]) {
       if (typeof this.filename === 'string') {
@@ -73,11 +86,13 @@ export default class ArchiveJszip extends Archive implements IArchive {
   }
 
   async write(file: string, data: string | Buffer): Promise<this> {
+    await this.ensureOpen();
     this.archive.file(file, data);
     return this;
   }
 
   async remove(file: string): Promise<void> {
+    await this.ensureOpen();
     this.archive.remove(file);
   }
 
@@ -105,6 +120,7 @@ export default class ArchiveJszip extends Archive implements IArchive {
     params: AutomizerParams,
     options?: JSZip.JSZipGeneratorOptions<'nodebuffer'>,
   ): Promise<NodeJS.ReadableStream> {
+    await this.ensureOpen();
     this.setOptions(params);
 
     await this.writeBuffer(this);
@@ -118,11 +134,13 @@ export default class ArchiveJszip extends Archive implements IArchive {
   }
 
   async getFinalArchive(): Promise<JSZip> {
+    await this.ensureOpen();
     await this.writeBuffer(this);
     return this.archive;
   }
 
   async getContent(params: AutomizerParams): Promise<Buffer> {
+    await this.ensureOpen();
     this.setOptions(params);
 
     await this.writeBuffer(this);
