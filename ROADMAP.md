@@ -39,7 +39,7 @@ noise from every later change.
    `File not found: undefined` from deep inside `FileHelper`. Throw a
    `TemplateNotFoundError` with the searched dirs right there.
 
-## Phase 1 — Error handling & logging (foundation for everything else)
+## Phase 1 — Error handling & logging (foundation for everything else) — ✅ done 2026-08-11
 
 Current state: 14 string `throw`s (`throw 'no chart found'` style), `throw new Error`
 elsewhere, `console.error` + `return undefined` in the element pipeline
@@ -96,7 +96,9 @@ concerns. It's where most future features will land, so pay this debt first.
   exists as `automizer.content`; the remaining offenders are the direct
   `contentTracker` imports in `xml-helper.ts` and `file-helper.ts` — thread it
   through instead).
-- 🏗 Same for `Logger.verbosity` (process-global).
+- 🏗 Same for the module-level active logger in `helper/logger.ts`
+  (`setActiveLogger`): thread the `Automizer`-owned instance through to the
+  static helpers instead.
 - 🧪 Add a regression test: two Automizer instances built in parallel
   (`Promise.all([presA.write(...), presB.write(...)])`) produce valid output.
 
@@ -127,24 +129,160 @@ concerns. It's where most future features will land, so pay this debt first.
   pptx" users never need. (`runExternalGenerator` currently instantiates the
   bridge unconditionally on every write.)
 
-## Phase 5 — Testing strategy
+## Phase 5 — Testing strategy (four tiers)
 
 The 94-suite integration harness is a real asset (it exercises actual OOXML end
 to end). Its weakness: assertions are almost all `expect(result.slides).toBe(n)` —
 the content of the produced XML is unverified, so regressions that corrupt output
 without crashing pass green.
 
-- 🧪 Add an **output-assertion helper**: open the written .pptx with jszip, fetch
-  a part, and assert on XML (`expectXml(output, 'ppt/slides/slide1.xml').toContainElement('a:t', 'my text')`).
+A test on generated pptx can answer one of three different questions, and no
+single fixture type answers all of them:
+
+1. **Did my edit arrive in the XML?** (precision) → only XML assertions.
+2. **Is the file valid — will PowerPoint open it without the repair prompt?**
+   (validity) → only a schema validator. XML assertions can't catch this (the
+   wrongly-ordered XML is exactly what you asserted) and LibreOffice can't
+   either (it renders invalid files happily).
+3. **Does it look right?** (rendering) → only pixels.
+
+Hence four tiers. Tiers 0–1 run in every `yarn test`; tiers 2–3 are separate CI
+jobs. Note the complementarity: an intentionally *invisible* XML change keeps
+tier 3 green while tier 0 asserts it; an intended *visible* change fails tier 3
+once, and the reviewer approves a PNG diff in the PR instead of opening the file.
+
+### Tier 0 — per-assertion XML checks (fast, always on)
+
+- 🧪 **Output-assertion helper**: open the written .pptx with jszip, fetch a
+  part, assert on XML —
+  `expectXml(output, 'ppt/slides/slide1.xml').toContainElement('a:t', 'my text')`.
   Retro-fit onto the highest-value suites first (charts, tables, text).
-- 🧪 Add unit tests for pure helpers (`modify-text-helper`, `modify-color-helper`,
-  `cell-id-helper`, `general-helper`) — they're pure functions on DOM nodes,
-  cheap to test, currently only covered incidentally.
-- 🧪 Optional: a validity smoke check (open output with jszip and verify all
-  `[Content_Types].xml` overrides and rel targets resolve to existing parts) —
-  a cheap proxy for "PowerPoint can open this", catching the most common
-  corruption class (dangling relationships).
-- 🔧 Wire coverage into CI once the glob is fixed (Phase 0).
+- 🧪 **Targeted subtree snapshots**: jest snapshots of the *modified subtree
+  only* (the shape's `<p:sp>`, a chart's `<c:ser>`), canonicalized
+  (pretty-printed, attributes sorted) so diffs are readable. Never snapshot
+  whole parts — serialization refactors would churn every snapshot and train
+  everyone to `jest -u` blindly. **No whole-file hashes/fingerprints**: the ZIP
+  layer is nondeterministic (timestamps, ordering) and `rId<n>-created`
+  counters shift with unrelated changes; and a hash mismatch tells you *that*
+  something changed, not *what*.
+- 🧪 **Round-trip assertions**: re-open the *written* file with the library's
+  own read side (`getInfo()`, `xml-slide-helper`) and assert on what it reports.
+  An independent code path as oracle, zero infrastructure.
+- 🧪 Unit tests for pure helpers (`modify-text-helper`, `modify-color-helper`,
+  `cell-id-helper`, `general-helper`) — pure functions on DOM nodes, cheap to
+  test, currently only covered incidentally.
+
+### Tier 1 — package invariants on every written archive (fast, automatic)
+
+Hook into the shared test write helper so **every** output file is checked
+without individual suites opting in:
+
+- every `r:id`/`r:embed`/`r:link` referenced in a part resolves to an entry in
+  that part's `_rels` file;
+- every rel target resolves to an existing part in the archive (and vice versa:
+  no orphaned media/chart parts);
+- every part is covered by `[Content_Types].xml` (override or default);
+- `ppt/presentation.xml` slide list ↔ actual `slide<n>.xml` parts are consistent.
+
+This catches the most common corruption class (dangling relationships) at
+near-zero cost and turns the existing 94 suites into 94 validity probes.
+
+### Tier 2 — OOXML schema validation (CI job) — the "never see the repair prompt again" gate
+
+The repair-prompt bug class (e.g. `a:pPr` child order, see the HTML→text track)
+is invisible to tiers 0/1/3. The genuine oracle is the Open XML SDK validator.
+
+- 🔧 **Tool sketch** — `tools/validate-pptx/` (self-contained .NET console app,
+  ~30 lines):
+
+  ```csharp
+  // tools/validate-pptx/Program.cs
+  using DocumentFormat.OpenXml;
+  using DocumentFormat.OpenXml.Packaging;
+  using DocumentFormat.OpenXml.Validation;
+
+  var errors = 0;
+  foreach (var path in args) {
+    using var doc = PresentationDocument.Open(path, false);
+    var validator = new OpenXmlValidator(FileFormatVersions.Microsoft365);
+    foreach (var e in validator.Validate(doc)) {
+      errors++;
+      Console.WriteLine($"{path} :: [{e.ErrorType}] {e.Description}" +
+                        $" @ {e.Part?.Uri} {e.Path?.XPath}");
+    }
+  }
+  return errors == 0 ? 0 : 1;
+  ```
+
+  `validate-pptx.csproj` references the `DocumentFormat.OpenXml` NuGet package.
+  CI: `actions/setup-dotnet` → `yarn test` → `dotnet run --project
+  tools/validate-pptx -- __tests__/pptx-output/*.pptx`.
+- ⚠ **Baseline first**: run the validator over `__tests__/pptx-templates/*.pptx`
+  before gating — real-world templates often carry pre-existing warnings, and
+  the validator flags some things PowerPoint tolerates. Ship a small allowlist
+  (per error description/part) seeded from the template baseline; fail only on
+  *new* errors. Tighten the allowlist over time.
+- Alternative if .NET in CI is unwanted: a `python-pptx` round-trip open is a
+  weaker, dependency-lighter proxy (catches package-level breakage, not schema
+  order).
+
+### Tier 3 — visual regression via pptx-thumbnailer (curated, separate CI job / nightly)
+
+Uses [pptx-thumbnailer](https://github.com/singerla/pptx-thumbnailer)
+(headless LibreOffice → PDF → pdftocairo) as a **change detector, not a
+correctness oracle**: LibreOffice's <100% PowerPoint fidelity doesn't matter
+for regression testing — determinism does. The baseline PNG means "what the
+pinned renderer showed when a human last blessed it", not "what PowerPoint
+shows". Never conclude PowerPoint-correctness from green pixels.
+
+- 🔧 Mechanics: run the thumbnailer as a service container **pinned by image
+  digest** (renderer/font/poppler drift invalidates baselines), fixed `dpi`,
+  fonts limited to those shipped in the image (Liberation/Carlito) for the
+  golden templates. Compare with a perceptual diff (`odiff` or `pixelmatch`)
+  with a small threshold — never byte-equality, antialiasing guarantees noise.
+  Baselines live in `__tests__/visual-baselines/<deck>/<slide>.png` (400px
+  wide → small enough to commit; GitHub renders image diffs in PRs).
+  Update flow: `UPDATE_BASELINES=1 yarn test:visual` regenerates; the PR shows
+  before/after PNGs; review is a glance, not a PowerPoint session.
+- 🧪 **Do not render all 94 suites** (LibreOffice, concurrency 1 → coffee-break
+  CI). Instead ~12 **golden decks**, each a small scripted build (1–5 slides)
+  from existing `__tests__/pptx-templates/`, deliberately covering one feature
+  area:
+
+  | # | Deck | Exercises |
+  |---|---|---|
+  | 1 | `text-basics` | setText, replaceText, setBulletList, TextStyle (bold/italic/color/size) |
+  | 2 | `multitext-html` | setMultiText + htmlToMultiText (nested lists, `<ol>`, styles) — pins current behavior; the HTML→text feature track updates these baselines intentionally |
+  | 3 | `tables` | setTableData grow/shrink rows+cols, cell styles, borders |
+  | 4 | `chart-bars` | setChartData add/remove series+categories on bar charts |
+  | 5 | `chart-types` | pie, line, scatter, bubble, combo |
+  | 6 | `chart-styling` | setAxisRange, setLegendPosition, data labels incl. removal |
+  | 7 | `images` | image copy across templates, setPosition/setSize, duplicate-media dedup |
+  | 8 | `masters-layouts` | addMaster, useSlideLayout, placeholder normalization |
+  | 9 | `generate-bridge` | PptxGenJS-generated shapes next to template shapes |
+  | 10 | `hyperlinks` | external + internal (slide-target) links |
+  | 11 | `remove-and-order` | removeElement, removeSlide/slide order, normalizePresentation |
+  | 12 | `mixed-report` | 3-slide realistic report combining text+table+chart+image |
+
+  A red golden deck answers "which feature area changed visually" in one glance.
+- Free byproduct: "LibreOffice converted the deck at all" is itself a weak
+  validity smoke test.
+
+### Rollout order
+
+1. Tier 1 invariants + `expectXml` helper (immediate value, no new infra).
+2. Tier 2 validator with template-derived allowlist → CI gate. **After this,
+   the repair prompt is a CI failure, not a customer report.**
+3. Tier 0 snapshots retro-fitted per bug fix / feature PR (rule: every bug fix
+   adds the XML assertion that would have caught it).
+4. Tier 3 golden decks, starting with `chart-bars`, `tables`, `multitext-html`
+   (the areas where visual breakage historically happens).
+5. 📖 As each tier lands, update **AGENTS.md → "Testing rules"** to point at the
+   tier model (especially: every bug fix adds the tier-0 assertion that would
+   have caught it; never render all suites in tier 3), so agents working in the
+   repo follow it automatically.
+- 🔧 Wire coverage into CI once the glob is fixed (Phase 0). Coverage is a
+  tier-0 metric only — tiers 1–3 verify output, not code paths.
 
 ## Phase 6 — Docs & AI enablement
 
@@ -287,7 +425,10 @@ Weeks 2-3: Phase 1 (errors/logging) — small PRs, mechanical
 Weeks 3-6: Phase 2 (HasShapes decomposition + PptPaths) — one extraction per PR,
            integration suite as the safety net
 Then:     Phase 3 (globals) → Phase 4 (templates/strict) as background chores
-Ongoing:  Phase 5 assertions added with every bug fix; Phase 6 docs split
+Early:    Phase 5 tiers 1+2 (invariants + schema validator) right after CI exists —
+          they harden every later refactor PR at fixed cost
+Ongoing:  Phase 5 tier-0 assertions added with every bug fix; tier-3 golden
+          decks feature area by feature area; Phase 6 docs split
 ```
 
 Rule of thumb for every PR during the refactor: **no public `modify.*` signature

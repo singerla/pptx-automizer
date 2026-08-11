@@ -2,7 +2,7 @@ import HyperlinkElement from './modify-hyperlink-element';
 import { ShapeModificationCallback } from '../types/types';
 import { XmlDocument, XmlElement } from '../types/xml-types';
 import { XmlHelper } from './xml-helper';
-import { Logger } from './general-helper';
+import { log } from './logger';
 
 interface RelationshipData {
   Id: string;
@@ -111,14 +111,14 @@ export default class ModifyHyperlinkHelper {
     (target: string | number, isExternal = true): ShapeModificationCallback =>
     async (element: XmlElement, relation?: XmlElement): Promise<void> => {
       if (!element || !relation) {
-        Logger.log('SetHyperlinkTarget: Missing element or relation', 2);
+        log.debug('SetHyperlinkTarget: Missing element or relation');
         return;
       }
 
       // Find existing hyperlinks
       const hlinkClicks = element.getElementsByTagName('a:hlinkClick');
       if (hlinkClicks.length === 0) {
-        Logger.log('No hyperlinks found to modify', 1);
+        log.warn('No hyperlinks found to modify');
         return;
       }
 
@@ -128,7 +128,7 @@ export default class ModifyHyperlinkHelper {
         .filter(Boolean) as string[];
 
       if (existingRIds.length === 0) {
-        Logger.log('No valid relationship IDs found in hyperlinks', 1);
+        log.warn('No valid relationship IDs found in hyperlinks');
         return;
       }
 
@@ -167,10 +167,7 @@ export default class ModifyHyperlinkHelper {
         }
       });
 
-      Logger.log(
-        'SetHyperlinkTarget: Successfully updated hyperlink target',
-        2,
-      );
+      log.debug('SetHyperlinkTarget: Successfully updated hyperlink target');
     };
 
   /**
@@ -222,12 +219,12 @@ export default class ModifyHyperlinkHelper {
           if (txBody) {
             this.createNewTextStructure(txBody, hyperlinkElement);
           } else {
-            console.error('No suitable text element found to add hyperlink to');
+            log.error('No suitable text element found to add hyperlink to');
           }
         }
       }
 
-      Logger.log('AddHyperlink: Successfully completed', 2);
+      log.debug('AddHyperlink: Successfully completed');
     };
 
   /**
@@ -246,9 +243,9 @@ export default class ModifyHyperlinkHelper {
         Array.from(hlinkClicks).forEach((hlink) =>
           hlink.parentNode?.removeChild(hlink),
         );
-        Logger.log('RemoveHyperlink: Successfully completed', 2);
+        log.debug('RemoveHyperlink: Successfully completed');
       } catch (error) {
-        console.error('Error in RemoveHyperlink:', error);
+        log.error('Error in RemoveHyperlink:', error);
       }
     };
 }

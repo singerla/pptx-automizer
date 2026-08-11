@@ -14,7 +14,8 @@ import { PresTemplate } from './interfaces/pres-template';
 import { RootPresTemplate } from './interfaces/root-pres-template';
 import { Template } from './classes/template';
 import { ModifyXmlCallback, TemplateInfo } from './types/xml-types';
-import { GeneralHelper, log, Logger } from './helper/general-helper';
+import { GeneralHelper } from './helper/general-helper';
+import { ConsoleLogger, ILogger, setActiveLogger } from './helper/logger';
 import { Master } from './classes/master';
 import path from 'path';
 import * as fs from 'fs';
@@ -28,7 +29,7 @@ import JSZip from 'jszip';
 import { ISlide } from './interfaces/islide';
 import { IMaster } from './interfaces/imaster';
 import { ContentTypeExtension, ContentTypeMap } from './enums/content-type-map';
-import { TemplateNotFoundError } from './errors';
+import { AutomizerError, OutputError, TemplateNotFoundError } from './errors';
 import slugify from 'slugify';
 
 /**
@@ -45,9 +46,9 @@ const VALID_MEDIA_EXTENSIONS: readonly string[] = Object.keys(ContentTypeMap) as
  */
 function validateMediaExtension(extension: string, filename: string): asserts extension is ContentTypeExtension {
   if (!VALID_MEDIA_EXTENSIONS.includes(extension.toLowerCase())) {
-    throw (
+    throw new AutomizerError(
       `Unsupported media extension '${extension}' for file '${filename}'. ` +
-      `Supported extensions: ${VALID_MEDIA_EXTENSIONS.join(', ')}`
+        `Supported extensions: ${VALID_MEDIA_EXTENSIONS.join(', ')}`,
     );
   }
 }
@@ -64,7 +65,9 @@ function getValidatedExtension(filename: string): ContentTypeExtension {
     .replace('.', '') as ContentTypeExtension;
 
   if (!extension) {
-    throw `Filename must include extension: ${filename}. Example: 'logo.png'`;
+    throw new AutomizerError(
+      `Filename must include extension: ${filename}. Example: 'logo.png'`,
+    );
   }
 
   validateMediaExtension(extension, filename);
@@ -95,6 +98,11 @@ export default class Automizer implements IPresentationProps {
   timer: number;
   params: AutomizerParams;
   status: StatusTracker;
+  /**
+   * Logger used for all library output. Defaults to a `ConsoleLogger`
+   * filtered by `params.verbosity`; inject your own via `params.logger`.
+   */
+  logger: ILogger;
 
   content: ContentTracker;
   modifyPresentation: ModifyXmlCallback[] = [];
@@ -105,6 +113,9 @@ export default class Automizer implements IPresentationProps {
    */
   constructor(params: AutomizerParams) {
     this.params = params;
+
+    this.logger = params.logger ?? new ConsoleLogger(params.verbosity ?? 1);
+    setActiveLogger(this.logger);
 
     this.templateDir = params?.templateDir ? params.templateDir + '/' : '';
     this.templateFallbackDir = params?.templateFallbackDir
@@ -158,15 +169,11 @@ export default class Automizer implements IPresentationProps {
         this.templates.push(newTemplate);
       });
     }
-
-    if (params.verbosity) {
-      Logger.verbosity = params.verbosity;
-    }
   }
 
   setStatusTracker(statusTracker: StatusTracker['next']): void {
     const defaultStatusTracker = (status: StatusTracker) => {
-      log(status.info + ' (' + status.share + '%)', 2);
+      this.logger.info(status.info + ' (' + status.share + '%)');
     };
 
     this.status = {
@@ -274,7 +281,9 @@ export default class Automizer implements IPresentationProps {
   ): this {
     const files = GeneralHelper.arrayify(filename);
     if (!this.rootTemplate) {
-      throw "Can't load media, you need to load a root template first";
+      throw new AutomizerError(
+        "Can't load media, you need to load a root template first",
+      );
     }
     files.forEach((file) => {
       const directory = dir || this.params.mediaDir;
@@ -283,7 +292,7 @@ export default class Automizer implements IPresentationProps {
       try {
         fs.accessSync(filepath, fs.constants.F_OK);
       } catch (_e) {
-        throw `Can't load media: ${filepath} does not exist.`;
+        throw new AutomizerError(`Can't load media: ${filepath} does not exist.`);
       }
       this.rootTemplate.mediaFiles.push({
         source: 'path',
@@ -313,21 +322,25 @@ export default class Automizer implements IPresentationProps {
     const files = GeneralHelper.arrayify(filename);
     const buffers = GeneralHelper.arrayify(buffer);
     if (!this.rootTemplate) {
-      throw "Can't load media, you need to load a root template first";
+      throw new AutomizerError(
+        "Can't load media, you need to load a root template first",
+      );
     }
 
     if (files.length !== buffers.length) {
-      throw `Mismatched arrays: ${files.length} filename(s) but ${buffers.length} buffer(s)`;
+      throw new AutomizerError(
+        `Mismatched arrays: ${files.length} filename(s) but ${buffers.length} buffer(s)`,
+      );
     }
 
     files.forEach((file, index) => {
       const buf = buffers[index];
 
       if (!Buffer.isBuffer(buf)) {
-        throw `Invalid buffer for file: ${file}`;
+        throw new AutomizerError(`Invalid buffer for file: ${file}`);
       }
       if (buf.length === 0) {
-        throw `Empty buffer provided for file: ${file}`;
+        throw new AutomizerError(`Empty buffer provided for file: ${file}`);
       }
 
       const extension = getValidatedExtension(file);
@@ -459,7 +472,7 @@ export default class Automizer implements IPresentationProps {
     const key = sourceIdentifier + '@' + name;
 
     if (this.rootTemplate.masters.find((master) => master.key === key)) {
-      console.log('Already imported ' + key);
+      this.logger.info('Already imported ' + key);
       return this;
     }
 
@@ -534,7 +547,7 @@ export default class Automizer implements IPresentationProps {
     await this.finalizePresentation();
 
     if (!this.rootTemplate.archive.stream) {
-      throw 'Streaming is not implemented for current archive type';
+      throw new OutputError('Streaming is not implemented for current archive type');
     }
 
     return this.rootTemplate.archive.stream(this.params, generatorOptions);
@@ -548,7 +561,9 @@ export default class Automizer implements IPresentationProps {
     await this.finalizePresentation();
 
     if (!this.rootTemplate.archive.getFinalArchive) {
-      throw 'GetFinalArchive is not implemented for current archive type';
+      throw new OutputError(
+        'GetFinalArchive is not implemented for current archive type',
+      );
     }
 
     return this.rootTemplate.archive.getFinalArchive();

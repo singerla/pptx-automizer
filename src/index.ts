@@ -196,7 +196,17 @@ export type {
   XmlDocument,
 };
 
-export { AutomizerError, TemplateNotFoundError } from './errors';
+export {
+  AutomizerError,
+  TemplateNotFoundError,
+  SlideNotFoundError,
+  ElementNotFoundError,
+  ArchiveError,
+  OutputError,
+  CallbackError,
+} from './errors';
+export { ConsoleLogger, NullLogger } from './helper/logger';
+export type { ILogger, Verbosity } from './helper/logger';
 
 export { ITemplate, IMaster, ISlide, IPptxGenJSSlide };
 export default Automizer;

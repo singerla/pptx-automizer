@@ -1,3 +1,4 @@
+import { log } from './logger';
 import fs, { promises as fsp } from 'fs';
 import path from 'path';
 import JSZip from 'jszip';
@@ -58,11 +59,11 @@ export const compressFolder = async (srcDir, destFile, options) => {
     zip
       .generateNodeStream({ streamFiles: true, ...options })
       .pipe(fs.createWriteStream(destFile))
-      .on('error', (err) => console.error('Error writing file', err.stack))
+      .on('error', (err) => log.error('Error writing file', err.stack))
       .on('finish', () =>
-        console.log('Zip written successfully:', Date.now() - start, 'ms'),
+        log.info('Zip written successfully:', Date.now() - start, 'ms'),
       );
   } catch (ex) {
-    console.error('Error creating zip', ex);
+    log.error('Error creating zip', ex);
   }
 };

@@ -10,7 +10,7 @@ import { XmlElement } from '../types/xml-types';
 import IArchive from '../interfaces/iarchive';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import ModifyHyperlinkHelper from '../helper/modify-hyperlink-helper';
-import { Logger } from '../helper/general-helper';
+import { log } from '../helper/logger';
 
 export class Hyperlink extends Shape {
   private hyperlinkType: 'internal' | 'external';
@@ -173,9 +173,8 @@ export class Hyperlink extends Shape {
     targetSlideNumber: number,
   ): Promise<void> {
     if (!this.target || !this.target.rId) {
-      Logger.log(
+      log.debug(
         'modifyOnAddedSlide called on Hyperlink without a valid source target/rId.',
-        2,
       );
       return;
     }

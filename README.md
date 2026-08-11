@@ -193,9 +193,17 @@ const automizer = new Automizer({
   // use a callback function to track pptx generation process.
   // statusTracker: myStatusTracker,
 
-  // Use 1 to show warnings or 2 for detailed information
-  // 0 disables logging
+  // Console log verbosity: 0 shows errors only, 1 adds warnings (default),
+  // 2 adds info & debug output. You can also inject a custom logger
+  // implementing ILogger (or NullLogger for complete silence):
+  // logger: new NullLogger(),
   verbosity: 1,
+
+  // By default, a throwing modification callback or an unresolvable
+  // element selector rejects write() with a typed error (CallbackError,
+  // ElementNotFoundError). Set to true to log a warning and skip the
+  // failing modification instead:
+  // continueOnError: false,
 
   // Remove all unused placeholders to prevent unwanted overlays:
   cleanupPlaceholders: false,

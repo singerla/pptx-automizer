@@ -1,3 +1,4 @@
+import { log } from './logger';
 import { ModifyChart } from '../modify/modify-chart';
 import { ChartModificationCallback, Workbook } from '../types/types';
 import {
@@ -442,7 +443,7 @@ export default class ModifyChartHelper {
           .getElementsByTagName('c:plotArea')[0]
           .getElementsByTagName('c:manualLayout')[0]
       ) {
-        console.error("Can't update plot area. No c:manualLayout found.");
+        log.error("Can't update plot area. No c:manualLayout found.");
         return;
       }
 

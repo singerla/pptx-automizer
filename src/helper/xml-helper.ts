@@ -1,3 +1,4 @@
+import { ElementNotFoundError } from '../errors';
 import { Node, XMLSerializer } from '@xmldom/xmldom';
 import {
   DefaultAttribute,
@@ -11,7 +12,7 @@ import {
 import { TargetByRelIdMap } from '../constants/constants';
 import { XmlPrettyPrint } from './xml-pretty-print';
 import { GetRelationshipsCallback, Target } from '../types/types';
-import { log } from './general-helper';
+import { log } from './logger';
 import { contentTracker } from './content-tracker';
 import IArchive from '../interfaces/iarchive';
 import {
@@ -397,7 +398,9 @@ export class XmlHelper {
         ?.getAttribute(params.relAttribute);
 
       if (!sourceRid) {
-        throw 'No sourceRid for ' + params.relRootTag;
+        throw new ElementNotFoundError('No sourceRid for ' + params.relRootTag, {
+          selector: params.relRootTag,
+        });
       }
 
       const shapeRels = await XmlHelper.getRelationshipTargetsByPrefix(
@@ -697,7 +700,7 @@ export class XmlHelper {
     const parent = collection[0].parentNode;
     order.forEach((index, i) => {
       if (!collection[index]) {
-        log('sortCollection index not found' + index, 1);
+        log.warn('sortCollection index not found' + index);
         return;
       }
 

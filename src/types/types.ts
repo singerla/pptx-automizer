@@ -10,7 +10,7 @@ import {
 import IArchive, { ArchiveMode } from '../interfaces/iarchive';
 import { ContentTypeExtension } from '../enums/content-type-map';
 import PptxGenJS from 'pptxgenjs';
-import { Logger } from '../helper/general-helper';
+import { ILogger, Verbosity } from '../helper/logger';
 import { IPptxGenJSSlide } from '../interfaces/ipptxgenjs-slide';
 import HasShapes from '../classes/has-shapes';
 import { ISlide } from '../interfaces/islide';
@@ -130,12 +130,25 @@ export type AutomizerParams = {
    */
   statusTracker?: StatusTracker['next'];
   /**
-   * Set logging verbosity.
-   * 0: no logging at all
-   * 1: show warnings
-   * 2: show info (e.g. on import & append)
+   * Set logging verbosity of the default console logger.
+   * 0: errors only
+   * 1: errors and warnings (default)
+   * 2: everything, including info (e.g. on import & append)
    */
-  verbosity?: Logger['verbosity'];
+  verbosity?: Verbosity;
+  /**
+   * Inject a custom logger to route library output into your own
+   * logging stack. Defaults to a console logger filtered by `verbosity`.
+   * Use `NullLogger` to keep the library completely silent.
+   */
+  logger?: ILogger;
+  /**
+   * By default, a throwing modification callback or an unresolvable
+   * element selector fails the run loudly with a typed error.
+   * Set to true to restore the lenient behavior: log a warning,
+   * skip the failing modification and continue.
+   */
+  continueOnError?: boolean;
 };
 export type StatusTracker = {
   current: number;
@@ -321,6 +334,7 @@ export type ImportedElement = {
     | 'image:media'
     | 'image:audioFile'
     | 'image:videoFile';
+  continueOnError?: boolean;
 };
 export type AnalyzedElementType = {
   type: ElementType;

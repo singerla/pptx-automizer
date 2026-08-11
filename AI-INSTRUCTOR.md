@@ -40,9 +40,17 @@ const automizer = new Automizer({
   removeExistingSlides: true,            // start output with 0 slides (usual)
   autoImportSlideMasters: true,          // bring masters/layouts along (usual)
   cleanup: false,
-  verbosity: 1,                          // 0 silent … 2 chatty
+  verbosity: 1,                          // 0 errors only … 2 chatty
+  // logger: myILogger,                  // inject custom logging (NullLogger = silent)
+  // continueOnError: true,              // log & skip failing modifications
+  //                                     // instead of rejecting write()
 });
 ```
+
+Error handling: a throwing modification callback or an unresolvable element
+selector rejects `write()` with a typed error (`CallbackError`,
+`ElementNotFoundError`, both `instanceof AutomizerError`) unless
+`continueOnError: true` is set.
 
 Load files (chainable, synchronous):
 

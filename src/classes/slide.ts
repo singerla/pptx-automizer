@@ -4,7 +4,8 @@ import { ISlide } from '../interfaces/islide';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
 import { PresTemplate } from '../interfaces/pres-template';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
-import { last, Logger } from '../helper/general-helper';
+import { last } from '../helper/general-helper';
+import { log } from '../helper/logger';
 import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import { IMaster } from '../interfaces/imaster';
 import HasShapes from './has-shapes';
@@ -113,7 +114,7 @@ export class Slide extends HasShapes implements ISlide {
           slideLayouts[0].updateTargetIndex(targetLayoutId as number);
         }
       } else {
-        Logger.log('Unable to use slide layout ' + layoutId, 0);
+        log.warn('Unable to use slide layout ' + layoutId);
       }
     });
 
@@ -188,7 +189,7 @@ export class Slide extends HasShapes implements ISlide {
     );
 
     if (!alreadyImported) {
-      console.error(
+      log.error(
         'Could not find "' +
           targetLayoutName +
           '"@' +
