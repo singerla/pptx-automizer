@@ -319,20 +319,74 @@ export class MultiTextHelper {
     text: string,
     style?: TextStyle,
   ): void {
-    const r = this.document.createElement('a:r');
-    p.appendChild(r);
+    this.forEachLine(p, text, style, (line) => {
+      const r = this.document.createElement('a:r');
+      p.appendChild(r);
 
+      const rPr = this.document.createElement('a:rPr');
+      r.appendChild(rPr);
+
+      // Apply text styling (excluding hyperlink)
+      this.applyRunStyle(rPr, style);
+
+      this.createTextElement(r, line);
+    });
+  }
+
+  /**
+   * Split text at soft line breaks and emit an `<a:br/>` between the segments.
+   *
+   * PPTX has no in-run line break: a soft break (Shift+Enter) is an `<a:br/>`
+   * element sitting *between* two `<a:r>` siblings. PowerPoint itself hands out
+   * U+000B (vertical tab) for such a break when text is read back from a shape,
+   * so `\v` is treated like `\n` here. A literal `\v` in `<a:t>` is not even
+   * valid XML 1.0 and used to produce a file PowerPoint offers to repair.
+   *
+   * Empty segments (consecutive breaks) do not get a run of their own — only
+   * text that was empty to begin with keeps its single empty run.
+   */
+  private forEachLine(
+    p: XmlElement,
+    text: string,
+    style: TextStyle | undefined,
+    createRun: (line: string) => void,
+  ): void {
+    // eslint-disable-next-line no-control-regex -- U+000B is one of the breaks we split on
+    const lines = String(text ?? '').split(/\r\n|[\r\n\u000B]/);
+
+    lines.forEach((line, index) => {
+      if (index > 0) {
+        this.appendLineBreak(p, style);
+      }
+      // Consecutive breaks: the break alone is the empty line
+      if (line === '' && lines.length > 1) {
+        return;
+      }
+      createRun(line);
+    });
+  }
+
+  /**
+   * Append an `<a:br/>` carrying the surrounding run style, so the empty line
+   * keeps the font size (and therefore the line height) of its neighbours.
+   */
+  private appendLineBreak(p: XmlElement, style?: TextStyle): void {
+    const br = this.document.createElement('a:br');
     const rPr = this.document.createElement('a:rPr');
-    r.appendChild(rPr);
+    br.appendChild(rPr);
+    this.applyRunStyle(rPr, style);
+    p.appendChild(br);
+  }
 
-    // Apply text styling (excluding hyperlink)
-    if (style) {
-      const styleWithoutHyperlink = { ...style };
-      delete styleWithoutHyperlink.hyperlink;
-      ModifyTextHelper.style(styleWithoutHyperlink)(rPr);
-    }
-
-    this.createTextElement(r, text);
+  /**
+   * Apply a TextStyle to an `<a:rPr>`, ignoring the hyperlink part
+   * (hyperlinks are an element inside rPr, added by HyperlinkElement)
+   */
+  private applyRunStyle(rPr: XmlElement, style?: TextStyle): void {
+    if (!style) return;
+    const styleWithoutHyperlink = { ...style };
+    delete styleWithoutHyperlink.hyperlink;
+    ModifyTextHelper.style(styleWithoutHyperlink)(rPr);
   }
 
   /**
@@ -387,20 +441,19 @@ export class MultiTextHelper {
       isInternal || false,
     );
 
-    // Create the text run with hyperlink
-    const r = hyperlinkElement.createTextRun(text);
+    // Create the text run(s) with hyperlink; a soft line break splits the text
+    // into several runs, all pointing at the same relationship
+    this.forEachLine(p, text, style, (line) => {
+      const r = hyperlinkElement.createTextRun(line);
 
-    // Apply additional styling if needed (excluding hyperlink)
-    if (style) {
+      // Apply additional styling if needed (excluding hyperlink)
       const rPr = r.getElementsByTagName('a:rPr')[0];
       if (rPr) {
-        const styleWithoutHyperlink = { ...style };
-        delete styleWithoutHyperlink.hyperlink;
-        ModifyTextHelper.style(styleWithoutHyperlink)(rPr);
+        this.applyRunStyle(rPr as XmlElement, style);
       }
-    }
 
-    p.appendChild(r);
+      p.appendChild(r);
+    });
   }
 
   /**

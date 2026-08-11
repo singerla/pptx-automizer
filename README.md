@@ -522,6 +522,11 @@ pres.addSlide('TextReplace.pptx', 1, (slide) => {
 });
 ```
 
+Within a text run, `\n` and `\v` (U+000B, the character PowerPoint itself uses for
+a soft line break created with Shift+Enter) are converted into an `<a:br/>` line
+break inside the same paragraph. Add another entry to the array if you need a real
+paragraph with its own bullet, level and alignment.
+
 It is also possible to directly convert an HTML page into pptx text contents. HTML code will be flattened and converted into a MultiText array.
 
 ```ts
@@ -544,6 +549,7 @@ Find out more about text replacement:
 - [Replace and style by tags](https://github.com/singerla/pptx-automizer/blob/main/__tests__/replace-tagged-text.test.ts)
 - [Modify text elements using getAllTextElementIds](https://github.com/singerla/pptx-automizer/blob/main/__tests__/get-all-text-element-ids.test.ts)
 - [Replace text by multitext objects](https://github.com/singerla/pptx-automizer/blob/main/__tests__/replace-multi-text.test.ts)
+- [Soft line breaks inside a text run](https://github.com/singerla/pptx-automizer/blob/main/__tests__/replace-multi-text-linebreaks.test.ts)
 - [Replace text by HTML](https://github.com/singerla/pptx-automizer/blob/main/__tests__/replace-multi-text-html.test.ts)
 
 ## Modify Images

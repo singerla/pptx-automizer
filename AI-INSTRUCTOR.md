@@ -135,6 +135,11 @@ modify.setMultiText([
 modify.htmlToMultiText('<p>Simple <b>HTML</b> → text</p>');
 ```
 
+Inside a `setMultiText` run, `\n` and `\v` (U+000B — what PowerPoint itself
+returns for a Shift+Enter) become a **soft line break** (`<a:br/>`) within the
+same paragraph. Use a new `MultiTextParagraph` when you want a real paragraph
+(with its own bullet, level and alignment) instead.
+
 **`htmlToMultiText` caveats (current state):** it supports a limited subset —
 `<p>`, `<ul>`/`<ol>` (both render as `•` bullets), `<li>`, `<strong>`/`<b>`,
 `<em>`/`<i>`, `<ins>` (underline), `<a href="url">` / `<a href="3">` (slide
