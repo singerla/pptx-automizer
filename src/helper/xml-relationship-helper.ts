@@ -47,7 +47,7 @@ export class XmlRelationshipHelper {
     return this;
   }
 
-  setXml(xml) {
+  setXml(xml: XmlDocument) {
     this.xml = xml;
     return this;
   }
@@ -55,7 +55,7 @@ export class XmlRelationshipHelper {
   getTargetsByPrefix(prefix: string | string[]): Target[] {
     const prefixes = typeof prefix === 'string' ? [prefix] : prefix;
 
-    const targets = [];
+    const targets: Target[] = [];
     this.xmlTargets.forEach((xmlTarget) => {
       prefixes.forEach((prefix) => {
         const target = XmlRelationshipHelper.parseRelationTarget(
@@ -73,7 +73,7 @@ export class XmlRelationshipHelper {
   }
 
   getTargetsByType(type: string): Target[] {
-    const targets = [];
+    const targets: Target[] = [];
     this.xmlTargets.forEach((xmlTarget) => {
       const target = XmlRelationshipHelper.parseRelationTarget(xmlTarget);
       if (target?.type === type) {
@@ -260,19 +260,24 @@ export class XmlRelationshipHelper {
     };
   }
 
-  static targetMatchesRelationship(relType, subtype, target, prefix) {
+  static targetMatchesRelationship(
+    relType: string,
+    subtype: string,
+    target: string,
+    prefix: string,
+  ) {
     if (relType === 'package') return true;
 
     return relType === subtype && target.indexOf(prefix) === 0;
   }
 
   static async getSlideLayoutNumber(sourceArchive: IArchive, slideId: number) {
-    const slideToLayouts = await new XmlRelationshipHelper().initialize(
+    const slideToLayouts = (await new XmlRelationshipHelper().initialize(
       sourceArchive,
       `slide${slideId}.xml.rels`,
       `ppt/slides/_rels`,
       '../slideLayouts/slideLayout',
-    );
+    )) as Target[];
     return slideToLayouts[0].number;
   }
 

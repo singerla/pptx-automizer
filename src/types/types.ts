@@ -23,7 +23,8 @@ export type SlideModificationCallback = (document: XmlDocument, parent?: HasShap
 export type SlidePlaceholder = {
   xml: XmlElement;
   type: string;
-  id?: number;
+  /** Value of the ph 'id' attribute; has always been the raw attribute string. */
+  id?: string;
 };
 export type ModificationCallback =
   | ChartModificationCallback

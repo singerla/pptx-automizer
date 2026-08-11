@@ -69,11 +69,15 @@ export class XmlHelper {
     );
 
     const newElement = xml.createElement(element.tag);
-    for (const attribute in element.attributes) {
-      const value = element.attributes[attribute];
+    const attributes = (element.attributes || {}) as Record<
+      string,
+      string | number | ((xml: XmlDocument) => string | number)
+    >;
+    for (const attribute in attributes) {
+      const value = attributes[attribute];
       const setValue = typeof value === 'function' ? value(xml) : value;
 
-      newElement.setAttribute(attribute, setValue);
+      newElement.setAttribute(attribute, String(setValue));
     }
 
     element.archive.contentTracker?.trackRelation(
@@ -193,7 +197,7 @@ export class XmlHelper {
     const filename = last(file.split('/'));
 
     let subtype = last(prefix.split('/'));
-    const mapSubtype = {
+    const mapSubtype: Record<string, string> = {
       data: 'diagramData',
     };
     subtype = mapSubtype[subtype] || subtype;
@@ -290,7 +294,7 @@ export class XmlHelper {
     const xml = await XmlHelper.getXmlFromArchive(archive, path);
     const relationshipItems = xml.getElementsByTagName(tag);
 
-    const rels = [];
+    const rels: Target[] = [];
 
     for (const i in relationshipItems) {
       if (relationshipItems[i].getAttribute) {

@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as JSZip from 'jszip';
 import { DOMParser } from '@xmldom/xmldom';
-import { modify } from '../src/index';
+import { modify, XmlElement } from '../src/index';
 
 test('delete-hyperlink - using removeHyperlink helper', async () => {
   const automizer = new Automizer({
@@ -56,7 +56,7 @@ test('delete-hyperlink - using removeHyperlink helper', async () => {
       });
 
       // Now use the removeHyperlink helper
-      slide.modifyElement('ExternalLink', (element, relation) => {
+      slide.modifyElement('ExternalLink', (element: XmlElement, relation?: XmlElement) => {
         console.log('Using removeHyperlink helper to remove hyperlink');
 
         // DEBUG: Log element details before removal

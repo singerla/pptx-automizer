@@ -1,4 +1,4 @@
-import { Color, ShapeOutline } from '../types/modify-types';
+import { BulletListContent, Color, ShapeOutline } from '../types/modify-types';
 import { XmlHelper } from './xml-helper';
 import { DOMParser } from '@xmldom/xmldom';
 import { dLblXml } from './xml/dLbl';
@@ -119,13 +119,13 @@ export default class XmlElements {
     return bodyPr;
   }
 
-  addBulletList(list: []): void {
+  addBulletList(list: BulletListContent): void {
     const txBody = this.createTextBody();
     this.createBodyProperties(txBody);
     this.processList(txBody, list, 0);
   }
 
-  processList(txBody: XmlElement, items: [], level: number): void {
+  processList(txBody: XmlElement, items: BulletListContent, level: number): void {
     items.forEach((item) => {
       if (Array.isArray(item)) {
         this.processList(txBody, item, level + 1);

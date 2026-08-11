@@ -70,8 +70,8 @@ export default class GeneratePptxGenJs implements IGenerator {
 
   async generateElements(
     generate: GenerateElements[],
-    pgenSlide,
-    tmpSlideNumber,
+    pgenSlide: PptxGenJS.Slide,
+    tmpSlideNumber: number,
   ): Promise<void> {
     for (const generateElement of generate) {
       generateElement.tmpSlideNumber = tmpSlideNumber;
@@ -155,10 +155,12 @@ export default class GeneratePptxGenJs implements IGenerator {
     };
   };
 
-  getOptions = (options, objectName: string) => {
-    options = options || {};
+  getOptions = <T extends object>(
+    options: T | undefined,
+    objectName: string,
+  ): T & { objectName: string } => {
     return {
-      ...options,
+      ...(options || ({} as T)),
       objectName,
     };
   };

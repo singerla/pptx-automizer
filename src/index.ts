@@ -29,8 +29,10 @@ import {
   ChartBubble,
   ChartCategory,
   ChartData,
+  ChartInfo,
   ChartSeries,
   ChartValueStyle,
+  WorkbookData,
 } from './types/chart-types';
 import {
   Border,
@@ -112,7 +114,9 @@ export type {
   ModifyTableParams,
   TableRowStyle,
   ChartData,
+  ChartInfo,
   ChartValueStyle,
+  WorkbookData,
   Color,
   Border,
   ShapeOutline,

@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as JSZip from 'jszip';
 import { DOMParser } from '@xmldom/xmldom';
-import { modify } from '../src/index';
+import { modify, XmlElement } from '../src/index';
 
 test('Add a new internal hyperlink to an existing shape', async () => {
   const automizer = new Automizer({
@@ -22,7 +22,7 @@ test('Add a new internal hyperlink to an existing shape', async () => {
   const result = await pres
     .addSlide('empty', 1, (slide) => {
       // Find a text shape and add an internal hyperlink to it
-      slide.modifyElement('Textfeld 3', (element, relation) => {
+      slide.modifyElement('Textfeld 3', (element: XmlElement, relation?: XmlElement) => {
         // Add hyperlink to slide 3
         modify.addHyperlink(targetSlide)(element, relation);
       });

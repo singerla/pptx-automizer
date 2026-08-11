@@ -62,6 +62,22 @@ export type ChartData = {
   series: ChartSeries[];
   categories: ChartCategory[];
 };
+/**
+ * Cell matrix read from an embedded chart workbook by
+ * `read.readWorkbookData`: one array per row.
+ */
+export type WorkbookData = (string | number)[][];
+/**
+ * Accumulator filled by `read.readChartInfo`.
+ */
+export type ChartInfo = {
+  series: {
+    seriesId: number;
+    colorType: string;
+    colorValue: string;
+  }[];
+  chartType?: string;
+};
 export type ChartDataMapper = {
   (point: number | ChartPoint | ChartBubble, category?: ChartCategory): number;
 };

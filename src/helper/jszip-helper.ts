@@ -11,10 +11,10 @@ import JSZip from 'jszip';
  * @param {string} dir
  * @returns {Promise<string[]>}
  */
-const getFilePathsRecursively = async (dir) => {
+const getFilePathsRecursively = async (dir: string): Promise<string[]> => {
   // returns a flat array of absolute paths of all files recursively contained in the dir
   const list = await fsp.readdir(dir);
-  const statPromises = list.map(async (file) => {
+  const statPromises = list.map(async (file): Promise<string | string[]> => {
     const fullPath = path.resolve(dir, file);
     const stat = await fsp.stat(fullPath);
     if (stat && stat.isDirectory()) {
@@ -23,7 +23,7 @@ const getFilePathsRecursively = async (dir) => {
     return fullPath;
   });
 
-  return (await Promise.all(statPromises)).flat(Infinity);
+  return (await Promise.all(statPromises)).flat() as string[];
 };
 
 /**
@@ -31,7 +31,7 @@ const getFilePathsRecursively = async (dir) => {
  * @param {string} dir
  * @returns {JSZip}
  */
-const createZipFromFolder = async (dir) => {
+const createZipFromFolder = async (dir: string): Promise<JSZip> => {
   const absRoot = path.resolve(dir);
   const filePaths = await getFilePathsRecursively(dir);
   return filePaths.reduce((z, filePath) => {
@@ -52,7 +52,11 @@ const createZipFromFolder = async (dir) => {
  * @param {string} srcDir
  * @param {string} destFile
  */
-export const compressFolder = async (srcDir, destFile, options) => {
+export const compressFolder = async (
+  srcDir: string,
+  destFile: string,
+  options: JSZip.JSZipGeneratorOptions<'nodebuffer'>,
+) => {
   const start = Date.now();
   try {
     const zip = await createZipFromFolder(srcDir);

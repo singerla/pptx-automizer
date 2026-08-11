@@ -368,7 +368,7 @@ export class Chart extends Shape implements IChart, IShapeAction {
       const styleRelation = await XmlHelper.getTargetsByRelationshipType(
         this.sourceArchive,
         this.wbRelsPath,
-        this[styleType],
+        (this as unknown as Record<string, string>)[styleType],
       );
 
       this.styleRelationFiles[styleType] =
@@ -416,8 +416,8 @@ export class Chart extends Shape implements IChart, IShapeAction {
     const relations = relXml.getElementsByTagName('Relationship');
 
     Object.keys(relations)
-      .map((key) => relations[key])
-      .filter((element) => element.getAttribute)
+      .map((key) => relations[Number(key)])
+      .filter((element) => element && element.getAttribute)
       .forEach((element) => {
         const type = element.getAttribute('Type');
         switch (type) {
@@ -480,7 +480,12 @@ export class Chart extends Shape implements IChart, IShapeAction {
     XmlHelper.writeXmlToArchive(this.targetArchive, targetRelFile, relXml);
   }
 
-  updateTargetWorksheetRelation(targetRelFile, element, attribute, value) {
+  updateTargetWorksheetRelation(
+    targetRelFile: string,
+    element: XmlElement,
+    attribute: string,
+    value: string,
+  ) {
     element.setAttribute(attribute, value);
   }
 

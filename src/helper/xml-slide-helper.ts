@@ -333,7 +333,6 @@ export class XmlSlideHelper {
         'numberingType',
         'bullet',
         'startAt',
-        'breaks',
       ] as const;
 
       for (const key of propertyKeys) {
@@ -460,7 +459,7 @@ export class XmlSlideHelper {
 
     switch (type) {
       case 'graphicFrame':
-        type = mapUriType[getUri()] || type;
+        type = mapUriType[getUri() as keyof typeof mapUriType] || type;
         break;
       case 'oleObj':
         type = 'OLEObject';

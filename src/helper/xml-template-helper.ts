@@ -268,7 +268,10 @@ export class XmlTemplateHelper {
     return slideRels;
   }
 
-  async getSlideNameFromNotes(archive, slideNoteRels): Promise<string> {
+  async getSlideNameFromNotes(
+    archive: IArchive,
+    slideNoteRels: Target[],
+  ): Promise<string> {
     const notesFile = slideNoteRels[0].file.replace('../', '');
     const notesXml = await XmlHelper.getXmlFromArchive(
       archive,

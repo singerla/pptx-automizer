@@ -175,10 +175,10 @@ export class ModifyTable {
     return cellProps;
   }
 
-  setCellBorder(style) {
+  setCellBorder(style: TableRowStyle) {
     const borders = GeneralHelper.arrayify<Border>(style.border);
     const sortBorderTags = ['lnB', 'lnT', 'lnR', 'lnL'];
-    const modifications = {};
+    const modifications: ModificationTags = {};
     borders
       .sort((b1, b2) =>
         sortBorderTags.indexOf(b1.tag) < sortBorderTags.indexOf(b2.tag)
@@ -188,7 +188,7 @@ export class ModifyTable {
       .forEach((border) => {
         const tag = 'a:' + border.tag;
 
-        const modifyCell = [];
+        const modifyCell: ModifyCallback[] = [];
 
         if (border.color) {
           modifyCell.push(ModifyColorHelper.solidFill(border.color));

@@ -111,7 +111,7 @@ export default class ArchiveFs extends Archive implements IArchive {
   async folder(dir: string): Promise<ArchivedFile[]> {
     await this.ensureOpen();
     const path = this.getPath(dir);
-    const files = [];
+    const files: ArchivedFile[] = [];
 
     if (!exists(path)) {
       return files;

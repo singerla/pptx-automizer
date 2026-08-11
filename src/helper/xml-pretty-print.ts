@@ -31,8 +31,8 @@ export class XmlPrettyPrint {
     let idx = 0;
     let indent = 0;
     let processing = '';
-    const tags = [];
-    const output = [];
+    const tags: string[] = [];
+    const output: string[] = [];
 
     while (idx < xmlStr.length) {
       processing += xmlStr[idx];
@@ -79,7 +79,7 @@ export class XmlPrettyPrint {
     return output;
   }
 
-  getToken(regex: RegExp, str: string): PrettyPrintToken {
+  getToken(regex: RegExp, str: string): PrettyPrintToken | undefined {
     if (regex.test(str)) {
       const matches = regex.exec(str);
       const match = matches[0];

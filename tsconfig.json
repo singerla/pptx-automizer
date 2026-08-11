@@ -2,6 +2,8 @@
   "compilerOptions": {
     "module": "commonjs",
     "esModuleInterop": true,
+    "noImplicitAny": true,
+    "strictBindCallApply": true,
     "target": "es6",
     "moduleResolution": "node",
     "sourceMap": true,

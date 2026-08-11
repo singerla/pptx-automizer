@@ -64,7 +64,7 @@ export default class ModifyCleanupHelper {
 
     // First extract the fill color information before removing the style
     const fillRef = styleElement.getElementsByTagName('a:fillRef')[0];
-    let colorInfo = null;
+    let colorInfo: Color = null;
 
     if (fillRef) {
       // Try to get the scheme color information
