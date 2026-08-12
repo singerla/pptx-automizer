@@ -25,7 +25,8 @@
   },
   "files": [
     "dist",
-    "AI-INSTRUCTOR.md"
+    "AI-INSTRUCTOR.md",
+    "CHANGELOG.md"
   ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

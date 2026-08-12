@@ -724,7 +724,7 @@ which is exactly the failure mode a pixel diff catches and an XML diff hides.
 throw a `TypeError` on a `Color` without `value` (`color.value.indexOf`), which
 aborted `setPointStyles` after the first point. Phase 1's hardening removed the
 crash — but that means such a style now silently reaches *all* points instead of
-one. Worth a CHANGELOG note when the refactor is published.
+one. ✅ noted in `CHANGELOG.md` under Unreleased → Changed.
 
 ---
 
