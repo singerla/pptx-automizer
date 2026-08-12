@@ -244,13 +244,27 @@ Current known-issue classes, all candidates for Phase 7 cleanup work:
 - slide/media/chart parts orphaned by `removeExistingSlides`/`removeSlide`
   without `cleanup`.
 
-### Tier 2 — OOXML schema validation (CI job) — the "never see the repair prompt again" gate
+### Tier 2 — OOXML schema validation (CI job) — the "never see the repair prompt again" gate — ✅ done 2026-08-12
 
 The repair-prompt bug class (e.g. `a:pPr` child order, see the HTML→text track)
 is invisible to tiers 0/1/3. The genuine oracle is the Open XML SDK validator.
 
-- 🔧 **Tool sketch** — `tools/validate-pptx/` (self-contained .NET console app,
-  ~30 lines):
+**Implemented Docker-first** (no .NET on any contributor machine or in CI —
+same reasoning as Tier 3's pinned renderer): `tools/validate-pptx/` holds the
+console app + a multi-stage Dockerfile (`sdk:8.0-alpine` build →
+`runtime:8.0-alpine`, image builds in seconds, cached afterwards).
+`yarn validate:pptx` builds the image and validates
+`__tests__/pptx-templates` **and** `__tests__/pptx-output`; the `validate-pptx`
+CI job runs `yarn test` to generate fresh outputs, then the same command.
+Allowlist lives in `tools/validate-pptx/allowlist.json` (description + optional
+part-URI substring match, comments allowed): baseline template noise (all MS
+chart-extension elements, scoped to `/ppt/charts/`), plus **documented library
+bugs** (see the bug track below) and upstream pptxgenjs chart quirks — each
+library-bug entry must be removed together with its fix. On landing day:
+161 files, 0 new errors, 573 allowlisted.
+
+Original tool sketch (kept for reference; the implemented version adds the
+allowlist and directory expansion):
 
   ```csharp
   // tools/validate-pptx/Program.cs
@@ -329,8 +343,10 @@ shows". Never conclude PowerPoint-correctness from green pixels.
 
 1. ✅ Tier 1 invariants + `expectXml` helper (immediate value, no new infra) —
    done 2026-08-12, incl. AGENTS.md "Testing rules" update.
-2. Tier 2 validator with template-derived allowlist → CI gate. **After this,
-   the repair prompt is a CI failure, not a customer report.**
+2. ✅ Tier 2 validator with template-derived allowlist → CI gate — done
+   2026-08-12, Dockerized (`yarn validate:pptx`, `validate-pptx` CI job).
+   **After this, the repair prompt is a CI failure, not a customer report** —
+   for everything not yet on the library-bug allowlist.
 3. Tier 0 snapshots retro-fitted per bug fix / feature PR (rule: every bug fix
    adds the XML assertion that would have caught it).
 4. Tier 3 golden decks, starting with `chart-bars`, `tables`, `multitext-html`
@@ -696,6 +712,51 @@ throw a `TypeError` on a `Color` without `value` (`color.value.indexOf`), which
 aborted `setPointStyles` after the first point. Phase 1's hardening removed the
 crash — but that means such a style now silently reaches *all* points instead of
 one. Worth a CHANGELOG note when the refactor is published.
+
+---
+
+## Bug track — schema violations found by the Tier-2 validator
+
+Audit date: 2026-08-12, first full run of `yarn validate:pptx` over all test
+outputs. Each class is allowlisted in `tools/validate-pptx/allowlist.json` so
+CI can gate on *regressions* today; **fixing a class means: fix the XML, remove
+the allowlist entry, add the tier-0 assertion that would have caught it.**
+Ordered by user impact:
+
+1. 🐛 **Dangling relationships make the Open XML SDK refuse to open ~18 output
+   files** (`OpenFailed: Specified part does not exist in the package`). These
+   are the Tier-1 `knownIssues` classes — stale rels after copy/dedup/
+   re-target, the never-copied notesMaster, orphaned parts without `cleanup`.
+   PowerPoint tolerates them; the SDK (and probably other strict consumers,
+   e.g. Apache POI) does not. Fixing this unlocks real Tier-2 coverage for
+   those files and lets Tier 1 escalate its `knownIssues` to errors — the
+   single highest-leverage cleanup in this list.
+2. 🐛 **Chart modifiers insert children out of schema order**: `c:dPt` after
+   `c:dLbls` in `c:ser` (`modify-existing-chart-styled`, related to the
+   `<c:dPt>` bug track above), `c:tx` misplaced inside `c:dLbl`
+   (`modify-chart-datalabels-text`), `c:dLbls` misplaced in scatter `c:ser`
+   and `a:solidFill` misplaced in `c:dLbl`/`c:spPr`
+   (`modify-chart-datalabels`). The shared `XmlHelper.insertInSchemaOrder`
+   primitive from the HTML→text track is the intended fix vehicle.
+3. 🐛 **Table cell borders written in caller order**: `a:tcPr` requires
+   `lnL → lnR → lnT → lnB`; `setTable`/`setTableData` append in the order the
+   caller lists them (`modify-existing-table-format-cells`).
+4. 🐛 **Bullet-list replacement leaves `a:bodyPr` after `a:p`** in `p:txBody`
+   (`replace-bullet-text`, `replace-nested-bullets`) — `bodyPr` must remain
+   the first child.
+5. 🐛 **Master auto-import registers slideLayout rels on
+   `ppt/presentation.xml`** (`modify-master-add-external-image`) — layouts may
+   only be related to their slideMaster.
+6. 🐛 **Copied diagrams get the wrong content type**: the drawing part is
+   re-registered as `application/vnd.openxmlformats-officedocument.…` although
+   source templates (and the spec) use
+   `application/vnd.ms-office.drawingml.diagramDrawing+xml`
+   (`add-slide-diagrams`) — likely a hardcoded type in the content-type
+   registration instead of copying the source template's.
+7. ⚠ **Upstream, not ours**: pptxgenjs generates line charts with
+   `c:varyColors` before `c:grouping` and `c:invertIfNegative` in line series
+   (`generate-pptxgenjs-charts`). Revisit the allowlist entries on pptxgenjs
+   upgrades.
 
 ---
 

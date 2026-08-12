@@ -1,0 +1,96 @@
+[
+  // Baseline seeded 2026-08-12 from __tests__/pptx-templates/*.pptx (41 files,
+  // 115 hits): all pre-existing noise in real-world PowerPoint templates, all
+  // inside chart parts — MS chart-extension elements (c14/c16) the strict
+  // schema does not know, and showDLblsOverMax in a position the schema
+  // rejects. PowerPoint reads these fine. Entries are scoped to /ppt/charts/
+  // so they cannot mask errors in slides, masters or layouts.
+  //
+  // Rule: only ever ADD an entry here together with a template baseline run
+  // proving it is pre-existing — never to silence an error your change caused.
+  {
+    "description": "unexpected child element 'http://schemas.microsoft.com/office/drawing/2012/chart:",
+    "part": "/ppt/charts/"
+  },
+  {
+    "description": "unexpected child element 'http://schemas.openxmlformats.org/drawingml/2006/chart:showDLblsOverMax'",
+    "part": "/ppt/charts/"
+  },
+  {
+    "description": "invalid child element 'http://schemas.microsoft.com/office/drawing/2017/03/chart:dataDisplayOptions16'",
+    "part": "/ppt/charts/"
+  },
+  {
+    "description": "The 'uri' attribute is not declared",
+    "part": "/ppt/charts/"
+  },
+
+  // ------------------------------------------------------------------
+  // KNOWN LIBRARY BUGS — baselined 2026-08-12 from __tests__/pptx-output
+  // (fresh run of all suites). Each entry is tracked in ROADMAP
+  // "Bug track — schema violations found by the Tier-2 validator" and MUST be
+  // removed together with the fix (plus the tier-0 assertion for it).
+  // ------------------------------------------------------------------
+
+  // The SDK refuses to open packages with dangling relationships — the
+  // Tier-1 `knownIssues` classes (stale rels after copy/dedup/re-target,
+  // never-copied notesMaster, orphaned parts without cleanup).
+  {
+    "description": "Specified part does not exist in the package"
+  },
+  // Chart modifiers insert c:dPt/c:dLbls/c:tx (and dLbl spPr fills) out of
+  // schema order — the repair-prompt class; see the <c:dPt> bug track.
+  {
+    "description": "unexpected child element 'http://schemas.openxmlformats.org/drawingml/2006/chart:dPt'",
+    "part": "/ppt/charts/"
+  },
+  {
+    "description": "unexpected child element 'http://schemas.openxmlformats.org/drawingml/2006/chart:dLbls'",
+    "part": "/ppt/charts/"
+  },
+  {
+    "description": "unexpected child element 'http://schemas.openxmlformats.org/drawingml/2006/chart:tx'",
+    "part": "/ppt/charts/"
+  },
+  {
+    "description": "unexpected child element 'http://schemas.openxmlformats.org/drawingml/2006/main:solidFill'",
+    "part": "/ppt/charts/"
+  },
+  // setTable/setTableData writes cell borders in caller order; the schema
+  // wants lnL → lnR → lnT → lnB inside a:tcPr.
+  {
+    "description": "unexpected child element 'http://schemas.openxmlformats.org/drawingml/2006/main:ln",
+    "part": "/ppt/slides/"
+  },
+  // Bullet-list replacement leaves a:bodyPr after a:p — bodyPr must stay the
+  // first child of p:txBody.
+  {
+    "description": "unexpected child element 'http://schemas.openxmlformats.org/drawingml/2006/main:bodyPr'",
+    "part": "/ppt/slides/"
+  },
+  // Master auto-import registers slideLayout relationships directly on
+  // ppt/presentation.xml; layouts may only hang off their slideMaster.
+  {
+    "description": "cannot have a relationship that targets part 'SlideLayoutPart"
+  },
+  // Copying a diagram re-registers the drawing part with the generic
+  // openxmlformats content type; the source template (and the SDK) use
+  // application/vnd.ms-office.drawingml.diagramDrawing+xml.
+  {
+    "description": "invalid part with an unexpected content type"
+  },
+
+  // ------------------------------------------------------------------
+  // UPSTREAM (pptxgenjs) — the generate() bridge embeds charts as pptxgenjs
+  // writes them: varyColors before grouping, invertIfNegative in line series.
+  // Not automizer's XML; revisit on pptxgenjs upgrades.
+  // ------------------------------------------------------------------
+  {
+    "description": "unexpected child element 'http://schemas.openxmlformats.org/drawingml/2006/chart:varyColors'",
+    "part": "/ppt/charts/"
+  },
+  {
+    "description": "invalid child element 'http://schemas.openxmlformats.org/drawingml/2006/chart:invertIfNegative'",
+    "part": "/ppt/charts/"
+  }
+]

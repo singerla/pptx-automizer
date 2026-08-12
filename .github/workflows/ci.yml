@@ -35,3 +35,29 @@ jobs:
 
       - name: Test
         run: yarn test
+
+  # Tier 2 (ROADMAP Phase 5): OOXML schema validation of every written
+  # archive via the Open XML SDK, packaged in a Docker image so neither
+  # contributors nor CI need a .NET toolchain. Fails only on error classes
+  # not covered by tools/validate-pptx/allowlist.json.
+  validate-pptx:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Prepare test directories
+        run: mkdir -p __tests__/pptx-output __tests__/pptx-cache
+
+      - name: Generate output archives
+        run: yarn test
+
+      - name: Validate templates and outputs (Tier 2)
+        run: yarn validate:pptx

@@ -17,6 +17,7 @@
     "dev": "nodemon -e ts --exec 'ts-node' src/dev.ts",
     "test": "npx jest",
     "test-coverage": "npx jest --coverage",
+    "validate:pptx": "docker build -q -t pptx-validator tools/validate-pptx && docker run --rm -v \"$PWD:/repo:ro\" pptx-validator --allowlist /repo/tools/validate-pptx/allowlist.json /repo/__tests__/pptx-templates /repo/__tests__/pptx-output",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "prettier": "prettier --config .prettierrc 'src/**/*.ts' --write"

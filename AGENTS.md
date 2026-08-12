@@ -212,6 +212,13 @@ Recurring OOXML pitfalls when implementing such a helper:
 - Tests are integration-style: build a real presentation from `__tests__/pptx-templates/`,
   write it to `__tests__/pptx-output/`, and assert on the summary (slide/chart counts)
   plus tier-0 XML assertions for whatever the test claims to verify.
+- **Tier 2 — OOXML schema validation**: `yarn validate:pptx` (needs Docker
+  only, no .NET) validates all templates and outputs with the Open XML SDK;
+  CI runs it as the `validate-pptx` job. New schema errors fail the gate.
+  `tools/validate-pptx/allowlist.json` holds baseline template noise plus
+  documented library bugs (see ROADMAP "Bug track — schema violations found by
+  the Tier-2 validator") — **never add an allowlist entry to silence an error
+  your change introduced**; removing an entry belongs to the fix for it.
 - Snapshot rule (when tier-0 snapshots land): snapshot the *modified subtree
   only*, canonicalized — never whole parts, never whole-file hashes.
 - Tier 3 (visual regression) rule: never render all suites; ~12 curated golden
