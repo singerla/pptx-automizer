@@ -1,3 +1,6 @@
+import * as fs from 'fs';
+import * as path from 'path';
+import * as JSZip from 'jszip';
 import Automizer, { XmlElement } from '../src/index';
 import { ModifyShapeHelper } from '../src';
 
@@ -77,10 +80,35 @@ test('add all implemented shape types to an empty slide', async () => {
 
     slide.addElement('collection', 1, 'Image filled rectangle', (element: XmlElement) => {
       const type = ModifyShapeHelper.getElementVisualType(element);
-      // ToDo: SVG image breaks in the output if embedded in a vectorShape
       expect(type).toBe('svgImage');
     });
   });
 
-  await pres.write(`add-shape-types.test.pptx`);
+  const result = await pres.write(`add-shape-types.test.pptx`);
+  expect(result.slides).toBe(2);
+
+  // An image filling a shape is not a p:pic, its media files and relations
+  // need to be imported nevertheless.
+  const zip = await JSZip.loadAsync(
+    fs.readFileSync(path.join(`${__dirname}/pptx-output`, `add-shape-types.test.pptx`)),
+  );
+  const slideXml = await zip.file('ppt/slides/slide2.xml')!.async('text');
+  const relsXml = await zip
+    .file('ppt/slides/_rels/slide2.xml.rels')!
+    .async('text');
+
+  const embeddedRIds = Array.from(slideXml.matchAll(/r:embed="([^"]+)"/g)).map(
+    (match) => match[1],
+  );
+  expect(embeddedRIds.length).toBe(7);
+
+  embeddedRIds.forEach((rId) => {
+    const rel = relsXml.match(new RegExp(`<Relationship Id="${rId}"[^>]+>`));
+    expect(rel).not.toBeNull();
+
+    // Every referenced media file made it into the archive.
+    const target = rel![0].match(/Target="\.\.\/media\/([^"]+)"/);
+    expect(target).not.toBeNull();
+    expect(zip.file(`ppt/media/${target![1]}`)).not.toBeNull();
+  });
 });

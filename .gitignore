@@ -6,6 +6,7 @@ dist/
 
 ### Editor
 workspace.code-workspace
+.idea
 
 ### Testing
 __tests__/images

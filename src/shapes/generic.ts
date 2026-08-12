@@ -9,6 +9,10 @@ import { Shape } from '../classes/shape';
 import { XmlElement } from '../types/xml-types';
 import { XmlHelper } from '../helper/xml-helper';
 import { HyperlinkProcessor } from '../helper/hyperlink-processor';
+import { Image } from './image';
+import { ElementType } from '../enums/element-type';
+import { PptPaths } from '../helper/ppt-paths';
+import { log } from '../helper/logger';
 
 export class GenericShape extends Shape implements IShapeAction {
   sourceElement: XmlElement;
@@ -36,6 +40,9 @@ export class GenericShape extends Shape implements IShapeAction {
 
     // If this element contains hyperlinks, copy the hyperlink relationships
     await this.copyHyperlinkRelationships(targetSlideNumber);
+
+    // If this element contains images, copy the media files and relationships
+    await this.copyImageRelationships(targetTemplate, targetSlideNumber);
 
     return this;
   }
@@ -81,5 +88,63 @@ export class GenericShape extends Shape implements IShapeAction {
       this.targetArchive,
       this.targetSlideRelFile
     );
+  }
+
+  /**
+   * Copy image relations from source slide to target slide.
+   *
+   * A generic shape can be filled with an image (`a:blipFill` inside
+   * `p:spPr`), and a group shape can contain any number of pictures. None of
+   * these are `p:pic` elements, so the Image shape class never sees them and
+   * their media files and relations would be missing on the target slide.
+   */
+  async copyImageRelationships(
+    targetTemplate: RootPresTemplate,
+    targetSlideNumber: number,
+  ): Promise<void> {
+    if (!this.targetElement) return;
+
+    const blips = [
+      ...Array.from(this.targetElement.getElementsByTagName('a:blip')),
+      // An svg blip is nested inside the a:blip holding its png fallback and
+      // requires a relation of its own.
+      ...Array.from(this.targetElement.getElementsByTagName('asvg:svgBlip')),
+    ].filter((blip) => blip.getAttribute('r:embed'));
+
+    if (!blips.length) return;
+
+    const sourceImages = await Image.getAllOnSlide(
+      this.sourceArchive,
+      PptPaths.slideRels(this.sourceSlideNumber),
+    );
+
+    for (const blip of blips) {
+      const sourceRid = blip.getAttribute('r:embed');
+      const target = sourceImages.find((image) => image.rId === sourceRid);
+
+      if (!target) {
+        log.warn(
+          `Can't find image relation ${sourceRid} of ${this.name} on slide ${this.sourceSlideNumber}`,
+        );
+        continue;
+      }
+
+      const image = new Image(
+        {
+          mode: 'append',
+          target,
+          sourceArchive: this.sourceArchive,
+          sourceSlideNumber: this.sourceSlideNumber,
+          type: ElementType.Image,
+        },
+        this.targetType,
+      );
+
+      // Copies the media file, registers its content type and appends a
+      // relation to the target slide rels.
+      await image.prepare(targetTemplate, targetSlideNumber);
+
+      blip.setAttribute('r:embed', image.createdRid);
+    }
   }
 }
