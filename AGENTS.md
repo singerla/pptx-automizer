@@ -188,7 +188,7 @@ Recurring OOXML pitfalls when implementing such a helper:
 
 > A four-tier testing model (XML assertions → package invariants → OOXML schema
 > validation → visual regression via pptx-thumbnailer) is specified in
-> ROADMAP Phase 5. Tiers 0 and 1 have landed; the rules below reflect them.
+> ROADMAP Phase 5. All four tiers have landed; the rules below reflect them.
 
 - **Tier 1 runs automatically**: `__tests__/helpers/setup-pptx-invariants.ts`
   (registered via jest `setupFilesAfterEnv`) validates **every archive any test
@@ -221,8 +221,21 @@ Recurring OOXML pitfalls when implementing such a helper:
   your change introduced**; removing an entry belongs to the fix for it.
 - Snapshot rule (when tier-0 snapshots land): snapshot the *modified subtree
   only*, canonicalized — never whole parts, never whole-file hashes.
-- Tier 3 (visual regression) rule: never render all suites; ~12 curated golden
-  decks only (see ROADMAP Phase 5).
+- **Tier 3 — visual regression**: `yarn test:visual` (needs Docker only)
+  renders curated golden decks (`__tests__/visual/*.deck.ts`) through the
+  pinned pptx-thumbnailer container (`tools/render-pptx/`) and perceptually
+  diffs each slide against `__tests__/visual-baselines/<deck>/`; CI runs it as
+  the `visual-regression` job, uploading actual+diff PNGs on failure. It is a
+  **change detector, not a correctness oracle** — LibreOffice fidelity is not
+  PowerPoint fidelity; never conclude PowerPoint-correctness from green pixels.
+  On an *intended* visual change, regenerate with
+  `UPDATE_BASELINES=1 yarn test:visual` in the same PR so the reviewer sees the
+  before/after PNGs. **Never render all suites** — ~12 curated golden decks
+  only (see the deck table in ROADMAP Phase 5); new decks must be small
+  (1–5 slides), stick to fonts shipped in the renderer image
+  (Liberation/Carlito families), and reuse existing templates. Changing
+  anything in `tools/render-pptx/Dockerfile` (base digest, thumbnailer
+  version, fonts) invalidates all baselines: regenerate them in the same PR.
 - The output .pptx files are real; when in doubt about visual/PowerPoint-level
   correctness, tell the maintainer which output file to open in PowerPoint.
 - Never commit anything under `__tests__/pptx-output/`, `__customer__/`, or `dist/`

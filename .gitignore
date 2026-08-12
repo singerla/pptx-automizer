@@ -13,6 +13,8 @@ __tests__/images
 coverage/
 __tests__/pptx-output/
 __tests__/pptx-cache/
+# Tier-3 failure evidence (actual/diff PNGs); baselines ARE committed
+__tests__/visual-output/
 
 ### Customer related files
 __customer__/

@@ -61,3 +61,35 @@ jobs:
 
       - name: Validate templates and outputs (Tier 2)
         run: yarn validate:pptx
+
+  # Tier 3 (ROADMAP Phase 5): perceptual diff of curated golden decks against
+  # committed baselines, rendered by the pinned pptx-thumbnailer container
+  # (tools/render-pptx). Baselines mean "what the pinned renderer showed when
+  # a human last blessed them" — on an intended visual change, regenerate with
+  # UPDATE_BASELINES=1 yarn test:visual in the same PR.
+  visual-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Prepare test directories
+        run: mkdir -p __tests__/pptx-output __tests__/pptx-cache
+
+      - name: Golden decks vs. baselines (Tier 3)
+        run: yarn test:visual
+
+      - name: Upload failure evidence (actual + diff PNGs)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-diffs
+          path: __tests__/visual-output/
+          if-no-files-found: ignore

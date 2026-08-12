@@ -299,6 +299,18 @@ allowlist and directory expansion):
 
 ### Tier 3 — visual regression via pptx-thumbnailer (curated, separate CI job / nightly)
 
+✅ Done 2026-08-12 (first 3 decks): `yarn test:visual` (Docker only) runs
+`__tests__/visual/*.deck.ts` via `jest.visual.config.ts`; its globalSetup
+builds `tools/render-pptx/` (digest-pinned `node:22-bookworm-slim` +
+`libreoffice-impress` + poppler + Liberation/Carlito, `pptx-thumbnailer@0.1.0`
+exact — no published image existed, so the renderer is pinned via base digest
+plus exact npm version instead) and starts it on a free port; pixelmatch
+threshold 0.1, ≤0.1% differing pixels, failure evidence in
+`__tests__/visual-output/` (gitignored). CI job `visual-regression` gates and
+uploads actual+diff PNGs as artifact. Decks 1 (partially, via multitext), 2, 3,
+4 covered by `multitext-html`, `tables`, `chart-bars`; the other 9 below are
+open.
+
 Uses [pptx-thumbnailer](https://github.com/singerla/pptx-thumbnailer)
 (headless LibreOffice → PDF → pdftocairo) as a **change detector, not a
 correctness oracle**: LibreOffice's <100% PowerPoint fidelity doesn't matter
@@ -349,8 +361,9 @@ shows". Never conclude PowerPoint-correctness from green pixels.
    for everything not yet on the library-bug allowlist.
 3. Tier 0 snapshots retro-fitted per bug fix / feature PR (rule: every bug fix
    adds the XML assertion that would have caught it).
-4. Tier 3 golden decks, starting with `chart-bars`, `tables`, `multitext-html`
-   (the areas where visual breakage historically happens).
+4. ✅ Tier 3 golden decks, starting with `chart-bars`, `tables`,
+   `multitext-html` (the areas where visual breakage historically happens) —
+   done 2026-08-12; the remaining ~9 decks from the table land incrementally.
 5. 📖 As each tier lands, update **AGENTS.md → "Testing rules"** to point at the
    tier model (especially: every bug fix adds the tier-0 assertion that would
    have caught it; never render all suites in tier 3), so agents working in the
