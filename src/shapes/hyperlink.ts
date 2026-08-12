@@ -13,6 +13,13 @@ import { RootPresTemplate } from '../interfaces/root-pres-template';
 import ModifyHyperlinkHelper from '../helper/modify-hyperlink-helper';
 import { log } from '../helper/logger';
 
+const HYPERLINK_REL_TYPE =
+  'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink';
+const SLIDE_REL_TYPE =
+  'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide';
+
+const basename = (target: string): string => target.split('/').pop();
+
 export class Hyperlink extends Shape implements IShapeAction {
   private hyperlinkType: 'internal' | 'external';
   private hyperlinkTarget: string;
@@ -123,9 +130,7 @@ export class Hyperlink extends Shape implements IShapeAction {
   }
 
   private determineHyperlinkType(target: Target): 'internal' | 'external' {
-    return target.isExternal ||
-      target.type ===
-        'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink'
+    return target.isExternal || target.type === HYPERLINK_REL_TYPE
       ? 'external'
       : 'internal';
   }
@@ -134,26 +139,69 @@ export class Hyperlink extends Shape implements IShapeAction {
     const isExternalLink = this.hyperlinkType === 'external';
     const rels = await this.getRelationsElement();
 
+    if (this.hyperlinkRelIsUpToDate(rels)) {
+      // Rewriting an unchanged relationship would drop the original rId, which
+      // can still be in use by other shapes on the same slide.
+      return;
+    }
+
     ModifyHyperlinkHelper.setHyperlinkTarget(
       this.hyperlinkTarget,
       isExternalLink,
     )(this.targetElement, rels as any);
   }
 
+  /**
+   * Checks whether the relationship referenced by the target element already
+   * points to the required hyperlink target.
+   */
+  private hyperlinkRelIsUpToDate(rels: XmlElement): boolean {
+    const hlinkClick = this.targetElement
+      ?.getElementsByTagName('a:hlinkClick')
+      .item(0);
+    const rId = hlinkClick?.getAttribute('r:id');
+    if (!rId || !this.hyperlinkTarget) {
+      return false;
+    }
+
+    const existingRel = XmlHelper.findByAttributeValue(
+      rels.getElementsByTagName('Relationship'),
+      'Id',
+      rId,
+    )[0];
+    if (!existingRel) {
+      return false;
+    }
+
+    const isExternalLink = this.hyperlinkType === 'external';
+    if (existingRel.getAttribute('Type') !== this.relationTypeUrl()) {
+      return false;
+    }
+
+    const existingTarget = existingRel.getAttribute('Target') || '';
+    return isExternalLink
+      ? existingTarget === this.hyperlinkTarget
+      : // Internal targets are stored either as `slide2.xml` or as
+        // `../slides/slide2.xml`, both resolving to the same slide.
+        basename(existingTarget) === basename(this.hyperlinkTarget);
+  }
+
+  private relationTypeUrl(): string {
+    return this.hyperlinkType === 'external'
+      ? HYPERLINK_REL_TYPE
+      : SLIDE_REL_TYPE;
+  }
+
   static async getAllOnSlide(
     archive: IArchive,
     relsPath: string,
   ): Promise<Target[]> {
-    const hyperlinkRelType =
-      'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink';
-    const slideRelType =
-      'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide';
     return XmlHelper.getRelationshipItems(
       archive,
       relsPath,
       (element: XmlElement, rels: Target[]) => {
         const type = element.getAttribute('Type');
-        if (type === hyperlinkRelType || type === slideRelType) {
+        if (type === HYPERLINK_REL_TYPE || type === SLIDE_REL_TYPE) {
           rels.push({
             rId: element.getAttribute('Id'),
             type: element.getAttribute('Type'),
@@ -162,7 +210,7 @@ export class Hyperlink extends Shape implements IShapeAction {
             element: element,
             isExternal:
               element.getAttribute('TargetMode') === 'External' ||
-              type === hyperlinkRelType,
+              type === HYPERLINK_REL_TYPE,
           } as Target);
         }
       },

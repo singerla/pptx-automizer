@@ -193,19 +193,45 @@ test('htmlToMultiText maps <br>, colors, sub/sup and highlights', async () => {
 });
 
 test('htmlToMultiText keeps hyperlinks, with the styling in schema order', async () => {
+  // A numeric href is a slide *number in the output deck*, so the deck needs
+  // enough slides for slide4.xml to exist - a hyperlink whose relationship
+  // target is not in the archive is silently dead in PowerPoint.
   const html =
     '<html><body><p>' +
     '<a href="https://example.com" style="color: #ff0000">external</a> ' +
-    '<a href="3">to slide 3</a>' +
+    '<a href="4">to slide 4</a>' +
     '</p></body></html>';
 
   const outputFile = `modify-multi-text-html-hyperlinks.test.pptx`;
-  const txBody = await buildFromHtml(html, outputFile);
+  const automizer = new Automizer({
+    templateDir: `${__dirname}/pptx-templates`,
+    outputDir: `${__dirname}/pptx-output`,
+  });
 
-  // <a:solidFill> must precede <a:hlinkClick> inside <a:rPr>
+  const result = await automizer
+    .loadRoot(`RootTemplate.pptx`)
+    .load(`TextReplace.pptx`)
+    .addSlide('TextReplace.pptx', 1, (slide) => {
+      slide.modifyElement('setText', modify.htmlToMultiText(html));
+    })
+    .addSlide('TextReplace.pptx', 1)
+    .addSlide('TextReplace.pptx', 1)
+    .write(outputFile);
+
+  expect(result.slides).toBe(4);
+
+  const txBody = await readTxBody(outputFile, 'setText');
+
+  // <a:solidFill> must precede <a:hlinkClick> inside <a:rPr>. Note that
+  // PowerPoint still paints hyperlink text in the theme's hlink color - the
+  // run fill is written, but does not win for a linked run.
   expect(txBody).toMatch(
     /<a:rPr[^>]*><a:solidFill><a:srgbClr val="FF0000"\/><\/a:solidFill><a:hlinkClick/,
   );
+
+  // An internal link needs the slide-jump action, or PowerPoint treats the
+  // run as plain underlined text
+  expect(txBody).toContain('action="ppaction://hlinksldjump"');
 
   const archive = await JSZip.loadAsync(
     fs.readFileSync(`${__dirname}/pptx-output/${outputFile}`),
@@ -216,8 +242,19 @@ test('htmlToMultiText keeps hyperlinks, with the styling in schema order', async
 
   expect(rels).toContain('Target="https://example.com"');
   expect(rels).toContain('TargetMode="External"');
-  // A numeric href is an internal slide link, not a URL
-  expect(rels).toContain('Target="../slides/slide3.xml"');
+  expect(rels).toContain('Target="../slides/slide4.xml"');
+
+  // Every non-external relationship target must resolve to a part that is
+  // actually in the archive; a dangling target is the corruption class that
+  // makes a link quietly stop working
+  const targets = Array.from(
+    rels.matchAll(/Target="([^"]+)"(?![^>]*TargetMode="External")/g),
+  ).map((match) => match[1]);
+
+  targets.forEach((target) => {
+    const resolved = target.replace(/^\.\.\//, 'ppt/');
+    expect(archive.file(resolved)).not.toBeNull();
+  });
 });
 
 test('htmlToMultiText does not inherit bold from the template placeholder', async () => {

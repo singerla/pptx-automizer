@@ -213,6 +213,12 @@ without individual suites opting in:
 This catches the most common corruption class (dangling relationships) at
 near-zero cost and turns the existing 94 suites into 94 validity probes.
 
+Not hypothetical: during the HTML→text track a test wrote an internal slide
+link to `slide3.xml` in a two-slide deck. Everything passed, the XML looked
+right, and the only symptom was a hyperlink that silently did nothing when the
+deck was opened in PowerPoint. A rel-target-resolves check would have failed
+that test instantly — this invariant is the one that pays for itself first.
+
 ### Tier 2 — OOXML schema validation (CI job) — the "never see the repair prompt again" gate
 
 The repair-prompt bug class (e.g. `a:pPr` child order, see the HTML→text track)

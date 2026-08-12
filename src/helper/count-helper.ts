@@ -3,7 +3,6 @@ import IArchive from '../interfaces/iarchive';
 import { ICounter } from '../interfaces/icounter';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { XmlHelper } from './xml-helper';
-import { XmlElement } from '../types/xml-types';
 
 export class CountHelper implements ICounter {
   template: RootPresTemplate;

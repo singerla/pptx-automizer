@@ -55,6 +55,23 @@ export default class ModifyHyperlinkHelper {
     return newRelId;
   }
 
+  /**
+   * Checks if a relationship id is referenced by a hyperlink outside of the
+   * given element, e.g. by another shape on the same slide.
+   */
+  private static isRelIdUsedElsewhere(
+    element: XmlElement,
+    relId: string,
+  ): boolean {
+    const slideXml = element.ownerDocument;
+    if (!slideXml) return false;
+
+    return Array.from(slideXml.getElementsByTagName('a:hlinkClick')).some(
+      (hlink) =>
+        hlink.getAttribute('r:id') === relId && !element.contains(hlink),
+    );
+  }
+
   private static addHyperlinkToTextRuns(
     element: XmlElement,
     hyperlinkElement: HyperlinkElement,
@@ -158,11 +175,17 @@ export default class ModifyHyperlinkHelper {
         }
       });
 
-      // Remove old relationships
+      // Remove old relationships, unless another shape still refers to them.
+      // Dropping a shared rId would leave dangling r:id attributes behind and
+      // make PowerPoint ask to repair the file.
       const relationships = relation.getElementsByTagName('Relationship');
       Array.from(relationships).forEach((rel) => {
         const relId = rel.getAttribute('Id');
-        if (relId && existingRIds.includes(relId)) {
+        if (
+          relId &&
+          existingRIds.includes(relId) &&
+          !this.isRelIdUsedElsewhere(element, relId)
+        ) {
           relation.removeChild(rel);
         }
       });

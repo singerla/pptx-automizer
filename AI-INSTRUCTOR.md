@@ -167,6 +167,12 @@ when the HTML says so, otherwise the shape's layout decides. Unsupported CSS is
 skipped silently. For anything beyond this, build paragraphs with `setMultiText`
 directly.
 
+Two hyperlink gotchas: `<a href="4">` is a slide number in the **finished output
+deck** (existing root-template slides included, not your `addSlide()` order), and
+the slide must exist — otherwise the relationship dangles and the text renders
+underlined but unlinked, with no error. And a `color` on an `<a>` has no visible
+effect: PowerPoint always paints links in the theme's `<a:hlink>` color.
+
 `TextStyle`: `{ size?, color?: {type: 'srgbClr'|'schemeClr', value}, isBold?,
 isItalics?, isUnderlined?, isStrike?, isSubscript?, isSuperscript?, fontFamily?,
 highlight?, hyperlink? … }`. `size` is in 1/100 pt (`1400` = 14pt). Colors are

@@ -599,6 +599,13 @@ Good to know:
   fallback style, so generated text keeps the template's look.
 - `<table>` markup has no equivalent in a single text shape: the cell text is
   kept, but flattened into one paragraph. Use `modify.setTableData` for tables.
+- `<a href="4">` is a slide **number in the finished output deck**, counting the
+  root template's existing slides — not the index of your `addSlide()` calls.
+  The target slide has to exist, or the relationship dangles and PowerPoint
+  shows the text underlined but unlinked, without a warning.
+- A `color` on an `<a>` element is written to the run, but PowerPoint paints
+  hyperlink text in the theme's `<a:hlink>` color regardless. To restyle links,
+  change that theme color; per-link colors are not achievable in PPTX.
 
 Find out more about text replacement:
 
