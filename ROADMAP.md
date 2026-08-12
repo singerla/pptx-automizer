@@ -597,6 +597,76 @@ the parser must be and which CSS subset is worth supporting.
 
 ---
 
+## Bug track — chart data-point styling creates `<c:dPt>` that erase line charts
+
+Audit date: 2026-08-12. Found while investigating an ensemblio report where all
+lines of a 9-series line chart disappeared. Independent of the refactor phases;
+the behaviour is old (`XmlElements.dataPoint()` dates back to 2021) and
+reproduces identically on `0.8.2` and on the current refactor branch — so this
+is a genuine library bug, not refactor fallout.
+
+**Symptom.** Every data point of every series gets a fabricated
+
+```xml
+<c:dPt><c:idx val="0"/><c:spPr>
+  <a:solidFill><a:srgbClr val="CCCCCC"/></a:solidFill>
+  <a:ln><a:noFill/></a:ln>
+  <a:effectLst/>
+</c:spPr></c:dPt>
+```
+
+On a bar/pie chart that only turns the points grey; on a **line** chart
+`<a:ln><a:noFill/>` per point removes the line segments, and the chart renders
+as data labels floating in empty space.
+
+**Cause chain.**
+
+1. `ModifyChart.chartPoint()` (`modify/modify-chart.ts`) decides "this point is
+   styled" from *key presence* — `if (!style?.color && !style?.border &&
+   !style?.marker) return;`. A caller-supplied `{ marker: { color: undefined } }`
+   (or `{ color: { value } }` without `type`) is truthy, so a `c:dPt`
+   modification is emitted although none of `chartPointFill/Border/Marker`
+   yields an applicable tag.
+2. `ModifyXmlHelper.assertElement` finds no `c:dPt` and calls
+   `XmlElements.dataPoint()`, which appends `idx` + a **default** `spPr` from
+   `XmlElements.spPr()` — grey `solidFill`, `a:ln` `noFill`, `effectLst`. A
+   data point that carries no explicit style should inherit the series
+   formatting, so fabricating one is wrong regardless of chart type.
+3. `chartPointMarker` targets a `c:marker` *inside* the new `c:dPt`;
+   `ModifyXmlHelper.createElement` does not handle that tag, so the
+   modification is silently dropped and the point keeps the pure default.
+
+**Fixes.**
+
+1. `chartPoint()`: build the child tags first and return `undefined` when
+   `chartPointFill`/`chartPointBorder`/`chartPointMarker` all produced nothing,
+   instead of testing key presence. No empty style may reach the XML layer.
+2. `XmlElements.dataPoint()`: create the `c:dPt` **empty** (`c:idx` only, plus
+   `c:bubble3D` for schema order) and let the actual modifications add `c:spPr`
+   via the existing `createElement('c:spPr')` path. Nothing should be styled
+   that the caller did not ask for.
+3. `chartPointMarker`: either support creating `c:marker` inside a `c:dPt`
+   (`XmlElements.marker()` + a `createElement` case) or document that per-point
+   marker styling is unsupported and drop the tag — today it is a silent no-op
+   whose only effect is bug 2.
+4. `Modification.isRequired: false` currently only suppresses a (commented-out)
+   warning; `assertElement` creates the element either way. Make it actually
+   mean "modify if present, never create" — `seriesStyle()` already passes it
+   for `c:marker`/`c:spPr` in that intent.
+
+**Guard.** Tier-0 assertion (Phase 5): modify a line chart with per-point styles
+and assert no `c:ser` gains a `c:dPt` containing `<a:ln><a:noFill/>` unless the
+caller asked for it; plus a tier-3 golden deck for a multi-series line chart,
+which is exactly the failure mode a pixel diff catches and an XML diff hides.
+
+**Related, already fixed.** `ModifyColorHelper.normalizeColorObject` used to
+throw a `TypeError` on a `Color` without `value` (`color.value.indexOf`), which
+aborted `setPointStyles` after the first point. Phase 1's hardening removed the
+crash — but that means such a style now silently reaches *all* points instead of
+one. Worth a CHANGELOG note when the refactor is published.
+
+---
+
 ## Suggested sequencing
 
 ```
