@@ -4,7 +4,7 @@ Audit date: 2026-08-11 (v0.8.2). Goal: consolidate architecture **before**
 adding further functionality. Findings are ordered into phases; each phase is
 shippable on its own and phases 0–2 unblock the rest.
 
-Legend: 🐛 bug · 🔧 tooling · 🏗 architecture · 🧪 testing · 📖 docs
+Legend: 🐛 bug · 🔧 tooling · 🏗 architecture · 🧪 testing · 📖 docs · ⚡ performance
 
 ---
 
@@ -982,6 +982,104 @@ Ordered by user impact:
 
 ---
 
+## Performance track — unbounded memory growth on large decks — postponed
+
+Investigated 2026-08-12 (v0.8.2), **deferred**; no code changed. Reported
+symptom: on big decks the run gets slower and slower, with
+`Cleaning unsupported tag p:custDataLst` as the last log line before each stall,
+eventually dying.
+
+**That log line is a red herring.** It comes from
+`PlaceholderNormalizer.removeUnsupportedTags` (`placeholder-normalizer.ts:126`),
+which is the *last* step of `Slide.append()` — so the growing gap between two
+consecutive lines is the whole per-slide pipeline slowing down, not the cleanup.
+Measured, the cleanup is 3–4 % of runtime.
+
+**Reproduction.** Synthetic Think-cell-like template: 600 shapes/slide, each
+with a `p:custDataLst`, ~310 KB slide XML, appended N times onto `RootTemplate`.
+
+| slides | heap | RSS | ms/slide |
+|--------|------|-----|----------|
+| 20     | 212 MB | 332 MB | 67 |
+| 60     | 534 MB | 675 MB | 56 |
+| 120    | 979 MB | 1159 MB | 57 |
+
+Growth is linear and permanent: **~8 MB of heap per slide, never released.**
+With `--max-old-space-size=900` and N=400, per-slide time climbs 15 ms → 29 ms
+as the limit nears, then `FATAL ERROR: Reached heap limit` at ~slide 365. The
+"getting slower" is GC thrash on a heap that only ever grows.
+
+### Root cause
+
+1. ⚡🏗 **`Archive.buffer` never evicts** (`src/helper/archive/archive.ts:14`).
+   `readXml()` (`archive-jszip.ts:151`, `archive-fs.ts:187`) parses a part into
+   an xmldom `XmlDocument` and pushes it into `buffer`; `writeXml()` only
+   re-buffers the same object. Serialization happens exclusively in
+   `writeBuffer()` at `output()`/`stream()` time. By the end of a run **every
+   slide, rels, layout and master DOM of the whole output deck is live at
+   once** — and an xmldom DOM costs roughly **25× its XML source size**
+   (310 KB slide → ~8 MB heap).
+
+   Verified by experiment: serializing each finished slide back into the zip and
+   dropping it from `buffer` after each append, same 120 slides →
+   buffered entries 243 → 3, final heap **1019 MB → 67 MB** with no upward
+   trend, total time 7.7 s → 6.3 s (less GC pressure more than pays for the
+   extra serialization).
+
+### Secondary findings (real, none dominant today)
+
+2. ⚡ **`fromBuffer` is a linear scan** (`archive.ts:64`) run on every
+   `readXml`/`writeXml` — ~20 calls per slide, so O(n²) in parts: 643 k string
+   comparisons at 300 slides. Wants a `Map<string, ArchivedFile>`.
+3. ⚡ **XML parsing dominates per-slide CPU** (~48 %, attributed to
+   `parsePlaceholders` only because that is where the target slide is first
+   read). Inside it, `@xmldom/xmldom` 0.9.10 compiles a **fresh RegExp for every
+   closing tag** (`lib/sax.js:151`,
+   `g.reg('^', g.QName_group, g.S_OPT, '$')`) — 19 % of total runtime in the CPU
+   profile. Memoizing `grammar.reg` gave a reproducible **~20 % end-to-end
+   speedup** (3.55 s → 2.99 s over 60 slides). Upstream bug; 0.9.10 is latest.
+4. ⚡ **`addToPresentation` is quadratic in slide count** — 12 / 66 / 196 ms for
+   100 / 400 / 800 slides, from `getMaxId` + append over the ever-growing
+   `presentation.xml.rels` and `[Content_Types].xml`. Negligible below ~1000
+   slides.
+5. ⚡ **`removeUnsupportedTags` is superlinear per slide**:
+   `XmlHelper.sliceCollection` (`xml-helper.ts:625`) reads `collection.length`
+   every iteration, and that is a live `LiveNodeList` getter which **re-walks
+   the entire document** after each removal (same pattern in
+   `modifyCollection`, `xml-helper.ts:806`). Plus `parents.includes()` is
+   O(k²). Measured 0.6 ms/slide at 150 tags, 3.5 ms at 600 — i.e. ~3.5 % of
+   runtime, *not* the bottleneck despite being the code behind the log line.
+
+### Constraint any fix must respect
+
+`Archive.toBuffer` (`archive.ts:44`) **silently ignores the write when the path
+is already buffered** — callers rely on mutating the same document object in
+place, and `writeXml()` can therefore never replace a buffered document. An
+eviction scheme has to fix that too. Re-reading an evicted part re-parses it
+from the zip, which is correct as long as the flush wrote the serialized
+content back first (verified: output file stays valid).
+
+### Proposed fix, in order
+
+1. ⚡🏗 **Flush + evict a part's DOM once it is finished** — for slides after
+   `cleanSlide()`, for masters/layouts after their append. Turns O(deck) memory
+   into O(1) and is by far the biggest win. Needs `toBuffer` to actually
+   replace (see constraint above).
+2. ⚡ **`buffer` → `Map`**, killing the linear `fromBuffer` scan.
+3. ⚡ **Memoize `grammar.reg`** in a small local patch and report upstream to
+   `@xmldom/xmldom`. ~20 % for a few lines.
+4. ⚡ **Snapshot live NodeLists into plain arrays** in `sliceCollection` /
+   `modifyCollection` before mutating; `parents` → `Set`.
+5. ⚡ Optional, later: `addToPresentation` should cache the max rId / content-type
+   state instead of rescanning the growing parts (item 4 above).
+
+**Guard.** New Tier-1-style test: append N large slides and assert
+`process.memoryUsage().heapUsed` stays under a ceiling (and that
+`archive.buffer.size` stays bounded) — the current behavior fails it by an order
+of magnitude, so it is a genuine regression gate once fixed.
+
+---
+
 ## Suggested sequencing
 
 ```
@@ -1002,6 +1100,8 @@ Early:    Phase 6.1 (docs-example compile test) alongside Phase 5 tier 1 — it 
           the same kind of cheap always-on gate, and it must exist before the
           README split moves 126 examples around
 Then:     Phase 6.2-6.5 docs split → site on GitHub Pages → self-hosted mirror
+Deferred: Performance track (archive buffer eviction) — postponed 2026-08-12;
+          pick up when large-deck memory becomes blocking
 ```
 
 Rule of thumb for every PR during the refactor: **no public `modify.*` signature
