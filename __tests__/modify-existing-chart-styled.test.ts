@@ -1,5 +1,7 @@
 import Automizer, { modify } from '../src/index';
 import { ChartData } from '../src/types/chart-types';
+import { expectXml } from './helpers/expect-xml';
+import { Element as XmlElement } from '@xmldom/xmldom';
 
 test('create presentation, add slide with charts from template and modify existing chart.', async () => {
   const automizer = new Automizer({
@@ -105,4 +107,48 @@ test('create presentation, add slide with charts from template and modify existi
     .write(`modify-existing-chart-styled.test.pptx`);
 
   expect(result.charts).toBe(3);
+
+  // The styles above are deliberately sparse: c:dPt/c:dLbl are one-element-
+  // per-styled-point collections addressed by their <c:idx> payload, so each
+  // series must end up with exactly the explicitly styled points — no
+  // duplicated indices, no styles dropped (ROADMAP, Modification-contract
+  // track, regression A).
+  const chart = await expectXml(
+    'modify-existing-chart-styled.test.pptx',
+    'ppt/charts/chart3.xml',
+  );
+  // pin that chart3.xml is the modified ColumnChart
+  chart.toContainElement('c:v', 'series 1');
+
+  const series = chart.elements('c:ser');
+  expect(series.length).toBe(3);
+
+  const dataPointsOf = (ser: XmlElement) =>
+    Array.from(ser.getElementsByTagName('c:dPt')).map((dPt) => ({
+      idx: dPt.getElementsByTagName('c:idx')[0].getAttribute('val'),
+      color: dPt.getElementsByTagName('a:srgbClr')[0]?.getAttribute('val'),
+    }));
+
+  expect(dataPointsOf(series[0])).toEqual([{ idx: '0', color: '333333' }]);
+  expect(dataPointsOf(series[1])).toEqual([{ idx: '1', color: 'EFEFEF' }]);
+  expect(dataPointsOf(series[2])).toEqual([
+    { idx: '1', color: 'EECC00' },
+    { idx: '3', color: 'EECCFF' },
+  ]);
+
+  // series 1 carries a style.label, but the template series has no c:dLbls —
+  // "modify if present" must not fabricate one (regression B).
+  expect(series[0].getElementsByTagName('c:dLbls').length).toBe(0);
+
+  // the single styled point label lands as a sparse c:dLbl at c:idx 3
+  const pointLabels = Array.from(series[2].getElementsByTagName('c:dLbl'));
+  expect(pointLabels.length).toBe(1);
+  expect(
+    pointLabels[0].getElementsByTagName('c:idx')[0].getAttribute('val'),
+  ).toBe('3');
+  const labelProps = pointLabels[0].getElementsByTagName('a:defRPr')[0];
+  expect(labelProps.getAttribute('sz')).toBe('2200');
+  expect(
+    labelProps.getElementsByTagName('a:schemeClr')[0].getAttribute('val'),
+  ).toBe('accent2');
 });

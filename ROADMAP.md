@@ -728,6 +728,213 @@ one. Worth a CHANGELOG note when the refactor is published.
 
 ---
 
+## Bug track — silent `Modification` contract violations in chart modifiers — ✅ fixed 2026-08-12
+
+Audit date: 2026-08-12. Found by diffing two renderings of the *same*
+report against **byte-identical input data** —
+an older deck versus one generated on `0.8.2`. Two independent, customer-visible
+regressions, both in chart modifiers, both silent, both already released. They
+are separate defects with separate fixes, but they share one root cause with
+each other and with the `<c:dPt>` track above: the `Modification` type's two
+control fields — `index` and `isRequired` — have **no documented contract and no
+enforcement**, so a plausible-looking edit silently changes what the XML layer
+does.
+
+Both were verified by reproduction against the customer's own templates; the
+evidence below is reproducible from `__tests__` alone.
+
+### A. 🐛 `setPointStyles` addresses `c:dPt` / `c:dLbl` by category index
+
+Regression introduced in `3d6c452` (2026-06-24, "feat(chart): add functionality
+to remove data labels from charts"), released in **v0.8.2**. The commit is
+otherwise a *stop fabricating data-label XML* cleanup; this hunk is unrelated to
+that goal and is not mentioned in the message.
+
+```diff
+-          count[s] = !count[s] ? 0 : count[s];
+-          labelCount[s] = !labelCount[s] ? 0 : labelCount[s];
+           this.chart.modify(
+-            this.series(s, this.chartPoint(count[s], c, style)),
++            this.series(s, this.chartPoint(c, c, style)),
+           );
+           if (style.label) {
+             this.chart.modify(
+-              this.series(s, this.chartPointLabel(labelCount[s], c, style.label)),
++              this.series(s, this.chartPointLabel(c, c, style.label)),
+             );
+-            labelCount[s]++;
+           }
+-          count[s]++;
+```
+
+**Symptom.** Per-point styles are silently dropped and replaced by a duplicate
+of the previously styled point. In the customer deck: a red point at category 0
+and a green point at category 3 produce **two red `c:dPt`, both `c:idx val="0"`**
+— the green is gone. Deck-wide, **879 of 1224 charts** carry duplicated `c:dPt`
+and **60 of 2033 series** duplicated `c:dLbl` indices.
+
+**Why the change looked right.** `chartPoint(count[s], c, style)` passes two
+different numbers for what reads as one concept ("the point being styled"), so
+collapsing them to `c` looks like deleting bookkeeping cruft — and the diff gets
+shorter. The type says only `index?: number` with the comment *"Specify an index
+if not 0"*. There was also a real bug next door: `chartPointLabel` addresses
+`c:dLbl` elements that a template usually already carries for *specific* points,
+so a counter over *styled* points edits an unrelated label and rewrites its
+`c:idx` — an index mismatch for which "use the category index" is the natural
+conclusion.
+
+**Why it is wrong.**
+
+1. `c:dPt` / `c:dLbl` are **sparse** in OOXML: one element per *explicitly
+   styled* point, not one per category. Sibling position carries no meaning;
+   `c:idx` is the payload naming the category.
+2. `Modification.index` is **positional over existing siblings** — the same
+   meaning it has for `c:ser`. `chartPoint(count[s], c, …)` was correct by
+   construction: *take or create the next `c:dPt` slot, stamp `c:idx = c`*.
+3. `assertElement` can only grow a collection **by one clone per call**. A
+   positional index is therefore only satisfiable if the caller walks slots
+   0, 1, 2, … in order — exactly the invariant `count[s]` encoded. Passing `c`
+   breaks it as soon as the styled categories are not contiguous from 0.
+
+**Why nothing caught it.** The failure is silent (`assertElement` returns
+`false`, `modify()` swallows it, the diagnostic is a commented-out `vd(…)`), and
+the clone it already inserted stays — so the output *grows*, which does not read
+like a dropped modification. The only test exercising point styles,
+`modify-existing-chart-styled.test.ts`, asserts `expect(result.charts).toBe(3)`
+and nothing about XML. Its own demo data is sparse (`styles: [null, {…}]`), so
+**the library's showcase output is wrong today**:
+
+```
+ser 0  [(idx 0, 333333)]                     ← correct
+ser 1  [(idx 0, CCCCCC)]                     ← should be efefef at idx 1
+ser 2  [(idx 0, CCCCCC), (idx 0, CCCCCC)]    ← should be eecc00 @1 and eeccff @3
+```
+
+Restoring the counters makes that output correct again — but see the fix below,
+a plain revert re-introduces the `c:dLbl` mis-targeting the commit was chasing.
+PowerPoint collapses duplicate `c:dPt` with equal `c:idx` on save, which is why
+the artifact survives review even when a broken deck is opened.
+
+### B. 🐛 `seriesDataLabel` fabricates a `c:dLbls` in every styled series
+
+Regression introduced in `0a45454` (2026-03-18, "custom data label suffixes and
+alpha transparency"), released in **v0.8.2**. Independent of A and three months
+older.
+
+**Symptom.** A radar chart whose template deliberately carries *no* data labels
+gains one `c:dLbls` per series — ten of them — each containing the hardcoded
+blob from `src/helper/xml/dLbl.ts` verbatim, fingerprint included:
+
+```xml
+<c:dLbl><c:idx val="0"/>
+  …<a:defRPr sz="1400" …><a:solidFill><a:schemeClr val="accent1"/>…
+  <c:showVal val="1"/>
+  <c16:uniqueId val="{00000001-04B4-49A4-AD60-4DBFE8A0F479}"/>
+```
+
+Result: a 14 pt accent1 label switched on for category 0 of every series, over
+a template that asked for none.
+
+**Cause.** `ModifyChart.seriesDataLabel()` has declared its intent since
+`f68ca16` (2022-05-18):
+
+```js
+'c:dLbls': { isRequired: false, children: { 'a:pPr': … } }
+```
+
+*Modify label formatting if the template has labels; never create them.* But
+`isRequired: false` has never been honoured (fix 4 of the `<c:dPt>` track above).
+That stayed harmless only because `createElement()` had no case for the tag —
+the assert failed silently and the chart was left alone. `0a45454` added
+
+```diff
++      case 'c:dLbls':
++        new XmlElements(parent).dataPointLabels();
+```
+
+which turns the ignored flag into its opposite: *never create* now means *create
+an opinionated default*.
+
+**Reproduction** (clean, from the customer template but the shape is generic):
+modify a radar chart with `series[].style.label` set → 10 fabricated `c:dLbls`;
+without it → 0. Matches the before/after decks exactly.
+
+### C. 🏗 Shared root cause — make the `Modification` contract explicit
+
+Both regressions, plus fixes 2 and 4 of the `<c:dPt>` track, are the same
+weakness: `ModifyXmlHelper` silently *creates* and silently *fails*, and its
+contract lives only in the heads of the call sites.
+
+- `index` is positional-over-existing-siblings and can only grow a collection by
+  one per call. Nothing says so.
+- `isRequired: false` reads as "modify if present, never create" at every call
+  site and does nothing.
+- A failed assert produces no diagnostic (the `vd(…)` is commented out) and may
+  leave a stray clone behind.
+- `createElement()` injects opinionated defaults (grey `spPr` for `c:dPt`,
+  14 pt/accent1/`showVal=1` for `c:dLbls`) rather than empty shells.
+
+**Fixes, in implementation order** — 1 is the smallest change with the widest
+effect and unblocks the rest:
+
+1. ✅ **Honour `isRequired: false` in `assertElement`**: when false and the element
+   is absent, return `false` *without* creating or cloning. Fixes B outright,
+   fixes `<c:dPt>` track item 4, and stops fabrication generally. Audit every
+   existing `isRequired: false` call site first (`seriesDataLabel`,
+   `seriesStyle`, `setDataPointLabelAttributes`'s nine `c:show*`/`c:numFmt`/
+   `c:dLblPos` entries) — some of them may today *depend* on the creation they
+   ask not to have. *Audit outcome: none depended on creation (`c:marker`,
+   `a:defRPr`, `c15:datalabelsRange` and the nine `c:show*` entries have no
+   `createElement` case). Two call sites got the flag added because their
+   default-required children fabricated content into label-less series:
+   `setDataLabelAttributes`' `c:dLbls` wrapper and `setDataPointLabelAttributes`'
+   `c:spPr` (grey-blob creation).*
+2. ✅ **Re-enable the diagnostic**: the "Could not assert required tag" path logs
+   at `warn` for `isRequired: true` and `debug` for skipped optional tags. The
+   default test run stays silent.
+3. ✅ **Fix `setPointStyles` addressing (A)** — `Modification.matchIdx` resolves
+   `c:dPt` / `c:dLbl` by **matching the child `c:idx` value**, creating one in
+   `c:idx` order when absent (`ModifyXmlHelper.assertElementByIdx`); `c:dLbl`
+   creation clones the clean `fromIndex` template, whose cache key is now truly
+   per-parent (`getParentIndex` ranks over the whole document, so the `c:dLbls`
+   of different `c:ser` no longer collide).
+4. ✅ **Empty shells in `XmlElements`**: `dataPoint()` → `c:idx` + `c:bubble3D`
+   only; `dataPointLabels()` → empty `c:dLbls`; `dataPointLabel()` → `c:idx`
+   plus an unopinionated `c:txPr` scaffold. All three insert via
+   `insertInSchemaOrder` (`C_SER_CHILD_ORDER` / `C_DLBLS_CHILD_ORDER`), which
+   also fixed the `c:dPt`-after-`c:dLbls` class of the schema-violation track —
+   both allowlist entries removed. The hardcoded `dLbl.ts` blob is deleted.
+5. ✅ **Document the contract** on the `Modification` type: what `index` indexes,
+   the one-grow-per-call limit, what `isRequired` guarantees, `matchIdx`.
+
+**Guards** (Phase 5, in place):
+
+- 🧪 ✅ tier-0: point styles on **non-contiguous** categories (0 and 3 of 15) →
+  exactly two `c:dPt`, `c:idx` 0 and 3, two distinct colors
+  (`modify-chart-point-styles-sparse.test.ts`).
+- 🧪 ✅ tier-0: a series `style.label` on a template whose series carry **no**
+  `c:dLbls` → no `c:dLbls` created (same suite + styled test). Covers B.
+- 🧪 ✅ tier-1 (stronger than tier-0 — checked on *every* written archive): the
+  `c16:uniqueId` fingerprint `{00000001-04B4-49A4-AD60-4DBFE8A0F479}` is an
+  `errors`-class invariant in `pptx-invariants.ts`; no shipped template
+  contains it (verified 2026-08-12), so any occurrence is fabricated XML.
+- 🧪 ✅ `modify-existing-chart-styled.test.ts` asserts the exact `c:dPt`/`c:dLbl`
+  sets per series via `expectXml` — its data was already the sparse case, and
+  the showcase output is correct again (`333333@0` / `efefef@1` / `eecc00@1` +
+  `eeccff@3` + one styled label at idx 3).
+- 🧪 ✅ tier-3 golden deck `chart-radar-labels`: 5-series pptxgenjs-generated
+  radar chart with styled series labels re-loaded through `setChartData` — the
+  baseline pins "no labels appear". (One upstream pptxgenjs allowlist entry
+  added: `c:invertIfNegative` in radar series cascades into a `c:axId` report.)
+
+**Downstream note.** ensemblio-api consumes these paths through
+`ShapeModifiersChartService` → `modify.setChartData`; the api side was verified
+correct in both cases (metas, style matching and the `categories[].styles` array
+all carry the right values), so no api change is needed — but regenerating
+affected customer decks is part of "done".
+
+---
+
 ## Bug track — schema violations found by the Tier-2 validator
 
 Audit date: 2026-08-12, first full run of `yarn validate:pptx` over all test
@@ -744,13 +951,15 @@ Ordered by user impact:
    e.g. Apache POI) does not. Fixing this unlocks real Tier-2 coverage for
    those files and lets Tier 1 escalate its `knownIssues` to errors — the
    single highest-leverage cleanup in this list.
-2. 🐛 **Chart modifiers insert children out of schema order**: `c:dPt` after
-   `c:dLbls` in `c:ser` (`modify-existing-chart-styled`, related to the
-   `<c:dPt>` bug track above), `c:tx` misplaced inside `c:dLbl`
+2. 🐛 **Chart modifiers insert children out of schema order**: ~~`c:dPt` after
+   `c:dLbls` in `c:ser`~~ (✅ fixed 2026-08-12 with the Modification-contract
+   track — `c:dPt`/`c:dLbls` creation goes through `insertInSchemaOrder` now,
+   both allowlist entries removed), `c:tx` misplaced inside `c:dLbl`
    (`modify-chart-datalabels-text`), `c:dLbls` misplaced in scatter `c:ser`
    and `a:solidFill` misplaced in `c:dLbl`/`c:spPr`
    (`modify-chart-datalabels`). The shared `XmlHelper.insertInSchemaOrder`
-   primitive from the HTML→text track is the intended fix vehicle.
+   primitive from the HTML→text track is the intended fix vehicle for the
+   rest.
 3. 🐛 **Table cell borders written in caller order**: `a:tcPr` requires
    `lnL → lnR → lnT → lnB`; `setTable`/`setTableData` append in the order the
    caller lists them (`modify-existing-table-format-cells`).
@@ -785,6 +994,10 @@ Early:    Phase 5 tiers 1+2 (invariants + schema validator) right after CI exist
           they harden every later refactor PR at fixed cost
 Ongoing:  Phase 5 tier-0 assertions added with every bug fix; tier-3 golden
           decks feature area by feature area
+Urgent:   "Modification contract violations" bug track — both regressions are
+          released in 0.8.2 and corrupt customer decks silently. Order:
+          isRequired → diagnostic → setPointStyles addressing → empty shells,
+          each with its tier-0 guard written first
 Early:    Phase 6.1 (docs-example compile test) alongside Phase 5 tier 1 — it is
           the same kind of cheap always-on gate, and it must exist before the
           README split moves 126 examples around

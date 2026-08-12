@@ -2,7 +2,6 @@ import { BulletListContent, Color, ShapeOutline } from '../types/modify-types';
 import { XmlHelper } from './xml-helper';
 import { DOMParser } from '@xmldom/xmldom';
 import type { Node } from '@xmldom/xmldom';
-import { dLblXml } from './xml/dLbl';
 import { lnLRTB } from './xml/lnLRTB';
 import { XmlDocument, XmlElement } from '../types/xml-types';
 
@@ -30,6 +29,58 @@ const LINE_AFTER_DASH_TAGS = [
   'a:headEnd',
   'a:tailEnd',
   'a:extLst',
+];
+
+/**
+ * Children of <c:ser>, in OOXML schema order — the union of all CT_*Ser
+ * variants (bar, line, pie, scatter, radar, area, bubble, surface); their
+ * shared members never disagree on relative order.
+ */
+export const C_SER_CHILD_ORDER = [
+  'c:idx',
+  'c:order',
+  'c:tx',
+  'c:spPr',
+  'c:invertIfNegative',
+  'c:pictureOptions',
+  'c:explosion',
+  'c:marker',
+  'c:dPt',
+  'c:dLbls',
+  'c:trendline',
+  'c:errBars',
+  'c:cat',
+  'c:val',
+  'c:xVal',
+  'c:yVal',
+  'c:smooth',
+  'c:shape',
+  'c:bubbleSize',
+  'c:bubble3D',
+  'c:extLst',
+];
+
+/**
+ * Children of <c:dLbls> (CT_DLbls), in OOXML schema order: the sparse
+ * <c:dLbl> point overrides come first, followed by the group-level settings.
+ */
+export const C_DLBLS_CHILD_ORDER = [
+  'c:dLbl',
+  'c:delete',
+  'c:numFmt',
+  'c:spPr',
+  'c:txPr',
+  'c:dLblPos',
+  'c:showLegendKey',
+  'c:showVal',
+  'c:showCatName',
+  'c:showSerName',
+  'c:showPercent',
+  'c:showBubbleSize',
+  'c:separator',
+  'c:showLeaderLines',
+  'c:leaderLines',
+  'c:extLst',
 ];
 
 export default class XmlElements {
@@ -329,16 +380,26 @@ export default class XmlElements {
     }
   }
 
-  dataPoint(): this {
+  /**
+   * A minimal <c:dPt> shell: `c:idx` plus `c:bubble3D` (which PowerPoint
+   * always writes) and nothing else. A data point carries no formatting the
+   * caller did not ask for — modifications create `c:spPr` etc. on demand.
+   */
+  buildDataPoint(): XmlElement {
     const dPt = this.document.createElement('c:dPt');
     dPt.appendChild(this.idx());
-    dPt.appendChild(this.spPr());
+    const bubble3D = this.document.createElement('c:bubble3D');
+    bubble3D.setAttribute('val', '0');
+    dPt.appendChild(bubble3D);
+    return dPt;
+  }
 
-    const nextSibling = this.element.getElementsByTagName('c:cat')[0];
-    if (nextSibling) {
-      nextSibling.parentNode.insertBefore(dPt, nextSibling);
-    }
-
+  dataPoint(): this {
+    XmlHelper.insertInSchemaOrder(
+      this.element as XmlElement,
+      this.buildDataPoint(),
+      C_SER_CHILD_ORDER,
+    );
     return this;
   }
 
@@ -393,22 +454,52 @@ export default class XmlElements {
     this.element.appendChild(spPr);
   }
 
+  /**
+   * An empty <c:dLbls>: all children of CT_DLbls are optional, and every
+   * label property (visibility included) is inherited from the chart's
+   * defaults. No fabricated formatting, no forced `showVal`.
+   */
   dataPointLabels() {
-    const doc = new DOMParser().parseFromString(dLblXml, 'application/xml');
-    const ele = doc.getElementsByTagName('c:dLbls')[0] as unknown as Node;
-    const nextSibling = this.element.getElementsByTagName('c:cat')[0];
-    if (nextSibling) {
-      nextSibling.parentNode.insertBefore(ele.cloneNode(true), nextSibling);
-    } else {
-      this.element.appendChild(ele.cloneNode(true));
-    }
+    const dLbls = this.document.createElement('c:dLbls');
+    XmlHelper.insertInSchemaOrder(
+      this.element as XmlElement,
+      dLbls,
+      C_SER_CHILD_ORDER,
+    );
+  }
+
+  /**
+   * A minimal <c:dLbl> point override: `c:idx` plus an empty `c:txPr`
+   * scaffold so that text styling modifications have a target — without
+   * opinionated defaults (no size, no fill, no `showVal`).
+   */
+  buildDataPointLabel(): XmlElement {
+    const dLbl = this.document.createElement('c:dLbl');
+    dLbl.appendChild(this.idx());
+
+    const txPr = this.document.createElement('c:txPr');
+    txPr.appendChild(this.document.createElement('a:bodyPr'));
+    txPr.appendChild(this.document.createElement('a:lstStyle'));
+
+    const p = this.document.createElement('a:p');
+    const pPr = this.document.createElement('a:pPr');
+    pPr.appendChild(this.document.createElement('a:defRPr'));
+    p.appendChild(pPr);
+    const endParaRPr = this.document.createElement('a:endParaRPr');
+    endParaRPr.setAttribute('lang', 'en-US');
+    p.appendChild(endParaRPr);
+    txPr.appendChild(p);
+
+    dLbl.appendChild(txPr);
+    return dLbl;
   }
 
   dataPointLabel() {
-    const doc = new DOMParser().parseFromString(dLblXml, 'application/xml');
-    const ele = doc.getElementsByTagName('c:dLbl')[0] as unknown as Node;
-    const firstChild = this.element.firstChild;
-    this.element.insertBefore(ele.cloneNode(true), firstChild);
+    XmlHelper.insertInSchemaOrder(
+      this.element as XmlElement,
+      this.buildDataPointLabel(),
+      C_DLBLS_CHILD_ORDER,
+    );
   }
 
   tableCellBorder(tag: 'a:lnL' | 'a:lnR' | 'a:lnT' | 'a:lnB') {

@@ -8,11 +8,33 @@ export type ModifyCollectionCallback = {
 };
 /**
  * A Modification is applied to xml elements by ModificationTags.
- * Specify an index if not 0 and put one or more ModifyCallbacks to
- * 'modify' prop.
+ * Put one or more ModifyCallbacks to the 'modify' prop and address the
+ * target element with `index` or `matchIdx`.
+ *
+ * The contract of the control fields (enforced by ModifyXmlHelper):
+ *
+ * - `index` is *positional over the existing elements* of the tag, in
+ *   document order — it is never compared to a `<c:idx>` payload. When the
+ *   element at `index` does not exist, the collection can grow by at most
+ *   ONE created/cloned element per modify() call; a positional index is
+ *   therefore only satisfiable if callers walk 0, 1, 2, … without gaps.
+ * - `matchIdx` addresses sparse chart collections (`c:dPt`, `c:dLbl`) by
+ *   the value of their `<c:idx val="…"/>` child instead of by position.
+ *   A missing element is created (cloned from the clean `fromIndex`
+ *   template when given, else built as a minimal shell), stamped with
+ *   `matchIdx`, and inserted keeping ascending `c:idx` order. Takes
+ *   precedence over `index`.
+ * - `isRequired: false` guarantees "modify if present, never create": an
+ *   absent target makes the modification (and its `children`) a no-op,
+ *   logged at debug level. With the default (`true`), a target that can
+ *   neither be found nor created is logged as a warning.
+ * - `fromIndex` / `fromPrevious` select the clone source when the target
+ *   has to be created from existing siblings: a clean pre-modification
+ *   template of the element at `fromIndex`, or the direct predecessor.
  */
 export type Modification = {
   index?: number;
+  matchIdx?: number;
   last?: boolean;
   all?: boolean;
   collection?: ModifyCollectionCallback;

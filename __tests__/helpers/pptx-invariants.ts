@@ -16,7 +16,10 @@ import {
  *  3. a relationship that an attribute actually references whose target part
  *     is missing (a silently dead hyperlink, image or chart);
  *  4. a part not covered by [Content_Types].xml;
- *  5. a ppt/presentation.xml slide-list entry whose slide part is missing.
+ *  5. a ppt/presentation.xml slide-list entry whose slide part is missing;
+ *  6. the c16:uniqueId fingerprint of the (deleted) hardcoded data-label
+ *     blob from src/helper/xml/dLbl.ts — an exact detector for fabricated
+ *     label XML reaching an output (ROADMAP, Modification-contract track).
  *
  * `knownIssues` are pre-existing library behaviors that PowerPoint tolerates.
  * They are reported for future cleanup work but do not fail tests:
@@ -33,6 +36,11 @@ import {
 
 const RELATIONSHIP_ATTRIBUTE_NS =
   'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+
+// The c16:uniqueId that the hardcoded dLbl.ts template carried verbatim into
+// every fabricated label. No shipped template contains it (verified against
+// __tests__/pptx-templates 2026-08-12), so any occurrence is fabricated XML.
+const FABRICATED_DLBL_FINGERPRINT = '{00000001-04B4-49A4-AD60-4DBFE8A0F479}';
 
 interface Relationship {
   id: string;
@@ -66,6 +74,14 @@ export async function checkPptxInvariants(
       xmlParts.set(name, parseStrict(content));
     } catch (error) {
       errors.push(`${name}: not well-formed XML (${error})`);
+    }
+
+    // 6. no fabricated data-label XML
+    if (content.includes(FABRICATED_DLBL_FINGERPRINT)) {
+      errors.push(
+        `${name}: contains the fabricated data-label fingerprint ` +
+          `${FABRICATED_DLBL_FINGERPRINT} (hardcoded dLbl blob reached the output)`,
+      );
     }
   }
 

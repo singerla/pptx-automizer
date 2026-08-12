@@ -707,6 +707,9 @@ export default class ModifyChartHelper {
           ...applyToSeries,
           children: {
             'c:dLbls': {
+              // Modify label attributes only where the template carries
+              // labels — never fabricate a c:dLbls into a series.
+              isRequired: false,
               children:
                 ModifyChartHelper.setDataPointLabelAttributes(dataLabel),
             },
@@ -720,6 +723,7 @@ export default class ModifyChartHelper {
   ) => {
     return {
       'c:spPr': {
+        isRequired: false,
         modify: [ModifyColorHelper.solidFill(dataLabel.solidFill)],
       },
       'c:numFmt': {

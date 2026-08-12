@@ -196,12 +196,10 @@ export class ModifyChart {
         category.styles.forEach((style, s) => {
           if (style === null || !Object.values(style).length) return;
 
-          this.chart.modify(
-            this.series(s, this.chartPoint(c, c, style)),
-          );
+          this.chart.modify(this.series(s, this.chartPoint(c, style)));
           if (style.label) {
             this.chart.modify(
-              this.series(s, this.chartPointLabel(c, c, style.label)),
+              this.series(s, this.chartPointLabel(c, style.label)),
             );
           }
         });
@@ -480,19 +478,14 @@ export class ModifyChart {
     };
   };
 
-  chartPoint = (
-    index: number,
-    idx: number,
-    style: ChartValueStyle,
-  ): ModificationTags => {
+  chartPoint = (idx: number, style: ChartValueStyle): ModificationTags => {
     if (!style?.color && !style?.border && !style?.marker) return;
     return {
       'c:dPt': {
-        index: index,
+        // c:dPt is sparse: one element per explicitly styled point, addressed
+        // by its <c:idx> payload — never by sibling position.
+        matchIdx: idx,
         children: {
-          'c:idx': {
-            modify: ModifyXmlHelper.attribute('val', idx),
-          },
           ...this.chartPointFill(style?.color),
           ...this.chartPointBorder(style?.border),
           ...this.chartPointMarker(style?.marker),
@@ -548,7 +541,6 @@ export class ModifyChart {
   };
 
   chartPointLabel = (
-    index: number,
     idx: number,
     labelStyle: ChartValueStyle['label'],
   ): ModificationTags => {
@@ -566,25 +558,31 @@ export class ModifyChart {
       'c:dLbls': {
         children: {
           'c:dLbl': {
-            index: index,
+            // Like c:dPt, c:dLbl is a sparse per-point override addressed by
+            // its <c:idx> payload. A missing label is cloned from the clean
+            // state of the first existing one.
+            matchIdx: idx,
             fromIndex: 0,
             modify: suffixModify,
             children: {
-              'c:idx': {
-                modify: ModifyXmlHelper.attribute('val', String(idx)),
-              },
+              // Template content is styled where present, never fabricated.
               'a:pPr': {
-                modify: ModifyColorHelper.solidFill(labelStyle?.color),
+                isRequired: false,
                 children: {
                   'a:defRPr': {
                     isRequired: false,
-                    modify: ModifyTextHelper.style(labelStyle),
+                    modify: [
+                      ModifyColorHelper.solidFill(labelStyle?.color),
+                      ModifyTextHelper.style(labelStyle),
+                    ],
                   },
                 },
               },
               'a:fld': {
+                isRequired: false,
                 children: {
                   'a:rPr': {
+                    isRequired: false,
                     modify: [
                       ModifyColorHelper.solidFill(labelStyle?.color),
                       ModifyTextHelper.style(labelStyle),

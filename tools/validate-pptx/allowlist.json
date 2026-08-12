@@ -38,16 +38,10 @@
   {
     "description": "Specified part does not exist in the package"
   },
-  // Chart modifiers insert c:dPt/c:dLbls/c:tx (and dLbl spPr fills) out of
-  // schema order — the repair-prompt class; see the <c:dPt> bug track.
-  {
-    "description": "unexpected child element 'http://schemas.openxmlformats.org/drawingml/2006/chart:dPt'",
-    "part": "/ppt/charts/"
-  },
-  {
-    "description": "unexpected child element 'http://schemas.openxmlformats.org/drawingml/2006/chart:dLbls'",
-    "part": "/ppt/charts/"
-  },
+  // Chart modifiers insert c:tx (and dLbl spPr fills) out of schema order —
+  // the repair-prompt class; see the <c:dPt> bug track. The c:dPt/c:dLbls
+  // entries of this class were removed with the Modification-contract fixes:
+  // both are inserted via insertInSchemaOrder now.
   {
     "description": "unexpected child element 'http://schemas.openxmlformats.org/drawingml/2006/chart:tx'",
     "part": "/ppt/charts/"
@@ -91,6 +85,14 @@
   },
   {
     "description": "invalid child element 'http://schemas.openxmlformats.org/drawingml/2006/chart:invertIfNegative'",
+    "part": "/ppt/charts/"
+  },
+  // pptxgenjs radar series carry c:invertIfNegative (not part of
+  // CT_RadarSer); the validator's recovery then reports the following
+  // c:axId as unexpected. Baselined 2026-08-12 with the chart-radar-labels
+  // golden deck, whose source deck embeds pptxgenjs output verbatim.
+  {
+    "description": "unexpected child element 'http://schemas.openxmlformats.org/drawingml/2006/chart:axId'",
     "part": "/ppt/charts/"
   }
 ]
