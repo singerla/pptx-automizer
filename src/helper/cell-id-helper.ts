@@ -82,4 +82,34 @@ export default class CellIdHelper {
     const colLetter = CellIdHelper.increment(c);
     return `${colLetter}${r + 1}`;
   }
+
+  /**
+   * Extracts the zero-based column index from a cell address.
+   * e.g. "A1" => 0, "B12" => 1, "AA3" => 26
+   * Returns null if there are no leading letters to parse.
+   */
+  static getColumnIndex(address: string): number | null {
+    const letters = address ? address.match(/^[A-Za-z]+/) : null;
+    if (!letters) {
+      return null;
+    }
+
+    const chars = letters[0].toUpperCase();
+    let index = 0;
+    for (let i = 0; i < chars.length; i++) {
+      index = index * 26 + (chars.charCodeAt(i) - 64);
+    }
+
+    return index - 1;
+  }
+
+  /**
+   * Extracts the row number from a cell address.
+   * e.g. "A1" => 1, "B12" => 12
+   * Returns null if there is no trailing number to parse.
+   */
+  static getRowNumber(address: string): number | null {
+    const digits = address ? address.match(/\d+$/) : null;
+    return digits ? Number(digits[0]) : null;
+  }
 }

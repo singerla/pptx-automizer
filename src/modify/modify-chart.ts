@@ -32,6 +32,7 @@ export class ModifyChart {
   columns: ChartColumn[];
 
   sharedStrings: XmlDocument;
+  sharedStringCache: Record<string, number> = {};
 
   workbook: ModifyXmlHelper;
   workbookTable: ModifyXmlHelper;
@@ -309,6 +310,124 @@ export class ModifyChart {
         toRemove.parentNode.removeChild(toRemove);
       }
     }
+
+    this.normalizeCellPositions();
+  }
+
+  /*
+    Excel skips the <c>-tag of an empty cell, e.g. a chart worksheet with an
+    empty top left cell has no <c r="A1"/> at all. All worksheet modifications
+    address a cell by its position inside a <row>, so any gap would shift all
+    following cells and finally create duplicate cell addresses.
+    Inserting a blank cell for each gap restores "nth cell equals nth column".
+    See https://github.com/singerla/pptx-automizer/issues/39
+   */
+  normalizeCellPositions(): void {
+    const rows = this.workbook.root.getElementsByTagName('row');
+    for (let r = 0; r < rows.length; r++) {
+      this.insertMissingCells(rows[r] as XmlElement);
+    }
+  }
+
+  insertMissingCells(row: XmlElement): void {
+    const cells = Array.from(row.getElementsByTagName('c')) as XmlElement[];
+
+    const rowNumber = this.getRowNumber(row, cells);
+    if (rowNumber === null) {
+      return;
+    }
+
+    let expectedColumn = 0;
+    cells.forEach((cell) => {
+      const column = CellIdHelper.getColumnIndex(cell.getAttribute('r'));
+
+      if (column === null || column < expectedColumn) {
+        // A cell without a parsable address is assumed to be in place.
+        expectedColumn++;
+        return;
+      }
+
+      while (expectedColumn < column) {
+        row.insertBefore(this.blankCell(expectedColumn, rowNumber), cell);
+        expectedColumn++;
+      }
+
+      expectedColumn = column + 1;
+    });
+  }
+
+  getRowNumber(row: XmlElement, cells: XmlElement[]): number | null {
+    const rowNumber = Number(row.getAttribute('r'));
+    if (rowNumber) {
+      return rowNumber;
+    }
+
+    // A <row> without "r"-attribute can still be identified by its cells.
+    for (const cell of cells) {
+      const cellRow = CellIdHelper.getRowNumber(cell.getAttribute('r'));
+      if (cellRow) {
+        return cellRow;
+      }
+    }
+
+    return null;
+  }
+
+  blankCell(c: number, rowNumber: number): XmlElement {
+    const doc =
+      this.workbook.root.ownerDocument || (this.workbook.root as XmlDocument);
+
+    const label = this.blankCellLabel(c, rowNumber);
+
+    const value = doc.createElement('v');
+    value.appendChild(doc.createTextNode(String(this.getSharedString(label))));
+
+    const cell = doc.createElement('c');
+    cell.setAttribute('r', CellIdHelper.getCellAddressString(c, rowNumber - 1));
+    cell.setAttribute('t', 's');
+    cell.appendChild(value);
+
+    return cell as XmlElement;
+  }
+
+  /*
+    A blank cell holds a single space, just like PowerPoint does for the empty
+    top left cell of a default chart worksheet. If the worksheet contains a
+    table, a header cell needs to match the name of its tableColumn, otherwise
+    Excel is going to repair the workbook.
+   */
+  blankCellLabel(c: number, rowNumber: number): string {
+    if (rowNumber !== 1 || !this.workbookTable) {
+      return ' ';
+    }
+
+    const column =
+      this.workbookTable.root.getElementsByTagName('tableColumn')[c];
+
+    return column ? column.getAttribute('name') : ' ';
+  }
+
+  /*
+    Re-uses an existing shared string to not grow the worksheet on each
+    inserted cell.
+   */
+  getSharedString(label: string): number {
+    if (this.sharedStringCache[label] === undefined) {
+      const strings = this.sharedStrings.getElementsByTagName('si');
+      for (let i = 0; i < strings.length; i++) {
+        if (strings[i].textContent === label) {
+          this.sharedStringCache[label] = i;
+          return i;
+        }
+      }
+
+      this.sharedStringCache[label] = XmlHelper.appendSharedString(
+        this.sharedStrings,
+        label,
+      );
+    }
+
+    return this.sharedStringCache[label];
   }
 
   setWorkbook(): void {
@@ -692,10 +811,14 @@ export class ModifyChart {
         children: {
           c: {
             index: c,
-            modify: ModifyXmlHelper.attribute(
-              'r',
-              CellIdHelper.getCellAddressString(c, 0),
-            ),
+            modify: [
+              ModifyXmlHelper.attribute(
+                'r',
+                CellIdHelper.getCellAddressString(c, 0),
+              ),
+              // A label always refers to a shared string.
+              ModifyXmlHelper.attribute('t', 's'),
+            ],
             children: this.sharedString(label),
           },
         },
@@ -723,10 +846,14 @@ export class ModifyChart {
         fromPrevious: true,
         children: {
           c: {
-            modify: ModifyXmlHelper.attribute(
-              'r',
-              CellIdHelper.getCellAddressString(0, r),
-            ),
+            modify: [
+              ModifyXmlHelper.attribute(
+                'r',
+                CellIdHelper.getCellAddressString(0, r),
+              ),
+              // A label always refers to a shared string.
+              ModifyXmlHelper.attribute('t', 's'),
+            ],
             children: this.sharedString(label),
           },
         },
@@ -743,10 +870,15 @@ export class ModifyChart {
           c: {
             index: c,
             fromPrevious: true,
-            modify: ModifyXmlHelper.attribute(
-              'r',
-              CellIdHelper.getCellAddressString(c, r),
-            ),
+            modify: [
+              ModifyXmlHelper.attribute(
+                'r',
+                CellIdHelper.getCellAddressString(c, r),
+              ),
+              // A chart value is numeric, it must not point to a shared string,
+              // e.g. if the cell was blank in the source worksheet.
+              ModifyXmlHelper.removeAttribute('t'),
+            ],
             children: this.cellValue(ModifyChartHelper.parseCellValue(value)),
           },
         },

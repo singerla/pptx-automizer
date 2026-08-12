@@ -198,6 +198,12 @@ export default class ModifyXmlHelper {
         element.setAttribute(attribute, XmlHelper.sanitizeAttr(value));
     };
 
+  static removeAttribute =
+    (attribute: string) =>
+    (element: XmlElement): void => {
+      element.removeAttribute(attribute);
+    };
+
   static booleanAttribute =
     (attribute: string, state: boolean) =>
     (element: XmlElement): void => {
