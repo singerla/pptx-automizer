@@ -179,10 +179,11 @@ once, and the reviewer approves a PNG diff in the PR instead of opening the file
 
 ### Tier 0 — per-assertion XML checks (fast, always on)
 
-- 🧪 **Output-assertion helper**: open the written .pptx with jszip, fetch a
-  part, assert on XML —
-  `expectXml(output, 'ppt/slides/slide1.xml').toContainElement('a:t', 'my text')`.
-  Retro-fit onto the highest-value suites first (charts, tables, text).
+- 🧪 ✅ **Output-assertion helper** (2026-08-12): `__tests__/helpers/expect-xml.ts` —
+  `expectXml(output, 'ppt/slides/slide1.xml').toContainElement('a:t', 'my text')`,
+  plus `toContainElementTimes`/`toHaveAttribute` and `raw()`/`doc()` escape
+  hatches. Retro-fitted onto `modify-existing-chart`, `modify-existing-table`
+  and `replace-tagged-text` (the latter two previously asserted nothing).
 - 🧪 **Targeted subtree snapshots**: jest snapshots of the *modified subtree
   only* (the shape's `<p:sp>`, a chart's `<c:ser>`), canonicalized
   (pretty-printed, attributes sorted) so diffs are readable. Never snapshot
@@ -198,10 +199,14 @@ once, and the reviewer approves a PNG diff in the PR instead of opening the file
   `cell-id-helper`, `general-helper`) — pure functions on DOM nodes, cheap to
   test, currently only covered incidentally.
 
-### Tier 1 — package invariants on every written archive (fast, automatic)
+### Tier 1 — package invariants on every written archive (fast, automatic) — ✅ done 2026-08-12
 
-Hook into the shared test write helper so **every** output file is checked
-without individual suites opting in:
+Implemented in `__tests__/helpers/pptx-invariants.ts`; there was no shared
+write helper to hook, so `setup-pptx-invariants.ts` (jest `setupFilesAfterEnv`)
+wraps `Automizer.prototype.write` — **every** output file is checked without
+individual suites opting in, and a violation fails the test that wrote the
+file. A self-test (`pptx-invariants.test.ts`) proves each corruption class is
+still detected. Checks:
 
 - every `r:id`/`r:embed`/`r:link` referenced in a part resolves to an entry in
   that part's `_rels` file;
@@ -218,6 +223,26 @@ link to `slide3.xml` in a two-slide deck. Everything passed, the XML looked
 right, and the only symptom was a hyperlink that silently did nothing when the
 deck was opened in PowerPoint. A rel-target-resolves check would have failed
 that test instantly — this invariant is the one that pays for itself first.
+(Confirmed on landing day: the hook immediately caught the same class again in
+`htmlToMultiText-hyperlinks.test.ts`, plus one test that does it deliberately —
+that one now wraps its write in `withoutPptxInvariants(...)`.)
+
+**Baseline findings (2026-08-12).** Strict checking initially failed 33 suites;
+triage showed the dangling rels were almost all *unreferenced* (no `r:*`
+attribute points at them), i.e. tolerated bloat rather than corruption. The
+checker therefore splits its report: `errors` (a **referenced** rel whose
+target is missing, uncovered parts, broken slide list, malformed XML) fail the
+test; `knownIssues` are reported but tolerated, mirroring the Tier-2 allowlist
+principle — escalate a class to an error only together with the library fix.
+Current known-issue classes, all candidates for Phase 7 cleanup work:
+
+- stale rel entries left behind when copied content is re-targeted (slide
+  copy, media dedup, `setRelationTarget` swaps) — the copied slide keeps its
+  source-template rels although the blips point at the new `-created` ones;
+- notesSlides rels reference `notesMasters/notesMaster1.xml`, but a notesMaster
+  is never copied to the output;
+- slide/media/chart parts orphaned by `removeExistingSlides`/`removeSlide`
+  without `cleanup`.
 
 ### Tier 2 — OOXML schema validation (CI job) — the "never see the repair prompt again" gate
 
@@ -302,7 +327,8 @@ shows". Never conclude PowerPoint-correctness from green pixels.
 
 ### Rollout order
 
-1. Tier 1 invariants + `expectXml` helper (immediate value, no new infra).
+1. ✅ Tier 1 invariants + `expectXml` helper (immediate value, no new infra) —
+   done 2026-08-12, incl. AGENTS.md "Testing rules" update.
 2. Tier 2 validator with template-derived allowlist → CI gate. **After this,
    the repair prompt is a CI failure, not a customer report.**
 3. Tier 0 snapshots retro-fitted per bug fix / feature PR (rule: every bug fix

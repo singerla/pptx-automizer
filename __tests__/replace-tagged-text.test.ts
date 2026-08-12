@@ -1,4 +1,5 @@
 import Automizer, { modify } from '../src/index';
+import { expectXml } from './helpers/expect-xml';
 
 const bulletPoints = ['first line', 'second line', 'third line'].join(`
 `);
@@ -91,5 +92,22 @@ test('create presentation, replace tagged text.', async () => {
     })
     .write(`replace-tagged-text.test.pptx`);
 
-  // expect(result.tables).toBe(2); // TODO: fixture for pptx-output
+  // Tier 0: replacements and their styles arrived in the slide XML
+  const slide2 = await expectXml(
+    'replace-tagged-text.test.pptx',
+    'ppt/slides/slide2.xml',
+  );
+  slide2.toContainElement('a:t', 'Test');
+  expect(slide2.raw()).toMatch(/Apples/);
+  expect(slide2.raw()).toMatch(/Bananas/);
+  expect(slide2.raw()).not.toMatch(/\{\{/);
+  slide2
+    .toHaveAttribute('a:srgbClr', 'val', 'CCAA4F')
+    .toHaveAttribute('a:schemeClr', 'val', 'accent2');
+
+  const slide3 = await expectXml(
+    'replace-tagged-text.test.pptx',
+    'ppt/slides/slide3.xml',
+  );
+  expect(slide3.raw()).toMatch(/second line/);
 });

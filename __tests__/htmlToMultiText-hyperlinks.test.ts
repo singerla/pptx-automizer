@@ -1,6 +1,7 @@
 import Automizer, { modify, XmlElement } from '../src/index';
 import { HtmlToMultiTextHelper } from '../src/helper/html-to-multitext-helper';
 import { ModifyTextHelper } from '../src';
+import { withoutPptxInvariants } from './helpers/setup-pptx-invariants';
 
 test('create presentation with external hyperlinks using htmlToMultiText', async () => {
   const automizer = new Automizer({
@@ -39,11 +40,15 @@ test('create presentation with multiple hyperlinks using htmlToMultiText', async
     '<p>Jump to <a href="2">slide 2</a> or <a href="5">slide 5 not existing</a></p>' +
     '</body></html>';
 
-  const result = await pres
-    .addSlide('TextReplace.pptx', 1, (slide) => {
-      slide.modifyElement('setText', modify.htmlToMultiText(html));
-    })
-    .write(`htmlToMultiText-multiple-hyperlinks.test.pptx`);
+  // The link to slide 5 is intentionally dead (see the html above), so the
+  // Tier-1 dangling-relationship invariant is expected to fire here.
+  const result = await withoutPptxInvariants(() =>
+    pres
+      .addSlide('TextReplace.pptx', 1, (slide) => {
+        slide.modifyElement('setText', modify.htmlToMultiText(html));
+      })
+      .write(`htmlToMultiText-multiple-hyperlinks.test.pptx`),
+  );
 
   // Test passes if file is written successfully
 });

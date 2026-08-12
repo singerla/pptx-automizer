@@ -1,5 +1,6 @@
 import Automizer, { modify } from '../src/index';
 import { TableRow, TableRowStyle } from '../src/index';
+import { expectXml } from './helpers/expect-xml';
 
 test('create presentation, add and modify an existing table.', async () => {
   const automizer = new Automizer({
@@ -169,5 +170,23 @@ test('create presentation, add and modify an existing table.', async () => {
     })
     .write(`modify-existing-table.test.pptx`);
 
-  // expect(result.tables).toBe(2); // tbd
+  // Tier 0: cell text and styles arrived in the table XML
+  const slide2 = await expectXml(
+    'modify-existing-table.test.pptx',
+    'ppt/slides/slide2.xml',
+  );
+  slide2
+    .toContainElement('a:t', 'test1')
+    // data2 grew TableWithLabels to nine rows
+    .toContainElement('a:t', 'test9')
+    .toContainElement('a:t', '996')
+    // data1 border style on TableDefault
+    .toHaveAttribute('a:lnB', 'w', '18500')
+    .toHaveAttribute('a:srgbClr', 'val', 'AACC00');
+
+  const slide3 = await expectXml(
+    'modify-existing-table.test.pptx',
+    'ppt/slides/slide3.xml',
+  );
+  slide3.toHaveAttribute('a:lnB', 'w', '35000');
 });

@@ -188,14 +188,34 @@ Recurring OOXML pitfalls when implementing such a helper:
 
 > A four-tier testing model (XML assertions → package invariants → OOXML schema
 > validation → visual regression via pptx-thumbnailer) is specified in
-> ROADMAP Phase 5. As tiers land, this section gets updated to reflect them —
-> until then, the rules below are the current practice.
+> ROADMAP Phase 5. Tiers 0 and 1 have landed; the rules below reflect them.
 
+- **Tier 1 runs automatically**: `__tests__/helpers/setup-pptx-invariants.ts`
+  (registered via jest `setupFilesAfterEnv`) validates **every archive any test
+  writes** — referenced relationships resolve, parts are covered by
+  `[Content_Types].xml`, the slide list is intact, all XML is well-formed. If it
+  fails your test, you produced a broken deck: fix the change (or the test's
+  deck setup, e.g. an internal hyperlink to a slide that doesn't exist). A test
+  that *intentionally* writes a broken archive wraps its `write()` in
+  `withoutPptxInvariants(...)` from the same module. Pre-existing tolerated
+  behaviors (stale unreferenced rels, the never-copied notesMaster, orphaned
+  parts after `removeExistingSlides` without cleanup) are classified as
+  `knownIssues`, not errors — escalate one to an error only together with the
+  library fix.
+- **Tier 0 — assert on the XML, not just counts**: use
+  `expectXml(outputFile, partPath)` from `__tests__/helpers/expect-xml.ts`
+  (`.toContainElement`, `.toContainElementTimes`, `.toHaveAttribute`, plus
+  `raw()`/`doc()` escape hatches; see `modify-existing-chart.test.ts` for the
+  pattern). **Every bug fix adds the tier-0 assertion that would have caught
+  it** — don't just bump a count. Note: colors are normalized to uppercase hex
+  in output (`CCAA4F`), and row `label`s are not cell text.
 - Tests are integration-style: build a real presentation from `__tests__/pptx-templates/`,
-  write it to `__tests__/pptx-output/`, and assert on the summary (slide/chart counts).
-  They verify "does not crash / counts match", **not** XML correctness. When fixing an
-  XML-level bug, add an assertion that reads the output archive and checks the XML
-  (see ROADMAP "testing strategy") — don't just bump a count.
+  write it to `__tests__/pptx-output/`, and assert on the summary (slide/chart counts)
+  plus tier-0 XML assertions for whatever the test claims to verify.
+- Snapshot rule (when tier-0 snapshots land): snapshot the *modified subtree
+  only*, canonicalized — never whole parts, never whole-file hashes.
+- Tier 3 (visual regression) rule: never render all suites; ~12 curated golden
+  decks only (see ROADMAP Phase 5).
 - The output .pptx files are real; when in doubt about visual/PowerPoint-level
   correctness, tell the maintainer which output file to open in PowerPoint.
 - Never commit anything under `__tests__/pptx-output/`, `__customer__/`, or `dist/`
