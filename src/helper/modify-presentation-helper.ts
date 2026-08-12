@@ -69,7 +69,7 @@ export default class ModifyPresentationHelper {
     archive: IArchive,
   ) => {
     const slides = ModifyPresentationHelper.getSlideMastersCollection(xml);
-    let currentId;
+    let currentId: number;
     await XmlHelper.modifyCollectionAsync(
       slides,
       async (slide: XmlElement, i) => {
@@ -161,7 +161,7 @@ export default class ModifyPresentationHelper {
     await tracker.analyzeContents(archive);
 
     const extensions = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'emf'];
-    const keepFiles = [];
+    const keepFiles: string[] = [];
 
     await tracker.collect('ppt/slides', 'image', keepFiles);
     await tracker.collect('ppt/slideMasters', 'image', keepFiles);

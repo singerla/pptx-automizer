@@ -1,4 +1,5 @@
 import { FileHelper } from '../helper/file-helper';
+import { XmlDocument } from '../types/xml-types';
 import { PptPaths } from '../helper/ppt-paths';
 import { ShapeTargetType, SourceIdentifier } from '../types/types';
 import { ISlide } from '../interfaces/islide';
@@ -43,11 +44,11 @@ export class Slide extends HasShapes implements ISlide {
   async append(targetTemplate: RootPresTemplate): Promise<void> {
     this.targetTemplate = targetTemplate;
 
-    this.targetArchive = await targetTemplate.archive;
+    this.targetArchive = targetTemplate.archive;
     this.targetNumber = targetTemplate.incrementCounter('slides');
     this.targetPath = PptPaths.slide(this.targetNumber);
     this.targetRelsPath = PptPaths.slideRels(this.targetNumber);
-    this.sourceArchive = await this.sourceTemplate.archive;
+    this.sourceArchive = this.sourceTemplate.archive;
 
     this.status.info = 'Appending slide ' + this.targetNumber;
 
@@ -81,7 +82,7 @@ export class Slide extends HasShapes implements ISlide {
    * @param layoutId
    */
   useSlideLayout(layoutId?: number | string): this {
-    this.relModifications.push(async (slideRelXml: XMLDocument) => {
+    this.relModifications.push(async (slideRelXml: XmlDocument) => {
       let targetLayoutId: number;
 
       if (typeof layoutId === 'string') {

@@ -50,7 +50,7 @@ export class CountHelper implements ICounter {
   }
 
   async set(): Promise<void> {
-    this.count = await this.calculateCount(await this.template.archive);
+    this.count = await this.calculateCount(this.template.archive);
   }
 
   get(): number {
@@ -96,59 +96,13 @@ export class CountHelper implements ICounter {
     return presentationXml.getElementsByTagName('p:sldMasterId').length;
   }
 
-  private static async countLayouts(presentation: IArchive): Promise<number> {
-    const contentTypesXml = await XmlHelper.getXmlFromArchive(
-      presentation,
-      '[Content_Types].xml',
-    );
-    const overrides = contentTypesXml.getElementsByTagName('Override');
-
-    return Object.keys(overrides)
-      .map((key) => overrides[key] as XmlElement)
-      .filter(
-        (o) =>
-          o.getAttribute &&
-          o.getAttribute('ContentType') ===
-            `application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml`,
-      ).length;
-  }
-
-  private static async countThemes(presentation: IArchive): Promise<number> {
-    const contentTypesXml = await XmlHelper.getXmlFromArchive(
-      presentation,
-      '[Content_Types].xml',
-    );
-    const overrides = contentTypesXml.getElementsByTagName('Override');
-
-    return Object.keys(overrides)
-      .map((key) => overrides[key] as XmlElement)
-      .filter(
-        (o) =>
-          o.getAttribute &&
-          o.getAttribute('ContentType') ===
-            `application/vnd.openxmlformats-officedocument.theme+xml`,
-      ).length;
-  }
-
-  private static async countCharts(presentation: IArchive): Promise<number> {
-    const contentTypesXml = await XmlHelper.getXmlFromArchive(
-      presentation,
-      '[Content_Types].xml',
-    );
-    const overrides = contentTypesXml.getElementsByTagName('Override');
-
-    return Object.keys(overrides)
-      .map((key) => overrides[key] as XmlElement)
-      .filter(
-        (o) =>
-          o.getAttribute &&
-          o.getAttribute('ContentType') ===
-            `application/vnd.openxmlformats-officedocument.drawingml.chart+xml`,
-      ).length;
-  }
-
-  private static async countOleObjects(
+  /**
+   * Counts the Override entries of [Content_Types].xml with the given
+   * ContentType.
+   */
+  private static async countContentTypeOverrides(
     presentation: IArchive,
+    contentType: string,
   ): Promise<number> {
     const contentTypesXml = await XmlHelper.getXmlFromArchive(
       presentation,
@@ -156,14 +110,43 @@ export class CountHelper implements ICounter {
     );
     const overrides = contentTypesXml.getElementsByTagName('Override');
 
-    return Object.keys(overrides)
-      .map((key) => overrides[key] as XmlElement)
-      .filter(
-        (o) =>
-          o.getAttribute &&
-          o.getAttribute('ContentType') ===
-            `application/vnd.openxmlformats-officedocument.oleObject`,
-      ).length;
+    let count = 0;
+    for (let i = 0; i < overrides.length; i++) {
+      if (overrides.item(i)?.getAttribute('ContentType') === contentType) {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  private static async countLayouts(presentation: IArchive): Promise<number> {
+    return CountHelper.countContentTypeOverrides(
+      presentation,
+      'application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml',
+    );
+  }
+
+  private static async countThemes(presentation: IArchive): Promise<number> {
+    return CountHelper.countContentTypeOverrides(
+      presentation,
+      'application/vnd.openxmlformats-officedocument.theme+xml',
+    );
+  }
+
+  private static async countCharts(presentation: IArchive): Promise<number> {
+    return CountHelper.countContentTypeOverrides(
+      presentation,
+      'application/vnd.openxmlformats-officedocument.drawingml.chart+xml',
+    );
+  }
+
+  private static async countOleObjects(
+    presentation: IArchive,
+  ): Promise<number> {
+    return CountHelper.countContentTypeOverrides(
+      presentation,
+      'application/vnd.openxmlformats-officedocument.oleObject',
+    );
   }
 
   private static async countImages(presentation: IArchive): Promise<number> {
@@ -175,19 +158,9 @@ export class CountHelper implements ICounter {
   }
 
   private static async countDiagrams(presentation: IArchive): Promise<number> {
-    const contentTypesXml = await XmlHelper.getXmlFromArchive(
+    return CountHelper.countContentTypeOverrides(
       presentation,
-      '[Content_Types].xml',
+      'application/vnd.openxmlformats-officedocument.drawingml.diagramData+xml',
     );
-    const overrides = contentTypesXml.getElementsByTagName('Override');
-
-    return Object.keys(overrides)
-      .map((key) => overrides[key] as XmlElement)
-      .filter(
-        (o) =>
-          o.getAttribute &&
-          o.getAttribute('ContentType') ===
-          `application/vnd.openxmlformats-officedocument.drawingml.diagramData+xml`,
-      ).length;
   }
 }

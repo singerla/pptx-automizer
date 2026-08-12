@@ -3,6 +3,7 @@
  * through XML modifications.
  */
 import {
+  BulletListContent,
   ReplaceText,
   ReplaceTextOptions,
   ShapeOutline,
@@ -142,7 +143,7 @@ export default class ModifyShapeHelper {
    * @returns Function that accepts an XML element to modify
    */
   static setBulletList =
-    (list) =>
+    (list: BulletListContent) =>
     (element: XmlElement): void => {
       ModifyTextHelper.setBulletList(list)(element as XmlElement);
     };
@@ -239,16 +240,17 @@ export default class ModifyShapeHelper {
 
       // Apply each provided coordinate
       Object.keys(pos).forEach((key) => {
-        let value = Math.round(pos[key]);
+        const mapped = map[key as keyof typeof map];
+        let value = Math.round(pos[key as keyof ShapeCoordinates]);
         // Skip invalid values or unsupported properties
-        if (typeof value !== 'number' || !map[key]) return;
+        if (typeof value !== 'number' || !mapped) return;
         // Ensure value is not negative
         value = value < 0 ? 0 : value;
 
         // Set the value in the appropriate XML tag and attribute
         xfrm
-          .getElementsByTagName(map[key].tag)[0]
-          .setAttribute(map[key].attribute, value);
+          .getElementsByTagName(mapped.tag)[0]
+          .setAttribute(mapped.attribute, String(value));
       });
     };
 
@@ -269,21 +271,22 @@ export default class ModifyShapeHelper {
 
       // Apply each provided delta coordinate
       Object.keys(pos).forEach((key) => {
-        let value = Math.round(pos[key]);
+        const mapped = map[key as keyof typeof map];
+        let value = Math.round(pos[key as keyof ShapeCoordinates]);
         // Skip invalid values or unsupported properties
-        if (typeof value !== 'number' || !map[key]) return;
+        if (typeof value !== 'number' || !mapped) return;
 
         // Get current value and add the delta
         const currentValue = xfrm
-          .getElementsByTagName(map[key].tag)[0]
-          .getAttribute(map[key].attribute);
+          .getElementsByTagName(mapped.tag)[0]
+          .getAttribute(mapped.attribute);
 
         value += Number(currentValue);
 
         // Update the value in the appropriate XML tag and attribute
         xfrm
-          .getElementsByTagName(map[key].tag)[0]
-          .setAttribute(map[key].attribute, value);
+          .getElementsByTagName(mapped.tag)[0]
+          .setAttribute(mapped.attribute, String(value));
       });
     };
 

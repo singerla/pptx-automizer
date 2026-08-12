@@ -1,5 +1,5 @@
 import { HyperlinkInfo, TextStyle } from '../types/modify-types';
-import { XmlElement } from '../types/xml-types';
+import { XmlDocument, XmlElement } from '../types/xml-types';
 import { MultiTextParagraph, MultiTextRun } from '../interfaces/imulti-text';
 import ModifyTextHelper from './modify-text-helper';
 import { XmlHelper } from './xml-helper';
@@ -39,7 +39,7 @@ const BULLET_FONT = 'Arial';
 
 export class MultiTextHelper {
   private element: XmlElement;
-  private document: Document;
+  private document: XmlDocument;
   private relationElement?: XmlElement;
 
   constructor(element: XmlElement, relationElement?: XmlElement) {

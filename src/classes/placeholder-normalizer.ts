@@ -47,7 +47,7 @@ export class PlaceholderNormalizer {
       this.host.targetArchive,
       this.host.targetPath,
     );
-    const placeholderTypes = [];
+    const placeholderTypes: SlidePlaceholder[] = [];
     const placeholders = xml.getElementsByTagName('p:ph');
     XmlHelper.modifyCollection(placeholders, (placeholder: XmlElement) => {
       placeholderTypes.push({
@@ -69,7 +69,7 @@ export class PlaceholderNormalizer {
     sourcePlaceholderTypes: SlidePlaceholder[],
   ): void {
     const placeholders = xml.getElementsByTagName('p:ph');
-    const usedTypes = {};
+    const usedTypes: Record<string, number> = {};
     XmlHelper.modifyCollection(placeholders, (placeholder: XmlElement) => {
       const type = placeholder.getAttribute('type');
       usedTypes[type] = usedTypes[type] || 0;

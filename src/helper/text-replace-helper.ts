@@ -4,6 +4,7 @@ import { XmlHelper } from './xml-helper';
 import {
   ReplaceText,
   ReplaceTextOptions,
+  ReplaceTextReplacement,
 } from '../types/modify-types';
 import ModifyTextHelper from './modify-text-helper';
 import { XmlElement } from '../types/xml-types';
@@ -167,8 +168,8 @@ export default class TextReplaceHelper {
     }
   }
 
-  assertTextBlocks(length: number, textBlock: any): XmlElement[] {
-    const modifyBlocks = [];
+  assertTextBlocks(length: number, textBlock: XmlElement): XmlElement[] {
+    const modifyBlocks: XmlElement[] = [];
     if (length > 1) {
       for (let i = 1; i < length; i++) {
         const addedTextBlock = textBlock.cloneNode(true) as XmlElement;
@@ -181,7 +182,12 @@ export default class TextReplaceHelper {
     return modifyBlocks;
   }
 
-  updateTextNode(textNode: XmlElement, sourceText, replace, by): void {
+  updateTextNode(
+    textNode: XmlElement,
+    sourceText: string,
+    replace: string,
+    by: ReplaceTextReplacement,
+  ): void {
     const replacedText = sourceText.replace(replace, by.text);
     ModifyTextHelper.content(replacedText)(textNode);
 

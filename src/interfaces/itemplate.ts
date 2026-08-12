@@ -1,9 +1,10 @@
-import IArchive, { ArchiveInput } from './iarchive';
+import IArchive from './iarchive';
 import { XmlDocument } from '../types/xml-types';
+import { AutomizerFile } from '../types/types';
 
 export interface ITemplate {
   location: string;
-  file: ArchiveInput;
+  file: AutomizerFile;
   archive: IArchive;
   getSlideIdList: () => Promise<XmlDocument>;
 }

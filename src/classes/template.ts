@@ -7,7 +7,7 @@ import { PresTemplate } from '../interfaces/pres-template';
 import { RootPresTemplate } from '../interfaces/root-pres-template';
 import { ITemplate } from '../interfaces/itemplate';
 import { XmlTemplateHelper } from '../helper/xml-template-helper';
-import { ContentMap, SlideInfo } from '../types/xml-types';
+import { ContentMap, SlideInfo, XmlDocument } from '../types/xml-types';
 import { XmlHelper } from '../helper/xml-helper';
 import { PptPaths } from '../helper/ppt-paths';
 import { MediaDeduplicator } from '../helper/media-deduplicator';
@@ -18,9 +18,13 @@ import Automizer from '../automizer';
 import { IMaster } from '../interfaces/imaster';
 import { ILayout } from '../interfaces/ilayout';
 import { IGenerator } from '../interfaces/igenerator';
-import GeneratePptxGenJs from '../helper/generate/generate-pptxgenjs';
 
-export class Template implements ITemplate {
+/**
+ * Shared base for the two template roles: a source template provides
+ * importable slides and shapes (`SourceTemplate`), the root template is the
+ * output presentation everything is written into (`OutputTemplate`).
+ */
+export abstract class Template implements ITemplate {
   /**
    * Path to local file
    * @type string
@@ -28,16 +32,9 @@ export class Template implements ITemplate {
   location: string;
 
   /**
-   * An alias name to identify template and simplify
-   * @type string
+   * Node file buffer or path passed to the archive.
    */
-  name: string;
-
-  /**
-   * Node file buffer
-   * @type InputType
-   */
-  file: any;
+  file: AutomizerFile;
 
   /**
    * this.file will be passed to FileProxy
@@ -45,17 +42,90 @@ export class Template implements ITemplate {
    */
   archive: IArchive;
 
+  protected constructor(file: AutomizerFile, params: ArchiveParams) {
+    this.file = file;
+    this.archive = FileHelper.importArchive(file, params);
+  }
+
+  /**
+   * Factory: `params.name` decides the role — a named template is a source
+   * template containing importable slides; an unnamed one is the root
+   * (output) template.
+   */
+  static import(
+    file: AutomizerFile,
+    params: ArchiveParams,
+    automizer?: Automizer,
+  ): SourceTemplate | OutputTemplate {
+    if (params.name) {
+      return new SourceTemplate(file, params);
+    }
+    return new OutputTemplate(file, params, automizer);
+  }
+
+  async getSlideIdList(): Promise<XmlDocument> {
+    return XmlHelper.getXmlFromArchive(this.archive, PptPaths.presentation);
+  }
+}
+
+/**
+ * A loaded .pptx used as a source of slides, masters and shapes
+ * (`Automizer.load()`). Identified by its alias `name`.
+ */
+export class SourceTemplate extends Template implements PresTemplate {
+  /**
+   * An alias name to identify template and simplify
+   * @type string
+   */
+  name: string;
+
+  creationIds: SlideInfo[];
+  useCreationIds?: boolean;
+  slideNumbers: number[];
+
+  constructor(file: AutomizerFile, params: ArchiveParams) {
+    super(file, params);
+    this.name = params.name;
+  }
+
+  /**
+   * Returns the slide numbers of a given template as a sorted array of integers.
+   * @returns {Promise<number[]>} - A promise that resolves to a sorted array of slide numbers in the template.
+   */
+  async getAllSlideNumbers(): Promise<number[]> {
+    try {
+      const xmlTemplateHelper = new XmlTemplateHelper(this.archive);
+      this.slideNumbers = await xmlTemplateHelper.getAllSlideNumbers();
+      return this.slideNumbers;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async setCreationIds(): Promise<SlideInfo[]> {
+    const xmlTemplateHelper = new XmlTemplateHelper(this.archive);
+    this.creationIds = await xmlTemplateHelper.getCreationIds();
+
+    return this.creationIds;
+  }
+}
+
+/**
+ * The root template: the output presentation that slides, masters and media
+ * are appended to (`Automizer.loadRoot()`).
+ */
+export class OutputTemplate extends Template implements RootPresTemplate {
   /**
    * Array containing all slides coming from Automizer.addSlide()
    * @type: ISlide[]
    */
-  slides: ISlide[];
+  slides: ISlide[] = [];
 
   /**
    * Array containing all slideMasters coming from Automizer.addMaster()
    * @type: IMaster[]
    */
-  masters: IMaster[];
+  masters: IMaster[] = [];
 
   /**
    * Array containing all counters
@@ -63,8 +133,6 @@ export class Template implements ITemplate {
    */
   counter: ICounter[];
 
-  creationIds: SlideInfo[];
-  slideNumbers: number[];
   existingSlides: number;
 
   contentMap: ContentMap[] = [];
@@ -72,54 +140,35 @@ export class Template implements ITemplate {
 
   /**
    * Checksum index of the media files of the output archive, used to import
-   * each distinct image only once. Root template only.
+   * each distinct image only once.
    */
   mediaDeduplicator: MediaDeduplicator;
 
+  content: ContentTracker;
   automizer: Automizer;
   generator: IGenerator;
 
-  constructor(file: AutomizerFile, params: ArchiveParams) {
-    this.file = file;
-    const archive = FileHelper.importArchive(file, params);
-    this.archive = archive;
-  }
-
-  static import(
+  constructor(
     file: AutomizerFile,
     params: ArchiveParams,
     automizer?: Automizer,
-  ): PresTemplate | RootPresTemplate {
-    let newTemplate: PresTemplate | RootPresTemplate;
-    if (params.name) {
-      // New template will be a default template containing
-      // importable slides and shapes.
-      newTemplate = new Template(file, params) as PresTemplate;
-      newTemplate.name = params.name;
-    } else {
-      // New template will be root template
-      newTemplate = new Template(file, params) as RootPresTemplate;
-      newTemplate.automizer = automizer;
-      newTemplate.slides = [];
-      newTemplate.masters = [];
-      newTemplate.counter = [
-        new CountHelper('slides', newTemplate),
-        new CountHelper('charts', newTemplate),
-        new CountHelper('images', newTemplate),
-        new CountHelper('diagrams', newTemplate),
-        new CountHelper('masters', newTemplate),
-        new CountHelper('layouts', newTemplate),
-        new CountHelper('themes', newTemplate),
-        new CountHelper('oleObjects', newTemplate),
-      ];
-      newTemplate.content = automizer?.content ?? new ContentTracker();
-      newTemplate.archive.contentTracker = newTemplate.content;
-      newTemplate.mediaDeduplicator = new MediaDeduplicator(
-        newTemplate.archive,
-      );
-    }
+  ) {
+    super(file, params);
 
-    return newTemplate;
+    this.automizer = automizer;
+    this.counter = [
+      new CountHelper('slides', this),
+      new CountHelper('charts', this),
+      new CountHelper('images', this),
+      new CountHelper('diagrams', this),
+      new CountHelper('masters', this),
+      new CountHelper('layouts', this),
+      new CountHelper('themes', this),
+      new CountHelper('oleObjects', this),
+    ];
+    this.content = automizer?.content ?? new ContentTracker();
+    this.archive.contentTracker = this.content;
+    this.mediaDeduplicator = new MediaDeduplicator(this.archive);
   }
 
   mapContents(
@@ -153,29 +202,6 @@ export class Template implements ITemplate {
       (map) =>
         map.type === type && map.key === key && map.sourceId === sourceId,
     );
-  }
-
-  /**
-   * Returns the slide numbers of a given template as a sorted array of integers.
-   * @returns {Promise<number[]>} - A promise that resolves to a sorted array of slide numbers in the template.
-   */
-  async getAllSlideNumbers(): Promise<number[]> {
-    try {
-      const xmlTemplateHelper = new XmlTemplateHelper(this.archive);
-      this.slideNumbers = await xmlTemplateHelper.getAllSlideNumbers();
-      return this.slideNumbers;
-    } catch (error) {
-      throw new Error(error.message);
-    }
-  }
-
-  async setCreationIds(): Promise<SlideInfo[]> {
-    const archive = await this.archive;
-
-    const xmlTemplateHelper = new XmlTemplateHelper(archive);
-    this.creationIds = await xmlTemplateHelper.getCreationIds();
-
-    return this.creationIds;
   }
 
   async appendMasterSlide(slideMaster: IMaster): Promise<void> {
@@ -240,11 +266,7 @@ export class Template implements ITemplate {
       }
 
       XmlHelper.sliceCollection(existingSlides, this.existingSlides, 0);
-      XmlHelper.writeXmlToArchive(
-        await this.archive,
-        PptPaths.presentation,
-        xml,
-      );
+      XmlHelper.writeXmlToArchive(this.archive, PptPaths.presentation, xml);
 
       await this.removeSlideRelations(removedRelIds);
 
@@ -263,21 +285,12 @@ export class Template implements ITemplate {
     }
 
     await XmlHelper.removeIf({
-      archive: await this.archive,
+      archive: this.archive,
       file: PptPaths.presentationRels,
       tag: 'Relationship',
       clause: (xml, element) =>
         removedRelIds.includes(element.getAttribute('Id')),
     });
-  }
-
-  async getSlideIdList(): Promise<Document> {
-    const archive = await this.archive;
-    const xml = await XmlHelper.getXmlFromArchive(
-      archive,
-      PptPaths.presentation,
-    );
-    return xml;
   }
 
   async initializeCounter(): Promise<void> {
@@ -295,11 +308,23 @@ export class Template implements ITemplate {
   }
 
   async runExternalGenerator() {
+    const requiresGenerator = this.slides.some(
+      (slide) => slide.getGeneratedElements().length > 0,
+    );
+    if (!requiresGenerator) {
+      return;
+    }
+
+    // Lazy import: pptxgenjs is a heavy dependency that pure
+    // "modify existing pptx" runs never need.
+    const { default: GeneratePptxGenJs } = await import(
+      '../helper/generate/generate-pptxgenjs'
+    );
     this.generator = new GeneratePptxGenJs(this.automizer, this.slides);
     await this.generator.generateSlides();
   }
 
   async cleanupExternalGenerator() {
-    await this.generator.cleanup();
+    await this.generator?.cleanup();
   }
 }

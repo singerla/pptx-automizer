@@ -30,9 +30,22 @@ export default class ArchiveFs extends Archive implements IArchive {
   isActive: boolean;
   isRoot: boolean;
   filename: string;
+  private opened: Promise<this>;
 
   constructor(filename: string, params: ArchiveParams) {
     super(filename, params);
+  }
+
+  /**
+   * Extracts the template and prepares the work dir on first use.
+   * Idempotent; every method touching the extracted files awaits this.
+   */
+  private ensureOpen(): Promise<this> {
+    if (this.archive) {
+      return Promise.resolve(this);
+    }
+    this.opened = this.opened ?? this.initialize();
+    return this.opened;
   }
 
   private async initialize() {
@@ -96,8 +109,9 @@ export default class ArchiveFs extends Archive implements IArchive {
   }
 
   async folder(dir: string): Promise<ArchivedFile[]> {
+    await this.ensureOpen();
     const path = this.getPath(dir);
-    const files = [];
+    const files: ArchivedFile[] = [];
 
     if (!exists(path)) {
       return files;
@@ -117,9 +131,7 @@ export default class ArchiveFs extends Archive implements IArchive {
   }
 
   async read(file: string): Promise<string | Buffer> {
-    if (!this.archive) {
-      await this.initialize();
-    }
+    await this.ensureOpen();
 
     const path = this.getPath(file);
     return await fsPromises.readFile(path);
@@ -133,6 +145,7 @@ export default class ArchiveFs extends Archive implements IArchive {
   }
 
   async write(file: string, data: string | Buffer): Promise<this> {
+    await this.ensureOpen();
     const filename = this.workDir + file;
     ensureDirectoryExistence(filename);
     await fsPromises.writeFile(filename, data);
@@ -140,6 +153,7 @@ export default class ArchiveFs extends Archive implements IArchive {
   }
 
   async remove(file: string): Promise<void> {
+    await this.ensureOpen();
     const path = this.getPath(file);
     if (exists(path)) {
       await fsPromises.unlink(path);
@@ -147,6 +161,7 @@ export default class ArchiveFs extends Archive implements IArchive {
   }
 
   async output(location: string, params: AutomizerParams): Promise<void> {
+    await this.ensureOpen();
     await this.writeBuffer(this);
     this.setOptions(params);
 

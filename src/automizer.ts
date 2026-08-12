@@ -12,7 +12,11 @@ import {
 import { IPresentationProps } from './interfaces/ipresentation-props';
 import { PresTemplate } from './interfaces/pres-template';
 import { RootPresTemplate } from './interfaces/root-pres-template';
-import { Template } from './classes/template';
+import {
+  OutputTemplate,
+  SourceTemplate,
+  Template,
+} from './classes/template';
 import { ModifyXmlCallback, TemplateInfo } from './types/xml-types';
 import { GeneralHelper } from './helper/general-helper';
 import { ConsoleLogger, ILogger, runWithLogger } from './helper/logger';
@@ -137,11 +141,7 @@ export default class Automizer implements IPresentationProps {
       if (typeof file !== 'object') {
         file = this.getLocation(file, 'template');
       }
-      this.rootTemplate = Template.import(
-        file,
-        this.archiveParams,
-        this,
-      ) as RootPresTemplate;
+      this.rootTemplate = new OutputTemplate(file, this.archiveParams, this);
     }
 
     if (params.presTemplates) {
@@ -157,12 +157,7 @@ export default class Automizer implements IPresentationProps {
           ...this.archiveParams,
           name,
         };
-        const newTemplate = Template.import(
-          file,
-          archiveParams,
-        ) as PresTemplate;
-
-        this.templates.push(newTemplate);
+        this.templates.push(new SourceTemplate(file, archiveParams));
       });
     }
   }
@@ -255,10 +250,10 @@ export default class Automizer implements IPresentationProps {
 
     const newTemplate = Template.import(file, importParams, this);
 
-    if (!this.isPresTemplate(newTemplate)) {
-      this.rootTemplate = newTemplate;
-    } else {
+    if (newTemplate instanceof SourceTemplate) {
       this.templates.push(newTemplate);
+    } else {
+      this.rootTemplate = newTemplate;
     }
 
     return this;
@@ -404,17 +399,6 @@ export default class Automizer implements IPresentationProps {
       },
     };
     return info;
-  }
-
-  /**
-   * Determines whether template is root or default template.
-   * @param template
-   * @returns pres template
-   */
-  private isPresTemplate(
-    template: PresTemplate | RootPresTemplate,
-  ): template is PresTemplate {
-    return 'name' in template;
   }
 
   /**

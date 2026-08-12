@@ -1,4 +1,4 @@
-import { Color, TextStyle } from '../types/modify-types';
+import { BulletListContent, Color, TextStyle } from '../types/modify-types';
 import ModifyColorHelper from './modify-color-helper';
 import ModifyXmlHelper from './modify-xml-helper';
 import { XmlElement } from '../types/xml-types';
@@ -83,7 +83,7 @@ export default class ModifyTextHelper {
   };
 
   static setBulletList =
-    (list) =>
+    (list: BulletListContent) =>
     (element: XmlElement): void => {
       const xmlElements = new XmlElements(element);
       xmlElements.addBulletList(list);

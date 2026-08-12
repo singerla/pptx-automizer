@@ -1,4 +1,4 @@
-import Automizer, { read } from '../src/index';
+import Automizer, { ChartInfo, read, XmlDocument, XmlElement } from '../src/index';
 
 test('read chart info from workbook, e.g. series color', async () => {
   const automizer = new Automizer({
@@ -10,14 +10,14 @@ test('read chart info from workbook, e.g. series color', async () => {
     .loadRoot(`RootTemplate.pptx`)
     .load(`ChartBarsStacked.pptx`, 'charts');
 
-  const info = {
+  const info: ChartInfo = {
     series: [],
   };
 
   await pres
     .addSlide('charts', 1, (slide) => {
       slide.modifyElement('BarsStacked', [
-        (ele, chart, workbook) => {
+        (ele: XmlElement, chart?: XmlDocument) => {
           // enable next line to log chart xml to console:
           // XmlHelper.dump(chart)
         },

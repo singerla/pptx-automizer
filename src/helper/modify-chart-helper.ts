@@ -7,11 +7,13 @@ import {
   ChartCategory,
   ChartData,
   ChartElementCoordinateShares,
+  ChartInfo,
   ChartPoint, ChartPointValue,
   ChartSeries,
   ChartSeriesDataLabelAttributes,
   ChartSlot,
   ChartValueStyle,
+  WorkbookData,
 } from '../types/chart-types';
 import ModifyXmlHelper from './modify-xml-helper';
 import { XmlDocument, XmlElement } from '../types/xml-types';
@@ -231,7 +233,7 @@ export default class ModifyChartHelper {
    * See `__tests__/read-chart-data.test.js`
    */
   static readWorkbookData =
-    (data: any): ChartModificationCallback =>
+    (data: WorkbookData): ChartModificationCallback =>
     (element: XmlElement, chart?: XmlDocument, workbook?: Workbook): void => {
       const getSharedString = (index: number): string => {
         return workbook.sharedStrings.getElementsByTagName('si').item(index)
@@ -265,7 +267,7 @@ export default class ModifyChartHelper {
    * See `__tests__/read-chart-data.test.js`
    */
   static readChartInfo =
-    (info: any): ChartModificationCallback =>
+    (info: ChartInfo): ChartModificationCallback =>
     (element: XmlElement, chart?: XmlDocument, _workbook?: Workbook): void => {
       const series = chart.getElementsByTagName('c:ser');
       XmlHelper.modifyCollection(series, (tmpSeries: XmlElement, s: number) => {

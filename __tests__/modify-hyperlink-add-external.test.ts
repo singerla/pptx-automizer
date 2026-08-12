@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as JSZip from 'jszip';
 import { DOMParser } from '@xmldom/xmldom';
-import { modify } from '../src/index';
+import { modify, XmlElement } from '../src/index';
 
 test('Add a new external hyperlink', async () => {
   const automizer = new Automizer({
@@ -23,7 +23,7 @@ test('Add a new external hyperlink', async () => {
     .addSlide('empty', 1, (slide) => {
       // Find a text shape and add a hyperlink to it
       // The EmptySlide template has a text field named "Textfeld 3" instead of "Title"
-      slide.modifyElement('Textfeld 3', (element, relation) => {
+      slide.modifyElement('Textfeld 3', (element: XmlElement, relation?: XmlElement) => {
         // Using the addHyperlink function directly - notice the lowercase "a"
         modify.addHyperlink(newUrl)(element, relation);
       });

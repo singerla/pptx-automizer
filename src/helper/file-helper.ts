@@ -9,6 +9,15 @@ import ArchiveJszip from './archive/archive-jszip';
 import ArchiveFs from './archive/archive-fs';
 import { ContentTypeExtension } from '../enums/content-type-map';
 
+/**
+ * The slice of Slide/Master/Layout/Shape that archive copy helpers need:
+ * the two archives a part is copied between.
+ */
+export type ArchiveCopyContext = {
+  sourceArchive: IArchive;
+  targetArchive: IArchive;
+};
+
 export class FileHelper {
   static importArchive(file: AutomizerFile, params: ArchiveParams): IArchive {
     if (typeof file !== 'object') {
@@ -62,7 +71,7 @@ export class FileHelper {
     return FileHelper.fileExistsInArchive(archive, file);
   }
 
-  static isArchive(archive) {
+  static isArchive(archive: IArchive): void {
     if (archive === undefined) {
       throw new Error('Archive is invalid or empty.');
     }
@@ -73,20 +82,20 @@ export class FileHelper {
   }
 
   static async zipCopyWithRelations(
-    parentClass,
+    context: ArchiveCopyContext,
     type: string,
     sourceNumber: number,
     targetNumber: number,
-  ) {
+  ): Promise<void> {
     const typePlural = type + 's';
     await FileHelper.zipCopyByIndex(
-      parentClass,
+      context,
       `ppt/${typePlural}/${type}`,
       sourceNumber,
       targetNumber,
     );
     await FileHelper.zipCopyByIndex(
-      parentClass,
+      context,
       `ppt/${typePlural}/_rels/${type}`,
       sourceNumber,
       targetNumber,
@@ -95,17 +104,17 @@ export class FileHelper {
   }
 
   static async zipCopyByIndex(
-    parentClass,
-    prefix,
-    sourceId,
-    targetId,
-    suffix?,
+    context: ArchiveCopyContext,
+    prefix: string,
+    sourceId: number | string,
+    targetId: number | string,
+    suffix?: string,
   ): Promise<IArchive> {
     suffix = suffix || '.xml';
     return FileHelper.zipCopy(
-      parentClass.sourceArchive,
+      context.sourceArchive,
       `${prefix}${sourceId}${suffix}`,
-      parentClass.targetArchive,
+      context.targetArchive,
       `${prefix}${targetId}${suffix}`,
     );
   }
@@ -153,7 +162,7 @@ export const makeDir = (dir: string) => {
   }
 };
 
-export const copyDir = async (src, dest) => {
+export const copyDir = async (src: string, dest: string) => {
   await fsPromises.mkdir(dest, { recursive: true });
   const entries = await fsPromises.readdir(src, { withFileTypes: true });
 
@@ -169,10 +178,10 @@ export const copyDir = async (src, dest) => {
   }
 };
 
-export const ensureDirectoryExistence = (filePath) => {
+export const ensureDirectoryExistence = (filePath: string): void => {
   const dirname = path.dirname(filePath);
   if (fs.existsSync(dirname)) {
-    return true;
+    return;
   }
   ensureDirectoryExistence(dirname);
   fs.mkdirSync(dirname);

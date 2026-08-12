@@ -37,10 +37,11 @@ export class ContentTracker {
   constructor() {}
 
   reset(): void {
-    ['files', 'relations'].forEach((section) =>
-      Object.keys(this[section]).forEach((key) => {
-        this[section][key] = [];
-      }),
+    [this.files, this.relations].forEach(
+      (section: Record<string, unknown[]>) =>
+        Object.keys(section).forEach((key) => {
+          section[key] = [];
+        }),
     );
     this.relationTags = contentTrack();
   }
@@ -170,7 +171,7 @@ export class ContentTracker {
     file: string,
     filename: string,
     relationTag: TrackedRelation,
-    relationTagInfo,
+    relationTagInfo: TrackedRelationTag,
   ): Promise<void> {
     const attribute = relationTag.attribute || 'r:id';
 

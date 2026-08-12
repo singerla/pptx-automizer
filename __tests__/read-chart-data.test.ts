@@ -1,4 +1,4 @@
-import Automizer, { read } from '../src/index';
+import Automizer, { read, WorkbookData } from '../src/index';
 
 test('read chart data from workbook', async () => {
   const automizer = new Automizer({
@@ -9,7 +9,7 @@ test('read chart data from workbook', async () => {
   const pres = automizer
     .loadRoot(`RootTemplate.pptx`)
     .load(`ChartBarsStacked.pptx`, 'charts');
-  const data = [];
+  const data: WorkbookData = [];
 
   await pres
     .addSlide('charts', 1, (slide) => {

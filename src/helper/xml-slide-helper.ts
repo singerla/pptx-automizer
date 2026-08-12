@@ -1,4 +1,5 @@
 import { log } from './logger';
+import type { Node } from '@xmldom/xmldom';
 import {
   ElementInfo,
   ElementPosition,
@@ -333,7 +334,6 @@ export class XmlSlideHelper {
         'numberingType',
         'bullet',
         'startAt',
-        'breaks',
       ] as const;
 
       for (const key of propertyKeys) {
@@ -460,7 +460,7 @@ export class XmlSlideHelper {
 
     switch (type) {
       case 'graphicFrame':
-        type = mapUriType[getUri()] || type;
+        type = mapUriType[getUri() as keyof typeof mapUriType] || type;
         break;
       case 'oleObj':
         type = 'OLEObject';
@@ -556,7 +556,7 @@ export class XmlSlideHelper {
           if (node.nodeType !== 1) return false; // Skip non-element nodes
 
           const nodeName =
-            (node as Element).localName || (node as Element).nodeName;
+            (node as XmlElement).localName || (node as XmlElement).nodeName;
           // Skip group property elements
           return (
             !nodeName.includes('nvGrpSpPr') && !nodeName.includes('grpSpPr')

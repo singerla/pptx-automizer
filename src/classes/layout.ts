@@ -38,11 +38,11 @@ export class Layout extends HasShapes implements ILayout {
   async append(targetTemplate: RootPresTemplate): Promise<void> {
     this.targetTemplate = targetTemplate;
 
-    this.targetArchive = await targetTemplate.archive;
+    this.targetArchive = targetTemplate.archive;
     this.targetNumber = targetTemplate.incrementCounter('layouts');
     this.targetPath = PptPaths.slideLayout(this.targetNumber);
     this.targetRelsPath = PptPaths.slideLayoutRels(this.targetNumber);
-    this.sourceArchive = await this.sourceTemplate.archive;
+    this.sourceArchive = this.sourceTemplate.archive;
 
     log.info('Importing slideLayout ' + this.targetNumber);
 

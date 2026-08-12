@@ -8,6 +8,8 @@ import {
   RelationshipAttribute,
   XmlDocument,
   XmlElement,
+  XmlElementCollection,
+  XmlNodeCollection,
 } from '../types/xml-types';
 import { TargetByRelIdMap } from '../constants/constants';
 import { XmlPrettyPrint } from './xml-pretty-print';
@@ -69,11 +71,15 @@ export class XmlHelper {
     );
 
     const newElement = xml.createElement(element.tag);
-    for (const attribute in element.attributes) {
-      const value = element.attributes[attribute];
+    const attributes = (element.attributes || {}) as Record<
+      string,
+      string | number | ((xml: XmlDocument) => string | number)
+    >;
+    for (const attribute in attributes) {
+      const value = attributes[attribute];
       const setValue = typeof value === 'function' ? value(xml) : value;
 
-      newElement.setAttribute(attribute, setValue);
+      newElement.setAttribute(attribute, String(setValue));
     }
 
     element.archive.contentTracker?.trackRelation(
@@ -132,7 +138,7 @@ export class XmlHelper {
   }
 
   static getMaxId(
-    rels: NodeListOf<ChildNode> | HTMLCollectionOf<XmlElement>,
+    rels: XmlNodeCollection | XmlElementCollection,
     attribute: string,
     increment?: boolean,
     minId?: number,
@@ -193,7 +199,7 @@ export class XmlHelper {
     const filename = last(file.split('/'));
 
     let subtype = last(prefix.split('/'));
-    const mapSubtype = {
+    const mapSubtype: Record<string, string> = {
       data: 'diagramData',
     };
     subtype = mapSubtype[subtype] || subtype;
@@ -290,7 +296,7 @@ export class XmlHelper {
     const xml = await XmlHelper.getXmlFromArchive(archive, path);
     const relationshipItems = xml.getElementsByTagName(tag);
 
-    const rels = [];
+    const rels: Target[] = [];
 
     for (const i in relationshipItems) {
       if (relationshipItems[i].getAttribute) {
@@ -302,7 +308,7 @@ export class XmlHelper {
   }
 
   static findByAttribute(
-    xml: XmlDocument | Document,
+    xml: XmlDocument,
     tagName: string,
     attributeName: string,
     attributeValue: string,
@@ -443,7 +449,7 @@ export class XmlHelper {
     return XmlHelper.findByName(slideXml, name, nameIdx);
   }
 
-  static findByName(doc: Document, name: string, nameIdx?: number): XmlElement {
+  static findByName(doc: XmlDocument, name: string, nameIdx?: number): XmlElement {
     const names = doc.getElementsByTagName('p:cNvPr');
     let matchCount = 0;
 
@@ -464,7 +470,7 @@ export class XmlHelper {
     return null;
   }
 
-  static findByCreationId(doc: Document, creationId: string): XmlElement {
+  static findByCreationId(doc: XmlDocument, creationId: string): XmlElement {
     const creationIds = doc.getElementsByTagName('a16:creationId');
 
     for (const i in creationIds) {
@@ -481,7 +487,7 @@ export class XmlHelper {
   }
 
   static findFirstByAttributeValue(
-    nodes: NodeListOf<ChildNode> | HTMLCollectionOf<XmlElement>,
+    nodes: XmlNodeCollection | XmlElementCollection,
     attributeName: string,
     attributeValue: string,
   ): XmlElement {
@@ -498,7 +504,7 @@ export class XmlHelper {
   }
 
   static findByAttributeValue(
-    nodes: NodeListOf<ChildNode> | HTMLCollectionOf<XmlElement>,
+    nodes: XmlNodeCollection | XmlElementCollection,
     attributeName: string,
     attributeValue: string,
   ): XmlElement[] {
@@ -565,7 +571,7 @@ export class XmlHelper {
   }
 
   static appendSharedString(
-    sharedStrings: Document,
+    sharedStrings: XmlDocument,
     stringValue: string,
   ): number {
     const strings = sharedStrings.getElementsByTagName('sst')[0];
@@ -613,11 +619,11 @@ export class XmlHelper {
     return referenceNode.parentNode.insertBefore(
       newNode,
       referenceNode.nextSibling,
-    );
+    ) as XmlElement;
   }
 
   static sliceCollection(
-    collection: HTMLCollectionOf<XmlElement>,
+    collection: XmlElementCollection,
     length: number,
     from?: number,
   ): void {
@@ -687,11 +693,11 @@ export class XmlHelper {
         continue;
       }
       if (rank(existing.nodeName) > childRank) {
-        return parent.insertBefore(child, existing);
+        return parent.insertBefore(child, existing) as XmlElement;
       }
     }
 
-    return parent.appendChild(child);
+    return parent.appendChild(child) as XmlElement;
   }
 
   /**
@@ -775,7 +781,7 @@ export class XmlHelper {
   }
 
   static sortCollection(
-    collection: HTMLCollectionOf<XmlElement>,
+    collection: XmlElementCollection,
     order: number[],
     callback?: ModifyXmlCallback,
   ): void {
@@ -798,7 +804,7 @@ export class XmlHelper {
   }
 
   static modifyCollection(
-    collection: HTMLCollectionOf<XmlElement>,
+    collection: XmlElementCollection,
     callback: ModifyXmlCallback,
   ): void {
     for (let i = 0; i < collection.length; i++) {
@@ -808,7 +814,7 @@ export class XmlHelper {
   }
 
   static async modifyCollectionAsync(
-    collection: HTMLCollectionOf<XmlElement>,
+    collection: XmlElementCollection,
     callback: ModifyXmlCallback,
   ): Promise<void> {
     for (let i = 0; i < collection.length; i++) {
@@ -817,7 +823,7 @@ export class XmlHelper {
     }
   }
 
-  static dump(element: XMLDocument | Element | Node): void {
+  static dump(element: XmlDocument | XmlElement | Node): void {
     const s = new XMLSerializer();
     const xmlBuffer = s.serializeToString(<Node>element);
     const p = new XmlPrettyPrint(xmlBuffer);

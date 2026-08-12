@@ -29,9 +29,9 @@ export default class Archive {
     ) as unknown as XmlDocument;
   }
 
-  serializeXml(XmlDocument: XMLDocument | Node) {
+  serializeXml(xml: XmlDocument | Node) {
     const s = new XMLSerializer();
-    return s.serializeToString(<Node>XmlDocument);
+    return s.serializeToString(<Node>xml);
   }
 
   async writeBuffer(archiveType: ArchiveType) {
@@ -41,7 +41,7 @@ export default class Archive {
     }
   }
 
-  toBuffer(relativePath, content): void {
+  toBuffer(relativePath: string, content: XmlDocument): void {
     const existing = this.fromBuffer(relativePath);
     if (!existing) {
       this.buffer.push({
@@ -61,7 +61,7 @@ export default class Archive {
     }
   }
 
-  fromBuffer(relativePath) {
+  fromBuffer(relativePath: string): ArchivedFile | undefined {
     return this.buffer.find((file) => file.relativePath === relativePath);
   }
 }

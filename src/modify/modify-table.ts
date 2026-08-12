@@ -14,7 +14,7 @@ import {
 } from '../types/modify-types';
 import ModifyTextHelper from '../helper/modify-text-helper';
 import { ModifyColorHelper } from '../index';
-import { XmlDocument, XmlElement } from '../types/xml-types';
+import { XmlDocument, XmlElement, XmlElementCollection } from '../types/xml-types';
 import { GeneralHelper } from '../helper/general-helper';
 
 export class ModifyTable {
@@ -142,7 +142,7 @@ export class ModifyTable {
             modify: ModifyTextHelper.style(style),
           },
           'a:r': {
-            collection: (collection: HTMLCollectionOf<Element>) => {
+            collection: (collection: XmlElementCollection) => {
               XmlHelper.sliceCollection(collection, 1);
             },
           },
@@ -175,10 +175,10 @@ export class ModifyTable {
     return cellProps;
   }
 
-  setCellBorder(style) {
+  setCellBorder(style: TableRowStyle) {
     const borders = GeneralHelper.arrayify<Border>(style.border);
     const sortBorderTags = ['lnB', 'lnT', 'lnR', 'lnL'];
-    const modifications = {};
+    const modifications: ModificationTags = {};
     borders
       .sort((b1, b2) =>
         sortBorderTags.indexOf(b1.tag) < sortBorderTags.indexOf(b2.tag)
@@ -188,7 +188,7 @@ export class ModifyTable {
       .forEach((border) => {
         const tag = 'a:' + border.tag;
 
-        const modifyCell = [];
+        const modifyCell: ModifyCallback[] = [];
 
         if (border.color) {
           modifyCell.push(ModifyColorHelper.solidFill(border.color));
@@ -217,7 +217,7 @@ export class ModifyTable {
     return {
       children: {
         [tag]: {
-          collection: (collection: HTMLCollectionOf<XmlElement>) => {
+          collection: (collection: XmlElementCollection) => {
             XmlHelper.sliceCollection(collection, length);
           },
         },
@@ -368,7 +368,7 @@ export class ModifyTable {
   };
 
   getExpandCellClone(
-    columns: HTMLCollectionOf<XmlElement>,
+    columns: XmlElementCollection,
     sourceCell: XmlElement,
     colId: number,
   ): XmlElement {

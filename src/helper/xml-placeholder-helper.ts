@@ -116,7 +116,7 @@ export default class XmlPlaceholderHelper {
    */
   public handleForceAssignmentPlaceholders(forceAssignPhTypes: string[]): void {
     const mappingResult = this.mappingResult;
-    const usedElements = [];
+    const usedElements: ElementInfo[] = [];
 
     forceAssignPhTypes.forEach((phType) => {
       // Find unassigned target placeholders of this type
@@ -138,7 +138,7 @@ export default class XmlPlaceholderHelper {
 
       unassignedTargetPlaceholders.forEach((ph) => {
         const targetTypes = this.mapCandidates[ph.type];
-        const candidateElements = [];
+        const candidateElements: EnrichedElementInfo[] = [];
 
         targetTypes.forEach((targetType) => {
           candidateElements.push(...(elementsGroups[targetType] || []));
@@ -196,9 +196,9 @@ export default class XmlPlaceholderHelper {
   private findClosestCandidate(
     ph: PlaceholderInfo,
     candidateElements: EnrichedElementInfo[],
-  ) {
+  ): EnrichedElementInfo | null {
     let highestScore = 0;
-    let bestCandidate = null;
+    let bestCandidate: EnrichedElementInfo | null = null;
     candidateElements.forEach((ele) => {
       const closestShapeScore = XmlPlaceholderHelper.calculateDistanceScore(
         ele.position,
@@ -268,7 +268,7 @@ export default class XmlPlaceholderHelper {
       cy: 1000000,
     };
 
-    const callback = (element) => {
+    const callback = (element: XmlElement) => {
       XmlPlaceholderHelper.removePlaceholder(element, fallbackPosition);
     };
     this.postApplyModification(element, callback);
@@ -435,8 +435,11 @@ export default class XmlPlaceholderHelper {
     ph: XmlElement,
     layoutPlaceholder: PlaceholderInfo,
   ) {
-    if (layoutPlaceholder[tag]) {
-      ph.setAttribute(tag, String(layoutPlaceholder[tag]));
+    const value = (layoutPlaceholder as unknown as Record<string, unknown>)[
+      tag
+    ];
+    if (value) {
+      ph.setAttribute(tag, String(value));
     } else {
       ph.removeAttribute(tag);
     }
@@ -591,7 +594,7 @@ export default class XmlPlaceholderHelper {
       });
 
       // Create enriched elements with rankings
-      groupedByType[shapeType as ElementInfo['type']] = elementsOfType.map(
+      groupedByType[shapeType as ElementInfo['visualType']] = elementsOfType.map(
         (element) => {
           const elementKey =
             element.creationId || element.name + element.nameIdx;

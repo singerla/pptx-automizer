@@ -118,32 +118,42 @@ concerns. It's where most future features will land, so pay this debt first.
   code this test crashes with `Could not find file ppt/charts/chart1.xml@RootTemplate.pptx`
   — instance B tripping over instance A's tracked relations.
 
-## Phase 4 — Template & archive layer clarity
+## Phase 4 — Template & archive layer clarity — ✅ done 2026-08-11
 
-- 🏗 `Template` plays two roles decided by whether `params.name` is set
-  (`Template.import`), then casts to `PresTemplate` or `RootPresTemplate`.
-  `isPresTemplate` tests `'name' in template`. Split into two classes
-  (`SourceTemplate`, `OutputTemplate` extends shared base) and delete the casts —
-  half the fields on `Template` are `undefined` in one of the roles today.
-- 🏗 `template.archive` is typed `IArchive` but is `await`ed all over
-  (`await this.archive`) as if it were a promise — it isn't; initialization is
-  lazy inside `ArchiveJszip.read`. Make initialization explicit
-  (`async open()`), type honestly, drop the fake awaits.
-- 🏗 `Template.file: any`, `zipCopyWithRelations(parentClass, …)` untyped
-  "parentClass" params, 13 `: any` — tighten while touching these files.
-- 🔧 Turn on `strict` incrementally: start with `noImplicitAny` +
-  `strictBindCallApply`, then `strictNullChecks` (the big one — the pipeline has
-  many "returns undefined on failure" paths that Phase 1 converts to throws,
-  which makes strictNullChecks feasible).
-- 🔧 Modernize the build: `"lib": ["es2020","dom"]` pulls browser DOM types into
-  a Node library and shadows xmldom types (e.g. `XMLDocument` in `slide.ts` is the
-  browser type). Remove `dom`, use xmldom's types consistently. Consider dual
-  CJS+ESM output (tsup or tsc twice + `exports` map) — CJS-only is increasingly
-  painful for consumers.
-- 🏗 Consider making `pptxgenjs` an **optional peer dependency**, lazily imported
-  by the generator bridge. It's a heavy dependency that pure "modify existing
-  pptx" users never need. (`runExternalGenerator` currently instantiates the
-  bridge unconditionally on every write.)
+- 🏗 ✅ `Template` split into `SourceTemplate` and `OutputTemplate` extending a
+  shared abstract `Template` base. `Template.import` stays as the factory and
+  returns the concrete union; all `as PresTemplate`/`as RootPresTemplate` casts
+  and the `'name' in template` check (`isPresTemplate`) are gone.
+  `ITemplate.file` is typed `AutomizerFile` (was the wrong `ArchiveInput`).
+- 🏗 ✅ Archive initialization is a private idempotent `ensureOpen()` awaited by
+  every method that needs the loaded archive (also covers `write`/`folder`/
+  `output` being called first — a latent gap in `ArchiveFs`). All
+  `await x.archive` pseudo-awaits removed; `extract()`-created instances with a
+  preloaded inner archive short-circuit the guard.
+- 🏗 ✅ `zipCopyWithRelations`/`zipCopyByIndex` take a typed
+  `ArchiveCopyContext` instead of an untyped "parentClass"; `Archive` buffer
+  methods and the remaining loose helpers annotated.
+- 🔧 ✅ `noImplicitAny` + `strictBindCallApply` are on (tsconfig). Genuine
+  catches: `groupElements` indexed `GroupedByType` with `ElementInfo['type']`
+  instead of `['visualType']`; a dead `'breaks'` key in
+  `groupSimilarParagraphs`; `SlidePlaceholder.id` declared `number` but always
+  a string. `read.readWorkbookData`/`readChartInfo` gained typed accumulators
+  (exported `WorkbookData`/`ChartInfo`); `setBulletList` content is the
+  exported `BulletListContent`.
+  ⏳ `strictNullChecks` deferred: ~424 errors as of 2026-08-11 — its own
+  phase-sized chore, best tackled file-by-file with `// @ts-expect-error`-free
+  boundaries.
+- 🔧 ✅ `dom` removed from `lib`; `XmlDocument`/`XmlElement` alias
+  `@xmldom/xmldom`'s `Document`/`Element`, plus new `XmlElementCollection`/
+  `XmlNodeCollection` aliases replacing `HTMLCollectionOf`/`NodeListOf`.
+  Published `.d.ts` reference `@xmldom/xmldom` (a runtime dependency).
+  ⏳ Dual CJS+ESM output deferred — packaging change, do it as a release of
+  its own.
+- 🏗 ✅ The pptxgenjs generator bridge is dynamically imported and only when at
+  least one slide has `generate()` elements; a modify-only run never loads
+  pptxgenjs (verified against the compiled output). ⏳ Making pptxgenjs an
+  **optional peer dependency** deferred — breaking packaging change; the lazy
+  import already removes the runtime cost.
 
 ## Phase 5 — Testing strategy (four tiers)
 
@@ -584,6 +594,76 @@ nesting anywhere. All HTML hierarchy must be *projected* onto this:
 Open scoping question: **where does the HTML come from** (CKEditor/TinyMCE
 output vs. arbitrary user HTML vs. an own generator)? That decides how defensive
 the parser must be and which CSS subset is worth supporting.
+
+---
+
+## Bug track — chart data-point styling creates `<c:dPt>` that erase line charts
+
+Audit date: 2026-08-12. Found while investigating an ensemblio report where all
+lines of a 9-series line chart disappeared. Independent of the refactor phases;
+the behaviour is old (`XmlElements.dataPoint()` dates back to 2021) and
+reproduces identically on `0.8.2` and on the current refactor branch — so this
+is a genuine library bug, not refactor fallout.
+
+**Symptom.** Every data point of every series gets a fabricated
+
+```xml
+<c:dPt><c:idx val="0"/><c:spPr>
+  <a:solidFill><a:srgbClr val="CCCCCC"/></a:solidFill>
+  <a:ln><a:noFill/></a:ln>
+  <a:effectLst/>
+</c:spPr></c:dPt>
+```
+
+On a bar/pie chart that only turns the points grey; on a **line** chart
+`<a:ln><a:noFill/>` per point removes the line segments, and the chart renders
+as data labels floating in empty space.
+
+**Cause chain.**
+
+1. `ModifyChart.chartPoint()` (`modify/modify-chart.ts`) decides "this point is
+   styled" from *key presence* — `if (!style?.color && !style?.border &&
+   !style?.marker) return;`. A caller-supplied `{ marker: { color: undefined } }`
+   (or `{ color: { value } }` without `type`) is truthy, so a `c:dPt`
+   modification is emitted although none of `chartPointFill/Border/Marker`
+   yields an applicable tag.
+2. `ModifyXmlHelper.assertElement` finds no `c:dPt` and calls
+   `XmlElements.dataPoint()`, which appends `idx` + a **default** `spPr` from
+   `XmlElements.spPr()` — grey `solidFill`, `a:ln` `noFill`, `effectLst`. A
+   data point that carries no explicit style should inherit the series
+   formatting, so fabricating one is wrong regardless of chart type.
+3. `chartPointMarker` targets a `c:marker` *inside* the new `c:dPt`;
+   `ModifyXmlHelper.createElement` does not handle that tag, so the
+   modification is silently dropped and the point keeps the pure default.
+
+**Fixes.**
+
+1. `chartPoint()`: build the child tags first and return `undefined` when
+   `chartPointFill`/`chartPointBorder`/`chartPointMarker` all produced nothing,
+   instead of testing key presence. No empty style may reach the XML layer.
+2. `XmlElements.dataPoint()`: create the `c:dPt` **empty** (`c:idx` only, plus
+   `c:bubble3D` for schema order) and let the actual modifications add `c:spPr`
+   via the existing `createElement('c:spPr')` path. Nothing should be styled
+   that the caller did not ask for.
+3. `chartPointMarker`: either support creating `c:marker` inside a `c:dPt`
+   (`XmlElements.marker()` + a `createElement` case) or document that per-point
+   marker styling is unsupported and drop the tag — today it is a silent no-op
+   whose only effect is bug 2.
+4. `Modification.isRequired: false` currently only suppresses a (commented-out)
+   warning; `assertElement` creates the element either way. Make it actually
+   mean "modify if present, never create" — `seriesStyle()` already passes it
+   for `c:marker`/`c:spPr` in that intent.
+
+**Guard.** Tier-0 assertion (Phase 5): modify a line chart with per-point styles
+and assert no `c:ser` gains a `c:dPt` containing `<a:ln><a:noFill/>` unless the
+caller asked for it; plus a tier-3 golden deck for a multi-series line chart,
+which is exactly the failure mode a pixel diff catches and an XML diff hides.
+
+**Related, already fixed.** `ModifyColorHelper.normalizeColorObject` used to
+throw a `TypeError` on a `Color` without `value` (`color.value.indexOf`), which
+aborted `setPointStyles` after the first point. Phase 1's hardening removed the
+crash — but that means such a style now silently reaches *all* points instead of
+one. Worth a CHANGELOG note when the refactor is published.
 
 ---
 

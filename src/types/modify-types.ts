@@ -1,10 +1,10 @@
-import { XmlElement } from './xml-types';
+import { XmlElement, XmlElementCollection } from './xml-types';
 
 export type ModifyCallback = {
-  (element: XmlElement);
+  (element: XmlElement): void;
 };
 export type ModifyCollectionCallback = {
-  (collection: HTMLCollectionOf<XmlElement>);
+  (collection: XmlElementCollection): void;
 };
 /**
  * A Modification is applied to xml elements by ModificationTags.
@@ -31,6 +31,12 @@ export type Modification = {
 export type ModificationTags = {
   [tag: string]: Modification;
 };
+/**
+ * Content for a bulleted list: items are stringified; a nested array
+ * increases the indentation level of its items.
+ */
+export type BulletListContent = (string | number | BulletListContent)[];
+
 export type Color = {
   type?: 'schemeClr' | 'srgbClr';
   value: string;

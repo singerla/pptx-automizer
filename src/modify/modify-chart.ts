@@ -21,7 +21,7 @@ import { Workbook } from '../types/types';
 import ModifyXmlHelper from '../helper/modify-xml-helper';
 import ModifyTextHelper from '../helper/modify-text-helper';
 import ModifyColorHelper from '../helper/modify-color-helper';
-import { XmlDocument, XmlElement } from '../types/xml-types';
+import { XmlDocument, XmlElement, XmlElementCollection } from '../types/xml-types';
 import { modify } from '../index';
 import ModifyChartHelper from '../helper/modify-chart-helper';
 
@@ -115,16 +115,21 @@ export class ModifyChart {
         );
       };
 
+      const slotHandler =
+        slot.type !== undefined
+          ? (this as unknown as Record<string, unknown>)[slot.type]
+          : undefined;
       const chartCb =
-        slot.type !== undefined &&
-        this[slot.type] !== undefined &&
-        typeof this[slot.type] === 'function'
+        typeof slotHandler === 'function'
           ? (
               point: number | null | ChartPoint | ChartBubble,
               r: number,
               category: ChartCategory,
             ): ModificationTags => {
-              return this[slot.type](
+              return (
+                slotHandler as (...args: unknown[]) => ModificationTags
+              ).call(
+                this,
                 r,
                 targetCol,
                 point,
@@ -166,7 +171,7 @@ export class ModifyChart {
     });
   }
 
-  setValuesByCategory(cb): void {
+  setValuesByCategory(cb: (col: ChartColumn) => ModificationTags): void {
     this.data.categories.forEach((category, c) => {
       this.columns
         .filter((col) => col.chart)
@@ -259,7 +264,7 @@ export class ModifyChart {
     this.columns
       .filter((column) => column.modTags)
       .forEach((column) => {
-        const sliceMod = {};
+        const sliceMod: ModificationTags = {};
 
         Object.keys(column.modTags).forEach((tag) => {
           sliceMod[tag] = this.slice('c:pt', this.height);
@@ -276,7 +281,7 @@ export class ModifyChart {
     this.columns
       .filter((column) => column.modTags)
       .forEach((column) => {
-        const sliceMod = {};
+        const sliceMod: ModificationTags = {};
 
         Object.keys(column.modTags).forEach((tag) => {
           sliceMod[tag] = this.slice('cx:pt', this.height);
@@ -557,7 +562,10 @@ export class ModifyChart {
     };
   };
 
-  seriesDataLabel = (s, style: ChartValueStyle['label']): ModificationTags => {
+  seriesDataLabel = (
+    s: number,
+    style: ChartValueStyle['label'],
+  ): ModificationTags => {
     return {
       'c:dLbls': {
         isRequired: false,
@@ -750,7 +758,7 @@ export class ModifyChart {
     return {
       children: {
         [tag]: {
-          collection: (collection: HTMLCollectionOf<Element>) => {
+          collection: (collection: XmlElementCollection) => {
             XmlHelper.sliceCollection(collection, length);
           },
         },

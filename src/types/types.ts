@@ -9,7 +9,7 @@ import {
 } from './xml-types';
 import IArchive, { ArchiveMode } from '../interfaces/iarchive';
 import { ContentTypeExtension } from '../enums/content-type-map';
-import PptxGenJS from 'pptxgenjs';
+import type PptxGenJS from 'pptxgenjs';
 import { ILogger, Verbosity } from '../helper/logger';
 import { IPptxGenJSSlide } from '../interfaces/ipptxgenjs-slide';
 import { ShapeActionMode } from '../interfaces/ishape-action';
@@ -23,7 +23,8 @@ export type SlideModificationCallback = (document: XmlDocument, parent?: HasShap
 export type SlidePlaceholder = {
   xml: XmlElement;
   type: string;
-  id?: number;
+  /** Value of the ph 'id' attribute; has always been the raw attribute string. */
+  id?: string;
 };
 export type ModificationCallback =
   | ChartModificationCallback

@@ -208,7 +208,7 @@ export class ElementImporter {
         ? PptPaths.slideMasterRels(slideNumber)
         : PptPaths.slideRels(slideNumber);
 
-    const sourceArchive = await template.archive;
+    const sourceArchive = template.archive;
     const useCreationIds =
       template.useCreationIds === true && template.creationIds !== undefined;
 
