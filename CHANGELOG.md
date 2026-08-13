@@ -4,7 +4,34 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 semver, with the pre-1.0 convention that **breaking changes bump the minor**.
 
-## [Unreleased] — targeting 0.9.0
+## [Unreleased]
+
+### Added
+
+- `ModifyPresentationHelper`, `XmlSlideHelper`, `XmlRelationshipHelper` and the
+  `FindElementSelector` type are exported from the package root. The README
+  documented imports for them (`pptx-automizer/src/...`, `./helper/...`,
+  `./types/types`) that no npm consumer could actually resolve — only `dist/`
+  ships.
+- Every fenced ```ts example in `README.md` and `AI-INSTRUCTOR.md` is compiled
+  against the current source on every `yarn test`
+  (`__tests__/docs-examples.test.ts`, ROADMAP Phase 6.1) — documented API drift
+  now fails CI.
+- `yarn docs:api` generates the typedoc API reference into `website/docs/api`
+  (gitignored).
+
+### Fixed
+
+- Documentation only — examples that documented APIs which never existed:
+  `replaceText` has no regex/whole-word/case options (its options are the
+  `openingTag`/`closingTag` tag delimiters, default `{{`/`}}`);
+  `ModifyShapeHelper.setSolidFill` takes no color argument (it sets theme color
+  accent6); `ModifyCleanupHelper.clearTextColor` must be wrapped in a callback
+  (passed bare, the relationship element lands in its `color` parameter);
+  table `expand.mode` is `'column'`, not `'col'`; `dLblPos` takes the
+  `LabelPosition` enum. Added a "Deferred execution" section to the README.
+
+## [0.9.0] — 2026-08-12
 
 The architecture audit of `ROADMAP.md` (Phases 0–5). Consumers should read
 **Breaking changes** before upgrading: the `modify.*` call signatures are

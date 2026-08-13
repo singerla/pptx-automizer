@@ -191,7 +191,7 @@ import { CmToDxa } from 'pptx-automizer';
 modify.setPosition({ x: CmToDxa(2), y: CmToDxa(1), w: CmToDxa(10), h: CmToDxa(5) });
 modify.updatePosition({ x: CmToDxa(1) });   // only given props, relative-safe
 modify.rotateShape(45);
-modify.setSolidFill({ type: 'srgbClr', value: '00FF00' });
+modify.setSolidFill; // no-argument callback: sets the fill to theme color accent6
 
 // Outline/border of a shape: width (EMU, 1pt = 12700), color, dash style.
 // Only given props are touched; an a:ln is created if the shape has none.

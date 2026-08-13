@@ -397,24 +397,42 @@ for `AI-INSTRUCTOR.md` ("update it in the same PR as any `modify.*` change") is
 unenforced human discipline, and a stale AI instructor is worse than none — it
 teaches wrong APIs authoritatively.
 
-### 6.1 Kill documentation drift first (before any website)
+### 6.1 Kill documentation drift first (before any website) — ✅ done 2026-08-13
 
 Highest leverage in the phase, and independent of everything below.
 
-- 🧪 **Compile every documented example in CI.** Add
-  `__tests__/docs-examples.test.ts`: extract all fenced ` ```ts ` blocks from
-  `README.md`, `docs/**/*.md` and `AI-INSTRUCTOR.md`, wrap each in a synthetic
-  module, and typecheck the batch with the TS compiler API. Blocks that are
-  deliberately partial get ` ```ts ignore `. This turns 126 prose snippets into
-  tests and fixes drift for both audiences with one mechanism.
-- 🔧 **`typedoc.json` writes into `docs/`**, which is not gitignored and is
-  exactly where the docs-site sources want to live. Change `out` to
-  `website/docs/api` (generated, gitignored) before the split starts.
-- 🔧 Add scripts: `docs:api` (typedoc), `docs:build`, `docs:serve`.
-- 📖 **Document the deferred-execution model explicitly** — the single biggest
-  user surprise: callbacks run at `write()`, not at `addSlide()`. It belongs in
-  the concepts page, restated in the intro of every modifier page (redundancy is
-  correct here — see the principle above), and in the rules list.
+- 🧪 ✅ **Compile every documented example in CI** —
+  `__tests__/docs-examples.test.ts` extracts all fenced ` ```ts ` blocks from
+  `README.md`, `AI-INSTRUCTOR.md` and `docs/**/*.md`, wraps each in a synthetic
+  module (`export {};` prefix — block-local scope + top-level await) and
+  typechecks the batch in **one** TS program, so src's type graph is built once
+  (~2 s inside the normal `yarn test`). Deliberately partial blocks opt out via
+  ` ```ts ignore ` — currently **zero** need it: the docs' conventional context
+  names (`pres`, `slide`, `modify`, the `Modify*Helper` classes, …) are ambient
+  globals in `__tests__/helpers/docs-example-context.d.ts`, typed straight from
+  src, and snippet-local declarations shadow them. Baseline: 73 blocks, 12 were
+  broken. Genuine drift fixed: `replaceText` documented a fictional
+  regex/whole-word/case API; `setSolidFill` documented a color argument it
+  never had (both README and AI-INSTRUCTOR); `ModifyCleanupHelper.clearTextColor`
+  was shown bare in a callback array, where the `relation` element lands in its
+  `color` parameter at runtime; `expand.mode: 'col'` vs `'column'`;
+  `dLblPos: 'outEnd'` vs the `LabelPosition` enum; internal import paths
+  (`./types/types`, `./helper/modify-presentation-helper`,
+  `pptx-automizer/src/...`) that resolve for no npm consumer. The last class is
+  fixed properly: `ModifyPresentationHelper`, `XmlSlideHelper`,
+  `XmlRelationshipHelper` and `FindElementSelector` are now exported from
+  `src/index.ts` (additive).
+- 🔧 ✅ `typedoc.json` `out` → `website/docs/api` (gitignored); first actual
+  typedoc run works (0 errors, 51 warnings about unexported referenced types —
+  a cleanup candidate for 6.3).
+- 🔧 ✅ Script `docs:api` (typedoc) added; `docs:build`/`docs:serve` deferred to
+  6.3 — they need the Docusaurus scaffold to exist.
+- 📖 ✅ **Deferred-execution model documented** where users look today: new
+  "Deferred execution" section in README (before the basic example);
+  AI-INSTRUCTOR already taught it ("Key rule" in the mental model). Restating it
+  on every modifier page happens with the 6.2 split. Also fixed stale AGENTS.md
+  claims while there: callback errors reject `write()` since Phase 1 (not
+  "swallowed"), CI exists, tier 2 catches schema-order bugs.
 
 ### 6.2 Split the README
 
@@ -504,7 +522,8 @@ serving other things from the same box.
 
 ### Rollout order
 
-1. 6.1 — docs-example test + typedoc `out` fix. Standalone value, no site needed.
+1. ✅ 6.1 — docs-example test + typedoc `out` fix. Standalone value, no site
+   needed. Done 2026-08-13.
 2. 6.2 — README split, page by page, example test green throughout.
 3. 6.3 — Docusaurus + typedoc, deployed to **GitHub Pages only** first. Prove the
    pipeline on the zero-ops target.

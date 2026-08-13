@@ -4,6 +4,10 @@ pptx/
 out/
 dist/
 
+### Docs
+# generated API reference (yarn docs:api); the docs corpus itself is committed
+website/docs/api/
+
 ### Editor
 workspace.code-workspace
 .idea

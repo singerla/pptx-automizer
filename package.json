@@ -18,6 +18,7 @@
     "test": "npx jest",
     "test-coverage": "npx jest --coverage",
     "test:visual": "npx jest --config jest.visual.config.ts",
+    "docs:api": "typedoc",
     "validate:pptx": "docker build -q -t pptx-validator tools/validate-pptx && docker run --rm -v \"$PWD:/repo:ro\" pptx-validator --allowlist /repo/tools/validate-pptx/allowlist.json /repo/__tests__/pptx-templates /repo/__tests__/pptx-output",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
