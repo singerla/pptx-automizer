@@ -417,13 +417,21 @@ export default class XmlElements {
   }
 
   /**
-   * A minimal <c:dPt> shell: `c:idx` plus `c:bubble3D` (which PowerPoint
-   * always writes) and nothing else. A data point carries no formatting the
-   * caller did not ask for — modifications create `c:spPr` etc. on demand.
+   * A minimal <c:dPt> shell: `c:idx`, `c:invertIfNegative` and `c:bubble3D`
+   * (which PowerPoint always writes) and nothing else. A data point carries
+   * no formatting the caller did not ask for — modifications create `c:spPr`
+   * etc. on demand. `c:invertIfNegative` must be written explicitly: OOXML
+   * defaults the absent element to *true*, which makes PowerPoint invert the
+   * fill of negative-value bars (white with a border) — silently overriding
+   * the very fill the caller styled the point for. LibreOffice ignores the
+   * flag, so pixel-based golden decks cannot catch this.
    */
   buildDataPoint(): XmlElement {
     const dPt = this.document.createElement('c:dPt');
     dPt.appendChild(this.idx());
+    const invertIfNegative = this.document.createElement('c:invertIfNegative');
+    invertIfNegative.setAttribute('val', '0');
+    dPt.appendChild(invertIfNegative);
     const bubble3D = this.document.createElement('c:bubble3D');
     bubble3D.setAttribute('val', '0');
     dPt.appendChild(bubble3D);

@@ -44,6 +44,14 @@ semver, with the pre-1.0 convention that **breaking changes bump the minor**.
   styles on template-less points now materialize as a bare `<a:ln>` in schema
   position instead of silently relying on the fabricated default (per-point
   *marker* styling remains modify-if-present).
+- A created `<c:dPt>` now pins `<c:invertIfNegative val="0"/>`. OOXML
+  defaults the absent element to *true*, so PowerPoint inverted the fill of
+  negative-value **bar** points — rendering them white with a border and
+  silently overriding the very fill the point was styled for. The pre-0.9.0
+  code never hit this because it cloned the template's existing data point
+  (inheriting its `invertIfNegative`); the empty-shell creation lost the flag.
+  LibreOffice ignores `invertIfNegative`, which is why the tier-3 golden
+  decks could not catch it.
 - Documentation only — examples that documented APIs which never existed:
   `replaceText` has no regex/whole-word/case options (its options are the
   `openingTag`/`closingTag` tag delimiters, default `{{`/`}}`);

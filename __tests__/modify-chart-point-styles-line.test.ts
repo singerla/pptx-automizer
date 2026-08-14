@@ -36,6 +36,13 @@ const dataPointsOf = (ser: XmlElement) =>
   Array.from(ser.getElementsByTagName('c:dPt')).map((dPt) => ({
     idx: dPt.getElementsByTagName('c:idx')[0].getAttribute('val'),
     color: dPt.getElementsByTagName('a:srgbClr')[0]?.getAttribute('val'),
+    // OOXML defaults an absent c:invertIfNegative to *true*: PowerPoint then
+    // inverts the fill of negative-value bars (white with a border),
+    // overriding the styled color — and LibreOffice ignores the flag, so the
+    // tier-3 golden decks cannot see it. A created c:dPt must pin it to 0.
+    invertIfNegative: dPt
+      .getElementsByTagName('c:invertIfNegative')[0]
+      ?.getAttribute('val'),
   }));
 
 test('per-point styles on a line chart create no c:dPt beyond the explicitly styled points', async () => {
@@ -121,7 +128,9 @@ test('per-point styles on a line chart create no c:dPt beyond the explicitly sty
 
   // Only the real style at category 1 materializes; the pseudo-styles at
   // categories 2 and 3 produce no c:dPt — not even an empty shell.
-  expect(dataPointsOf(series[0])).toEqual([{ idx: '1', color: 'FF0000' }]);
+  expect(dataPointsOf(series[0])).toEqual([
+    { idx: '1', color: 'FF0000', invertIfNegative: '0' },
+  ]);
   expect(dataPointsOf(series[1])).toEqual([]);
   expect(dataPointsOf(series[2])).toEqual([]);
 
