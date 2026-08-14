@@ -75,6 +75,8 @@ export class Master extends HasShapes implements IMaster {
     await this.checkIntegrity(info, assert);
 
     await this.cleanSlide(this.targetPath);
+
+    await this.flushTargetXml();
   }
 
   async copyRelatedLayouts(): Promise<Target[]> {

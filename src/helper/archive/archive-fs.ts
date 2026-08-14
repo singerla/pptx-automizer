@@ -207,6 +207,10 @@ export default class ArchiveFs extends Archive implements IArchive {
     this.toBuffer(file, XmlDocument);
   }
 
+  async flushXml(file: string): Promise<void> {
+    await this.flushBuffered(this, file);
+  }
+
   /**
    * Used for worksheets only
    **/

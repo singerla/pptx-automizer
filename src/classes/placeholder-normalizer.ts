@@ -125,22 +125,21 @@ export class PlaceholderNormalizer {
    */
   private removeUnsupportedTags(xml: XmlDocument): void {
     this.host.unsupportedTags.forEach((tag) => {
-      const drop = xml.getElementsByTagName(tag);
-      const length = drop.length;
-      if (length && length > 0) {
+      const drop = XmlHelper.collectionToArray(xml.getElementsByTagName(tag));
+      if (drop.length > 0) {
         log.debug('Cleaning unsupported tag ' + tag);
 
         // First get parent elements before removing
-        const parents: XmlElement[] = [];
-        for (let i = 0; i < drop.length; i++) {
-          const parent = drop[i].parentNode as XmlElement | null;
-          if (parent && !parents.includes(parent)) {
-            parents.push(parent);
+        const parents = new Set<XmlElement>();
+        for (const item of drop) {
+          const parent = item.parentNode as XmlElement | null;
+          if (parent) {
+            parents.add(parent);
           }
         }
 
         // Remove the unsupported tags
-        XmlHelper.sliceCollection(drop, 0);
+        drop.forEach((item) => XmlHelper.remove(item));
 
         // Check each parent and remove it if it has no children left
         // but never remove <p:nvPr/>

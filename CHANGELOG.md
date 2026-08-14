@@ -29,6 +29,35 @@ semver, with the pre-1.0 convention that **breaking changes bump the minor**.
   condensed cheat sheet. A test fails `yarn test` whenever the committed file
   drifts from the docs it is built from.
 
+### Changed
+
+- **Memory no longer grows with deck size** (ROADMAP performance track).
+  Every appended slide, master and layout (plus its rels and notesSlide) is
+  serialized back into the archive and its parsed DOM dropped from the
+  buffer as the last step of its append — previously every part's xmldom
+  document (~25× the XML source size) stayed live until `write()`, which on
+  large decks meant GC thrash and eventually `FATAL ERROR: Reached heap
+  limit`. Measured on a synthetic 600-shapes-per-slide deck: 60 slides
+  566 MB → 54 MB heap; a 400-slide run under `--max-old-space-size=900`
+  used to die at ~slide 365 and now finishes with 149 MB. Guarded by
+  `__tests__/memory-bounded-large-deck.test.ts`. Two internal surfaces
+  moved with this: `IArchive` gained `flushXml(file)`, and the archive
+  `buffer` is a `Map<string, ArchivedFile>` (was an array with a linear
+  scan per `readXml`/`writeXml` — O(n²) in part count). Writing XML for an
+  already-buffered path now *replaces* the buffered document (last write
+  wins); before, the first buffered DOM silently won.
+- `@xmldom/xmldom`'s SAX parser compiles a fresh RegExp for every closing
+  tag it parses (~19 % of total runtime on parse-heavy runs, upstream issue
+  in 0.9.10). A guarded runtime patch memoizes the grammar's RegExp
+  compilation — ~20 % end-to-end speedup on template-heavy workloads; a
+  no-op if a future xmldom version blocks or fixes it.
+- `XmlHelper.sliceCollection`/`modifyCollection` snapshot xmldom's live
+  node lists before iterating. Besides removing superlinear re-walks of the
+  document (visible as ever-slower `Cleaning unsupported tag` steps on
+  large slides), this fixes the iteration semantics when a callback removes
+  elements: placeholder normalization previously skipped the element
+  following each removed one.
+
 ### Fixed
 
 - Chart per-point styling (`setChartData` with `categories[].styles`) no

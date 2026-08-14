@@ -622,20 +622,32 @@ export class XmlHelper {
     ) as XmlElement;
   }
 
+  /**
+   * Copies a node collection into a plain array. xmldom's LiveNodeList
+   * re-walks the entire document on `.length` access after a mutation,
+   * while indexed access returns entries from before it — snapshot before
+   * iterating whenever the loop (or its callback) mutates the tree.
+   */
+  static collectionToArray(
+    collection: XmlElementCollection | XmlNodeCollection,
+  ): XmlElement[] {
+    const items: XmlElement[] = [];
+    const length = collection.length;
+    for (let i = 0; i < length; i++) {
+      items.push(collection[i] as XmlElement);
+    }
+    return items;
+  }
+
   static sliceCollection(
     collection: XmlElementCollection,
     length: number,
     from?: number,
   ): void {
-    if (from !== undefined) {
-      for (let i = from; i < length; i++) {
-        XmlHelper.remove(collection[i]);
-      }
-    } else {
-      for (let i = collection.length; i > length; i--) {
-        XmlHelper.remove(collection[i - 1]);
-      }
-    }
+    const items = XmlHelper.collectionToArray(collection);
+    const removeItems =
+      from !== undefined ? items.slice(from, length) : items.slice(length);
+    removeItems.forEach((item) => XmlHelper.remove(item));
   }
 
   /**
@@ -807,9 +819,9 @@ export class XmlHelper {
     collection: XmlElementCollection,
     callback: ModifyXmlCallback,
   ): void {
-    for (let i = 0; i < collection.length; i++) {
-      const item = collection[i];
-      callback(item, i);
+    const items = XmlHelper.collectionToArray(collection);
+    for (let i = 0; i < items.length; i++) {
+      callback(items[i], i);
     }
   }
 
@@ -817,9 +829,9 @@ export class XmlHelper {
     collection: XmlElementCollection,
     callback: ModifyXmlCallback,
   ): Promise<void> {
-    for (let i = 0; i < collection.length; i++) {
-      const item = collection[i];
-      await callback(item, i);
+    const items = XmlHelper.collectionToArray(collection);
+    for (let i = 0; i < items.length; i++) {
+      await callback(items[i], i);
     }
   }
 

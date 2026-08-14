@@ -172,4 +172,8 @@ export default class ArchiveJszip extends Archive implements IArchive {
   writeXml(file: string, XmlDocument: XmlDocument): void {
     this.toBuffer(file, XmlDocument);
   }
+
+  async flushXml(file: string): Promise<void> {
+    await this.flushBuffered(this, file);
+  }
 }

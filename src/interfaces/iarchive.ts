@@ -32,6 +32,11 @@ export default interface IArchive {
   write: (file: string, data: string | Buffer) => Promise<ArchiveType>;
   readXml: (file: string) => Promise<XmlDocument>;
   writeXml: (file: string, XmlDocument: XmlDocument) => void;
+  /**
+   * Serializes a buffered part back into the archive and drops its parsed
+   * DOM from memory. Call once a part is finished; later reads re-parse it.
+   */
+  flushXml: (file: string) => Promise<void>;
   folder: (folder: string) => Promise<ArchivedFile[]>;
   fileExists: (file: string) => boolean;
   extract: (file: string) => Promise<ArchiveType>;
