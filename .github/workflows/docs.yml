@@ -1,6 +1,5 @@
 # ROADMAP Phase 6.3: build the Docusaurus site (guides + typedoc API) and
-# deploy it to GitHub Pages. Phase 6.5 extends this with the self-hosted
-# Docker target (different DOCS_URL/DOCS_BASE_URL) and flips the canonical.
+# deploy it to GitHub Pages — the only docs host (ROADMAP 6.5 decision).
 name: Docs
 
 on:
