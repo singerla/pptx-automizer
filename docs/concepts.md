@@ -50,7 +50,8 @@ are addressed by filename or the label given to `.load()`.
 ## One instance, one output
 
 Use **one Automizer instance per presentation build**, and call the output
-method (`write`/`stream`/`getJSZip`) **once** per instance. Don't run two
-builds concurrently in the same process — instances share internal state (a
-known limitation). If you need several output files, create a fresh
-`new Automizer(...)` per file.
+method (`write`/`stream`/`getJSZip`) **once** per instance. If you need
+several output files, create a fresh `new Automizer(...)` per file. Separate
+instances are isolated from each other — running several builds concurrently
+in the same process (e.g. `Promise.all` in a server) is supported and covered
+by a regression test.

@@ -473,7 +473,11 @@ is now the real landing page (pitch + quick example + nav + ecosystem), no
 longer a stub. README kept pitch/badges (npm, CI, license — newly added)/
 install/the quick example/Special Thanks and links every docs page. The
 `troubleshooting` page gained the repair-prompt bisection steps from
-AI-INSTRUCTOR rule 7.
+AI-INSTRUCTOR rule 7. Added beyond the table (2026-08-14, user request): a
+`testing` page documenting the Phase-5 tooling for humans — `yarn test` +
+automatic invariants, `yarn validate:pptx` (Docker OOXML schema validation),
+`yarn test:visual` (pptx-thumbnailer visual regression) — previously only in
+the agent-facing AGENTS.md, hence invisible to the site search.
 
 ### 6.3 Docs site — ✅ done 2026-08-14
 
@@ -512,20 +516,52 @@ AI-INSTRUCTOR rule 7.
   `singerla.github.io/pptx-automizer` and are env-overridable
   (`DOCS_URL`/`DOCS_BASE_URL`) for builds targeting another host.
 
-### 6.4 AI rendering (generated, not written)
+### 6.4 AI rendering (generated, not written) — ✅ done 2026-08-14
 
-- 📖 `llms.txt` at the site root: flat plaintext index of every page with a
+- 📖 ✅ `llms.txt` at the site root: flat plaintext index of every page with a
   one-line description. `llms-full.txt`: the whole corpus concatenated. Both
   generated at build time by a Docusaurus plugin — never edited by hand.
-- 📖 Serve a `.md` twin of every HTML page at the same path + `.md`.
-- 📖 `AI-INSTRUCTOR.md` stays hand-written **only** for the parts that have no
+- 📖 ✅ Serve a `.md` twin of every HTML page at the same path + `.md`.
+- 📖 ✅ `AI-INSTRUCTOR.md` stays hand-written **only** for the parts that have no
   human equivalent: the mental model, the rules list, and the minimal complete
   example. Everything else in it becomes an include from the docs corpus, and the
   whole file is covered by the 6.1 compile test. Keep shipping it in the npm
   `files` array — that is the offline channel for AI readers.
-- 📖 `AGENTS.md` stays in the repo root and off the site. It addresses agents
+- 📖 ✅ `AGENTS.md` stays in the repo root and off the site. It addresses agents
   editing this repository, not users of the library, and root is where they look
-  for it.
+  for it. (Nothing to do.)
+
+Implementation notes (2026-08-14):
+
+- **Local plugin, no new dependency**: `website/plugins/llms-txt.ts`, a
+  `postBuild` hook reading the docs plugin's loaded content — routes, titles
+  and sidebar order come from Docusaurus itself, so a new page only needs its
+  frontmatter and a sidebar id. Twins mirror the `trailingSlash: false` route
+  scheme (`/charts` → `charts.md`; the category-index route `/api` →
+  `api.md`, and relative `…/index.md` links are rewritten accordingly).
+  Guides + all 65 typedoc pages get twins; `llms-full.txt` is guides-only
+  (the generated API reference is indexed via `llms.txt` instead). A guide
+  page without a frontmatter `description` **fails the build** — that
+  one-liner is the llms.txt payload. Deploy needed no CI change (the Pages
+  workflow uploads `website/build` wholesale).
+- **AI-INSTRUCTOR.md is now a build artifact**: `tools/ai-instructor/build.ts`
+  assembles it from `template.md` (mental model, rules, minimal example) plus
+  `<!-- include: docs/<page>.md -->` whole-page and `… § <Heading> -->`
+  section directives (heading levels shifted fence-aware, relative docs links
+  absolutized to the Pages twins). `yarn docs:ai` regenerates;
+  `__tests__/ai-instructor.test.ts` fails `yarn test` on drift, and the 6.1
+  compile test covers the generated file's blocks as before. The file grew
+  ~500 → ~1900 lines: the full feature pages replace the condensed cheat
+  sheet.
+- **Corpus became the single source first**: facts that existed only in
+  AI-INSTRUCTOR moved into the docs pages — raw-XML-callback rules + worked
+  outline example + units reference → `helpers.md`; `Buffer` template loading
+  → `getting-started.md`; `getAllElements`/`getDimensions` → `selectors.md`;
+  PptxGenJS inches note → `generation.md`; `loadMediaBuffer` → `images.md`.
+  Two stale claims died in the process (CHANGELOG'd): "callback exceptions
+  are swallowed" (rejects `write()` since Phase 1) and "don't run two builds
+  concurrently" (`concepts.md` still said it; concurrency is supported and
+  regression-tested since Phase 3).
 
 ### 6.5 Publishing — ✅ resolved 2026-08-14: GitHub Pages only
 
@@ -550,8 +586,9 @@ the site for another host — unused by CI.)
    and `website/sidebars.ts` as they land.
 4. ✅ 6.5 — resolved 2026-08-14: GitHub Pages stays the only host, the
    self-hosted mirror is dropped (see above).
-5. 6.4 — `llms.txt` generation and the `AI-INSTRUCTOR.md` include refactor, once
-   the corpus is stable enough to generate from.
+5. ✅ 6.4 — `llms.txt` generation and the `AI-INSTRUCTOR.md` include refactor,
+   once the corpus is stable enough to generate from. Done 2026-08-14 — with
+   this, Phase 6 is complete.
 
 ## Phase 7 — Feature debt already noted in code (post-refactor)
 

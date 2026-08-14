@@ -163,11 +163,14 @@ documented is invisible.
    instead of adding a binary. Per the testing rules below, assert on the
    resulting **XML** read back from the output archive — not just
    `expect(result.slides).toBe(n)`.
-5. **Document it in both places**: `README.md` (in the matching modifier
-   section) and `AI-INSTRUCTOR.md` (one line in the cheat sheet), in the same PR
-   as the API change. This is enforced: every fenced ```ts example in both
-   files is typechecked by `__tests__/docs-examples.test.ts` on every
-   `yarn test`, so a stale or invented signature fails the suite.
+5. **Document it** on the matching `docs/` feature page, in the same PR as the
+   API change, then run `yarn docs:ai`. `AI-INSTRUCTOR.md` is **generated**
+   from the docs corpus (ROADMAP 6.4) — never edit it directly; its
+   hand-written parts live in `tools/ai-instructor/template.md`, and
+   `__tests__/ai-instructor.test.ts` fails `yarn test` when the committed file
+   drifts. Every fenced ```ts example in the corpus is typechecked by
+   `__tests__/docs-examples.test.ts` on every `yarn test`, so a stale or
+   invented signature fails the suite.
 
 Then run `yarn test` and `npx tsc --noEmit` locally (CI runs the same, plus the
 tier-2/3 gates) — and name the output .pptx that should be opened in PowerPoint
@@ -255,6 +258,9 @@ Recurring OOXML pitfalls when implementing such a helper:
   `Modify*Helper` classes, …) declared in
   `__tests__/helpers/docs-example-context.d.ts` — add a name there only for a
   docs-wide convention, never to silence one failing example.
+- **`AI-INSTRUCTOR.md` is generated** (ROADMAP 6.4): edit the `docs/` pages or
+  `tools/ai-instructor/template.md` and run `yarn docs:ai` in the same commit
+  — `__tests__/ai-instructor.test.ts` pins the committed file to the build.
 
 ## Public API stability
 

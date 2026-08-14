@@ -35,6 +35,10 @@ pres.addSlide('images', 2, (slide) => {
 });
 ```
 
+Media can also come from memory instead of `mediaDir`:
+`automizer.loadMediaBuffer('chart.png', myImageBuffer)` registers a `Buffer`
+under a filename, usable with `setRelationTarget` like any loaded file.
+
 Note: media loading requires the root template to be loaded first. An image that is imported more than once (e.g. a logo on several slides) is stored only once in the output file — identical media files are always shared.
 
 This will also auto-crop the image to the new width and height,

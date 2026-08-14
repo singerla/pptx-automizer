@@ -2,6 +2,7 @@
 slug: /
 title: Introduction
 sidebar_label: Introduction
+description: What pptx-automizer is — a template-based .pptx generator for Node.js that modifies existing PowerPoint templates instead of building slides from scratch.
 ---
 
 # pptx-automizer
@@ -69,6 +70,7 @@ you pass. Nothing is applied until `await pres.write(...)` (or `.stream()` /
 - [Helper Utilities](./helpers.md) — shape, cleanup, unit and XML helpers.
 - [Output](./output.md) — write, stream, JSZip access, status tracking.
 - [Requirements and Limitations](./limitations.md) and [Troubleshooting](./troubleshooting.md).
+- [Testing and Validation Tools](./testing.md) — the test suite, the OOXML schema validator and visual regression.
 - [API reference](./api/index.md) — generated from the TypeScript sources.
 - [AI-INSTRUCTOR.md](https://github.com/singerla/pptx-automizer/blob/main/AI-INSTRUCTOR.md)
   — a condensed, self-contained guide for AI assistants consuming this

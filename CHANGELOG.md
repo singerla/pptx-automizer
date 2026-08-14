@@ -19,6 +19,15 @@ semver, with the pre-1.0 convention that **breaking changes bump the minor**.
   now fails CI.
 - `yarn docs:api` generates the typedoc API reference into `website/docs/api`
   (gitignored).
+- The docs site ships AI renderings, generated at build time (ROADMAP 6.4):
+  `llms.txt` (per-page index with one-line descriptions), `llms-full.txt`
+  (the guide corpus in one file), and a Markdown twin of every HTML page —
+  guides and API reference — served at the page's URL plus `.md`.
+- `AI-INSTRUCTOR.md` (shipped in the npm package) is now **generated from the
+  documentation corpus** (`yarn docs:ai`; hand-written parts: mental model,
+  rules list, minimal example) and covers every feature page instead of a
+  condensed cheat sheet. A test fails `yarn test` whenever the committed file
+  drifts from the docs it is built from.
 
 ### Fixed
 
@@ -30,6 +39,12 @@ semver, with the pre-1.0 convention that **breaking changes bump the minor**.
   (passed bare, the relationship element lands in its `color` parameter);
   table `expand.mode` is `'column'`, not `'col'`; `dLblPos` takes the
   `LabelPosition` enum. Added a "Deferred execution" section to the README.
+- Documentation only — two claims that 0.9.0 had made stale: callback
+  exceptions are no longer "swallowed" (a throwing callback or unresolvable
+  selector rejects `write()` with a typed error unless
+  `continueOnError: true`), and concurrent Automizer instances in one process
+  are supported (the global state was removed in 0.9.0, with a regression
+  test). `AI-INSTRUCTOR.md` and `docs/concepts.md` said otherwise.
 
 ## [0.9.0] — 2026-08-12
 

@@ -19,6 +19,8 @@ If the output opens with a PowerPoint repair prompt and the checks above don't p
 2. Remove exotic elements (animations, embedded videos, ThinkCell remnants) from the template.
 3. Isolate the failing slide by bisecting your `addSlide` calls — comment out half of them, re-run, and narrow down until the offending slide (or modification) is found.
 
+Another powerful check: run the repo's [OOXML schema validator](./testing.md#ooxml-schema-validation-validatepptx) (`yarn validate:pptx`) on your output — it usually names the exact part and element PowerPoint chokes on.
+
 If none of these could help, please don't hesitate to [talk about it](https://github.com/singerla/pptx-automizer/issues/new).
 
 ## Testing
@@ -29,3 +31,5 @@ You can run all unit tests using these commands:
 yarn test
 yarn test-coverage
 ```
+
+See [Testing and Validation Tools](./testing.md) for the full test system — archive invariants, the docs-examples compile gate, schema validation and visual regression.

@@ -51,6 +51,10 @@ pres.addSlide('empty', 1, (slide) => {
 });
 ```
 
+Note: inside `generate`, coordinates and sizes are in **inches** (PptxGenJS
+convention) — unlike `modify.setPosition`, which uses EMU/DXA values (see the
+[units reference](./helpers.md#units-reference)).
+
 You can use the following functions to generate shapes with `pptxGenJS`:
 
 - addChart
