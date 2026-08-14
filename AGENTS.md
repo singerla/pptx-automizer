@@ -83,8 +83,9 @@ Consequences for agents:
 
 - A bug reported "when writing" usually originates from a callback queued much
   earlier. Trace the queue (`importElements`, `modifications`, `relModifications`).
-- Errors thrown inside user shape callbacks are **swallowed** (`console.warn` in
-  `shape.ts:applyCallbacks`). Silent failure is a known design weakness.
+- Errors thrown inside user shape callbacks **reject `write()`** with a typed
+  `CallbackError` (Phase 1 policy: fail loudly). The lenient legacy behavior —
+  log a warning, skip the modification — is opt-in via `continueOnError: true`.
 - Element type detection is a tag-sniffing detector registry in
   `helper/shape-type-detector.ts` (`c:chart`, `p:nvPicPr`, `dgm:relIds`,
   `p:oleObj`, hyperlink detection, else generic shape). New shape types are
@@ -163,12 +164,14 @@ documented is invisible.
    resulting **XML** read back from the output archive — not just
    `expect(result.slides).toBe(n)`.
 5. **Document it in both places**: `README.md` (in the matching modifier
-   section) and `AI-INSTRUCTOR.md` (one line in the cheat sheet). ROADMAP Phase 6
-   makes this a rule: `AI-INSTRUCTOR.md` is updated in the same PR as any
-   `modify.*` API change.
+   section) and `AI-INSTRUCTOR.md` (one line in the cheat sheet), in the same PR
+   as the API change. This is enforced: every fenced ```ts example in both
+   files is typechecked by `__tests__/docs-examples.test.ts` on every
+   `yarn test`, so a stale or invented signature fails the suite.
 
-Then run `yarn test` and `npx tsc --noEmit` — there is no CI, local green is the
-gate — and name the output .pptx that should be opened in PowerPoint to verify.
+Then run `yarn test` and `npx tsc --noEmit` locally (CI runs the same, plus the
+tier-2/3 gates) — and name the output .pptx that should be opened in PowerPoint
+to verify.
 
 Recurring OOXML pitfalls when implementing such a helper:
 
@@ -179,7 +182,8 @@ Recurring OOXML pitfalls when implementing such a helper:
   on a `<p:sp>` also finds line properties inside `a:rPr`. Get `p:spPr` first,
   then scan its direct children.
 - **Respect schema child order** (see "Conventions & gotchas" above) — wrong
-  order produces a file PowerPoint offers to repair, which no test catches today.
+  order produces a file PowerPoint offers to repair; `yarn validate:pptx`
+  (tier 2) catches it. Insert via `XmlHelper.insertInSchemaOrder`.
 - **Units differ per attribute**: EMU for geometry and line width (1pt = 12700,
   1cm = 360000), 1/60000° for rotation, 1/100pt for font size, 1/1000% for
   percentages. Document the unit your parameter expects.
@@ -242,6 +246,15 @@ Recurring OOXML pitfalls when implementing such a helper:
   (all gitignored). `src/dev-customer.ts` is gitignored too.
 - New features need a test with a template .pptx. Prefer reusing existing templates
   in `__tests__/pptx-templates/` over adding new binaries.
+- **Documented examples compile** (ROADMAP Phase 6.1): every fenced ```ts block
+  in `README.md`, `AI-INSTRUCTOR.md` and `docs/**/*.md` is typechecked against
+  src by `__tests__/docs-examples.test.ts` in every `yarn test`. Change a
+  documented API → update its examples in the same commit, or the suite fails.
+  A deliberately partial snippet opts out with a ```ts ignore fence. Snippets
+  may use the conventional context variables (`pres`, `slide`, `modify`, the
+  `Modify*Helper` classes, …) declared in
+  `__tests__/helpers/docs-example-context.d.ts` — add a name there only for a
+  docs-wide convention, never to silence one failing example.
 
 ## Public API stability
 

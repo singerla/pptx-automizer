@@ -1,0 +1,27 @@
+/**
+ * Global overrides on top of the Infima defaults.
+ * The primary shades follow PowerPoint-orange as a nod to the subject matter.
+ */
+
+:root {
+  --ifm-color-primary: #c2410c;
+  --ifm-color-primary-dark: #af3a0b;
+  --ifm-color-primary-darker: #a5370a;
+  --ifm-color-primary-darkest: #882d09;
+  --ifm-color-primary-light: #d5480d;
+  --ifm-color-primary-lighter: #df4b0e;
+  --ifm-color-primary-lightest: #ee5a1d;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #fb923c;
+  --ifm-color-primary-dark: #fa7f1d;
+  --ifm-color-primary-darker: #fa760e;
+  --ifm-color-primary-darkest: #d76105;
+  --ifm-color-primary-light: #fca55b;
+  --ifm-color-primary-lighter: #fcae6a;
+  --ifm-color-primary-lightest: #fdc998;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}

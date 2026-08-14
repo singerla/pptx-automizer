@@ -141,6 +141,22 @@ in the root folder of your project. This will download and install the most rece
 
 Take a look into [**tests**-directory](https://github.com/singerla/pptx-automizer/blob/main/__tests__) to see a lot of examples for several use cases. You will also find example .pptx-files there. Most of the examples shown below make use of [those files](https://github.com/singerla/pptx-automizer/blob/main/__tests__/pptx-templates).
 
+## Deferred execution
+
+The single most important thing to know: calls like `addSlide()`, `addElement()`
+and `modifyElement()` only **queue** work — including every modification
+callback you pass. Nothing is applied to the output presentation until you call
+`await pres.write(...)` (or `.stream()` / `.getJSZip()`), which executes the
+whole queue in order. Two practical consequences:
+
+- A throwing callback or an unresolvable element selector surfaces as a rejected
+  `write()` (with a typed error such as `CallbackError`), not at the line where
+  you queued it. Set `continueOnError: true` to log a warning and skip the
+  failing modification instead.
+- Anything you compute *inside* a callback runs at `write()` time; variables it
+  closes over will have their values from that moment, not from when the
+  callback was queued.
+
 ## Basic Example
 
 This is a basic example on how to use `pptx-automizer` in your code:
@@ -381,7 +397,7 @@ const automizer = new Automizer({
 Regarding shapes, it is also possible to use a `creationId` and the shape name as a fallback. These are the different types of a `FindElementSelector`:
 
 ```ts
-import { FindElementSelector } from './types/types';
+import { FindElementSelector } from 'pptx-automizer';
 
 // This is default when set up with `useCreationIds: true`:
 const myShapeSelectorCreationId: FindElementSelector =
@@ -457,13 +473,12 @@ pres.addSlide('shapes', 1, (slide) => {
 You can select and import generic shapes from any loaded template. It is possible to update the containing text in several ways:
 
 ```ts
-import { ModifyTextHelper } from 'pptx-automizer';
+import { ModifyTextHelper, XmlElement } from 'pptx-automizer';
 
 pres.addSlide('SlideWithImages.pptx', 1, (slide) => {
   // You can directly modify the child nodes of <p:sp>
-  slide.addElement('shapes', 2, 'Arrow', (element) => {
-    element.getElementsByTagName('a:t').item(0).firstChild.data =
-      'Custom content';
+  slide.addElement('shapes', 2, 'Arrow', (element: XmlElement) => {
+    element.getElementsByTagName('a:t').item(0).textContent = 'Custom content';
   });
 
   // You might prefer a built-in function to set text:
@@ -719,7 +734,8 @@ Use `ModifyShapeHelper` to quickly adjust common properties of shapes and text f
 
 ```ts
 slide.modifyElement('MyShape', [
-  ModifyShapeHelper.setSolidFill({ type: 'srgbClr', value: 'FF0000' }),
+  // sets the shape's solid fill to theme color "accent6"
+  ModifyShapeHelper.setSolidFill,
 ]);
 ```
 
@@ -751,16 +767,17 @@ slide.modifyElement('MyTextBox', [
 ]);
 ```
 
-- Replace text with options (regex, whole-word, case)
+- Replace tagged text (see [Replace tagged text](#modify-text) above for the
+  tag concept; the default delimiters are `{{` and `}}`)
 
 ```ts
 slide.modifyElement('MyTextBox', [
   ModifyShapeHelper.replaceText(
     [
-      { replace: 'Acme', by: 'Globex' },
-      { replace: /\b2024\b/, by: '2025' },
+      { replace: 'company', by: { text: 'Globex' } },
+      { replace: 'year', by: { text: '2025', style: { isBold: true } } },
     ],
-    { regex: true, wholeWord: true, matchCase: false }
+    { openingTag: '{{', closingTag: '}}' },
   ),
 ]);
 ```
@@ -810,7 +827,7 @@ slide.modifyElement('MyTable', [
     {
       expand: [
         { tag: '<<ROW>>', count: 3, mode: 'row' },
-        { tag: '<<COL>>', count: 2, mode: 'col' },
+        { tag: '<<COL>>', count: 2, mode: 'column' },
       ],
       adjustHeight: true,
       adjustWidth: true,
@@ -848,6 +865,8 @@ Additional convenience methods:
 `ModifyCleanupHelper` helps remove formatting noise from shapes when you need a clean base.
 
 ```ts
+import { XmlElement } from 'pptx-automizer';
+
 slide.modifyElement('MyShape', [
   ModifyCleanupHelper.removeBackground,
   ModifyCleanupHelper.removeBorder,
@@ -856,8 +875,14 @@ slide.modifyElement('MyShape', [
   ModifyCleanupHelper.clearTextUnderline,
   ModifyCleanupHelper.clearTextBold,
   ModifyCleanupHelper.clearTextSize,
-  // remove specific text color (e.g., red)
-  ModifyCleanupHelper.clearTextColor({ type: 'srgbClr', value: 'FF0000' }),
+  // remove all explicit text colors …
+  (element: XmlElement) => ModifyCleanupHelper.clearTextColor(element),
+  // … or pass a color to set a uniform one instead
+  (element: XmlElement) =>
+    ModifyCleanupHelper.clearTextColor(element, {
+      type: 'srgbClr',
+      value: 'FF0000',
+    }),
 ]);
 ```
 
@@ -966,11 +991,10 @@ slide.modifyElement('MyShape', [
 
 For advanced scenarios, you can inspect slide XML and relationships. These are considered expert APIs and may change.
 
-Import directly from helper paths:
+Import them from the package root:
 
 ```ts
-import { XmlSlideHelper } from 'pptx-automizer/src/helper/xml-slide-helper';
-import { XmlRelationshipHelper } from 'pptx-automizer/src/helper/xml-relationship-helper';
+import { XmlSlideHelper, XmlRelationshipHelper } from 'pptx-automizer';
 ```
 
 Examples:
@@ -1092,11 +1116,13 @@ slide.modifyElement('ColumnChart', [
 - Data labels
 
 ```ts
+import { LabelPosition } from 'pptx-automizer';
+
 slide.modifyElement('ColumnChart', [
   // format the data labels of all series (or a single series by index)
   modify.setDataLabelAttributes({
     applyToSeries: 0, // omit to apply to all series
-    dLblPos: 'outEnd',
+    dLblPos: LabelPosition.OutsideEnd,
     formatCode: '0.0%',
     sourceLinked: false,
     showVal: true,
@@ -1134,10 +1160,10 @@ slide.modifyElement('VerticalLineChart', [
 The `read` namespace provides callbacks to read information out of a chart without modifying it. They populate the object you pass in (see `__tests__/read-chart-data.test.js`).
 
 ```ts
-import { read } from 'pptx-automizer';
+import { read, WorkbookData, ChartInfo } from 'pptx-automizer';
 
-const workbookData = [];
-const chartInfo = { series: [] };
+const workbookData: WorkbookData = [];
+const chartInfo: ChartInfo = { series: [] };
 
 slide.modifyElement('ColumnChart', [
   // read the raw rows of the embedded workbook into workbookData
@@ -1231,11 +1257,13 @@ PowerPoint presentations often use hyperlinks to connect to external websites or
 You can add hyperlinks to template text shapes using the `addHyperlink` helper function. The function accepts either a URL string for external links or a slide number for internal slide links:
 
 ```ts
+import { XmlElement } from 'pptx-automizer';
+
 // Add an external hyperlink
 slide.modifyElement('TextShape', modify.addHyperlink('https://example.com'));
 
 // Add an internal slide link (to slide 3)
-slide.modifyElement('TextShape', (element, relation) => {
+slide.modifyElement('TextShape', (element: XmlElement, relation?: XmlElement) => {
   modify.addHyperlink(3)(element, relation);
 });
 ```
@@ -1464,7 +1492,7 @@ pres.write(`mySortedPresentation.pptx`).then((summary) => {
 Slides will be appended to the existing slides by slide number (starting from 1). You may find irritating results in case you skip a slide number.
 
 ```ts
-import ModifyPresentationHelper from './helper/modify-presentation-helper';
+import { ModifyPresentationHelper } from 'pptx-automizer';
 
 //
 // You may truncate root template or you may not

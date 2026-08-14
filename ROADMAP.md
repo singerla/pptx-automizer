@@ -397,24 +397,42 @@ for `AI-INSTRUCTOR.md` ("update it in the same PR as any `modify.*` change") is
 unenforced human discipline, and a stale AI instructor is worse than none — it
 teaches wrong APIs authoritatively.
 
-### 6.1 Kill documentation drift first (before any website)
+### 6.1 Kill documentation drift first (before any website) — ✅ done 2026-08-13
 
 Highest leverage in the phase, and independent of everything below.
 
-- 🧪 **Compile every documented example in CI.** Add
-  `__tests__/docs-examples.test.ts`: extract all fenced ` ```ts ` blocks from
-  `README.md`, `docs/**/*.md` and `AI-INSTRUCTOR.md`, wrap each in a synthetic
-  module, and typecheck the batch with the TS compiler API. Blocks that are
-  deliberately partial get ` ```ts ignore `. This turns 126 prose snippets into
-  tests and fixes drift for both audiences with one mechanism.
-- 🔧 **`typedoc.json` writes into `docs/`**, which is not gitignored and is
-  exactly where the docs-site sources want to live. Change `out` to
-  `website/docs/api` (generated, gitignored) before the split starts.
-- 🔧 Add scripts: `docs:api` (typedoc), `docs:build`, `docs:serve`.
-- 📖 **Document the deferred-execution model explicitly** — the single biggest
-  user surprise: callbacks run at `write()`, not at `addSlide()`. It belongs in
-  the concepts page, restated in the intro of every modifier page (redundancy is
-  correct here — see the principle above), and in the rules list.
+- 🧪 ✅ **Compile every documented example in CI** —
+  `__tests__/docs-examples.test.ts` extracts all fenced ` ```ts ` blocks from
+  `README.md`, `AI-INSTRUCTOR.md` and `docs/**/*.md`, wraps each in a synthetic
+  module (`export {};` prefix — block-local scope + top-level await) and
+  typechecks the batch in **one** TS program, so src's type graph is built once
+  (~2 s inside the normal `yarn test`). Deliberately partial blocks opt out via
+  ` ```ts ignore ` — currently **zero** need it: the docs' conventional context
+  names (`pres`, `slide`, `modify`, the `Modify*Helper` classes, …) are ambient
+  globals in `__tests__/helpers/docs-example-context.d.ts`, typed straight from
+  src, and snippet-local declarations shadow them. Baseline: 73 blocks, 12 were
+  broken. Genuine drift fixed: `replaceText` documented a fictional
+  regex/whole-word/case API; `setSolidFill` documented a color argument it
+  never had (both README and AI-INSTRUCTOR); `ModifyCleanupHelper.clearTextColor`
+  was shown bare in a callback array, where the `relation` element lands in its
+  `color` parameter at runtime; `expand.mode: 'col'` vs `'column'`;
+  `dLblPos: 'outEnd'` vs the `LabelPosition` enum; internal import paths
+  (`./types/types`, `./helper/modify-presentation-helper`,
+  `pptx-automizer/src/...`) that resolve for no npm consumer. The last class is
+  fixed properly: `ModifyPresentationHelper`, `XmlSlideHelper`,
+  `XmlRelationshipHelper` and `FindElementSelector` are now exported from
+  `src/index.ts` (additive).
+- 🔧 ✅ `typedoc.json` `out` → `website/docs/api` (gitignored); first actual
+  typedoc run works (0 errors, 51 warnings about unexported referenced types —
+  a cleanup candidate for 6.3).
+- 🔧 ✅ Script `docs:api` (typedoc) added; `docs:build`/`docs:serve` deferred to
+  6.3 — they need the Docusaurus scaffold to exist.
+- 📖 ✅ **Deferred-execution model documented** where users look today: new
+  "Deferred execution" section in README (before the basic example);
+  AI-INSTRUCTOR already taught it ("Key rule" in the mental model). Restating it
+  on every modifier page happens with the 6.2 split. Also fixed stale AGENTS.md
+  claims while there: callback errors reject `write()` since Phase 1 (not
+  "swallowed"), CI exists, tier 2 catches schema-order bugs.
 
 ### 6.2 Split the README
 
@@ -443,15 +461,42 @@ Everything else moves to `docs/`, one page per feature area:
 Do this **after** 6.1, so the example test moves with the content and catches
 anything broken in transit.
 
-### 6.3 Docs site
+### 6.3 Docs site — ✅ done 2026-08-14
 
-- 🔧 **Docusaurus** in `website/`, chosen over Starlight/VitePress for one
-  reason: `docusaurus-plugin-typedoc` folds the existing typedoc config into the
-  sidebar, so guides and API reference become one searchable site. Versioning is
-  built in and matters for a pre-1.0 library with API churn — cut a `0.8` version
-  at the first release after the site lands, keep `next` from `main`.
-- 🔧 Search: Pagefind or the built-in local index, built at compile time. No
-  hosted search service for a site this size.
+- 🔧 ✅ **Docusaurus** in `website/` (own yarn workspace, Docusaurus 3.10),
+  chosen over Starlight/VitePress for one reason: `docusaurus-plugin-typedoc`
+  folds the typedoc config into the sidebar, so guides and API reference become
+  one searchable site. Versioning is built in and matters for a pre-1.0 library
+  with API churn — cut a version at the first release after the site lands,
+  keep `next` from `main`. Implementation notes:
+  - **The docs corpus stays at repo-root `docs/`** (Docusaurus points its docs
+    plugin at `../docs`, docs-only mode, `routeBasePath: '/'`): it keeps the
+    6.1 compile test's glob unchanged and the pages readable on GitHub. The 6.2
+    split lands there, one sidebar id per page in `website/sidebars.ts`.
+  - Typedoc now emits **markdown** (`typedoc-plugin-markdown` +
+    `typedoc-docusaurus-theme`) into `docs/api` (gitignored, excluded from the
+    docs-examples walk as generated content). Root `typedoc.json` is gone —
+    the options live in the plugin block of `website/docusaurus.config.ts`,
+    and root `yarn docs:api` delegates to `docusaurus generate-typedoc`.
+    Generation also runs automatically on every `docs:start`/`docs:build`.
+  - `.md` is parsed as **CommonMark, not MDX** (`markdown.format: 'detect'`):
+    src doc comments and future 6.2 pages cite raw OOXML tags (`<a:ln>`,
+    `Promise<TemplateInfo[]>`) that MDX rejects as malformed JSX. Opt into MDX
+    per-file via `.mdx`. `sanitizeComments: true` escapes them in typedoc
+    output for good measure.
+  - The 51 typedoc warnings from 6.1 are gone in the markdown pipeline; the two
+    real ones left (`@order` instead of `@param` in
+    `modify-presentation-helper.ts`) fixed in src.
+  - `docs/index.md` is a **temporary landing page** (install + quick example,
+    compile-tested like everything else) that links to the README until the
+    6.2 split replaces it.
+- 🔧 ✅ Search: `@easyops-cn/docusaurus-search-local` — local index built at
+  compile time. No hosted search service for a site this size.
+- 🔧 ✅ CI: `.github/workflows/docs.yml` deploys to **GitHub Pages** on push to
+  `main` (`actions/deploy-pages`; needs Pages → Source: "GitHub Actions" in the
+  repo settings, one-time). `url`/`baseUrl` default to
+  `singerla.github.io/pptx-automizer` and are env-overridable
+  (`DOCS_URL`/`DOCS_BASE_URL`) for the 6.5 self-hosted build.
 
 ### 6.4 AI rendering (generated, not written)
 
@@ -504,10 +549,13 @@ serving other things from the same box.
 
 ### Rollout order
 
-1. 6.1 — docs-example test + typedoc `out` fix. Standalone value, no site needed.
+1. ✅ 6.1 — docs-example test + typedoc `out` fix. Standalone value, no site
+   needed. Done 2026-08-13.
 2. 6.2 — README split, page by page, example test green throughout.
-3. 6.3 — Docusaurus + typedoc, deployed to **GitHub Pages only** first. Prove the
-   pipeline on the zero-ops target.
+3. ✅ 6.3 — Docusaurus + typedoc, deployed to **GitHub Pages only** first. Prove
+   the pipeline on the zero-ops target. Done 2026-08-14, ahead of 6.2 — the
+   scaffold doesn't need the split content, the split pages drop into `docs/`
+   and `website/sidebars.ts` as they land.
 4. 6.5 — add the Docker target and `docs.ensembl.io`, flip canonical.
 5. 6.4 — `llms.txt` generation and the `AI-INSTRUCTOR.md` include refactor, once
    the corpus is stable enough to generate from.

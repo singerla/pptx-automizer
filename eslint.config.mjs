@@ -10,6 +10,7 @@ export default tseslint.config(
       'dist/',
       'out/',
       'docs/',
+      'website/',
       'node_modules/',
       '__customer__/',
       'src/dev.ts',

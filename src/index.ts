@@ -16,9 +16,13 @@ import {
   AutomizerFile,
   AutomizerParams,
   AutomizerSummary,
+  FindElementSelector,
   ShapeModificationCallback,
   StatusTracker,
 } from './types/types';
+import ModifyPresentationHelper from './helper/modify-presentation-helper';
+import { XmlSlideHelper } from './helper/xml-slide-helper';
+import { XmlRelationshipHelper } from './helper/xml-relationship-helper';
 import {
   ModifyTableParams,
   TableData,
@@ -129,6 +133,9 @@ export type {
 export {
   Automizer,
   XmlHelper,
+  XmlSlideHelper,
+  XmlRelationshipHelper,
+  ModifyPresentationHelper,
   ModifyHelper,
   ModifyShapeHelper,
   ModifyCleanupHelper,
@@ -195,6 +202,7 @@ export type {
   AutomizerSummary,
   TemplateInfo,
   StatusTracker,
+  FindElementSelector,
   ShapeModificationCallback,
   XmlElement,
   XmlDocument,
