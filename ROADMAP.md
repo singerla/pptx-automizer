@@ -473,7 +473,11 @@ is now the real landing page (pitch + quick example + nav + ecosystem), no
 longer a stub. README kept pitch/badges (npm, CI, license — newly added)/
 install/the quick example/Special Thanks and links every docs page. The
 `troubleshooting` page gained the repair-prompt bisection steps from
-AI-INSTRUCTOR rule 7.
+AI-INSTRUCTOR rule 7. Added beyond the table (2026-08-14, user request): a
+`testing` page documenting the Phase-5 tooling for humans — `yarn test` +
+automatic invariants, `yarn validate:pptx` (Docker OOXML schema validation),
+`yarn test:visual` (pptx-thumbnailer visual regression) — previously only in
+the agent-facing AGENTS.md, hence invisible to the site search.
 
 ### 6.3 Docs site — ✅ done 2026-08-14
 

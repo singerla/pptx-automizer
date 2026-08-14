@@ -23,6 +23,7 @@ const sidebars: SidebarsConfig = {
     'output',
     'limitations',
     'troubleshooting',
+    'testing',
     {
       type: 'category',
       label: 'API Reference',
