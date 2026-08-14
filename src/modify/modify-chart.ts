@@ -196,7 +196,10 @@ export class ModifyChart {
         category.styles.forEach((style, s) => {
           if (style === null || !Object.values(style).length) return;
 
-          this.chart.modify(this.series(s, this.chartPoint(c, style)));
+          const pointTags = this.chartPoint(c, style);
+          if (pointTags) {
+            this.chart.modify(this.series(s, pointTags));
+          }
           if (style.label) {
             this.chart.modify(
               this.series(s, this.chartPointLabel(c, style.label)),
@@ -479,27 +482,42 @@ export class ModifyChart {
   };
 
   chartPoint = (idx: number, style: ChartValueStyle): ModificationTags => {
-    if (!style?.color && !style?.border && !style?.marker) return;
+    // Build the child tags first: only a style that yields at least one
+    // applicable modification may create a c:dPt. A pseudo-style (truthy keys
+    // without applicable content, e.g. a color without `type`) must not reach
+    // the XML layer — a point without explicit style inherits the series
+    // formatting, and fabricating one used to erase line charts.
+    const children = {
+      ...this.chartPointSpPr(style),
+      ...this.chartPointMarker(style?.marker),
+    };
+    if (!Object.keys(children).length) return;
     return {
       'c:dPt': {
         // c:dPt is sparse: one element per explicitly styled point, addressed
         // by its <c:idx> payload — never by sibling position.
         matchIdx: idx,
-        children: {
-          ...this.chartPointFill(style?.color),
-          ...this.chartPointBorder(style?.border),
-          ...this.chartPointMarker(style?.marker),
-        },
+        children,
       },
     };
   };
 
-  chartPointFill = (color: ChartValueStyle['color']): ModificationTags => {
-    if (!color?.type) return;
+  /**
+   * Fill and border share the point's single <c:spPr>; the border's <a:ln>
+   * is nested so that its creation lands inside the spPr, not on the c:dPt.
+   */
+  chartPointSpPr = (style: ChartValueStyle): ModificationTags => {
+    const modify = <ModifyCallback[]>[];
+    if (style?.color?.type) {
+      modify.push(ModifyColorHelper.solidFill(style.color));
+    }
+    const border = this.chartPointBorder(style?.border);
+    if (!modify.length && !border) return;
 
     return {
       'c:spPr': {
-        modify: ModifyColorHelper.solidFill(color),
+        modify,
+        children: border,
       },
     };
   };
@@ -507,7 +525,10 @@ export class ModifyChart {
   chartPointMarker = (
     markerStyle: ChartValueStyle['marker'],
   ): ModificationTags => {
-    if (!markerStyle) return;
+    // solidFill is a no-op without a typed color, so a marker style carrying
+    // none has nothing to modify. Per-point marker *creation* is unsupported:
+    // isRequired:false styles a c:marker where the template has one.
+    if (!markerStyle?.color?.type) return;
 
     return {
       'c:marker': {
@@ -525,13 +546,14 @@ export class ModifyChart {
     if (!style) return;
     const modify = <ModifyCallback[]>[];
 
-    if (style.color) {
+    if (style.color?.type) {
       modify.push(ModifyColorHelper.solidFill(style.color));
       modify.push(ModifyColorHelper.removeNoFill());
     }
     if (style.weight) {
       modify.push(ModifyXmlHelper.attribute('w', style.weight));
     }
+    if (!modify.length) return;
 
     return {
       'a:ln': {
