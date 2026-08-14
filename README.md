@@ -77,8 +77,6 @@ This project is accompanied by [automizer-data](https://github.com/singerla/auto
 
 Thanks to all contributors! You are always welcome to share code, tipps and ideas. We appreciate all levels of expertise and encourage everyone to get involved. Whether you're a seasoned pro or just starting out, your contributions are invaluable. [Get started](https://github.com/singerla/pptx-automizer/issues/new)
 
-If you require commercial support for complex .pptx automation, you can explore [ensemblio.com](https://ensemblio.com). Ensemblio is a web application that leverages `pptx-automizer` and `automizer-data` to provide an accessible and convenient solution for automating .pptx files. Engaging with Ensemblio is likely to enhance and further develop this library.
-
 # Special Thanks
 
 This project was inspired by:

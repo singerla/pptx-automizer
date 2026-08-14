@@ -510,7 +510,7 @@ AI-INSTRUCTOR rule 7.
   `main` (`actions/deploy-pages`; needs Pages → Source: "GitHub Actions" in the
   repo settings, one-time). `url`/`baseUrl` default to
   `singerla.github.io/pptx-automizer` and are env-overridable
-  (`DOCS_URL`/`DOCS_BASE_URL`) for the 6.5 self-hosted build.
+  (`DOCS_URL`/`DOCS_BASE_URL`) for builds targeting another host.
 
 ### 6.4 AI rendering (generated, not written)
 
@@ -527,39 +527,16 @@ AI-INSTRUCTOR rule 7.
   editing this repository, not users of the library, and root is where they look
   for it.
 
-### 6.5 Publishing — GitHub Pages *and* self-hosted
+### 6.5 Publishing — ✅ resolved 2026-08-14: GitHub Pages only
 
-Ship both. GitHub Pages is zero-ops and gets the site live in an afternoon;
-the self-hosted container is the branded canonical URL and keeps the option of
-serving other things from the same box.
-
-- 🔧 **Runtime rule:** the container serves *static files*. No docs framework, no
-  Node in the production image. Multi-stage build → `nginx:alpine`, ~50 MB.
-
-  ```dockerfile
-  FROM node:22-alpine AS build
-  WORKDIR /app
-  COPY package.json yarn.lock ./
-  RUN yarn install --frozen-lockfile
-  COPY . .
-  RUN yarn docs:build
-
-  FROM nginx:alpine
-  COPY --from=build /app/website/build /usr/share/nginx/html
-  ```
-
-- 🔧 **TLS/proxy:** Caddy in front on a shared docker network — automatic Let's
-  Encrypt, three lines of Caddyfile for `docs.ensembl.io`. Traefik instead if
-  ensembl.io already runs it for other services.
-- 🔧 **CI:** on push to `main`, one workflow builds the site twice (different
-  `baseUrl`), deploys one build to Pages via `actions/deploy-pages`, and pushes
-  the image to `ghcr.io`; the VPS pulls. Two builds are needed because Docusaurus
-  bakes `url`/`baseUrl` in — `/pptx-automizer/` for
-  `singerla.github.io/pptx-automizer`, `/` for `docs.ensembl.io`. Cheap: a
-  matrix job.
-- 🔧 **Canonical:** `docs.ensembl.io` is canonical; the Pages build sets
-  `rel=canonical` at it and is the mirror/fallback. Avoids splitting search
-  ranking across two identical sites.
+Originally planned as GitHub Pages *plus* a self-hosted branded mirror.
+**Dropped 2026-08-14 by decision:** the docs stay on GitHub Pages exclusively,
+and the open-source project is not linked to any commercial offering — no
+second host, no canonical flip. `singerla.github.io/pptx-automizer` is the one
+and only docs URL. The Pages deploy has been live since 6.3; nothing further to
+do. (`DOCS_URL`/`DOCS_BASE_URL` env overrides remain in
+`website/docusaurus.config.ts` as a generic escape hatch for anyone building
+the site for another host — unused by CI.)
 
 ### Rollout order
 
@@ -571,7 +548,8 @@ serving other things from the same box.
    the pipeline on the zero-ops target. Done 2026-08-14, ahead of 6.2 — the
    scaffold doesn't need the split content, the split pages drop into `docs/`
    and `website/sidebars.ts` as they land.
-4. 6.5 — add the Docker target and `docs.ensembl.io`, flip canonical.
+4. ✅ 6.5 — resolved 2026-08-14: GitHub Pages stays the only host, the
+   self-hosted mirror is dropped (see above).
 5. 6.4 — `llms.txt` generation and the `AI-INSTRUCTOR.md` include refactor, once
    the corpus is stable enough to generate from.
 
@@ -723,7 +701,7 @@ the parser must be and which CSS subset is worth supporting.
 
 ## Bug track — chart data-point styling creates `<c:dPt>` that erase line charts
 
-Audit date: 2026-08-12. Found while investigating an ensemblio report where all
+Audit date: 2026-08-12. Found while investigating a downstream report where all
 lines of a 9-series line chart disappeared. Independent of the refactor phases;
 the behaviour is old (`XmlElements.dataPoint()` dates back to 2021) and
 reproduces identically on `0.8.2` and on the current refactor branch — so this
@@ -990,7 +968,7 @@ effect and unblocks the rest:
   baseline pins "no labels appear". (One upstream pptxgenjs allowlist entry
   added: `c:invertIfNegative` in radar series cascades into a `c:axId` report.)
 
-**Downstream note.** ensemblio-api consumes these paths through
+**Downstream note.** A downstream api service consumes these paths through
 `ShapeModifiersChartService` → `modify.setChartData`; the api side was verified
 correct in both cases (metas, style matching and the `categories[].styles` array
 all carry the right values), so no api change is needed — but regenerating
@@ -1162,7 +1140,8 @@ Urgent:   "Modification contract violations" bug track — both regressions are
 Early:    Phase 6.1 (docs-example compile test) alongside Phase 5 tier 1 — it is
           the same kind of cheap always-on gate, and it must exist before the
           README split moves 126 examples around
-Then:     Phase 6.2-6.5 docs split → site on GitHub Pages → self-hosted mirror
+Then:     Phase 6.2-6.5 docs split → site on GitHub Pages (only host; the
+          self-hosted mirror was dropped 2026-08-14)
 Deferred: Performance track (archive buffer eviction) — postponed 2026-08-12;
           pick up when large-deck memory becomes blocking
 ```

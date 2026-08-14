@@ -10,8 +10,8 @@ const config: Config = {
   title: 'pptx-automizer',
   tagline: 'A template-based .pptx generator for Node.js',
 
-  // GitHub Pages is the default target; the self-hosted build (ROADMAP 6.5)
-  // overrides both via env.
+  // GitHub Pages is the only deploy target; the env overrides are a generic
+  // escape hatch for building against another host (unused by CI).
   url: process.env.DOCS_URL ?? 'https://singerla.github.io',
   baseUrl: process.env.DOCS_BASE_URL ?? '/pptx-automizer/',
   organizationName: 'singerla',
