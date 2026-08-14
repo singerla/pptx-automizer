@@ -434,7 +434,7 @@ Highest leverage in the phase, and independent of everything below.
   claims while there: callback errors reject `write()` since Phase 1 (not
   "swallowed"), CI exists, tier 2 catches schema-order bugs.
 
-### 6.2 Split the README
+### 6.2 Split the README — ✅ done 2026-08-14
 
 Keep `README.md` to pitch, badges, install, one runnable example, and links out.
 Everything else moves to `docs/`, one page per feature area:
@@ -460,6 +460,20 @@ Everything else moves to `docs/`, one page per feature area:
 
 Do this **after** 6.1, so the example test moves with the content and catches
 anything broken in transit.
+
+Implementation notes (done after 6.3, since the scaffold didn't need the
+content): content moved verbatim wherever possible — the docs-examples test
+covers every page, 77 blocks green. Deviations from the table above:
+"Find all text elements on a slide" landed in `selectors` (it is about
+addressing shapes), and the Table/Text/Image helper subsections landed on their
+feature pages with pointers from `helpers` (one topic, one page). `concepts`
+additionally states the one-instance rule and 1-based numbering in
+AI-INSTRUCTOR's wording — the README never said them explicitly. `docs/index.md`
+is now the real landing page (pitch + quick example + nav + ecosystem), no
+longer a stub. README kept pitch/badges (npm, CI, license — newly added)/
+install/the quick example/Special Thanks and links every docs page. The
+`troubleshooting` page gained the repair-prompt bisection steps from
+AI-INSTRUCTOR rule 7.
 
 ### 6.3 Docs site — ✅ done 2026-08-14
 
@@ -551,7 +565,8 @@ serving other things from the same box.
 
 1. ✅ 6.1 — docs-example test + typedoc `out` fix. Standalone value, no site
    needed. Done 2026-08-13.
-2. 6.2 — README split, page by page, example test green throughout.
+2. ✅ 6.2 — README split, page by page, example test green throughout. Done
+   2026-08-14 (after 6.3).
 3. ✅ 6.3 — Docusaurus + typedoc, deployed to **GitHub Pages only** first. Prove
    the pipeline on the zero-ops target. Done 2026-08-14, ahead of 6.2 — the
    scaffold doesn't need the split content, the split pages drop into `docs/`

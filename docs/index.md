@@ -17,13 +17,11 @@ If you need to create elements from scratch, `pptx-automizer` wraps around
 [PptxGenJS](https://github.com/gitbrent/PptxGenJS) to add dynamic content to
 your existing .pptx template files.
 
-## Installation
-
-```bash
-yarn add pptx-automizer
-# or
-npm install pptx-automizer
-```
+`pptx-automizer` is particularly well-suited for users who aim to manage their
+own library of .pptx template files, making it an ideal choice for those who
+work with intricate, well-designed customized layouts. With this tool, any
+existing slide or even a single element can serve as a data-driven template for
+generating output .pptx files.
 
 ## Quick example
 
@@ -59,15 +57,27 @@ console.log(summary);
 The single most important concept: calls like `addSlide()` and
 `modifyElement()` only **queue** work — including every modification callback
 you pass. Nothing is applied until `await pres.write(...)` (or `.stream()` /
-`.getJSZip()`) executes the whole queue in order.
+`.getJSZip()`) executes the whole queue in order. Read more in
+[Concepts](./concepts.md).
 
 ## Where to go next
 
-The docs site is being migrated section by section. Until every page has
-landed here, the complete feature documentation lives in the
-[README on GitHub](https://github.com/singerla/pptx-automizer#readme).
-
+- [Getting started](./getting-started.md) — installation and a fully commented example.
+- [Concepts](./concepts.md) — the mental model: deferred execution, the template/root model, 1-based numbering.
+- [Selecting slides and shapes](./selectors.md) — how to address the things you want to change.
+- Feature guides: [Text](./text.md), [Tables](./tables.md), [Charts](./charts.md), [Images](./images.md), [Masters & Layouts](./masters-layouts.md), [Shape generation](./generation.md), [Hyperlinks](./hyperlinks.md), [Slide management](./slide-management.md).
+- [Helper Utilities](./helpers.md) — shape, cleanup, unit and XML helpers.
+- [Output](./output.md) — write, stream, JSZip access, status tracking.
+- [Requirements and Limitations](./limitations.md) and [Troubleshooting](./troubleshooting.md).
 - [API reference](./api/index.md) — generated from the TypeScript sources.
 - [AI-INSTRUCTOR.md](https://github.com/singerla/pptx-automizer/blob/main/AI-INSTRUCTOR.md)
   — a condensed, self-contained guide for AI assistants consuming this
   library (also shipped in the npm package).
+
+## Ecosystem
+
+This project is accompanied by [automizer-data](https://github.com/singerla/automizer-data). You can use `automizer-data` to import, browse and transform .xlsx- or .sav-data into perfectly fitting graph or table data.
+
+If you require commercial support for complex .pptx automation, you can explore [ensemblio.com](https://ensemblio.com). Ensemblio is a web application that leverages `pptx-automizer` and `automizer-data` to provide an accessible and convenient solution for automating .pptx files.
+
+Thanks to all contributors! You are always welcome to share code, tipps and ideas. We appreciate all levels of expertise and encourage everyone to get involved. [Get started](https://github.com/singerla/pptx-automizer/issues/new)
