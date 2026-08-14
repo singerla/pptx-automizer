@@ -61,6 +61,42 @@ export const C_SER_CHILD_ORDER = [
 ];
 
 /**
+ * Children of <c:dPt> (CT_DPt), in OOXML schema order. Note that it differs
+ * from CT_Ser: inside a data point, `c:bubble3D` comes *before* `c:spPr`.
+ */
+export const C_DPT_CHILD_ORDER = [
+  'c:idx',
+  'c:invertIfNegative',
+  'c:marker',
+  'c:bubble3D',
+  'c:explosion',
+  'c:spPr',
+  'c:pictureOptions',
+  'c:extLst',
+];
+
+/**
+ * Children of <c:spPr>/<a:spPr> (CT_ShapeProperties), in OOXML schema order.
+ */
+export const A_SPPR_CHILD_ORDER = [
+  'a:xfrm',
+  'a:custGeom',
+  'a:prstGeom',
+  'a:noFill',
+  'a:solidFill',
+  'a:gradFill',
+  'a:blipFill',
+  'a:pattFill',
+  'a:grpFill',
+  'a:ln',
+  'a:effectLst',
+  'a:effectDag',
+  'a:scene3d',
+  'a:sp3d',
+  'a:extLst',
+];
+
+/**
  * Children of <c:dLbls> (CT_DLbls), in OOXML schema order: the sparse
  * <c:dLbl> point overrides come first, followed by the group-level settings.
  */
@@ -403,13 +439,32 @@ export default class XmlElements {
     return this;
   }
 
-  spPr(): XmlElement {
+  /**
+   * An empty <c:spPr> shell in schema position: all children of
+   * CT_ShapeProperties are optional, and an absent property inherits from the
+   * series/theme defaults. Fills, lines etc. are added by the modifications
+   * that asked for them — the former grey solidFill + <a:ln><a:noFill/>
+   * default erased the segments of line charts.
+   */
+  shapeProperties() {
     const spPr = this.document.createElement('c:spPr');
-    spPr.appendChild(this.solidFill());
-    spPr.appendChild(this.line());
-    spPr.appendChild(this.effectLst());
+    const parentTag = (this.element as XmlElement).nodeName;
+    const order =
+      parentTag === 'c:dPt' ? C_DPT_CHILD_ORDER : C_SER_CHILD_ORDER;
+    XmlHelper.insertInSchemaOrder(this.element as XmlElement, spPr, order);
+  }
 
-    return spPr;
+  /**
+   * A bare <a:ln> in schema position — no fabricated <a:noFill>. Border
+   * modifications fill it with the properties the caller asked for.
+   */
+  plainLine() {
+    const ln = this.document.createElement('a:ln');
+    XmlHelper.insertInSchemaOrder(
+      this.element as XmlElement,
+      ln,
+      A_SPPR_CHILD_ORDER,
+    );
   }
 
   idx(): XmlElement {
@@ -447,11 +502,6 @@ export default class XmlElements {
     lineEnd.setAttribute('w', 'med');
     lineEnd.setAttribute('len', 'med');
     return lineEnd;
-  }
-
-  shapeProperties() {
-    const spPr = this.spPr();
-    this.element.appendChild(spPr);
   }
 
   /**

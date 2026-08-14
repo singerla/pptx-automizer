@@ -289,6 +289,9 @@ export default class ModifyXmlHelper {
       case 'c:spPr':
         new XmlElements(parent).shapeProperties();
         return true;
+      case 'a:ln':
+        new XmlElements(parent).plainLine();
+        return true;
       case 'c:dLbls':
         new XmlElements(parent).dataPointLabels();
         return true;

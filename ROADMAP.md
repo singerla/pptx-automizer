@@ -736,7 +736,7 @@ the parser must be and which CSS subset is worth supporting.
 
 ---
 
-## Bug track — chart data-point styling creates `<c:dPt>` that erase line charts
+## Bug track — chart data-point styling creates `<c:dPt>` that erase line charts — ✅ fixed 2026-08-14
 
 Audit date: 2026-08-12. Found while investigating a downstream report where all
 lines of a 9-series line chart disappeared. Independent of the refactor phases;
@@ -777,26 +777,43 @@ as data labels floating in empty space.
 
 **Fixes.**
 
-1. `chartPoint()`: build the child tags first and return `undefined` when
-   `chartPointFill`/`chartPointBorder`/`chartPointMarker` all produced nothing,
-   instead of testing key presence. No empty style may reach the XML layer.
-2. `XmlElements.dataPoint()`: create the `c:dPt` **empty** (`c:idx` only, plus
-   `c:bubble3D` for schema order) and let the actual modifications add `c:spPr`
-   via the existing `createElement('c:spPr')` path. Nothing should be styled
-   that the caller did not ask for.
-3. `chartPointMarker`: either support creating `c:marker` inside a `c:dPt`
-   (`XmlElements.marker()` + a `createElement` case) or document that per-point
-   marker styling is unsupported and drop the tag — today it is a silent no-op
-   whose only effect is bug 2.
-4. `Modification.isRequired: false` currently only suppresses a (commented-out)
-   warning; `assertElement` creates the element either way. Make it actually
-   mean "modify if present, never create" — `seriesStyle()` already passes it
-   for `c:marker`/`c:spPr` in that intent.
+1. ✅ (2026-08-14) `chartPoint()`: build the child tags first and return
+   `undefined` when fill/border/marker all produced nothing, instead of
+   testing key presence. No empty style may reach the XML layer —
+   `setPointStyles` skips the `modify()` call entirely when nothing remains.
+2. ✅ (2026-08-12, with the Modification-contract track) `XmlElements.dataPoint()`
+   creates the `c:dPt` **empty** (`c:idx` plus `c:bubble3D`); modifications add
+   `c:spPr` via the `createElement('c:spPr')` path.
+3. ✅ (2026-08-14) `chartPointMarker`: per-point marker styling is
+   **modify-if-present** (`isRequired: false` on `c:marker`, honored since the
+   contract track) and gated on a typed color — a `marker` key without one
+   contributes nothing instead of emitting a no-op tag whose only effect was
+   bug 2.
+4. ✅ (2026-08-12, contract track) `isRequired: false` means "modify if
+   present, never create" in `assertElement`.
 
-**Guard.** Tier-0 assertion (Phase 5): modify a line chart with per-point styles
-and assert no `c:ser` gains a `c:dPt` containing `<a:ln><a:noFill/>` unless the
-caller asked for it; plus a tier-3 golden deck for a multi-series line chart,
-which is exactly the failure mode a pixel diff catches and an XML diff hides.
+Closing the track (2026-08-14) surfaced that the **remaining payload lived in
+`createElement('c:spPr')` itself**: `XmlElements.shapeProperties()` built the
+grey `solidFill` + `<a:ln><a:noFill/>` + `effectLst` blob, so even a genuine
+per-point fill erased its line segment on creation. It now creates an **empty**
+`c:spPr` in schema position (new `C_DPT_CHILD_ORDER` — note `c:bubble3D`
+sorts *before* `c:spPr` inside `c:dPt`, unlike `c:ser` — and reusing
+`C_SER_CHILD_ORDER` for series). This also covers the series-level twin:
+`seriesStyle`'s default-required `c:spPr` fabricated the same blob into any
+styled series lacking one. Per-point borders no longer depend on the blob's
+`a:ln`: `chartPointBorder` nests inside the point's single `c:spPr` entry
+(`chartPointSpPr`) and a new `createElement('a:ln')` case inserts a bare
+`<a:ln>` per `A_SPPR_CHILD_ORDER`. The dead `XmlElements.spPr()` is deleted.
+
+**Guard.** ✅ Tier-0: `modify-chart-point-styles-line.test.ts` — no template
+ships a line chart (why the bug class stayed invisible), so it generates a
+3-series one via pptxgenjs and re-loads it through `setChartData`: a real
+style materializes exactly one `c:dPt` with the requested fill, pseudo-styles
+(`{ marker: {} }`, a color without `type`) produce none, and no `c:dPt`
+carries an `<a:noFill/>` the caller didn't ask for. ✅ Tier-3 golden deck
+`chart-line-points`: 5-series line chart with sparse real + pseudo point
+styles — the baseline pins "all lines visible", exactly the failure mode a
+pixel diff catches and an XML diff hides.
 
 **Related, already fixed.** `ModifyColorHelper.normalizeColorObject` used to
 throw a `TypeError` on a `Color` without `value` (`color.value.indexOf`), which

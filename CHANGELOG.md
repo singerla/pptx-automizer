@@ -31,6 +31,19 @@ semver, with the pre-1.0 convention that **breaking changes bump the minor**.
 
 ### Fixed
 
+- Chart per-point styling (`setChartData` with `categories[].styles`) no
+  longer fabricates default-styled `<c:dPt>` elements. Previously every
+  styled-looking point — including pseudo-styles such as `{ marker: {} }` or a
+  color without `type` — produced a data point carrying a default grey
+  `<a:solidFill>` plus `<a:ln><a:noFill/>`, which on **line charts** erased
+  the line segments (the chart rendered as floating labels). Now a style that
+  yields no applicable modification produces no `<c:dPt>` at all, and a
+  created `c:spPr` starts empty — points inherit the series formatting except
+  for exactly what the caller asked for. The same applies to a series
+  `style.color` on a template series without `<c:spPr>`. Per-point border
+  styles on template-less points now materialize as a bare `<a:ln>` in schema
+  position instead of silently relying on the fabricated default (per-point
+  *marker* styling remains modify-if-present).
 - Documentation only — examples that documented APIs which never existed:
   `replaceText` has no regex/whole-word/case options (its options are the
   `openingTag`/`closingTag` tag delimiters, default `{{`/`}}`);
