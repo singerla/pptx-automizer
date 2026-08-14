@@ -18,6 +18,7 @@
     "test": "npx jest",
     "test-coverage": "npx jest --coverage",
     "test:visual": "npx jest --config jest.visual.config.ts",
+    "docs:ai": "ts-node tools/ai-instructor/build.ts",
     "docs:api": "yarn --cwd website docusaurus generate-typedoc",
     "docs:start": "yarn --cwd website start",
     "docs:build": "yarn --cwd website build",

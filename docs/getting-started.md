@@ -156,6 +156,19 @@ pres.write('myPresentation.pptx').then((summary) => {
 });
 ```
 
+Templates don't have to come from disk: `load` and `loadRoot` also accept a
+`Buffer` (e.g. from a database or an upload). A name is required for buffered
+templates:
+
+```ts
+declare const rootBuffer: Buffer;
+declare const contentBuffer: Buffer;
+
+const pres = automizer
+  .loadRoot(rootBuffer)
+  .load(contentBuffer, 'content');
+```
+
 See [Output](./output.md) for the other output formats — a `ReadableStream` or the underlying JSZip instance.
 
 ## More examples

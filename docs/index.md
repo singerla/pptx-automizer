@@ -2,6 +2,7 @@
 slug: /
 title: Introduction
 sidebar_label: Introduction
+description: What pptx-automizer is — a template-based .pptx generator for Node.js that modifies existing PowerPoint templates instead of building slides from scratch.
 ---
 
 # pptx-automizer

@@ -181,6 +181,25 @@ pres.addSlide('shapes', 1, (slide) => {
 });
 ```
 
+## Inspect a slide from inside the callback
+
+Besides `pres.getInfo()` (see the [Basic Example](./getting-started.md#basic-example)),
+an added slide can describe itself at `write()` time. Prefer inspecting over
+guessing shape names — an unresolvable selector rejects `write()` (or is
+skipped with `continueOnError: true`), so listing what is actually there beats
+retrying name variations:
+
+```ts
+pres.addSlide('myTemplate.pptx', 1, async (slide) => {
+  // All shapes on this slide, with name, id, position and type:
+  const elements = await slide.getAllElements();
+  // Only certain tags, e.g. text-bearing shapes:
+  const shapes = await slide.getAllElements(['sp']);
+  // The slide's dimensions:
+  const dimensions = await slide.getDimensions();
+});
+```
+
 ## Find all text elements on a slide
 
 When processing an added slide, you might want to apply a modifier to any existing text element. Call `slide.getAllTextElementIds()` for this:

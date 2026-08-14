@@ -2,6 +2,7 @@ import type { Config } from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 import { themes as prismThemes } from 'prism-react-renderer';
 import * as path from 'path';
+import llmsTxtPlugin from './plugins/llms-txt';
 
 // The docs corpus lives at the repo root (`docs/`), not inside `website/`,
 // so it stays covered by `__tests__/docs-examples.test.ts` and readable on
@@ -59,6 +60,8 @@ const config: Config = {
   ],
 
   plugins: [
+    // ROADMAP 6.4: llms.txt + llms-full.txt + a .md twin of every page
+    llmsTxtPlugin,
     [
       'docusaurus-plugin-typedoc',
       {
