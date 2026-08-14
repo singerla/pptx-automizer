@@ -1,4 +1,0 @@
-{
-    "entryPoints": ["src/index.ts"],
-    "out": "website/docs/api"
-}

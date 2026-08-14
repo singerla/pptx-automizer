@@ -461,15 +461,42 @@ Everything else moves to `docs/`, one page per feature area:
 Do this **after** 6.1, so the example test moves with the content and catches
 anything broken in transit.
 
-### 6.3 Docs site
+### 6.3 Docs site — ✅ done 2026-08-14
 
-- 🔧 **Docusaurus** in `website/`, chosen over Starlight/VitePress for one
-  reason: `docusaurus-plugin-typedoc` folds the existing typedoc config into the
-  sidebar, so guides and API reference become one searchable site. Versioning is
-  built in and matters for a pre-1.0 library with API churn — cut a `0.8` version
-  at the first release after the site lands, keep `next` from `main`.
-- 🔧 Search: Pagefind or the built-in local index, built at compile time. No
-  hosted search service for a site this size.
+- 🔧 ✅ **Docusaurus** in `website/` (own yarn workspace, Docusaurus 3.10),
+  chosen over Starlight/VitePress for one reason: `docusaurus-plugin-typedoc`
+  folds the typedoc config into the sidebar, so guides and API reference become
+  one searchable site. Versioning is built in and matters for a pre-1.0 library
+  with API churn — cut a version at the first release after the site lands,
+  keep `next` from `main`. Implementation notes:
+  - **The docs corpus stays at repo-root `docs/`** (Docusaurus points its docs
+    plugin at `../docs`, docs-only mode, `routeBasePath: '/'`): it keeps the
+    6.1 compile test's glob unchanged and the pages readable on GitHub. The 6.2
+    split lands there, one sidebar id per page in `website/sidebars.ts`.
+  - Typedoc now emits **markdown** (`typedoc-plugin-markdown` +
+    `typedoc-docusaurus-theme`) into `docs/api` (gitignored, excluded from the
+    docs-examples walk as generated content). Root `typedoc.json` is gone —
+    the options live in the plugin block of `website/docusaurus.config.ts`,
+    and root `yarn docs:api` delegates to `docusaurus generate-typedoc`.
+    Generation also runs automatically on every `docs:start`/`docs:build`.
+  - `.md` is parsed as **CommonMark, not MDX** (`markdown.format: 'detect'`):
+    src doc comments and future 6.2 pages cite raw OOXML tags (`<a:ln>`,
+    `Promise<TemplateInfo[]>`) that MDX rejects as malformed JSX. Opt into MDX
+    per-file via `.mdx`. `sanitizeComments: true` escapes them in typedoc
+    output for good measure.
+  - The 51 typedoc warnings from 6.1 are gone in the markdown pipeline; the two
+    real ones left (`@order` instead of `@param` in
+    `modify-presentation-helper.ts`) fixed in src.
+  - `docs/index.md` is a **temporary landing page** (install + quick example,
+    compile-tested like everything else) that links to the README until the
+    6.2 split replaces it.
+- 🔧 ✅ Search: `@easyops-cn/docusaurus-search-local` — local index built at
+  compile time. No hosted search service for a site this size.
+- 🔧 ✅ CI: `.github/workflows/docs.yml` deploys to **GitHub Pages** on push to
+  `main` (`actions/deploy-pages`; needs Pages → Source: "GitHub Actions" in the
+  repo settings, one-time). `url`/`baseUrl` default to
+  `singerla.github.io/pptx-automizer` and are env-overridable
+  (`DOCS_URL`/`DOCS_BASE_URL`) for the 6.5 self-hosted build.
 
 ### 6.4 AI rendering (generated, not written)
 
@@ -525,8 +552,10 @@ serving other things from the same box.
 1. ✅ 6.1 — docs-example test + typedoc `out` fix. Standalone value, no site
    needed. Done 2026-08-13.
 2. 6.2 — README split, page by page, example test green throughout.
-3. 6.3 — Docusaurus + typedoc, deployed to **GitHub Pages only** first. Prove the
-   pipeline on the zero-ops target.
+3. ✅ 6.3 — Docusaurus + typedoc, deployed to **GitHub Pages only** first. Prove
+   the pipeline on the zero-ops target. Done 2026-08-14, ahead of 6.2 — the
+   scaffold doesn't need the split content, the split pages drop into `docs/`
+   and `website/sidebars.ts` as they land.
 4. 6.5 — add the Docker target and `docs.ensembl.io`, flip canonical.
 5. 6.4 — `llms.txt` generation and the `AI-INSTRUCTOR.md` include refactor, once
    the corpus is stable enough to generate from.

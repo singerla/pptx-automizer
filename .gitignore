@@ -6,7 +6,10 @@ dist/
 
 ### Docs
 # generated API reference (yarn docs:api); the docs corpus itself is committed
-website/docs/api/
+docs/api/
+# Docusaurus build artifacts
+website/build/
+website/.docusaurus/
 
 ### Editor
 workspace.code-workspace

@@ -18,7 +18,7 @@ export default class ModifyPresentationHelper {
   /**
    * Pass an array of slide numbers to define a target sort order.
    * First slide starts by 1.
-   * @order Array of slide numbers, starting by 1
+   * @param order Array of slide numbers, starting by 1
    */
   static sortSlides = (order: number[]) => (xml: XmlDocument) => {
     const slides = ModifyPresentationHelper.getSlidesCollection(xml);
@@ -28,7 +28,7 @@ export default class ModifyPresentationHelper {
 
   /**
    * Pass an array of slide numbers to remove from slide sortation.
-   * @order Array of slide numbers, starting by 1
+   * @param numbers Array of slide numbers, starting by 1
    */
   static removeSlides = (numbers: number[]) => (xml: XmlDocument) => {
     const slides = ModifyPresentationHelper.getSlidesCollection(xml);
