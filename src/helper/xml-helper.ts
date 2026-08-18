@@ -528,7 +528,9 @@ export class XmlHelper {
     return {
       archive,
       file: `[Content_Types].xml`,
-      parent: (xml: XmlDocument) => xml.getElementsByTagName('Types')[0],
+      // `Types` is the document element; a live getElementsByTagName lookup
+      // would re-walk the whole (growing) part on every append.
+      parent: (xml: XmlDocument) => xml.documentElement as XmlElement,
       tag: 'Override',
       attributes,
     };
@@ -544,8 +546,8 @@ export class XmlHelper {
     return {
       archive,
       file: targetRelFile,
-      parent: (xml: XmlDocument) =>
-        xml.getElementsByTagName('Relationships')[0],
+      // `Relationships` is the document element of a .rels part.
+      parent: (xml: XmlDocument) => xml.documentElement as XmlElement,
       tag: 'Relationship',
       attributes,
     };

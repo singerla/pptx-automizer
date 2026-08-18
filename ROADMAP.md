@@ -1167,7 +1167,7 @@ content back first (verified: output file stays valid).
    `@xmldom/xmldom`. ~20 % for a few lines.
 4. ⚡ ✅ **Snapshot live NodeLists into plain arrays** in `sliceCollection` /
    `modifyCollection` before mutating; `parents` → `Set`.
-5. ⚡ Optional, later: `addToPresentation` should cache the max rId / content-type
+5. ⚡ ✅ Optional, later: `addToPresentation` should cache the max rId / content-type
    state instead of rescanning the growing parts (item 4 above).
 
 **Guard.** ✅ New Tier-1-style test: append N large slides and assert
@@ -1188,7 +1188,11 @@ of magnitude, so it is a genuine regression gate once fixed.
   applied on archive-module load): memoizes `grammar.reg` on the exports
   object `sax.js` calls through — safe because `reg` is pure and emits no
   `g` flag. No-op if a future xmldom version blocks the deep import.
-  ⏳ Reporting it upstream to `@xmldom/xmldom` is still open.
+  ⏳ Reporting it upstream to `@xmldom/xmldom` is still open — issue text is
+  drafted (with a self-contained repro: 50k-element parse, 461 → 352
+  ms/parse from hoisting the one closing-tag RegExp; verified no existing
+  upstream issue as of 2026-08-18), needs a logged-in GitHub account to
+  file.
 - **Fix 4** also corrected the iteration semantics live lists silently had:
   a callback removing an element made the loop skip the next one
   (`normalizePlaceholderShapes`); snapshots process every element
@@ -1203,6 +1207,24 @@ of magnitude, so it is a genuine regression gate once fixed.
   synthetic deck in a child process (`--expose-gc`, deterministic heap
   numbers) and asserts ≤ 10 buffered parts (pre-fix: `2·slides + 4`) and
   < 200 MB heap at 60 slides (pre-fix: ~566 MB).
+
+### Outcome, fix 5 (2026-08-18)
+
+- **Fix 5**: `addToPresentation` no longer rescans the growing parts per
+  slide. `ContentTypeRegistry` keeps two WeakMap caches keyed by the parsed
+  document (so an evicted/re-parsed part rebuilds them with one scan): the
+  max rId of `presentation.xml.rels` (safe upper bound — the registry is the
+  only appender to that part; `Template.removeSlideRelations` only removes),
+  and the `p:sldIdLst`/`p:sldMasterIdLst` elements of `presentation.xml`
+  (xmldom's live `getElementsByTagName` re-walks the whole document per
+  access). `createContentTypeChild`/`createRelationshipChild` and
+  `appendToSlideRel` now use `xml.documentElement` directly — `Types` and
+  `Relationships` *are* the document elements, so the per-append live-list
+  walk of `[Content_Types].xml` and every rels part was pure waste.
+- Measured (empty slide appended N times, total `write()` time): 3200
+  slides **4.30 s → 2.17 s**; ms/slide 800→3200 was climbing 0.96 → 1.35,
+  now flat 0.82 → 0.68. Existing `remove-existing-slides` suite covers the
+  truncate-then-append rId interplay; suite green (311 tests).
 
 ---
 
@@ -1228,8 +1250,9 @@ Early:    Phase 6.1 (docs-example compile test) alongside Phase 5 tier 1 — it 
 Then:     Phase 6.2-6.5 docs split → site on GitHub Pages (only host; the
           self-hosted mirror was dropped 2026-08-14)
 Done:     Performance track (archive buffer eviction) — postponed 2026-08-12,
-          implemented 2026-08-14; open: optional addToPresentation caching,
-          upstream report of the xmldom RegExp recompilation
+          implemented 2026-08-14; addToPresentation caching added 2026-08-18;
+          open: upstream report of the xmldom RegExp recompilation
+          (issue text drafted, needs a logged-in GitHub account to file)
 ```
 
 Rule of thumb for every PR during the refactor: **no public `modify.*` signature

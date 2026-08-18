@@ -51,6 +51,15 @@ semver, with the pre-1.0 convention that **breaking changes bump the minor**.
   in 0.9.10). A guarded runtime patch memoizes the grammar's RegExp
   compilation — ~20 % end-to-end speedup on template-heavy workloads; a
   no-op if a future xmldom version blocks or fixes it.
+- Registering an appended slide/master/layout with the presentation is no
+  longer quadratic in deck size (ROADMAP performance track, fix 5).
+  `ContentTypeRegistry` caches the max rId of `presentation.xml.rels` and
+  the `p:sldIdLst`/`p:sldMasterIdLst` elements per parsed document instead
+  of rescanning the growing parts on every append, and appends to
+  `[Content_Types].xml` and rels parts address the container via
+  `documentElement` instead of a live `getElementsByTagName` walk of the
+  whole part. Appending 3200 empty slides: 4.3 s → 2.2 s, with per-slide
+  time now flat instead of climbing.
 - `XmlHelper.sliceCollection`/`modifyCollection` snapshot xmldom's live
   node lists before iterating. Besides removing superlinear re-walks of the
   document (visible as ever-slower `Cleaning unsupported tag` steps on
