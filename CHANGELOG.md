@@ -66,6 +66,27 @@ semver, with the pre-1.0 convention that **breaking changes bump the minor**.
   `continueOnError: true`), and concurrent Automizer instances in one process
   are supported (the global state was removed in 0.9.0, with a regression
   test). `AI-INSTRUCTOR.md` and `docs/concepts.md` said otherwise.
+- fs mode: `compressFolder` returned before the output stream finished and
+  swallowed write errors, so callers could clean up the work directory while
+  the zip was still being written. It now awaits stream completion and
+  rethrows failures. (#202)
+
+### Security
+
+- Removed the `extract-zip` dependency (unmaintained since 2020;
+  CVE-2026-19693: arbitrary file write via crafted zip symlink entries, no
+  patched release). fs mode extracts via an internal jszip-based
+  `extractToFolder` that rejects absolute and zip-slip entry paths and skips
+  symlink entries. Note: the whole archive is held in memory while
+  extracting, unlike the streaming extractor it replaces. (#202)
+- Removed the `image-size` dependency (repo archived upstream;
+  CVE-2025-71329/71330: infinite-loop DoS in its ICNS/JXL/HEIF parsers, no
+  patched release) in favor of an internal loop-safe parser for PNG, JPEG,
+  GIF, BMP, WebP and SVG. TIFF and ICO dimensions are no longer detected;
+  cover cropping (`setRelationTargetCover`) falls back to default dimensions
+  for such media with a warning. `pptxgenjs` still pins a vulnerable
+  `image-size` transitively; the yarn resolution to the newest release
+  remains in place as mitigation. (#202)
 
 ## [0.9.0] — 2026-08-12
 

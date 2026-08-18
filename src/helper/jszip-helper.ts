@@ -61,7 +61,10 @@ const isSymlinkEntry = (entry: JSZip.JSZipObject): boolean =>
  * Every entry must stay inside destDir: absolute and path-traversal
  * ("zip slip") entry names are rejected, and symlink entries are skipped
  * (never created). The archive is held in memory while extracting, one
- * entry decompressed at a time - fine for .pptx-sized files.
+ * entry decompressed at a time - fine for .pptx-sized files, but unlike
+ * the streaming extract-zip this replaces, peak memory grows with the
+ * compressed archive size. Relevant here because ArchiveFs (fs mode)
+ * targets large decks; revisit with a streaming unzip if that ever bites.
  * @param {string} srcFile
  * @param {string} destDir
  */

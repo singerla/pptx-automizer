@@ -1,8 +1,13 @@
 /**
- * Minimal, loop-safe image dimension detection for the formats PowerPoint
- * accepts as slide media: PNG, JPEG, GIF, BMP, WebP and SVG. Every parser
- * either returns dimensions or throws — bounded iteration only, so
+ * Minimal, loop-safe image dimension detection for the media formats that
+ * commonly appear in .pptx files: PNG, JPEG, GIF, BMP, WebP and SVG. Every
+ * parser either returns dimensions or throws — bounded iteration only, so
  * malformed or unsupported input can never hang the process.
+ *
+ * Not supported (unlike the removed image-size dependency): TIFF and ICO,
+ * as well as EMF/WMF, which PowerPoint also accepts as media. Callers
+ * catch the throw and fall back to default dimensions, so e.g. cover
+ * cropping degrades gracefully for such media instead of failing.
  */
 
 export interface ImageDimensions {
@@ -192,8 +197,8 @@ const looksLikeSvg = (buffer: Buffer): boolean =>
 
 /**
  * Detects the pixel dimensions of an image buffer.
- * Supported: PNG, JPEG, GIF, BMP, WebP, SVG — the formats PowerPoint
- * accepts as slide media. Throws on any other or malformed input.
+ * Supported: PNG, JPEG, GIF, BMP, WebP, SVG. Throws on any other
+ * (including TIFF/ICO/EMF/WMF) or malformed input.
  */
 export const imageDimensions = (buffer: Buffer): ImageDimensions => {
   if (!buffer || buffer.length < MIN_SNIFF_LENGTH) {

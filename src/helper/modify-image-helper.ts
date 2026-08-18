@@ -64,8 +64,13 @@ export default class ModifyImageHelper {
         const _dimensions = imageDimensions(buffer);
         newImageDimensions.width = _dimensions.width;
         newImageDimensions.height = _dimensions.height;
-      } catch (_error) {
-        log.warn("Couldn't find media file in template archive in path.");
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        log.warn(
+          'Could not read new image dimensions, using defaults: ' +
+            errorMessage,
+        );
       }
 
       // Find the original image dimensions using the original target path from the original slide
