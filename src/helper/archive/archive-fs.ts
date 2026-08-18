@@ -16,8 +16,7 @@ import {
   FileHelper,
   makeDirIfNotExists,
 } from '../file-helper';
-import extract from 'extract-zip';
-import { compressFolder } from '../jszip-helper';
+import { compressFolder, extractToFolder } from '../jszip-helper';
 
 export default class ArchiveFs extends Archive implements IArchive {
   archive: boolean;
@@ -86,9 +85,7 @@ export default class ArchiveFs extends Archive implements IArchive {
       return;
     }
 
-    await extract(file, { dir: targetDir }).catch((err) => {
-      throw err;
-    });
+    await extractToFolder(file, targetDir);
   }
 
   getTemplateDir(file: string): string {
