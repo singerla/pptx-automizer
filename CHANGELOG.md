@@ -73,6 +73,10 @@ semver, with the pre-1.0 convention that **breaking changes bump the minor**.
 
 ### Security
 
+For the full review record of the changes below — findings, threat-model
+discussion and open questions — see
+[`reviews/pr-202-security-deps.md`](./reviews/pr-202-security-deps.md).
+
 - Removed the `extract-zip` dependency (unmaintained since 2020;
   CVE-2026-19693: arbitrary file write via crafted zip symlink entries, no
   patched release). fs mode extracts via an internal jszip-based
