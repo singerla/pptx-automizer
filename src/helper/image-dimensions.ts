@@ -1,11 +1,8 @@
 /**
- * Minimal, loop-safe image dimension detection.
- *
- * Replaces the `image-size` package (all published versions are affected by
- * unpatched infinite-loop DoS advisories in its ICNS/JXL/HEIF parsers,
- * GHSA-w3rx-r6r6-pgpr / GHSA-5p2g-fcmc-qvqq). Only formats that are valid
- * PowerPoint media are supported; every parser either returns dimensions or
- * throws — it can never hang on malformed input.
+ * Minimal, loop-safe image dimension detection for the formats PowerPoint
+ * accepts as slide media: PNG, JPEG, GIF, BMP, WebP and SVG. Every parser
+ * either returns dimensions or throws — bounded iteration only, so
+ * malformed or unsupported input can never hang the process.
  */
 
 export interface ImageDimensions {
@@ -185,13 +182,13 @@ const parseSvg = (buffer: Buffer): ImageDimensions => {
   throw new Error('Malformed SVG: no width/height or viewBox found');
 };
 
-const looksLikeSvg = (buffer: Buffer): boolean => {
-  const prefix = buffer
+// binary formats are sniffed first, so any <svg tag within the scanned
+// prefix (after an optional prolog, DOCTYPE, comments or a generator
+// banner) is a safe signal; parseSvg still throws on malformed content
+const looksLikeSvg = (buffer: Buffer): boolean =>
+  buffer
     .toString('utf8', 0, Math.min(buffer.length, SVG_SCAN_LIMIT))
-    .replace(/^\uFEFF/, '')
-    .trimStart();
-  return prefix.startsWith('<svg') || /^<\?xml[\s\S]*<svg/.test(prefix);
-};
+    .includes('<svg');
 
 /**
  * Detects the pixel dimensions of an image buffer.

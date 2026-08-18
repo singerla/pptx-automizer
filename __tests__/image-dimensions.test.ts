@@ -68,6 +68,30 @@ describe('imageDimensions', () => {
     expect(imageDimensions(bmp)).toStrictEqual({ width: 64, height: 32 });
   });
 
+  test('reads WebP lossy (VP8) dimensions', () => {
+    const webp = Buffer.alloc(30);
+    webp.write('RIFF', 0, 'latin1');
+    webp.write('WEBP', 8, 'latin1');
+    webp.write('VP8 ', 12, 'latin1');
+    webp[23] = 0x9d;
+    webp[24] = 0x01;
+    webp[25] = 0x2a;
+    webp.writeUInt16LE(200, 26);
+    webp.writeUInt16LE(129, 28);
+    expect(imageDimensions(webp)).toStrictEqual({ width: 200, height: 129 });
+  });
+
+  test('reads WebP extended (VP8X) dimensions', () => {
+    const webp = Buffer.alloc(30);
+    webp.write('RIFF', 0, 'latin1');
+    webp.write('WEBP', 8, 'latin1');
+    webp.write('VP8X', 12, 'latin1');
+    // 24-bit little-endian canvas size - 1
+    webp.writeUIntLE(200 - 1, 24, 3);
+    webp.writeUIntLE(129 - 1, 27, 3);
+    expect(imageDimensions(webp)).toStrictEqual({ width: 200, height: 129 });
+  });
+
   test('reads WebP lossless (VP8L) dimensions', () => {
     const webp = Buffer.alloc(30);
     webp.write('RIFF', 0, 'latin1');
@@ -96,6 +120,19 @@ describe('imageDimensions', () => {
         ),
       ),
     ).toStrictEqual({ width: 10, height: 20 });
+  });
+
+  test('reads SVG dimensions with DOCTYPE, comment or banner prefixes', () => {
+    expect(
+      imageDimensions(
+        Buffer.from(
+          '<!-- Generator: Some Tool -->\n' +
+            '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" ' +
+            '"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">\n' +
+            '<svg width="30" height="40"></svg>',
+        ),
+      ),
+    ).toStrictEqual({ width: 30, height: 40 });
   });
 
   test('throws on empty and too-short buffers', () => {

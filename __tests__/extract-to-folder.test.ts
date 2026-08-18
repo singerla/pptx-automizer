@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import JSZip from 'jszip';
-import { extractToFolder } from '../src/helper/jszip-helper';
+import { compressFolder, extractToFolder } from '../src/helper/jszip-helper';
 
 const cacheDir = `${__dirname}/pptx-cache/extract-to-folder`;
 
@@ -99,6 +99,18 @@ describe('extractToFolder', () => {
     await expect(
       extractToFolder(srcFile, path.join(cacheDir, 'absolute')),
     ).rejects.toThrow('Zip entry has an absolute path: C:\\abs.txt');
+  });
+
+  test('compressFolder rejects when the source folder cannot be read', async () => {
+    // a failed write must reach the caller (ArchiveFs.output) instead of
+    // reporting success and cleaning up over a truncated output file
+    await expect(
+      compressFolder(
+        path.join(cacheDir, 'does-not-exist'),
+        path.join(cacheDir, 'never-written.zip'),
+        {},
+      ),
+    ).rejects.toThrow();
   });
 
   test('skips symlink entries instead of creating them', async () => {

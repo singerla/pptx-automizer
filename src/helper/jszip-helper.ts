@@ -1,5 +1,6 @@
 import { log } from './logger';
 import fs, { promises as fsp } from 'fs';
+import { pipeline } from 'stream/promises';
 import path from 'path';
 import JSZip from 'jszip';
 
@@ -57,9 +58,10 @@ const isSymlinkEntry = (entry: JSZip.JSZipObject): boolean =>
 /**
  * Extracts a zip file into a folder in the file system.
  *
- * Replaces extract-zip: rejects absolute and path-traversal ("zip slip")
- * entry names and never creates symlinks (symlink entries are skipped),
- * so a malicious archive cannot write outside destDir.
+ * Every entry must stay inside destDir: absolute and path-traversal
+ * ("zip slip") entry names are rejected, and symlink entries are skipped
+ * (never created). The archive is held in memory while extracting, one
+ * entry decompressed at a time - fine for .pptx-sized files.
  * @param {string} srcFile
  * @param {string} destDir
  */
@@ -117,22 +119,16 @@ export const compressFolder = async (
   const start = Date.now();
   try {
     const zip = await createZipFromFolder(srcDir);
-    // await the stream so callers (e.g. ArchiveFs.output) don't clean up
-    // the source folder while the zip is still being written
-    await new Promise<void>((resolve, reject) => {
-      zip
-        .generateNodeStream({ streamFiles: true, ...options })
-        .pipe(fs.createWriteStream(destFile))
-        .on('error', (err) => {
-          log.error('Error writing file', err.stack);
-          reject(err);
-        })
-        .on('finish', () => {
-          log.info('Zip written successfully:', Date.now() - start, 'ms');
-          resolve();
-        });
-    });
+    // pipeline settles on completion or on an error from either stream, so
+    // callers (e.g. ArchiveFs.output) only continue - and clean up the
+    // source folder - once the zip is fully written
+    await pipeline(
+      zip.generateNodeStream({ streamFiles: true, ...options }),
+      fs.createWriteStream(destFile),
+    );
+    log.info('Zip written successfully:', Date.now() - start, 'ms');
   } catch (ex) {
     log.error('Error creating zip', ex);
+    throw ex;
   }
 };
