@@ -3,7 +3,7 @@ import { XmlElement } from '../types/xml-types';
 import { ImageStyle } from '../types/modify-types';
 import { getMediaBuffer } from '../types/types';
 import slugify from 'slugify';
-import { imageSize } from 'image-size';
+import { imageDimensions } from './image-dimensions';
 import fs from 'fs';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
 import { XmlHelper } from './xml-helper';
@@ -61,7 +61,7 @@ export default class ModifyImageHelper {
           );
         }
         const buffer = getMediaBuffer(mediaFile, fs.readFileSync);
-        const _dimensions = imageSize(buffer);
+        const _dimensions = imageDimensions(buffer);
         newImageDimensions.width = _dimensions.width;
         newImageDimensions.height = _dimensions.height;
       } catch (_error) {
@@ -81,7 +81,7 @@ export default class ModifyImageHelper {
             originalTargetPath,
             'nodebuffer',
           )) as Buffer;
-          const _dimensions = imageSize(originalImage);
+          const _dimensions = imageDimensions(originalImage);
           originalImageDimensions.width = _dimensions.width;
           originalImageDimensions.height = _dimensions.height;
         } else {

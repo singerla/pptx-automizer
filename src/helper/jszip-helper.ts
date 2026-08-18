@@ -1,5 +1,6 @@
 import { log } from './logger';
 import fs, { promises as fsp } from 'fs';
+import { pipeline } from 'stream/promises';
 import path from 'path';
 import JSZip from 'jszip';
 
@@ -47,6 +48,64 @@ const createZipFromFolder = async (dir: string): Promise<JSZip> => {
   }, new JSZip());
 };
 
+const S_IFMT = 0xf000;
+const S_IFLNK = 0xa000;
+
+const isSymlinkEntry = (entry: JSZip.JSZipObject): boolean =>
+  // unixPermissions is typed number | string | null; octal strings included
+  (Number(entry.unixPermissions ?? 0) & S_IFMT) === S_IFLNK;
+
+/**
+ * Extracts a zip file into a folder in the file system.
+ *
+ * Every entry must stay inside destDir: absolute and path-traversal
+ * ("zip slip") entry names are rejected, and symlink entries are skipped
+ * (never created). The archive is held in memory while extracting, one
+ * entry decompressed at a time - fine for .pptx-sized files.
+ * @param {string} srcFile
+ * @param {string} destDir
+ */
+export const extractToFolder = async (
+  srcFile: string,
+  destDir: string,
+): Promise<void> => {
+  const root = path.resolve(destDir);
+  await fsp.mkdir(root, { recursive: true });
+
+  const zip = await new JSZip().loadAsync(await fsp.readFile(srcFile));
+
+  for (const entry of Object.values(zip.files)) {
+    if (
+      path.isAbsolute(entry.name) ||
+      entry.name.startsWith('/') ||
+      entry.name.startsWith('\\') ||
+      /^[a-zA-Z]:/.test(entry.name)
+    ) {
+      throw new Error('Zip entry has an absolute path: ' + entry.name);
+    }
+
+    const dest = path.resolve(root, entry.name);
+    if (dest !== root && !dest.startsWith(root + path.sep)) {
+      throw new Error(
+        'Zip entry resolves outside target directory: ' + entry.name,
+      );
+    }
+
+    if (isSymlinkEntry(entry)) {
+      log.warn('Skipping symlink entry in zip file: ' + entry.name);
+      continue;
+    }
+
+    if (entry.dir) {
+      await fsp.mkdir(dest, { recursive: true });
+    } else {
+      // some zips omit directory entries, so ensure the parent dir exists
+      await fsp.mkdir(path.dirname(dest), { recursive: true });
+      await fsp.writeFile(dest, await entry.async('nodebuffer'));
+    }
+  }
+};
+
 /**
  * Compresses a folder to the specified zip file.
  * @param {string} srcDir
@@ -60,14 +119,16 @@ export const compressFolder = async (
   const start = Date.now();
   try {
     const zip = await createZipFromFolder(srcDir);
-    zip
-      .generateNodeStream({ streamFiles: true, ...options })
-      .pipe(fs.createWriteStream(destFile))
-      .on('error', (err) => log.error('Error writing file', err.stack))
-      .on('finish', () =>
-        log.info('Zip written successfully:', Date.now() - start, 'ms'),
-      );
+    // pipeline settles on completion or on an error from either stream, so
+    // callers (e.g. ArchiveFs.output) only continue - and clean up the
+    // source folder - once the zip is fully written
+    await pipeline(
+      zip.generateNodeStream({ streamFiles: true, ...options }),
+      fs.createWriteStream(destFile),
+    );
+    log.info('Zip written successfully:', Date.now() - start, 'ms');
   } catch (ex) {
     log.error('Error creating zip', ex);
+    throw ex;
   }
 };
