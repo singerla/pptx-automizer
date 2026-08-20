@@ -10,6 +10,13 @@ export type MultiTextAutoNumberType =
   | 'romanUcPeriod'
   | string;
 
+/**
+ * A spacing value: a plain number is absolute points (`<a:spcPts>`), while
+ * `{ percent }` scales with the paragraph's line height (`<a:spcPct>`, 100 =
+ * one line) — the only way an em-based margin survives a font-size change.
+ */
+export type MultiTextSpacing = number | { percent: number };
+
 export interface MultiTextRun {
   text?: string;
   style?: TextStyle;
@@ -40,9 +47,9 @@ export interface MultiTextParagraph {
     /** Numbering scheme for `bulletType: 'number'` (default 'arabicPeriod') */
     autoNumberType?: MultiTextAutoNumberType;
     alignment?: 'l' | 'ctr' | 'r' | 'just'; // Text alignment
-    lineSpacing?: number; // Line spacing in points
-    spaceBefore?: number; // Space before paragraph in points
-    spaceAfter?: number; // Space after paragraph in points
+    lineSpacing?: MultiTextSpacing; // Line spacing (points or { percent })
+    spaceBefore?: MultiTextSpacing; // Space before paragraph (points or { percent })
+    spaceAfter?: MultiTextSpacing; // Space after paragraph (points or { percent })
     indent?: number; // Custom indentation in EMU (if different from level)
     marginLeft?: number; // Left margin in EMU
   };
