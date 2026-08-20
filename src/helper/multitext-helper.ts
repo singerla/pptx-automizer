@@ -1,6 +1,10 @@
 import { HyperlinkInfo, TextStyle } from '../types/modify-types';
 import { XmlDocument, XmlElement } from '../types/xml-types';
-import { MultiTextParagraph, MultiTextRun } from '../interfaces/imulti-text';
+import {
+  MultiTextParagraph,
+  MultiTextRun,
+  MultiTextSpacing,
+} from '../interfaces/imulti-text';
 import ModifyTextHelper from './modify-text-helper';
 import { XmlHelper } from './xml-helper';
 import HyperlinkElement from './modify-hyperlink-element';
@@ -300,41 +304,38 @@ export class MultiTextHelper {
     pPr: XmlElement,
     paragraphProps: MultiTextParagraph['paragraph'],
   ): void {
-    // Set line spacing
-    if (paragraphProps.lineSpacing !== undefined) {
-      const lnSpc = this.document.createElement('a:lnSpc');
-      const spcPts = this.document.createElement('a:spcPts');
-      spcPts.setAttribute(
-        'val',
-        String(Math.round(paragraphProps.lineSpacing * 100)),
-      ); // Convert to 100ths of a point
-      lnSpc.appendChild(spcPts);
-      pPr.appendChild(lnSpc);
+    this.appendSpacing(pPr, 'a:lnSpc', paragraphProps.lineSpacing);
+    this.appendSpacing(pPr, 'a:spcBef', paragraphProps.spaceBefore);
+    this.appendSpacing(pPr, 'a:spcAft', paragraphProps.spaceAfter);
+  }
+
+  /**
+   * Append one spacing element (`a:lnSpc`/`a:spcBef`/`a:spcAft`). A plain
+   * number is absolute points (`a:spcPts`, 100ths of a point); `{ percent }`
+   * scales with the line height (`a:spcPct`, thousandths of a percent).
+   */
+  private appendSpacing(
+    pPr: XmlElement,
+    tagName: string,
+    spacing: MultiTextSpacing | undefined,
+  ): void {
+    if (spacing === undefined) {
+      return;
     }
 
-    // Set space before paragraph
-    if (paragraphProps.spaceBefore !== undefined) {
-      const spcBef = this.document.createElement('a:spcBef');
+    const wrapper = this.document.createElement(tagName);
+
+    if (typeof spacing === 'number') {
       const spcPts = this.document.createElement('a:spcPts');
-      spcPts.setAttribute(
-        'val',
-        String(Math.round(paragraphProps.spaceBefore * 100)),
-      ); // Convert to 100ths of a point
-      spcBef.appendChild(spcPts);
-      pPr.appendChild(spcBef);
+      spcPts.setAttribute('val', String(Math.round(spacing * 100)));
+      wrapper.appendChild(spcPts);
+    } else {
+      const spcPct = this.document.createElement('a:spcPct');
+      spcPct.setAttribute('val', String(Math.round(spacing.percent * 1000)));
+      wrapper.appendChild(spcPct);
     }
 
-    // Set space after paragraph
-    if (paragraphProps.spaceAfter !== undefined) {
-      const spcAft = this.document.createElement('a:spcAft');
-      const spcPts = this.document.createElement('a:spcPts');
-      spcPts.setAttribute(
-        'val',
-        String(Math.round(paragraphProps.spaceAfter * 100)),
-      ); // Convert to 100ths of a point
-      spcAft.appendChild(spcPts);
-      pPr.appendChild(spcAft);
-    }
+    pPr.appendChild(wrapper);
   }
 
   /**

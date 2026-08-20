@@ -31,6 +31,14 @@ type BlockContext = {
   alignment?: Alignment;
   /** Style contributed by the block itself (e.g. h1 size, pre monospace) */
   blockStyle: TextStyle;
+  /** The block (or an ancestor) carries a default vertical margin (<p>, h1…) */
+  margin?: boolean;
+  /**
+   * Identity of the top-level list this block sits in. Items of the same list
+   * sit tight; where two *different* lists touch, each list's own outer
+   * margin applies.
+   */
+  listRoot?: number;
 };
 
 /** The paragraph currently being filled. */
@@ -112,6 +120,29 @@ const HEADING_SIZES: Record<string, number> = {
 const MONOSPACE_FONT = 'Consolas';
 
 /**
+ * Blocks that carry a vertical margin in the browser's default stylesheet
+ * (`margin: 1em 0`); `<ul>`/`<ol>` carry one too, handled as list edges.
+ */
+const MARGIN_TAGS = [
+  'p',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'blockquote',
+  'pre',
+];
+
+/**
+ * Gap between block paragraphs as a percentage of the line height - the PPTX
+ * projection of the browser's `margin: 1em 0`, with adjacent margins already
+ * collapsed into one gap.
+ */
+const BLOCK_MARGIN_PERCENT = 100;
+
+/**
  * PowerPoint varies the numbering scheme per outline level; mirror the
  * familiar 1. / a. / i. cascade and cycle beyond level 3.
  */
@@ -123,6 +154,9 @@ const AUTO_NUMBER_TYPES: MultiTextAutoNumberType[] = [
 
 export class HtmlToMultiTextHelper {
   private paragraphs: MultiTextParagraph[] = [];
+  /** Parallel to `paragraphs`: margin/list identity of the emitting block. */
+  private blockMeta: { margin: boolean; listRoot?: number }[] = [];
+  private listCounter = 0;
   private open?: OpenParagraph;
 
   /**
@@ -140,6 +174,8 @@ export class HtmlToMultiTextHelper {
    */
   public run(html: string): MultiTextParagraph[] {
     this.paragraphs = [];
+    this.blockMeta = [];
+    this.listCounter = 0;
     this.open = undefined;
 
     const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -154,6 +190,7 @@ export class HtmlToMultiTextHelper {
 
     this.walkChildren(body as unknown as Element, rootBlock, {});
     this.flush();
+    this.applyBlockMargins();
 
     return this.paragraphs;
   }
@@ -256,6 +293,9 @@ export class HtmlToMultiTextHelper {
     return {
       ...withCss,
       listTypes: [...withCss.listTypes, tagName],
+      // A new top-level list gets its own identity; nested lists inherit it
+      listRoot:
+        withCss.listTypes.length === 0 ? ++this.listCounter : withCss.listRoot,
     };
   }
 
@@ -277,7 +317,11 @@ export class HtmlToMultiTextHelper {
       blockStyle.fontFamily = MONOSPACE_FONT;
     }
 
-    return { ...context, blockStyle };
+    return {
+      ...context,
+      blockStyle,
+      margin: context.margin || MARGIN_TAGS.includes(tagName),
+    };
   }
 
   /** Merge an element's inline CSS into the block context (alignment, style). */
@@ -526,13 +570,14 @@ export class HtmlToMultiTextHelper {
     const { block, runs } = this.open;
     this.open = undefined;
 
-    // Trailing collapsed whitespace is layout, not content
-    const lastRun = runs[runs.length - 1];
-    if (lastRun?.text !== undefined) {
-      lastRun.text = lastRun.text.replace(/ +$/, '');
-      if (lastRun.text === '') {
-        runs.pop();
-      }
+    this.trimTrailingWhitespace(runs);
+
+    // A <br> right before the block's end has no visible effect in HTML (the
+    // empty last line gets no line box) - drop exactly one, so a deliberate
+    // <br><br> still keeps its one empty line
+    if (runs[runs.length - 1]?.break) {
+      runs.pop();
+      this.trimTrailingWhitespace(runs);
     }
 
     if (runs.length === 0) {
@@ -564,6 +609,54 @@ export class HtmlToMultiTextHelper {
         ...(block.alignment ? { alignment: block.alignment } : {}),
       },
       textRuns: runs,
+    });
+    this.blockMeta.push({ margin: !!block.margin, listRoot: block.listRoot });
+  }
+
+  /** Trailing collapsed whitespace is layout, not content. */
+  private trimTrailingWhitespace(runs: MultiTextRun[]): void {
+    for (let i = runs.length - 1; i >= 0; i--) {
+      const run = runs[i];
+      if (run.text === undefined) {
+        return;
+      }
+      run.text = run.text.replace(/ +$/, '');
+      if (run.text !== '') {
+        return;
+      }
+      runs.pop();
+    }
+  }
+
+  /**
+   * Project the browser's default vertical margins onto `spaceBefore`.
+   *
+   * Items of the same list sit tight (nested lists carry no margin in the
+   * default stylesheet); every other boundary touching a margin-bearing block
+   * or a list edge - including the edge between two adjacent lists - gets one
+   * collapsed gap, carried by the later paragraph. The first paragraph gets
+   * none: there is no margin against the text frame.
+   */
+  private applyBlockMargins(): void {
+    this.paragraphs.forEach((paragraph, index) => {
+      if (index === 0) {
+        return;
+      }
+
+      const previous = this.blockMeta[index - 1];
+      const current = this.blockMeta[index];
+      const sameList =
+        current.listRoot !== undefined &&
+        current.listRoot === previous.listRoot;
+      const touchesMargin =
+        previous.margin ||
+        current.margin ||
+        previous.listRoot !== undefined ||
+        current.listRoot !== undefined;
+
+      if (!sameList && touchesMargin) {
+        paragraph.paragraph.spaceBefore = { percent: BLOCK_MARGIN_PERCENT };
+      }
     });
   }
 }

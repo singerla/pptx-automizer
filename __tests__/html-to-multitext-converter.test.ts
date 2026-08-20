@@ -275,6 +275,79 @@ describe('whitespace', () => {
   });
 });
 
+// The browser's default stylesheet gives <p>, headings and lists a vertical
+// margin (`1em 0`, adjacent margins collapsed); without projecting that onto
+// spaceBefore, every paragraph sits flush against the previous one
+describe('vertical spacing', () => {
+  const spaceBefore = (paragraphs: MultiTextParagraph[]) =>
+    paragraphs.map((paragraph) => paragraph.paragraph.spaceBefore);
+
+  test('block paragraphs get one collapsed gap, the first none', () => {
+    expect(spaceBefore(convert('<p>a</p><p>b</p><h1>c</h1>'))).toEqual([
+      undefined,
+      { percent: 100 },
+      { percent: 100 },
+    ]);
+  });
+
+  test('list edges get the gap, list items inside sit tight', () => {
+    const paragraphs = convert(
+      '<p>a</p><ul><li>b</li><ul><li>c</li></ul><li>d</li></ul><p>e</p>',
+    );
+
+    expect(spaceBefore(paragraphs)).toEqual([
+      undefined, // a
+      { percent: 100 }, // b: list top margin
+      undefined, // c: nested list, no margin
+      undefined, // d
+      { percent: 100 }, // e: list bottom margin
+    ]);
+  });
+
+  test('two adjacent lists keep their outer margins apart', () => {
+    expect(
+      spaceBefore(convert('<ul><li>a</li></ul><ol><li>b</li></ol>')),
+    ).toEqual([undefined, { percent: 100 }]);
+  });
+
+  test('divs carry no margin of their own', () => {
+    expect(spaceBefore(convert('<div>a</div><div>b</div>'))).toEqual([
+      undefined,
+      undefined,
+    ]);
+  });
+});
+
+// A <br> right before a closing block tag is invisible in HTML - editors
+// append one after almost every link. It must not become an extra empty line.
+describe('trailing line breaks', () => {
+  test('a trailing <br/> and the space before it are dropped', () => {
+    expect(outline(convert('<p><a href="https://example.com">x</a> <br/></p>')))
+      .toEqual([{ level: 0, bullet: false, text: 'x' }]);
+    expect(outline(convert('<ul><li>item <br/></li></ul>'))).toEqual([
+      { level: 0, bullet: true, text: 'item' },
+    ]);
+  });
+
+  test('a deliberate double <br/> keeps its one empty line', () => {
+    expect(outline(convert('<p>a<br/><br/></p>'))).toEqual([
+      { level: 0, bullet: false, text: 'a<br>' },
+    ]);
+  });
+
+  test('<p><br/></p> stays a blank line', () => {
+    expect(outline(convert('<p><br/></p>'))).toEqual([
+      { level: 0, bullet: false, text: '' },
+    ]);
+  });
+
+  test('a <br/> between runs is untouched', () => {
+    expect(outline(convert('<p>a<br/>b</p>'))).toEqual([
+      { level: 0, bullet: false, text: 'a<br>b' },
+    ]);
+  });
+});
+
 test('missing body tag yields no paragraphs instead of throwing', () => {
   expect(new HtmlToMultiTextHelper().run('<p>no body</p>')).toEqual([]);
 });
