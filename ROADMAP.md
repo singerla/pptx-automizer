@@ -1077,9 +1077,11 @@ Ordered by user impact:
 
 ---
 
-## Performance track — unbounded memory growth on large decks — postponed
+## Performance track — unbounded memory growth on large decks — ✅ done 2026-08-14
 
-Investigated 2026-08-12 (v0.8.2), **deferred**; no code changed. Reported
+Investigated 2026-08-12 (v0.8.2), deferred, then **implemented 2026-08-14**
+(fixes 1–4 below; only the optional item 5 remains open — see the outcome
+block at the end of this track). Reported
 symptom: on big decks the run gets slower and slower, with
 `Cleaning unsupported tag p:custDataLst` as the last log line before each stall,
 eventually dying.
@@ -1156,22 +1158,73 @@ content back first (verified: output file stays valid).
 
 ### Proposed fix, in order
 
-1. ⚡🏗 **Flush + evict a part's DOM once it is finished** — for slides after
+1. ⚡🏗 ✅ **Flush + evict a part's DOM once it is finished** — for slides after
    `cleanSlide()`, for masters/layouts after their append. Turns O(deck) memory
    into O(1) and is by far the biggest win. Needs `toBuffer` to actually
    replace (see constraint above).
-2. ⚡ **`buffer` → `Map`**, killing the linear `fromBuffer` scan.
-3. ⚡ **Memoize `grammar.reg`** in a small local patch and report upstream to
+2. ⚡ ✅ **`buffer` → `Map`**, killing the linear `fromBuffer` scan.
+3. ⚡ ✅ **Memoize `grammar.reg`** in a small local patch and report upstream to
    `@xmldom/xmldom`. ~20 % for a few lines.
-4. ⚡ **Snapshot live NodeLists into plain arrays** in `sliceCollection` /
+4. ⚡ ✅ **Snapshot live NodeLists into plain arrays** in `sliceCollection` /
    `modifyCollection` before mutating; `parents` → `Set`.
-5. ⚡ Optional, later: `addToPresentation` should cache the max rId / content-type
+5. ⚡ ✅ Optional, later: `addToPresentation` should cache the max rId / content-type
    state instead of rescanning the growing parts (item 4 above).
 
-**Guard.** New Tier-1-style test: append N large slides and assert
+**Guard.** ✅ New Tier-1-style test: append N large slides and assert
 `process.memoryUsage().heapUsed` stays under a ceiling (and that
 `archive.buffer.size` stays bounded) — the current behavior fails it by an order
 of magnitude, so it is a genuine regression gate once fixed.
+
+### Outcome (2026-08-14)
+
+- **Fix 1**: `Slide`/`Master`/`Layout.append()` end with
+  `flushTargetXml()` — the new `IArchive.flushXml(file)` serializes the
+  buffered DOM back into the archive and drops it; a slide also flushes its
+  rels and copied notesSlide (same target number). `toBuffer` now
+  **replaces** a buffered entry (last write wins), which resolves the
+  constraint above; anything re-reading a flushed part (e.g. `cleanup` at
+  write time) re-parses it from the serialized content.
+- **Fix 3** is a guarded runtime patch (`src/helper/xmldom-sax-patch.ts`,
+  applied on archive-module load): memoizes `grammar.reg` on the exports
+  object `sax.js` calls through — safe because `reg` is pure and emits no
+  `g` flag. No-op if a future xmldom version blocks the deep import.
+  ⏳ Reporting it upstream to `@xmldom/xmldom` is still open — issue text is
+  drafted (with a self-contained repro: 50k-element parse, 461 → 352
+  ms/parse from hoisting the one closing-tag RegExp; verified no existing
+  upstream issue as of 2026-08-18), needs a logged-in GitHub account to
+  file.
+- **Fix 4** also corrected the iteration semantics live lists silently had:
+  a callback removing an element made the loop skip the next one
+  (`normalizePlaceholderShapes`); snapshots process every element
+  (CHANGELOG'd, suite unchanged).
+- Measured (same synthetic 600-shape deck): 60 slides **566 → 54 MB** heap,
+  124 → 4 buffered DOMs, 57 → 46 ms/slide; 120 slides **979 → 69 MB**, no
+  upward trend; the N=400 / `--max-old-space-size=900` run that died at
+  ~slide 365 finishes in 20 s at 149 MB. Remaining growth is the serialized
+  XML strings inside the output zip (≈ source size, not 25×) — inherent
+  until an fs-backed output is used.
+- **Guard**: `__tests__/memory-bounded-large-deck.test.ts` builds the
+  synthetic deck in a child process (`--expose-gc`, deterministic heap
+  numbers) and asserts ≤ 10 buffered parts (pre-fix: `2·slides + 4`) and
+  < 200 MB heap at 60 slides (pre-fix: ~566 MB).
+
+### Outcome, fix 5 (2026-08-18)
+
+- **Fix 5**: `addToPresentation` no longer rescans the growing parts per
+  slide. `ContentTypeRegistry` keeps two WeakMap caches keyed by the parsed
+  document (so an evicted/re-parsed part rebuilds them with one scan): the
+  max rId of `presentation.xml.rels` (safe upper bound — the registry is the
+  only appender to that part; `Template.removeSlideRelations` only removes),
+  and the `p:sldIdLst`/`p:sldMasterIdLst` elements of `presentation.xml`
+  (xmldom's live `getElementsByTagName` re-walks the whole document per
+  access). `createContentTypeChild`/`createRelationshipChild` and
+  `appendToSlideRel` now use `xml.documentElement` directly — `Types` and
+  `Relationships` *are* the document elements, so the per-append live-list
+  walk of `[Content_Types].xml` and every rels part was pure waste.
+- Measured (empty slide appended N times, total `write()` time): 3200
+  slides **4.30 s → 2.17 s**; ms/slide 800→3200 was climbing 0.96 → 1.35,
+  now flat 0.82 → 0.68. Existing `remove-existing-slides` suite covers the
+  truncate-then-append rId interplay; suite green (311 tests).
 
 ---
 
@@ -1196,8 +1249,10 @@ Early:    Phase 6.1 (docs-example compile test) alongside Phase 5 tier 1 — it 
           README split moves 126 examples around
 Then:     Phase 6.2-6.5 docs split → site on GitHub Pages (only host; the
           self-hosted mirror was dropped 2026-08-14)
-Deferred: Performance track (archive buffer eviction) — postponed 2026-08-12;
-          pick up when large-deck memory becomes blocking
+Done:     Performance track (archive buffer eviction) — postponed 2026-08-12,
+          implemented 2026-08-14; addToPresentation caching added 2026-08-18;
+          open: upstream report of the xmldom RegExp recompilation
+          (issue text drafted, needs a logged-in GitHub account to file)
 ```
 
 Rule of thumb for every PR during the refactor: **no public `modify.*` signature

@@ -539,4 +539,17 @@ export default class HasShapes {
   async parsePlaceholders(): Promise<SlidePlaceholder[]> {
     return this.placeholderNormalizer.parsePlaceholders();
   }
+
+  /**
+   * Flushes this part's finished target XML (and its rels) out of the
+   * archive's DOM buffer. Called as the last step of append(): keeping every
+   * appended slide's parsed DOM alive made memory grow with deck size
+   * (~8 MB per large slide). Anything reading the part afterwards
+   * (e.g. `cleanup` at write time) re-parses it from the archive.
+   * @internal
+   */
+  async flushTargetXml(): Promise<void> {
+    await this.targetArchive.flushXml(this.targetPath);
+    await this.targetArchive.flushXml(this.targetRelsPath);
+  }
 }

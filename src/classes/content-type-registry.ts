@@ -10,6 +10,22 @@ import {
 import type HasShapes from './has-shapes';
 
 /**
+ * Per-document caches that keep `addToPresentation` linear in the number of
+ * appended slides. Keyed by the parsed document object: when an archive
+ * evicts and re-parses a part, the fresh document misses the cache and the
+ * state is rebuilt by a single scan.
+ *
+ * The rId cache stays a safe upper bound because only this class appends
+ * relationships to `ppt/_rels/presentation.xml.rels`; the one other writer,
+ * `Template.removeSlideRelations` (removeExistingSlides), only removes.
+ */
+const nextRelIdByRelsDoc = new WeakMap<XmlDocument, number>();
+const listElementsByPresentationDoc = new WeakMap<
+  XmlDocument,
+  Map<string, XmlElement>
+>();
+
+/**
  * Registers appended parts with the presentation: relationship in
  * `ppt/_rels/presentation.xml.rels`, entry in the slide/master list of
  * `ppt/presentation.xml`, and override in `[Content_Types].xml`.
@@ -25,10 +41,7 @@ export class ContentTypeRegistry {
    */
   async addToPresentation(): Promise<void> {
     const host = this.host;
-    const relId = await XmlHelper.getNextRelId(
-      host.targetArchive,
-      PptPaths.presentationRels,
-    );
+    const relId = await this.getNextPresentationRelId(host.targetArchive);
     await this.appendToSlideRel(host.targetArchive, relId, host.targetNumber);
 
     if (host.targetType === 'slide') {
@@ -42,6 +55,53 @@ export class ContentTypeRegistry {
     await this.appendToContentType(host.targetArchive, host.targetNumber);
   }
 
+  /**
+   * Cached equivalent of `XmlHelper.getNextRelId` for
+   * `ppt/_rels/presentation.xml.rels`: the max-rId scan runs once per parsed
+   * document, afterwards ids are incremented locally (the scan is O(n) in
+   * appended slides, so rescanning per append made large decks O(n²)).
+   */
+  private async getNextPresentationRelId(
+    rootArchive: IArchive,
+  ): Promise<string> {
+    const xml = await XmlHelper.getXmlFromArchive(
+      rootArchive,
+      PptPaths.presentationRels,
+    );
+    const max =
+      nextRelIdByRelsDoc.get(xml) ??
+      XmlHelper.getMaxId(xml.documentElement.childNodes, 'Id');
+    const next = max + 1;
+    nextRelIdByRelsDoc.set(xml, next);
+    return `rId${next}-created`;
+  }
+
+  /**
+   * Cached lookup of a list element of `ppt/presentation.xml`
+   * (`p:sldIdLst` / `p:sldMasterIdLst`). xmldom's live
+   * `getElementsByTagName` re-walks the whole document on every access.
+   */
+  private getPresentationListElement(
+    xml: XmlDocument,
+    tag: string,
+  ): XmlElement | undefined {
+    let byTag = listElementsByPresentationDoc.get(xml);
+    if (!byTag) {
+      byTag = new Map();
+      listElementsByPresentationDoc.set(xml, byTag);
+    }
+    let element = byTag.get(tag);
+    if (!element || !element.parentNode) {
+      element = xml.getElementsByTagName(tag)[0];
+      if (element) {
+        byTag.set(tag, element);
+      } else {
+        byTag.delete(tag);
+      }
+    }
+    return element;
+  }
+
   appendToSlideRel(
     rootArchive: IArchive,
     relId: string,
@@ -51,8 +111,8 @@ export class ContentTypeRegistry {
     return XmlHelper.append({
       archive: rootArchive,
       file: PptPaths.presentationRels,
-      parent: (xml: XmlDocument) =>
-        xml.getElementsByTagName('Relationships')[0],
+      // `Relationships` is the document element of a .rels part.
+      parent: (xml: XmlDocument) => xml.documentElement as XmlElement,
       tag: 'Relationship',
       attributes: {
         Id: relId,
@@ -72,14 +132,15 @@ export class ContentTypeRegistry {
       archive: rootArchive,
       file: PptPaths.presentation,
       assert: async (xml: XmlDocument) => {
-        if (xml.getElementsByTagName('p:sldIdLst').length === 0) {
+        if (!this.getPresentationListElement(xml, 'p:sldIdLst')) {
           XmlHelper.insertAfter(
             xml.createElement('p:sldIdLst'),
-            xml.getElementsByTagName('p:sldMasterIdLst')[0],
+            this.getPresentationListElement(xml, 'p:sldMasterIdLst'),
           );
         }
       },
-      parent: (xml: XmlDocument) => xml.getElementsByTagName('p:sldIdLst')[0],
+      parent: (xml: XmlDocument) =>
+        this.getPresentationListElement(xml, 'p:sldIdLst'),
       tag: 'p:sldId',
       attributes: {
         'r:id': relId,
@@ -98,7 +159,7 @@ export class ContentTypeRegistry {
       archive: rootArchive,
       file: PptPaths.presentation,
       parent: (xml: XmlDocument) =>
-        xml.getElementsByTagName('p:sldMasterIdLst')[0],
+        this.getPresentationListElement(xml, 'p:sldMasterIdLst'),
       tag: 'p:sldMasterId',
       attributes: {
         'r:id': relId,

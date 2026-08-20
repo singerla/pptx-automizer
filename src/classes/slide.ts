@@ -74,7 +74,22 @@ export class Slide extends HasShapes implements ISlide {
 
     await this.cleanSlide(this.targetPath, placeholderTypes);
 
+    await this.flushTargetXml();
+
     this.status.increment();
+  }
+
+  /**
+   * Additionally flushes the slide's copied notesSlide part, which shares
+   * the slide's target number.
+   * @internal
+   */
+  async flushTargetXml(): Promise<void> {
+    await super.flushTargetXml();
+    await this.targetArchive.flushXml(PptPaths.notesSlide(this.targetNumber));
+    await this.targetArchive.flushXml(
+      PptPaths.notesSlideRels(this.targetNumber),
+    );
   }
 
   /**

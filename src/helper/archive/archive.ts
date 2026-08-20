@@ -7,11 +7,14 @@ import {
   AutomizerParams,
 } from '../../types/types';
 import JSZip from 'jszip';
+import { patchXmldomSaxRegExpCache } from '../xmldom-sax-patch';
+
+patchXmldomSaxRegExpCache();
 
 export default class Archive {
   filename: AutomizerFile;
   params: ArchiveParams;
-  buffer: ArchivedFile[] = [];
+  buffer: Map<string, ArchivedFile> = new Map();
   options: JSZip.JSZipGeneratorOptions<'nodebuffer'> = {
     type: 'nodebuffer',
   };
@@ -35,21 +38,38 @@ export default class Archive {
   }
 
   async writeBuffer(archiveType: ArchiveType) {
-    for (const buffered of this.buffer) {
+    for (const buffered of this.buffer.values()) {
       const serialized = this.serializeXml(buffered.content);
       await archiveType.write(buffered.relativePath, serialized);
     }
   }
 
   toBuffer(relativePath: string, content: XmlDocument): void {
-    const existing = this.fromBuffer(relativePath);
-    if (!existing) {
-      this.buffer.push({
-        relativePath,
-        name: relativePath,
-        content: content,
-      });
+    this.buffer.set(relativePath, {
+      relativePath,
+      name: relativePath,
+      content: content,
+    });
+  }
+
+  /**
+   * Serializes a buffered part back into the underlying archive and drops
+   * its DOM from the buffer. A parsed xmldom document costs ~25x its XML
+   * source size, so parts that are finished (an appended slide after
+   * cleanSlide, a master/layout after append) must not stay buffered for
+   * the rest of the run. Re-reading a flushed part re-parses it from the
+   * serialized content written here. No-op if the part is not buffered.
+   */
+  protected async flushBuffered(
+    archiveType: ArchiveType,
+    relativePath: string,
+  ): Promise<void> {
+    const buffered = this.buffer.get(relativePath);
+    if (!buffered) {
+      return;
     }
+    await archiveType.write(relativePath, this.serializeXml(buffered.content));
+    this.buffer.delete(relativePath);
   }
 
   setOptions(params: AutomizerParams): void {
@@ -62,6 +82,6 @@ export default class Archive {
   }
 
   fromBuffer(relativePath: string): ArchivedFile | undefined {
-    return this.buffer.find((file) => file.relativePath === relativePath);
+    return this.buffer.get(relativePath);
   }
 }
