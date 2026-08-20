@@ -636,6 +636,22 @@ Two behavior changes worth knowing about:
 - Paragraph alignment is only written when the HTML specifies `text-align`;
   previously every paragraph was forced to `algn="l"`, overriding the layout.
 
+**Follow-up 2026-08-20 (released in 0.9.1): vertical spacing fidelity.** A
+downstream side-by-side (browser rendering vs. generated deck) showed the
+converter emitted no paragraph spacing at all — the browser's default
+`margin: 1em 0` on `<p>`/headings/list edges was lost, and a trailing `<br/>`
+before a closing block tag (an editor tic after links) became a real empty
+line. Fixed on `fix/html-multitext-spacing`: the converter projects the
+default-stylesheet margins onto `spaceBefore: { percent: 100 }` with
+HTML-style margin collapsing (one gap per block boundary, incl. between two
+adjacent lists; items of the same list sit tight; nothing before the first
+paragraph), and drops exactly one trailing `<br/>` per block
+(`<br/><br/>` keeps its deliberate empty line). Carrier feature: the spacing
+fields of `MultiTextParagraph.paragraph` now accept `{ percent }` → `a:spcPct`
+alongside points → `a:spcPts`, so the gap scales with each paragraph's font
+size. The `multitext-html` golden deck baseline was regenerated intentionally
+(this track's standing note in the Phase 5 deck table).
+
 **Resolved scoping question:** the input contract is *WYSIWYG editor output*
 (CKEditor/TinyMCE). No `htmlparser2` dependency was added — `@xmldom/xmldom` in
 `text/html` mode turned out to handle the cases that mattered (`&nbsp;`, bare

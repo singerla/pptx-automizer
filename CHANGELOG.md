@@ -4,10 +4,23 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 semver, with the pre-1.0 convention that **breaking changes bump the minor**.
 
-## [Unreleased]
+## [0.9.1] — 2026-08-20
+
+Documentation, performance and dependency-security housekeeping on top of
+0.9.0, plus chart and text-rendering fixes. No API breaking changes; one
+visible behavior change: `htmlToMultiText` output now carries the vertical
+spacing the HTML implies, so decks regenerated from HTML render with the
+paragraph gaps they previously lacked (see **Fixed**).
 
 ### Added
 
+- Documentation site at <https://singerla.github.io/pptx-automizer> (ROADMAP
+  Phases 6.2/6.3): the README's feature documentation, split into per-feature
+  pages under `docs/`, published with a generated typedoc API reference and
+  full-text search; the README is reduced to pitch, install and one example.
+- `MultiTextParagraph.paragraph.lineSpacing`/`spaceBefore`/`spaceAfter` accept
+  `{ percent }` in addition to points: rendered as `<a:spcPct>`, spacing that
+  scales with the paragraph's line height instead of a fixed point value.
 - `ModifyPresentationHelper`, `XmlSlideHelper`, `XmlRelationshipHelper` and the
   `FindElementSelector` type are exported from the package root. The README
   documented imports for them (`pptx-automizer/src/...`, `./helper/...`,
@@ -69,6 +82,16 @@ semver, with the pre-1.0 convention that **breaking changes bump the minor**.
 
 ### Fixed
 
+- `htmlToMultiText` packed every paragraph flush against the previous one: the
+  browser's default vertical margins (`<p>`, headings, list edges) were lost,
+  and a trailing `<br/>` inside a block — invisible in HTML — became a real
+  empty line. The converter now emits one collapsed gap
+  (`spaceBefore: { percent: 100 }`) at every block boundary — between block
+  paragraphs, at list edges including two adjacent lists, never between items
+  of the same list — and drops exactly one trailing `<br/>` per block (plus
+  the collapsed whitespace around it); a deliberate `<br/><br/>` keeps its
+  empty line. Decks regenerated from unchanged HTML will render with these
+  gaps where they previously had none.
 - Chart per-point styling (`setChartData` with `categories[].styles`) no
   longer fabricates default-styled `<c:dPt>` elements. Previously every
   styled-looking point — including pseudo-styles such as `{ marker: {} }` or a

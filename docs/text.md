@@ -89,6 +89,10 @@ a soft line break created with Shift+Enter) are converted into an `<a:br/>` line
 break inside the same paragraph. Add another entry to the array if you need a real
 paragraph with its own bullet, level and alignment.
 
+`paragraph.lineSpacing`, `spaceBefore` and `spaceAfter` take points as a plain
+number, or `{ percent: 100 }` for spacing relative to the line height (100 =
+one line) — the relative form scales with the paragraph's font size.
+
 ## Convert HTML to text contents
 
 It is also possible to directly convert an HTML page into pptx text contents. HTML code will be flattened and converted into a MultiText array.
@@ -147,6 +151,12 @@ Good to know:
 - Relative font sizes (`em`, `%`) are ignored rather than guessed, leaving the
   size inherited from the template.
 - Whitespace collapses the way a browser collapses it; `&nbsp;` survives.
+- Vertical spacing mirrors the browser's default stylesheet: `<p>`, headings
+  and the outer edges of lists get one collapsed gap of one line height
+  (`spaceBefore: { percent: 100 }`, so it scales with each paragraph's font
+  size), while items of the same list sit tight. A trailing `<br>` before a
+  closing block tag is dropped, exactly as a browser renders it; a deliberate
+  `<br><br>` keeps its one empty line.
 - Alignment is only written when the HTML asks for it — otherwise the target
   shape's layout keeps deciding.
 - Font size and color of the target shape's existing text are used as the
