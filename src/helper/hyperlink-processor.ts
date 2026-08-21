@@ -144,23 +144,6 @@ export class HyperlinkProcessor {
   }
 
   /**
-   * Processes hyperlinks for single-hyperlink elements
-   */
-  static async processSingleHyperlink(element: XmlElement, newRid: string): Promise<void> {
-    const hyperlinks = this.findHyperlinks(element);
-    
-    // Only process if there's exactly one hyperlink
-    if (hyperlinks.length !== 1) {
-      log.warn(`Expected single hyperlink, found ${hyperlinks.length}`);
-      return;
-    }
-
-    // Update the single hyperlink with the new relationship ID
-    const hyperlink = hyperlinks[0];
-    hyperlink.setAttribute(this.RELATIONSHIP_ATTRIBUTE, newRid);
-  }
-
-  /**
    * Copies multiple hyperlinks from source to target slide
    */
   static async copyMultipleHyperlinks(
