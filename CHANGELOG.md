@@ -4,6 +4,31 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 semver, with the pre-1.0 convention that **breaking changes bump the minor**.
 
+## [Unreleased]
+
+### Fixed
+
+- Cloning or modifying a template shape that already carries a hyperlink
+  (`slide.modifyElement()`/`addElement()` on a shape classified as
+  `ElementType.Hyperlink`, addressed by name/selector) could corrupt the
+  output file: PowerPoint reported "found a problem with content" and
+  offered to repair, silently dropping the shape. `Shape.appendToSlideTree()`
+  and `Shape.modifySlideTree()` unconditionally rewrote the shape's
+  `<a:hlinkClick r:id>` to a separately precomputed id that had no matching
+  `<Relationship>` entry in the slide's `.rels` — for `modify()`, this ran
+  *after* `editTargetHyperlinkRel()` had already set up the relationship
+  correctly, and overwrote it with the unmatched id; for `append()`, it ran
+  *before* `addHyperlink()`, whose "link already set, don't add another"
+  guard then saw that unmatched id already in place and skipped setting up
+  its relationship too. Both call sites are removed — `Hyperlink.append()`
+  and `Hyperlink.modify()` already own setting up their own relationship via
+  `ModifyHyperlinkHelper`. `ModifyHyperlinkHelper.addHyperlink()`'s guard now
+  also checks whether an existing `<a:hlinkClick>`'s `r:id` actually resolves
+  to a `<Relationship>` before skipping: if it does (the genuine
+  pptxgenjs-authored case), it still skips; if it doesn't (a shape cloned from
+  a template), it creates a relationship for that existing id instead of
+  leaving it unmatched or adding an unused extra one.
+
 ## [0.9.1] — 2026-08-20
 
 Documentation, performance and dependency-security housekeeping on top of

@@ -38,11 +38,10 @@ export default class ModifyHyperlinkHelper {
   private static addRelationship(
     relation: XmlDocument | XmlElement,
     relData: RelationshipData,
+    relId?: string,
   ): string {
     const relNodes = relation.getElementsByTagName('Relationship');
-    const maxId = XmlHelper.getMaxId(relNodes, 'Id', true);
-
-    const newRelId = `rId${maxId}`;
+    const newRelId = relId || `rId${XmlHelper.getMaxId(relNodes, 'Id', true)}`;
 
     const newRel = relation.ownerDocument.createElement('Relationship');
     newRel.setAttribute('Id', newRelId);
@@ -53,6 +52,17 @@ export default class ModifyHyperlinkHelper {
     relNodes.item(0).parentNode.appendChild(newRel);
 
     return newRelId;
+  }
+
+  /**
+   * Checks whether a relationship id has a backing <Relationship> entry.
+   */
+  private static relationshipExists(
+    relation: XmlDocument | XmlElement,
+    relId: string,
+  ): boolean {
+    const relNodes = relation.getElementsByTagName('Relationship');
+    return Array.from(relNodes).some((rel) => rel.getAttribute('Id') === relId);
   }
 
   /**
@@ -176,8 +186,8 @@ export default class ModifyHyperlinkHelper {
       });
 
       // Remove old relationships, unless another shape still refers to them.
-      // Dropping a shared rId would leave dangling r:id attributes behind and
-      // make PowerPoint ask to repair the file.
+      // Dropping a shared rId would leave r:id attributes with no matching
+      // relationship behind, and make PowerPoint ask to repair the file.
       const relationships = relation.getElementsByTagName('Relationship');
       Array.from(relationships).forEach((rel) => {
         const relId = rel.getAttribute('Id');
@@ -213,14 +223,30 @@ export default class ModifyHyperlinkHelper {
         isInternalLink = true;
       }
 
-      const relData = this.createRelationshipData(target, isInternalLink);
-      const newRelId = this.addRelationship(relation, relData);
+      const existingHlink = element.getElementsByTagName('a:hlinkClick').item(0);
+      if (existingHlink) {
+        const existingRid = existingHlink.getAttribute('r:id');
+        if (existingRid && this.relationshipExists(relation, existingRid)) {
+          // Link has already been set and its relationship already created
+          // by e.g. pptxGenJs, don't add another link to the element.
+          return;
+        }
 
-      const hasHlink = element.getElementsByTagName('a:hlinkClick');
-      if (hasHlink.item(0)) {
-        // Link has already been set by e.g. pptxGenJs, don't add another link to element
+        // The element already carries an <a:hlinkClick>, but its r:id has no
+        // backing <Relationship> (e.g. a shape cloned from a template without
+        // its relationship). Create a relationship for that existing r:id so
+        // it resolves, instead of leaving it unmatched or creating an unused
+        // extra one.
+        if (existingRid) {
+          const relData = this.createRelationshipData(target, isInternalLink);
+          this.addRelationship(relation, relData, existingRid);
+          log.debug('AddHyperlink: Created missing relationship for existing hyperlink');
+        }
         return;
       }
+
+      const relData = this.createRelationshipData(target, isInternalLink);
+      const newRelId = this.addRelationship(relation, relData);
 
       const hyperlinkElement = new HyperlinkElement(
         element.ownerDocument,

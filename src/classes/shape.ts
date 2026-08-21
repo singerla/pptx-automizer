@@ -3,7 +3,6 @@ import { GeneralHelper } from '../helper/general-helper';
 import { PptPaths } from '../helper/ppt-paths';
 import { log } from '../helper/logger';
 import { CallbackError } from '../errors';
-import { HyperlinkProcessor } from '../helper/hyperlink-processor';
 import {
   ChartModificationCallback,
   ImportedElement,
@@ -112,27 +111,10 @@ export class Shape {
       .getElementsByTagName('p:spTree')[0]
       .appendChild(this.targetElement);
 
-    // Process hyperlinks in the element if this is a hyperlink element
-    if (this.relRootTag === 'a:hlinkClick') {
-      await this.processHyperlinks();
-    }
-
     XmlHelper.writeXmlToArchive(
       this.targetArchive,
       this.targetSlideFile,
       targetSlideXml,
-    );
-  }
-
-  /**
-   * Process hyperlinks in the element
-   */
-  async processHyperlinks(): Promise<void> {
-    if (!this.targetElement || !this.createdRid) return;
-
-    await HyperlinkProcessor.processSingleHyperlink(
-      this.targetElement,
-      this.createdRid,
     );
   }
 
@@ -179,11 +161,6 @@ export class Shape {
     sourceElementOnTargetSlide.parentNode.removeChild(
       sourceElementOnTargetSlide,
     );
-
-    // Process hyperlinks in the element if this is a hyperlink element
-    if (this.relRootTag === 'a:hlinkClick') {
-      await this.processHyperlinks();
-    }
 
     XmlHelper.writeXmlToArchive(archive, slideFile, targetSlideXml);
   }
