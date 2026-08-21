@@ -60,17 +60,43 @@ export class Image extends Shape implements IImage, IShapeAction {
   }
 
   /*
-   * It is necessary to update existing rIds for all
-   * unmodified images on an added slide at first.
+   * The copied slide already carries the source image relation; point its
+   * Target at the copied media file instead of appending a second relation.
+   * Appending would leave the source-named relation orphaned in the rels
+   * file, and PowerPoint asks to repair the file when such a Target does
+   * not exist in the output archive.
    */
   async modifyOnAddedSlide(
     targetTemplate: RootPresTemplate,
     targetSlideNumber: number,
   ): Promise<Image> {
-    await this.prepare(targetTemplate, targetSlideNumber);
-    await this.updateElementsRelId();
+    await this.setTarget(targetTemplate, targetSlideNumber);
+    await this.copyFiles();
+    await this.appendTypes();
+    await this.updateSlideRelTarget();
 
     return this;
+  }
+
+  private async updateSlideRelTarget(): Promise<void> {
+    const relXml = await XmlHelper.getXmlFromArchive(
+      this.targetArchive,
+      this.targetSlideRelFile,
+    );
+    const relations = relXml.getElementsByTagName('Relationship');
+    for (let i = 0; i < relations.length; i++) {
+      if (relations.item(i).getAttribute('Id') === this.sourceRid) {
+        relations
+          .item(i)
+          .setAttribute('Target', XmlHelper.sanitizeAttr(`../media/${this.targetFile}`));
+        break;
+      }
+    }
+    await XmlHelper.writeXmlToArchive(
+      this.targetArchive,
+      this.targetSlideRelFile,
+      relXml,
+    );
   }
 
   async modify(
