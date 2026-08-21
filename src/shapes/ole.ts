@@ -194,7 +194,10 @@ export class OLEObject extends Shape implements IShapeAction {
   }
 
   private async updateSlideXml(): Promise<void> {
-    const slideXmlPath = PptPaths.slide(this.targetSlideNumber);
+    // targetSlideFile respects targetType — an OLE object can sit on a
+    // slideLayout or slideMaster (e.g. think-cell data objects), where a
+    // hardcoded slide path would hit ppt/slides/slide<layoutNumber>.xml.
+    const slideXmlPath = this.targetSlideFile;
     const slideXml = await XmlHelper.getXmlFromArchive(
       this.targetArchive,
       slideXmlPath,
