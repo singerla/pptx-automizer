@@ -112,7 +112,10 @@ export class Shape {
       .getElementsByTagName('p:spTree')[0]
       .appendChild(this.targetElement);
 
-    // Process hyperlinks in the element if this is a hyperlink element
+    // A hyperlink shape cloned from a source slide still carries its source
+    // r:id, which may collide with an unrelated relationship already declared
+    // on the target slide. Rewrite it to the reserved createdRid — guaranteed
+    // unused — before Hyperlink.append() creates the matching relationship.
     if (this.relRootTag === 'a:hlinkClick') {
       await this.processHyperlinks();
     }
@@ -125,7 +128,10 @@ export class Shape {
   }
 
   /**
-   * Process hyperlinks in the element
+   * Rewrites the single a:hlinkClick r:id of this element to createdRid.
+   * Only used on append: on modify, Hyperlink.modify() manages the existing
+   * relationship in place via editTargetHyperlinkRel(), and overwriting its
+   * r:id here would leave it without a matching relationship entry.
    */
   async processHyperlinks(): Promise<void> {
     if (!this.targetElement || !this.createdRid) return;
@@ -179,11 +185,6 @@ export class Shape {
     sourceElementOnTargetSlide.parentNode.removeChild(
       sourceElementOnTargetSlide,
     );
-
-    // Process hyperlinks in the element if this is a hyperlink element
-    if (this.relRootTag === 'a:hlinkClick') {
-      await this.processHyperlinks();
-    }
 
     XmlHelper.writeXmlToArchive(archive, slideFile, targetSlideXml);
   }

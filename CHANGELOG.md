@@ -4,6 +4,59 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 semver, with the pre-1.0 convention that **breaking changes bump the minor**.
 
+## [Unreleased]
+
+### Fixed
+
+- Modifying a template shape that already carries a hyperlink
+  (`slide.modifyElement()` on a shape classified as `ElementType.Hyperlink`)
+  could corrupt the output file: PowerPoint reported "found a problem with
+  content" and offered to repair, silently dropping the shape.
+  `Shape.modifySlideTree()` unconditionally rewrote the shape's
+  `<a:hlinkClick r:id>` to a separately precomputed id *after*
+  `editTargetHyperlinkRel()` had already verified the existing relationship
+  was correct — leaving an `r:id` with no matching `<Relationship>` entry in
+  the slide's `.rels`. The rewrite is removed from the modify path;
+  `Hyperlink.modify()` owns its relationship via `editTargetHyperlinkRel()`.
+  On the append path (`slide.addElement()`), the rewrite to the freshly
+  reserved id stays — it is what protects a cloned shape from colliding with
+  an unrelated relationship already declared under its source rId on the
+  target slide — and `ModifyHyperlinkHelper.addHyperlink()` now creates the
+  matching relationship explicitly: it checks whether an existing
+  `<a:hlinkClick>`'s `r:id` resolves to a relationship *of hyperlink or
+  slide Type* before skipping (the genuine pptxgenjs-authored case). If the
+  id is unmatched it creates the relationship for it; if it resolves to a
+  relationship of the wrong Type it allocates a fresh id instead of silently
+  pointing the hyperlink at an unrelated part. Contributed in part by
+  [#205](https://github.com/singerla/pptx-automizer/pull/205).
+- Importing a shape whose `a:hlinkClick r:id` is stale — pointing at a
+  *structural* relationship of the source slide (classically `rId1` =
+  slideLayout, `rId2` = notesSlide) — corrupted the package:
+  `HyperlinkProcessor.copyMultipleHyperlinks()` (the GenericShape append
+  path for multi-hyperlink shapes, and the fallback for hyperlink shapes
+  whose rel lookup fails) cloned whatever relationship sat at that id, Type
+  and all, giving the target slide a second slideLayout/notesSlide
+  relationship with a source-numbered target — an OPC singleton violation
+  ("can only have one instance of relationship that targets part") observed
+  in field-generated decks. Only relationships of hyperlink/slide Type are
+  copied now, and the two hyperlink id spaces are kept apart: ids present on
+  the unmutated source element are imports and resolve against the source
+  slide's rels, while ids added by modification callbacks during `prepare()`
+  (e.g. `modify.htmlToMultiText()` links on an added element) already have
+  their relationships on the target slide's rels and are left untouched.
+  Hyperlinks that resolve in neither id space are stripped from the imported
+  element with a warning, since a dangling `r:id` is itself a repair
+  trigger. Downstream, the pre-fix behavior surfaced either as the repair
+  prompt or as **silent link loss** — link text rendered, hyperlink gone or
+  pointing at an unrelated part — depending on what sat at the colliding id,
+  which made this fix release-blocking for correctness rather than an edge
+  hardening. A certification sweep over field-generated decks that previously
+  failed to open under the Open XML SDK opens cleanly with these guards in
+  place. The Tier-1 package invariants (checked for every
+  archive written by the test suite) now also fail on duplicate
+  slideLayout/notesSlide relationships and on any
+  `a:hlinkClick`/`a:hlinkHover` resolving to a structural relationship.
+
 ## [0.9.1] — 2026-08-20
 
 Documentation, performance and dependency-security housekeeping on top of
