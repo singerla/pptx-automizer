@@ -46,7 +46,11 @@ semver, with the pre-1.0 convention that **breaking changes bump the minor**.
   their relationships on the target slide's rels and are left untouched.
   Hyperlinks that resolve in neither id space are stripped from the imported
   element with a warning, since a dangling `r:id` is itself a repair
-  trigger. A certification sweep over field-generated decks that previously
+  trigger. Downstream, the pre-fix behavior surfaced either as the repair
+  prompt or as **silent link loss** — link text rendered, hyperlink gone or
+  pointing at an unrelated part — depending on what sat at the colliding id,
+  which made this fix release-blocking for correctness rather than an edge
+  hardening. A certification sweep over field-generated decks that previously
   failed to open under the Open XML SDK opens cleanly with these guards in
   place. The Tier-1 package invariants (checked for every
   archive written by the test suite) now also fail on duplicate
