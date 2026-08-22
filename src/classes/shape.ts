@@ -3,6 +3,7 @@ import { GeneralHelper } from '../helper/general-helper';
 import { PptPaths } from '../helper/ppt-paths';
 import { log } from '../helper/logger';
 import { CallbackError } from '../errors';
+import { HyperlinkProcessor } from '../helper/hyperlink-processor';
 import {
   ChartModificationCallback,
   ImportedElement,
@@ -111,10 +112,33 @@ export class Shape {
       .getElementsByTagName('p:spTree')[0]
       .appendChild(this.targetElement);
 
+    // A hyperlink shape cloned from a source slide still carries its source
+    // r:id, which may collide with an unrelated relationship already declared
+    // on the target slide. Rewrite it to the reserved createdRid — guaranteed
+    // unused — before Hyperlink.append() creates the matching relationship.
+    if (this.relRootTag === 'a:hlinkClick') {
+      await this.processHyperlinks();
+    }
+
     XmlHelper.writeXmlToArchive(
       this.targetArchive,
       this.targetSlideFile,
       targetSlideXml,
+    );
+  }
+
+  /**
+   * Rewrites the single a:hlinkClick r:id of this element to createdRid.
+   * Only used on append: on modify, Hyperlink.modify() manages the existing
+   * relationship in place via editTargetHyperlinkRel(), and overwriting its
+   * r:id here would leave it without a matching relationship entry.
+   */
+  async processHyperlinks(): Promise<void> {
+    if (!this.targetElement || !this.createdRid) return;
+
+    await HyperlinkProcessor.processSingleHyperlink(
+      this.targetElement,
+      this.createdRid,
     );
   }
 

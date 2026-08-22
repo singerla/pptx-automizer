@@ -8,26 +8,43 @@ semver, with the pre-1.0 convention that **breaking changes bump the minor**.
 
 ### Fixed
 
-- Cloning or modifying a template shape that already carries a hyperlink
-  (`slide.modifyElement()`/`addElement()` on a shape classified as
-  `ElementType.Hyperlink`, addressed by name/selector) could corrupt the
-  output file: PowerPoint reported "found a problem with content" and
-  offered to repair, silently dropping the shape. `Shape.appendToSlideTree()`
-  and `Shape.modifySlideTree()` unconditionally rewrote the shape's
-  `<a:hlinkClick r:id>` to a separately precomputed id that had no matching
-  `<Relationship>` entry in the slide's `.rels` — for `modify()`, this ran
-  *after* `editTargetHyperlinkRel()` had already set up the relationship
-  correctly, and overwrote it with the unmatched id; for `append()`, it ran
-  *before* `addHyperlink()`, whose "link already set, don't add another"
-  guard then saw that unmatched id already in place and skipped setting up
-  its relationship too. Both call sites are removed — `Hyperlink.append()`
-  and `Hyperlink.modify()` already own setting up their own relationship via
-  `ModifyHyperlinkHelper`. `ModifyHyperlinkHelper.addHyperlink()`'s guard now
-  also checks whether an existing `<a:hlinkClick>`'s `r:id` actually resolves
-  to a `<Relationship>` before skipping: if it does (the genuine
-  pptxgenjs-authored case), it still skips; if it doesn't (a shape cloned from
-  a template), it creates a relationship for that existing id instead of
-  leaving it unmatched or adding an unused extra one.
+- Modifying a template shape that already carries a hyperlink
+  (`slide.modifyElement()` on a shape classified as `ElementType.Hyperlink`)
+  could corrupt the output file: PowerPoint reported "found a problem with
+  content" and offered to repair, silently dropping the shape.
+  `Shape.modifySlideTree()` unconditionally rewrote the shape's
+  `<a:hlinkClick r:id>` to a separately precomputed id *after*
+  `editTargetHyperlinkRel()` had already verified the existing relationship
+  was correct — leaving an `r:id` with no matching `<Relationship>` entry in
+  the slide's `.rels`. The rewrite is removed from the modify path;
+  `Hyperlink.modify()` owns its relationship via `editTargetHyperlinkRel()`.
+  On the append path (`slide.addElement()`), the rewrite to the freshly
+  reserved id stays — it is what protects a cloned shape from colliding with
+  an unrelated relationship already declared under its source rId on the
+  target slide — and `ModifyHyperlinkHelper.addHyperlink()` now creates the
+  matching relationship explicitly: it checks whether an existing
+  `<a:hlinkClick>`'s `r:id` resolves to a relationship *of hyperlink or
+  slide Type* before skipping (the genuine pptxgenjs-authored case). If the
+  id is unmatched it creates the relationship for it; if it resolves to a
+  relationship of the wrong Type it allocates a fresh id instead of silently
+  pointing the hyperlink at an unrelated part. Contributed in part by
+  [#205](https://github.com/singerla/pptx-automizer/pull/205).
+- Importing a shape whose `a:hlinkClick r:id` is stale — pointing at a
+  *structural* relationship of the source slide (classically `rId1` =
+  slideLayout, `rId2` = notesSlide) — corrupted the package:
+  `HyperlinkProcessor.copyMultipleHyperlinks()` (the GenericShape append
+  path for multi-hyperlink shapes, and the fallback for hyperlink shapes
+  whose rel lookup fails) cloned whatever relationship sat at that id, Type
+  and all, giving the target slide a second slideLayout/notesSlide
+  relationship with a source-numbered target — an OPC singleton violation
+  ("can only have one instance of relationship that targets part") observed
+  in field-generated decks. Only relationships of hyperlink/slide Type are
+  copied now; hyperlinks whose relationship cannot be copied are stripped
+  from the imported element with a warning, since a dangling `r:id` is
+  itself a repair trigger. The Tier-1 package invariants (checked for every
+  archive written by the test suite) now also fail on duplicate
+  slideLayout/notesSlide relationships and on any
+  `a:hlinkClick`/`a:hlinkHover` resolving to a structural relationship.
 
 ## [0.9.1] — 2026-08-20
 

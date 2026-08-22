@@ -1,4 +1,5 @@
 import HyperlinkElement from './modify-hyperlink-element';
+import { HyperlinkProcessor } from './hyperlink-processor';
 import { ShapeModificationCallback } from '../types/types';
 import { XmlDocument, XmlElement } from '../types/xml-types';
 import { XmlHelper } from './xml-helper';
@@ -55,14 +56,17 @@ export default class ModifyHyperlinkHelper {
   }
 
   /**
-   * Checks whether a relationship id has a backing <Relationship> entry.
+   * Returns the <Relationship> entry backing a relationship id, if any.
    */
-  private static relationshipExists(
+  private static getRelationshipById(
     relation: XmlDocument | XmlElement,
     relId: string,
-  ): boolean {
+  ): XmlElement | null {
     const relNodes = relation.getElementsByTagName('Relationship');
-    return Array.from(relNodes).some((rel) => rel.getAttribute('Id') === relId);
+    return (
+      Array.from(relNodes).find((rel) => rel.getAttribute('Id') === relId) ||
+      null
+    );
   }
 
   /**
@@ -226,9 +230,41 @@ export default class ModifyHyperlinkHelper {
       const existingHlink = element.getElementsByTagName('a:hlinkClick').item(0);
       if (existingHlink) {
         const existingRid = existingHlink.getAttribute('r:id');
-        if (existingRid && this.relationshipExists(relation, existingRid)) {
+        if (!existingRid) {
+          // An hlinkClick without r:id is action-only (e.g. a ppaction jump);
+          // nothing to wire up.
+          return;
+        }
+
+        const existingRel = this.getRelationshipById(relation, existingRid);
+        if (
+          existingRel &&
+          HyperlinkProcessor.isHyperlinkRelType(
+            existingRel.getAttribute('Type') || '',
+          )
+        ) {
           // Link has already been set and its relationship already created
           // by e.g. pptxGenJs, don't add another link to the element.
+          return;
+        }
+
+        if (existingRel) {
+          // The existing r:id collides with an unrelated relationship on this
+          // slide (an image, the layout, …). Reusing it would silently point
+          // the hyperlink at that part — allocate a fresh id instead and
+          // rewrite every hlinkClick in the element carrying the stale id.
+          const relData = this.createRelationshipData(target, isInternalLink);
+          const freshRelId = this.addRelationship(relation, relData);
+          Array.from(element.getElementsByTagName('a:hlinkClick')).forEach(
+            (hlink) => {
+              if (hlink.getAttribute('r:id') === existingRid) {
+                hlink.setAttribute('r:id', freshRelId);
+              }
+            },
+          );
+          log.debug(
+            'AddHyperlink: existing r:id collided with a non-hyperlink relationship, assigned a fresh id',
+          );
           return;
         }
 
@@ -237,11 +273,9 @@ export default class ModifyHyperlinkHelper {
         // its relationship). Create a relationship for that existing r:id so
         // it resolves, instead of leaving it unmatched or creating an unused
         // extra one.
-        if (existingRid) {
-          const relData = this.createRelationshipData(target, isInternalLink);
-          this.addRelationship(relation, relData, existingRid);
-          log.debug('AddHyperlink: Created missing relationship for existing hyperlink');
-        }
+        const relData = this.createRelationshipData(target, isInternalLink);
+        this.addRelationship(relation, relData, existingRid);
+        log.debug('AddHyperlink: Created missing relationship for existing hyperlink');
         return;
       }
 

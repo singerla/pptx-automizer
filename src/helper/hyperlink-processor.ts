@@ -11,6 +11,17 @@ export class HyperlinkProcessor {
   private static readonly HYPERLINK_TAG = 'a:hlinkClick';
   private static readonly RELATIONSHIP_ATTRIBUTE = 'r:id';
 
+  // The only relationship Types an a:hlinkClick may legitimately resolve to:
+  // an external hyperlink or an internal slide jump.
+  private static readonly HYPERLINK_REL_TYPES = [
+    'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink',
+    'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide',
+  ];
+
+  static isHyperlinkRelType(relType: string): boolean {
+    return this.HYPERLINK_REL_TYPES.includes(relType);
+  }
+
   /**
    * Finds all hyperlink elements within a given element
    */
@@ -144,6 +155,23 @@ export class HyperlinkProcessor {
   }
 
   /**
+   * Processes hyperlinks for single-hyperlink elements
+   */
+  static async processSingleHyperlink(element: XmlElement, newRid: string): Promise<void> {
+    const hyperlinks = this.findHyperlinks(element);
+
+    // Only process if there's exactly one hyperlink
+    if (hyperlinks.length !== 1) {
+      log.warn(`Expected single hyperlink, found ${hyperlinks.length}`);
+      return;
+    }
+
+    // Update the single hyperlink with the new relationship ID
+    const hyperlink = hyperlinks[0];
+    hyperlink.setAttribute(this.RELATIONSHIP_ATTRIBUTE, newRid);
+  }
+
+  /**
    * Copies multiple hyperlinks from source to target slide
    */
   static async copyMultipleHyperlinks(
@@ -197,7 +225,12 @@ export class HyperlinkProcessor {
         const target = sourceRel.getAttribute('Target');
         const targetMode = sourceRel.getAttribute('TargetMode');
 
-        if (relType && target) {
+        // A stale r:id can collide with any relationship on the source slide
+        // (rId1 is typically the slideLayout, rId2 often the notesSlide).
+        // Cloning such a rel verbatim adds a second slideLayout/notesSlide
+        // relationship to the target slide — a package-level corruption that
+        // makes PowerPoint offer to repair the file.
+        if (relType && target && this.isHyperlinkRelType(relType)) {
           const relationshipKey = `${relType}:${target}:${targetMode || ''}`;
           
           let newRId: string;
@@ -230,9 +263,26 @@ export class HyperlinkProcessor {
           }
 
           relationshipMap.set(rId, newRId);
+        } else if (relType && !this.isHyperlinkRelType(relType)) {
+          log.warn(
+            `Hyperlink r:id="${rId}" resolves to a non-hyperlink relationship ` +
+              `(${relType}) on source slide ${sourceSlideNumber} — not copied`,
+          );
         }
       }
     }
+
+    // Strip hyperlinks whose relationship could not be copied (no source rel,
+    // or a rel of the wrong Type). Leaving their r:id in place would either
+    // dangle or point at an unrelated relationship on the target slide —
+    // both are repair-prompt triggers.
+    this.findHyperlinks(element).forEach((hlink) => {
+      const rId = hlink.getAttribute(this.RELATIONSHIP_ATTRIBUTE);
+      if (rId && !relationshipMap.has(rId)) {
+        log.warn(`Dropping hyperlink with unresolvable r:id="${rId}"`);
+        hlink.parentNode?.removeChild(hlink);
+      }
+    });
 
     this.updateHyperlinkRelationshipIds(element, relationshipMap);
     await XmlHelper.writeXmlToArchive(targetArchive, targetSlideRelFile, targetRelXml);

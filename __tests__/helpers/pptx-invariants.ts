@@ -19,7 +19,13 @@ import {
  *  5. a ppt/presentation.xml slide-list entry whose slide part is missing;
  *  6. the c16:uniqueId fingerprint of the (deleted) hardcoded data-label
  *     blob from src/helper/xml/dLbl.ts — an exact detector for fabricated
- *     label XML reaching an output (ROADMAP, Modification-contract track).
+ *     label XML reaching an output (ROADMAP, Modification-contract track);
+ *  7. a slide part with more than one slideLayout or notesSlide relationship
+ *     (OPC singleton constraints — the "duplicate singleton rel" class from
+ *     hyperlink rels copied without a Type check);
+ *  8. an a:hlinkClick/a:hlinkHover r:id that resolves to a structural
+ *     relationship (slideLayout, notesSlide, slideMaster, theme) — an
+ *     internally consistent mislink the dangling-id check cannot see.
  *
  * `knownIssues` are pre-existing library behaviors that PowerPoint tolerates.
  * They are reported for future cleanup work but do not fail tests:
@@ -45,8 +51,24 @@ const FABRICATED_DLBL_FINGERPRINT = '{00000001-04B4-49A4-AD60-4DBFE8A0F479}';
 interface Relationship {
   id: string;
   target: string;
+  type: string;
   external: boolean;
 }
+
+// Relationship Types a slide part may declare at most once.
+const SINGLETON_REL_TYPES = ['slideLayout', 'notesSlide'];
+
+// Structural relationship Types an a:hlinkClick/a:hlinkHover must never
+// resolve to.
+const FORBIDDEN_HYPERLINK_REL_TYPES = [
+  'slideLayout',
+  'notesSlide',
+  'slideMaster',
+  'theme',
+];
+
+const relTypeSuffix = (type: string): string =>
+  type.slice(type.lastIndexOf('/') + 1);
 
 export interface PptxInvariantReport {
   errors: string[];
@@ -95,6 +117,7 @@ export async function checkPptxInvariants(
       rels.set(element.getAttribute('Id'), {
         id: element.getAttribute('Id'),
         target: element.getAttribute('Target'),
+        type: element.getAttribute('Type') || '',
         external: element.getAttribute('TargetMode') === 'External',
       });
     }
@@ -115,6 +138,48 @@ export async function checkPptxInvariants(
         errors.push(
           `${name}: ${attribute}="${value}" has no entry in ${relsPath(name)}`,
         );
+      }
+    }
+  }
+
+  // 7. slide parts declare singleton relationships at most once
+  for (const [owner, rels] of relsByPart) {
+    if (!/^ppt\/slides\/slide\d+\.xml$/.test(owner)) continue;
+    const countByType = new Map<string, number>();
+    for (const rel of rels.values()) {
+      const suffix = relTypeSuffix(rel.type);
+      if (SINGLETON_REL_TYPES.includes(suffix)) {
+        countByType.set(suffix, (countByType.get(suffix) || 0) + 1);
+      }
+    }
+    for (const [suffix, count] of countByType) {
+      if (count > 1) {
+        errors.push(
+          `${relsPath(owner)}: ${count} ${suffix} relationships — a slide ` +
+            `part may declare at most one`,
+        );
+      }
+    }
+  }
+
+  // 8. hyperlink elements never resolve to structural relationships
+  for (const [name, doc] of xmlParts) {
+    if (name.endsWith('.rels')) continue;
+    const rels = relsByPart.get(name);
+    if (!rels) continue;
+    for (const tag of ['a:hlinkClick', 'a:hlinkHover']) {
+      const hlinks = doc.getElementsByTagName(tag);
+      for (let i = 0; i < hlinks.length; i++) {
+        const rId = hlinks[i].getAttribute('r:id');
+        if (!rId) continue;
+        const rel = rels.get(rId);
+        if (rel && FORBIDDEN_HYPERLINK_REL_TYPES.includes(relTypeSuffix(rel.type))) {
+          errors.push(
+            `${name}: ${tag} r:id="${rId}" resolves to a ${relTypeSuffix(rel.type)} ` +
+              `relationship (${rel.target}) — hyperlinks must point at ` +
+              `hyperlink or slide relationships`,
+          );
+        }
       }
     }
   }
