@@ -33,6 +33,10 @@ changes.
 
 ## [0.9.2] — 2026-08-22
 
+> **Deprecated on npm.** This release shipped without the image/OLE
+> relationship fixes that were part of its certified release candidate (see
+> 0.9.3 above). Use 0.9.3 instead.
+
 ### Fixed
 
 - Modifying a template shape that already carries a hyperlink
