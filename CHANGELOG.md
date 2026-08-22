@@ -39,9 +39,16 @@ semver, with the pre-1.0 convention that **breaking changes bump the minor**.
   relationship with a source-numbered target — an OPC singleton violation
   ("can only have one instance of relationship that targets part") observed
   in field-generated decks. Only relationships of hyperlink/slide Type are
-  copied now; hyperlinks whose relationship cannot be copied are stripped
-  from the imported element with a warning, since a dangling `r:id` is
-  itself a repair trigger. The Tier-1 package invariants (checked for every
+  copied now, and the two hyperlink id spaces are kept apart: ids present on
+  the unmutated source element are imports and resolve against the source
+  slide's rels, while ids added by modification callbacks during `prepare()`
+  (e.g. `modify.htmlToMultiText()` links on an added element) already have
+  their relationships on the target slide's rels and are left untouched.
+  Hyperlinks that resolve in neither id space are stripped from the imported
+  element with a warning, since a dangling `r:id` is itself a repair
+  trigger. A certification sweep over field-generated decks that previously
+  failed to open under the Open XML SDK opens cleanly with these guards in
+  place. The Tier-1 package invariants (checked for every
   archive written by the test suite) now also fail on duplicate
   slideLayout/notesSlide relationships and on any
   `a:hlinkClick`/`a:hlinkHover` resolving to a structural relationship.

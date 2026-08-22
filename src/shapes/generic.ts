@@ -86,7 +86,11 @@ export class GenericShape extends Shape implements IShapeAction {
       this.sourceArchive,
       this.sourceSlideNumber,
       this.targetArchive,
-      this.targetSlideRelFile
+      this.targetSlideRelFile,
+      // The unmutated source element separates imported hyperlink ids (to
+      // resolve against the source rels) from ids added by modification
+      // callbacks during prepare(), whose rels already live on the target.
+      this.sourceElement,
     );
   }
 

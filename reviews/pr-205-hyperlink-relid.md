@@ -103,6 +103,20 @@ relationship. A patched-fixture regression test reproduces the field
 corruption and fails against pre-fix code; the fixed output validates with
 zero errors under the SDK.
 
+The strip pass itself then earned a taste of its own medicine: its first
+cut resolved *every* hyperlink id against the source slide's rels — but
+links added by modification callbacks (`htmlToMultiText` on an appended
+element) mint their relationships on the *target* slide during `prepare()`,
+so the pass stripped freshly created, perfectly valid links. A second
+session's certification sweep over field-generated decks caught it before
+merge; the corrected pass separates the two id spaces by comparing against
+the unmutated source element (imported ids → source rels, callback ids →
+target rels). With the guards in place, decks from that sweep which
+previously refused to open under the SDK all open cleanly. The lesson
+repeats itself at every level of this story: the fix for a
+wrong-id-space bug contained its own wrong-id-space bug, and it was —
+again — an input the author didn't choose that found it.
+
 ## "Please correct this PR" versus fixing it here
 
 We did not meter tokens precisely, but the ratios are clear enough to

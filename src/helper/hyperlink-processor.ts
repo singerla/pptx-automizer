@@ -179,7 +179,8 @@ export class HyperlinkProcessor {
     sourceArchive: IArchive,
     sourceSlideNumber: number,
     targetArchive: IArchive,
-    targetSlideRelFile: string
+    targetSlideRelFile: string,
+    sourceElement?: XmlElement,
   ): Promise<void> {
     if (!this.hasHyperlinks(element)) {
       return;
@@ -189,6 +190,19 @@ export class HyperlinkProcessor {
     if (hyperlinkRIds.length === 0) {
       return;
     }
+
+    // Hyperlink ids present on the unmutated source element are imports and
+    // resolve against the SOURCE slide's rels. Ids that are not (typically
+    // added by modification callbacks like htmlToMultiText, which run during
+    // prepare() and mint their relationships on the TARGET slide's rels)
+    // must never be looked up — or cloned — from the source id space.
+    // Without a source element to compare against, treat every id as an
+    // import (the historical behavior).
+    const importedRIds = new Set(
+      sourceElement
+        ? this.extractHyperlinkRelationshipIds(sourceElement)
+        : hyperlinkRIds,
+    );
 
     const sourceRelPath = `ppt/slides/_rels/slide${sourceSlideNumber}.xml.rels`;
     const sourceRelDoc = await XmlHelper.getXmlFromArchive(sourceArchive, sourceRelPath);
@@ -211,7 +225,10 @@ export class HyperlinkProcessor {
 
     for (let i = 0; i < hyperlinkRIds.length; i++) {
       const rId = hyperlinkRIds[i];
-      
+      if (!importedRIds.has(rId)) {
+        continue;
+      }
+
       let sourceRel: XmlElement | null = null;
       for (let j = 0; j < sourceRelationships.length; j++) {
         if (sourceRelationships[j].getAttribute('Id') === rId) {
@@ -272,16 +289,35 @@ export class HyperlinkProcessor {
       }
     }
 
-    // Strip hyperlinks whose relationship could not be copied (no source rel,
-    // or a rel of the wrong Type). Leaving their r:id in place would either
-    // dangle or point at an unrelated relationship on the target slide —
-    // both are repair-prompt triggers.
+    // Keep: imported hyperlinks that were cloned (relationshipMap), and
+    // callback-created hyperlinks whose r:id already resolves on the TARGET
+    // slide to a hyperlink/slide relationship. Strip everything else — an
+    // import whose source rel is missing or of the wrong Type, or a
+    // callback id that resolves nowhere. Leaving such an r:id in place
+    // would either dangle or point at an unrelated relationship on the
+    // target slide; both are repair-prompt triggers.
+    const targetRelationships = targetRelXml.getElementsByTagName('Relationship');
+    const resolvesOnTarget = (rId: string): boolean => {
+      for (let i = 0; i < targetRelationships.length; i++) {
+        if (targetRelationships[i].getAttribute('Id') === rId) {
+          return this.isHyperlinkRelType(
+            targetRelationships[i].getAttribute('Type') || '',
+          );
+        }
+      }
+      return false;
+    };
+
     this.findHyperlinks(element).forEach((hlink) => {
       const rId = hlink.getAttribute(this.RELATIONSHIP_ATTRIBUTE);
-      if (rId && !relationshipMap.has(rId)) {
-        log.warn(`Dropping hyperlink with unresolvable r:id="${rId}"`);
-        hlink.parentNode?.removeChild(hlink);
+      if (!rId || relationshipMap.has(rId)) {
+        return;
       }
+      if (!importedRIds.has(rId) && resolvesOnTarget(rId)) {
+        return;
+      }
+      log.warn(`Dropping hyperlink with unresolvable r:id="${rId}"`);
+      hlink.parentNode?.removeChild(hlink);
     });
 
     this.updateHyperlinkRelationshipIds(element, relationshipMap);
