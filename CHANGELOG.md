@@ -4,6 +4,33 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 semver, with the pre-1.0 convention that **breaking changes bump the minor**.
 
+## [0.9.3] — 2026-08-22
+
+Completes the certified 0.9.2 release candidate: the certification sweep that
+cleared 0.9.2 ran with both `fix/hyperlink-rel-type-guards` **and**
+`fix/master-import-ole-and-image-rels` applied, but only the former was merged
+before tagging. This release adds the missing branch; there are no other
+changes.
+
+### Fixed
+
+- Copying a slide, layout, or master no longer leaves orphaned image
+  relationships behind. `Image.modifyOnAddedSlide()` appended a fresh
+  relationship for every image on the copied part and left the source-named
+  relationship in the `.rels` file; whenever that orphan's Target did not
+  exist in the output archive (same basename, different extension in root vs
+  source), PowerPoint prompted to repair the file. The existing
+  relationship's Target is now pointed at the copied media file in place —
+  the rId stays stable, the element XML no longer needs rewriting, and no
+  orphaned relationships remain.
+- `autoImportSlideMasters` no longer fails with "Could not find file
+  ppt/slides/slide<n>.xml" when an imported slideLayout or slideMaster
+  carries an OLE object (e.g. think-cell data objects).
+  `OLEObject.updateSlideXml()` built a hardcoded slide path from the target
+  number, which is a layout/master number on that path; it now uses the
+  target-type-aware slide file the Shape base class already derives. Covered
+  by a regression test with a schema-faithful OLE fixture on a slideLayout.
+
 ## [0.9.2] — 2026-08-22
 
 ### Fixed
