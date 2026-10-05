@@ -88,6 +88,14 @@ export class PptPaths {
     return `ppt/media/${filename}`;
   }
 
+  static drawing(n: number | string): string {
+    return `ppt/drawings/drawing${n}.xml`;
+  }
+
+  static drawingRels(n: number | string): string {
+    return `ppt/drawings/_rels/drawing${n}.xml.rels`;
+  }
+
   static embedding(filename: string): string {
     return `ppt/embeddings/${filename}`;
   }

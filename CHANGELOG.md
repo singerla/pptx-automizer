@@ -4,6 +4,24 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 semver, with the pre-1.0 convention that **breaking changes bump the minor**.
 
+## [Unreleased]
+
+### Fixed
+
+- `Chart.copyChartStyleFiles()` now copies a `chartUserShapes` drawing's own
+  `_rels` file (and the images it relates to) when a chart is copied onto a
+  new slide. Previously only the drawing's XML part was copied; if the
+  drawing itself had relationships — e.g. a picture embedded in a chart
+  annotation, as produced by think-cell — the copy's `r:embed` pointed at
+  nothing in the output archive. PowerPoint reports this as "The picture
+  can't be displayed" when the affected slide is opened, even though a
+  cached slide-panel thumbnail can still render correctly. Images referenced
+  from the drawing's rels are now copied and renamed the same way
+  `relTypeChartImage` images on the chart itself already were. New regression
+  test: `__tests__/chart-user-shape-rels.test.ts`, with `__tests__/pptx-templates/ChartUserShapeWithImage.pptx`
+  (derived from `ChartUserShape.pptx`, with a `<cdr:pic>` added to the user
+  shapes drawing).
+
 ## [0.9.4] — 2026-09-28
 
 Table fill fidelity, a `cleanup: true` crash on fallback-less SVG pictures,

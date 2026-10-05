@@ -361,8 +361,10 @@ export class Chart extends Shape implements IChart, IShapeAction {
         this.sourceArchive,
         `ppt/drawings/${sourceFile}`,
         this.targetArchive,
-        `ppt/drawings/drawing${this.targetNumber}.xml`,
+        PptPaths.drawing(this.targetNumber),
       );
+
+      await this.copyChartUserShapesRels(sourceFile);
     }
 
     if (this.styleRelationFiles.relTypeChartThemeOverride?.length) {
@@ -378,6 +380,55 @@ export class Chart extends Shape implements IChart, IShapeAction {
         `ppt/theme/themeOverride${this.targetNumber}.xml`,
       );
     }
+  }
+
+  /**
+   * Copies a chart's `chartUserShapes` drawing's own `_rels` file, if it has
+   * one, and copies+renumbers any image it relates to — mirroring an
+   * embedded picture inside a chart annotation (e.g. a think-cell chart
+   * label), which otherwise has no relationship to resolve against in the
+   * copied drawing part.
+   */
+  async copyChartUserShapesRels(sourceFile: string): Promise<void> {
+    const sourceDrawingRels = `ppt/drawings/_rels/${sourceFile}.rels`;
+    if (
+      !FileHelper.fileExistsInArchive(this.sourceArchive, sourceDrawingRels)
+    ) {
+      return;
+    }
+
+    const relsXml = await XmlHelper.getXmlFromArchive(
+      this.sourceArchive,
+      sourceDrawingRels,
+    );
+    const relationships = relsXml.getElementsByTagName('Relationship');
+
+    for (let i = 0; i < relationships.length; i++) {
+      const relationship = relationships[i];
+      if (
+        relationship.getAttribute('TargetMode') === 'External' ||
+        relationship.getAttribute('Type') !== this.relTypeChartImage
+      ) {
+        continue;
+      }
+      const imageInfo = this.getTargetChartImageUri(
+        relationship.getAttribute('Target'),
+      );
+      await this.appendImageExtensionToContentType(imageInfo.extension);
+      await FileHelper.zipCopy(
+        this.sourceArchive,
+        imageInfo.source,
+        this.targetArchive,
+        imageInfo.target,
+      );
+      relationship.setAttribute('Target', imageInfo.rel);
+    }
+
+    XmlHelper.writeXmlToArchive(
+      this.targetArchive,
+      PptPaths.drawingRels(this.targetNumber),
+      relsXml,
+    );
   }
 
   async getChartStyles(): Promise<void> {
