@@ -18,6 +18,20 @@ import { ISlide } from '../interfaces/islide';
 import { IMaster } from '../interfaces/imaster';
 
 export type ShapeTargetType = 'slide' | 'slideMaster' | 'slideLayout';
+
+/**
+ * Selects a slide layout of the output presentation by name for
+ * `slide.useSlideLayout()`: the layout name as shown in PowerPoint's layout
+ * gallery, optionally narrowed down by the master's name and by the
+ * template the layout came from (`'root'` for the root template's own
+ * layouts, or the alias of a loaded template for layouts imported from it).
+ * Names are compared exactly.
+ */
+export type SlideLayoutSelector = {
+  layout: string;
+  master?: string;
+  template?: 'root' | string;
+};
 export type SourceIdentifier = number | string;
 export type SlideModificationCallback = (document: XmlDocument, parent?: HasShapes | ISlide | IMaster) => Promise<void> | void;
 export type SlidePlaceholder = {

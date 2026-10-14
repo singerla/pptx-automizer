@@ -6,6 +6,7 @@ import {
   ModificationCallback,
   SlideModificationCallback,
   SourceIdentifier,
+  SlideLayoutSelector,
 } from '../types/types';
 import IArchive from './iarchive';
 import {
@@ -64,14 +65,22 @@ export interface ISlide {
    */
   removeElement(selector: FindElementSelector): ISlide;
 
-  useSlideLayout(targetLayout?: number | string): ISlide;
+  /**
+   * Use another slide layout of the output: by 1-based layout number, by
+   * layout name (auto-imports the source slide's master, falls back to the
+   * root template's layouts), or by a `SlideLayoutSelector`
+   * (`{ layout, master?, template? }`, resolved against the output at write
+   * time, no auto-import). Without an argument the source slide's own
+   * layout and master are imported.
+   */
+  useSlideLayout(targetLayout?: number | string | SlideLayoutSelector): ISlide;
 
   /**
    * Merges slide content into a specified slide layout by matching placeholders.
    * @param targetLayout - The layout identifier to merge into
    * @returns Promise resolving to the updated slide instance
    */
-  mergeIntoSlideLayout(targetLayout: number | string): ISlide;
+  mergeIntoSlideLayout(targetLayout: number | string | SlideLayoutSelector): ISlide;
 
   getElement(selector: FindElementSelector): Promise<ElementInfo>;
 

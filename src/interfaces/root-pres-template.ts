@@ -6,6 +6,7 @@ import Automizer from '../automizer';
 import { IMaster } from './imaster';
 import { ILayout } from './ilayout';
 import { MediaFile } from '../types/types';
+import { ContentMap } from '../types/xml-types';
 import { MediaDeduplicator } from '../helper/media-deduplicator';
 
 export interface RootPresTemplate extends ITemplate {
@@ -14,6 +15,8 @@ export interface RootPresTemplate extends ITemplate {
   counter: ICounter[];
   mediaFiles: MediaFile[];
   mediaDeduplicator: MediaDeduplicator;
+  /** Imported masters/layouts: source → target numbers (see `mapContents`). */
+  contentMap?: ContentMap[];
   mapContents: (
     type: string,
     key: string,

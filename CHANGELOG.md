@@ -31,6 +31,21 @@ semver, with the pre-1.0 convention that **breaking changes bump the minor**.
   `pptxgenjs`'s range. Override it in your own project if you need the
   patched version.
 
+### Added
+
+- `slide.useSlideLayout()` accepts a selector object
+  `{ layout, master?, template? }` to pick a layout of the output
+  presentation by name, including the root template's own layouts (#136):
+  `{ layout: 'Nur Titel', template: 'root' }` or
+  `{ master: 'Orange Design', layout: 'Titel und Inhalt' }`. `master` is the
+  name PowerPoint shows for the master (its theme name, or the master's own
+  name if set); `template` is `'root'` or the alias of the template a
+  layout was imported from. The selector is resolved at write time and
+  never imports a master. No or more than one match rejects `write()` with
+  the new `SlideLayoutNotFoundError`, which lists the available or
+  ambiguous layouts (a warning with `continueOnError`). New exports:
+  `SlideLayoutSelector`, `SlideLayoutInfo`, `SlideLayoutNotFoundError`.
+
 ### Changed
 
 - CI hardening (#204): both GitHub Actions workflows declare least-privilege
@@ -38,6 +53,11 @@ semver, with the pre-1.0 convention that **breaking changes bump the minor**.
   Pages write scopes only on the docs deploy job), every action is pinned to
   a full commit SHA with a version comment, and Dependabot keeps those pins
   current in one monthly grouped PR.
+
+- `slide.useSlideLayout('<name>')` falls back to the root template's own
+  layouts when the name is not found among the imported ones (#136).
+  Previously such a call logged an error and kept the source slide's layout.
+  A name that matches nothing anywhere still behaves as before.
 
 - Internal: relationship handling now has a single implementation in
   `XmlRelationshipHelper` (#55). `parseRelationTarget`,

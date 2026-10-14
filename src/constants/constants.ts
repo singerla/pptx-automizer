@@ -4,6 +4,13 @@ import {
   TrackedRelationTag,
 } from '../types/types';
 
+/**
+ * Template alias under which the root (output) template acts as the source
+ * of its own masters and layouts (`Automizer.modifyMaster` /
+ * `modifyLayout`).
+ */
+export const ROOT_TEMPLATE_ALIAS = 'root';
+
 export const TargetByRelIdMap: Record<string, TargetByRelIdMapParam> = {
   chart: {
     relRootTag: 'c:chart',
