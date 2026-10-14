@@ -1,6 +1,7 @@
 import { FileHelper } from '../helper/file-helper';
 import { PptPaths } from '../helper/ppt-paths';
 import { XmlHelper } from '../helper/xml-helper';
+import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import type HasShapes from './has-shapes';
 
 /**
@@ -33,7 +34,7 @@ export class SlideNotesCopier {
    */
   async getSlideNoteSourceNumber(): Promise<number | undefined> {
     const host = this.host;
-    const targets = await XmlHelper.getTargetsByRelationshipType(
+    const targets = await XmlRelationshipHelper.getTargetsByRelationshipType(
       host.sourceArchive,
       PptPaths.slideRels(host.sourceNumber),
       'http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide',

@@ -7,6 +7,7 @@ import {
 } from '../interfaces/imulti-text';
 import ModifyTextHelper from './modify-text-helper';
 import { XmlHelper } from './xml-helper';
+import { XmlRelationshipHelper } from './xml-relationship-helper';
 import HyperlinkElement from './modify-hyperlink-element';
 
 type TextRun = MultiTextRun & { hyperlink?: HyperlinkInfo };
@@ -570,7 +571,7 @@ export class MultiTextHelper {
     relData: { Id: string; Target: string; Type: string; TargetMode?: string },
   ): string {
     const relNodes = relation.getElementsByTagName('Relationship');
-    const maxId = XmlHelper.getMaxId(relNodes, 'Id', true);
+    const maxId = XmlRelationshipHelper.getMaxId(relNodes, 'Id', true);
 
     const newRelId = `rId${maxId}`;
 

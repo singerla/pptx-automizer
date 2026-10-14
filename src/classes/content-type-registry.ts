@@ -1,5 +1,6 @@
 import { PptPaths } from '../helper/ppt-paths';
 import { XmlHelper } from '../helper/xml-helper';
+import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import IArchive from '../interfaces/iarchive';
 import {
   RelationshipAttribute,
@@ -56,7 +57,7 @@ export class ContentTypeRegistry {
   }
 
   /**
-   * Cached equivalent of `XmlHelper.getNextRelId` for
+   * Cached equivalent of `XmlRelationshipHelper.getNextRelId` for
    * `ppt/_rels/presentation.xml.rels`: the max-rId scan runs once per parsed
    * document, afterwards ids are incremented locally (the scan is O(n) in
    * appended slides, so rescanning per append made large decks O(n²)).
@@ -70,7 +71,7 @@ export class ContentTypeRegistry {
     );
     const max =
       nextRelIdByRelsDoc.get(xml) ??
-      XmlHelper.getMaxId(xml.documentElement.childNodes, 'Id');
+      XmlRelationshipHelper.getMaxId(xml.documentElement.childNodes, 'Id');
     const next = max + 1;
     nextRelIdByRelsDoc.set(xml, next);
     return `rId${next}-created`;

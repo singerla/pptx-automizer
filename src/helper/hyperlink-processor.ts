@@ -1,5 +1,6 @@
 import { XmlElement } from '../types/xml-types';
 import { XmlHelper } from './xml-helper';
+import { XmlRelationshipHelper } from './xml-relationship-helper';
 import { log } from './logger';
 import IArchive from '../interfaces/iarchive';
 import { Target } from '../types/types';
@@ -264,7 +265,7 @@ export class HyperlinkProcessor {
               }
             }
           } else {
-            newRId = await XmlHelper.getNextRelId(targetArchive, targetSlideRelFile);
+            newRId = await XmlRelationshipHelper.getNextRelId(targetArchive, targetSlideRelFile);
             
             const newRelationship = targetRelXml.createElement('Relationship');
             newRelationship.setAttribute('Id', newRId);

@@ -1,5 +1,6 @@
 import { FileHelper } from '../helper/file-helper';
 import { XmlHelper } from '../helper/xml-helper';
+import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import { Shape } from '../classes/shape';
 
 import { RelationshipAttribute, XmlElement } from '../types/xml-types';
@@ -183,7 +184,7 @@ export class Diagram extends Shape implements IShapeAction {
   }
 
   async appendToSlideRels(type: string, target: string): Promise<XmlElement> {
-    this.createdRid = await XmlHelper.getNextRelId(
+    this.createdRid = await XmlRelationshipHelper.getNextRelId(
       this.targetArchive,
       this.targetSlideRelFile,
     );
@@ -197,7 +198,7 @@ export class Diagram extends Shape implements IShapeAction {
     } as RelationshipAttribute;
 
     return XmlHelper.append(
-      XmlHelper.createRelationshipChild(
+      XmlRelationshipHelper.createRelationshipChild(
         this.targetArchive,
         this.targetSlideRelFile,
         attributes,
@@ -255,7 +256,7 @@ export class Diagram extends Shape implements IShapeAction {
     archive: IArchive,
     relsPath: string,
   ): Promise<Target[]> {
-    return await XmlHelper.getRelationshipTargetsByPrefix(archive, relsPath, [
+    return await XmlRelationshipHelper.getRelationshipTargetsByPrefix(archive, relsPath, [
       '../diagrams/data',
     ]);
   }

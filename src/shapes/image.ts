@@ -1,6 +1,7 @@
 import { FileHelper } from '../helper/file-helper';
 import { PptPaths } from '../helper/ppt-paths';
 import { XmlHelper } from '../helper/xml-helper';
+import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import { Shape } from '../classes/shape';
 import { RelationshipAttribute, XmlElement } from '../types/xml-types';
 import {
@@ -194,7 +195,7 @@ export class Image extends Shape implements IImage, IShapeAction {
   ) {
     const relsPath = PptPaths.slideRels(this.sourceSlideNumber);
 
-    const target = await XmlHelper.getTargetByRelId(
+    const target = await XmlRelationshipHelper.resolveElementTarget(
       this.sourceArchive,
       relsPath,
       this.targetElement,
@@ -317,7 +318,7 @@ export class Image extends Shape implements IImage, IShapeAction {
    */
   async appendToSlideRels(): Promise<void> {
     const targetRelFile = `ppt/${this.targetType}s/_rels/${this.targetType}${this.targetSlideNumber}.xml.rels`;
-    this.createdRid = await XmlHelper.getNextRelId(
+    this.createdRid = await XmlRelationshipHelper.getNextRelId(
       this.targetArchive,
       targetRelFile,
     );
@@ -329,7 +330,7 @@ export class Image extends Shape implements IImage, IShapeAction {
     } as RelationshipAttribute;
 
     this.createdRelation = await XmlHelper.append(
-      XmlHelper.createRelationshipChild(
+      XmlRelationshipHelper.createRelationshipChild(
         this.targetArchive,
         targetRelFile,
         attributes,
@@ -353,7 +354,7 @@ export class Image extends Shape implements IImage, IShapeAction {
     archive: IArchive,
     relsPath: string,
   ): Promise<Target[]> {
-    return await XmlHelper.getTargetsByRelationshipType(
+    return await XmlRelationshipHelper.getTargetsByRelationshipType(
       archive,
       relsPath,
       'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image',

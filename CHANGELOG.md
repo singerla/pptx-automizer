@@ -6,6 +6,24 @@ semver, with the pre-1.0 convention that **breaking changes bump the minor**.
 
 ## [Unreleased]
 
+### Changed
+
+- Internal: relationship handling now has a single implementation in
+  `XmlRelationshipHelper` (#55). `parseRelationTarget`,
+  `targetMatchesRelationship`, `getRelationshipItems`,
+  `getRelationshipTargetsByPrefix`, `getTargetsByRelationshipType`,
+  `getNextRelId`, `getMaxId` and `createRelationshipChild` moved there with
+  their `XmlHelper` names; `XmlHelper.getTargetByRelId` became
+  `XmlRelationshipHelper.resolveElementTarget`. All internal callers use
+  the new home. The `XmlHelper.*` names remain as `@deprecated` delegates
+  with unchanged signatures and will be removed in 1.0. The merged parser
+  keeps both former behaviors: the `../diagrams/data` → `diagramData`
+  subtype mapping and the absolute `/ppt/...` target matching (pptxgenjs
+  output) now also apply to the instance methods
+  (`getTargetsByPrefix`), and targets returned by the former `XmlHelper`
+  statics carry the full `Target` shape (`filenameExt`, `updateTargetIndex`,
+  …).
+
 ### Fixed
 
 - Copying a chart now also copies the `_rels` file of its `chartUserShapes`

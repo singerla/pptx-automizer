@@ -2,7 +2,7 @@ import HyperlinkElement from './modify-hyperlink-element';
 import { HyperlinkProcessor } from './hyperlink-processor';
 import { ShapeModificationCallback } from '../types/types';
 import { XmlDocument, XmlElement } from '../types/xml-types';
-import { XmlHelper } from './xml-helper';
+import { XmlRelationshipHelper } from './xml-relationship-helper';
 import { log } from './logger';
 
 interface RelationshipData {
@@ -42,7 +42,7 @@ export default class ModifyHyperlinkHelper {
     relId?: string,
   ): string {
     const relNodes = relation.getElementsByTagName('Relationship');
-    const newRelId = relId || `rId${XmlHelper.getMaxId(relNodes, 'Id', true)}`;
+    const newRelId = relId || `rId${XmlRelationshipHelper.getMaxId(relNodes, 'Id', true)}`;
 
     const newRel = relation.ownerDocument.createElement('Relationship');
     newRel.setAttribute('Id', newRelId);

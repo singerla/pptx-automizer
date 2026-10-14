@@ -3,6 +3,7 @@ import { AutomizerError } from '../errors';
 import { FileHelper } from '../helper/file-helper';
 import { PptPaths } from '../helper/ppt-paths';
 import { XmlHelper } from '../helper/xml-helper';
+import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import { Shape } from '../classes/shape';
 import { ImportedElement, ShapeTargetType, Target } from '../types/types';
 import { XmlElement } from '../types/xml-types';
@@ -92,7 +93,7 @@ export class OLEObject extends Shape implements IShapeAction {
 
     const sourceFilePath = PptPaths.embedding(oleObject.file.split('/').pop());
 
-    this.createdRid = await XmlHelper.getNextRelId(
+    this.createdRid = await XmlRelationshipHelper.getNextRelId(
       this.targetArchive,
       this.targetSlideRelFile,
     );
@@ -304,7 +305,7 @@ export class OLEObject extends Shape implements IShapeAction {
     const oleObjectType =
       'http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject';
 
-    return XmlHelper.getRelationshipItems(
+    return XmlRelationshipHelper.getRelationshipItems(
       archive,
       relsPath,
       (element: XmlElement, rels: Target[]) => {

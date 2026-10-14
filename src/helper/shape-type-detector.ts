@@ -2,7 +2,7 @@ import { ElementType } from '../enums/element-type';
 import IArchive from '../interfaces/iarchive';
 import { AnalyzedElementType } from '../types/types';
 import { XmlElement } from '../types/xml-types';
-import { XmlHelper } from './xml-helper';
+import { XmlRelationshipHelper } from './xml-relationship-helper';
 import { HyperlinkProcessor } from './hyperlink-processor';
 import { log } from './logger';
 
@@ -14,7 +14,7 @@ export type ShapeTypeDetector = {
   match: (element: XmlElement) => boolean;
   type: ElementType;
   /**
-   * Relationship lookup key for XmlHelper.getTargetByRelId; the detected
+   * Relationship lookup key for XmlRelationshipHelper.resolveElementTarget; the detected
    * element's related target (chart xml, media file, …) is resolved with it.
    * Omit for shape types without related content.
    */
@@ -74,7 +74,7 @@ export const shapeTypeDetectors: ShapeTypeDetector[] = [
         return { type: ElementType.Shape };
       }
       try {
-        const target = await XmlHelper.getTargetByRelId(
+        const target = await XmlRelationshipHelper.resolveElementTarget(
           sourceArchive,
           relsPath,
           element,
@@ -114,7 +114,7 @@ export async function analyzeElement(
     return {
       type: detector.type,
       target: detector.relType
-        ? await XmlHelper.getTargetByRelId(
+        ? await XmlRelationshipHelper.resolveElementTarget(
             sourceArchive,
             relsPath,
             sourceElement,
