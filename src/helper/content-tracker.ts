@@ -20,6 +20,7 @@ export class ContentTracker {
     'ppt/slides': [],
     'ppt/charts': [],
     'ppt/embeddings': [],
+    'ppt/drawings': [],
   };
 
   relations: TrackedRelations = {
@@ -28,6 +29,7 @@ export class ContentTracker {
     'ppt/slideMasters/_rels': [],
     'ppt/slideLayouts/_rels': [],
     'ppt/charts/_rels': [],
+    'ppt/drawings/_rels': [],
     'ppt/_rels': [],
     ppt: [],
   };

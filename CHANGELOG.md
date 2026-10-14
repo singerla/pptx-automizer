@@ -21,6 +21,10 @@ semver, with the pre-1.0 convention that **breaking changes bump the minor**.
   Other internal relationship types in such a drawing are copied unchanged
   with a warning. New `PptPaths.drawing()`, `PptPaths.drawingRels()`,
   `PptPaths.relsOf()` and `PptPaths.relative.drawing()`.
+- `cleanup: true` no longer removes images that are referenced only by a
+  copied chart (e.g. scatter point markers) or by its user shapes drawing.
+  The `ContentTracker` now collects image relations of `ppt/charts` and
+  `ppt/drawings` parts in addition to slides, masters and layouts.
 
 ## [0.9.4] — 2026-09-28
 

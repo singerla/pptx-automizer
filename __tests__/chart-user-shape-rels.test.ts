@@ -133,3 +133,21 @@ test('adding the chart as an element onto existing slides keeps the drawing imag
   expect(first).toBe(`../media/${sourceImage}-chart-1.png`);
   expect(second).toBe(`../media/${sourceImage}-chart-2.png`);
 });
+
+test('the drawing image survives cleanup: true', async () => {
+  const automizer = new Automizer({ templateDir, outputDir, cleanup: true });
+  const outputFile = 'chart-user-shape-rels-cleanup.test.pptx';
+
+  const pres = automizer
+    .loadRoot(`RootTemplate.pptx`)
+    .load(`ChartUserShapeWithImage.pptx`, 'chartUserShape');
+
+  pres.addSlide('chartUserShape', 1);
+
+  const result = await pres.write(outputFile);
+
+  expect(result.charts).toBe(1);
+
+  const target = await expectDrawingImage(outputFile, 1);
+  expect(target).toBe(`../media/${sourceImage}-chart-1.png`);
+});
