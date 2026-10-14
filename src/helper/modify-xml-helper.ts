@@ -298,6 +298,10 @@ export default class ModifyXmlHelper {
       case 'c:dLbl':
         new XmlElements(parent).dataPointLabel();
         return true;
+      case 'c:pt':
+        return new XmlElements(parent).point();
+      case 'cx:pt':
+        return new XmlElements(parent).extPoint();
       case 'a:lnL':
       case 'a:lnR':
       case 'a:lnT':

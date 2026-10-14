@@ -4,6 +4,27 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 semver, with the pre-1.0 convention that **breaking changes bump the minor**.
 
+## [Unreleased]
+
+### Fixed
+
+- `setChartData` fills a chart cache that holds no point at all. A chart
+  saved with empty `c:numCache`/`c:strCache` caches (PowerPoint writes such
+  "legend-only" charts, and a template may ship a stripped cache) could
+  never receive a `<c:pt>`: a missing point is cloned from its last sibling,
+  and with no sibling the element factory did not know the tag. Every point
+  logged `Could not assert required tag: c:pt@index:…`, the embedded
+  workbook was written correctly, and PowerPoint — which renders from the
+  cache — showed an empty series until "Edit Data" was opened. The first
+  point is now created inside the cache (`c:numCache`, `c:strCache`,
+  `c15:dlblRangeCache`, `c:numLit`, `c:strLit`), after `c:formatCode` and
+  `c:ptCount`; later points clone it as before. The same applies to `cx:pt`
+  in a chartex `cx:lvl`. **Behavior change for consumers relying on the old
+  outcome**: a legend-only chart no longer stays empty; it shows the values
+  that were passed to `setChartData`. A wrapper with no cache at all (a
+  `c:numRef` holding only `c:f`) still logs the warning; the warning's
+  wording and level are unchanged.
+
 ## [0.9.4] — 2026-09-28
 
 Table fill fidelity, a `cleanup: true` crash on fallback-less SVG pictures,

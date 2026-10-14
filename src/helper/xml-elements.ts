@@ -560,6 +560,69 @@ export default class XmlElements {
     );
   }
 
+  /**
+   * Containers that hold `<c:pt>` children, in order of likelihood. The
+   * modification is addressed to the `c:val`/`c:cat`/`c:xVal`/`c:yVal`
+   * wrapper (or `c15:datalabelsRange`), so the points live one level down.
+   */
+  static C_PT_CONTAINERS = [
+    'c:numCache',
+    'c:strCache',
+    'c15:dlblRangeCache',
+    'c:numLit',
+    'c:strLit',
+  ];
+
+  /**
+   * A first `<c:pt idx="0"><c:v/></c:pt>` for a chart cache without any
+   * point (a "legend-only" chart, or a template whose cache was stripped).
+   * The `c:v` must carry a text node, even an empty one:
+   * `ModifyXmlHelper.value` writes `firstChild.textContent` and silently
+   * skips a `c:v` without one. Inserted after `c:formatCode`/`c:ptCount`
+   * and before an `c:extLst`, as CT_NumData/CT_StrData require. Later
+   * points are cloned from this one by `assertElement`.
+   *
+   * Returns false when `this.element` holds no cache to put the point in.
+   */
+  point(): boolean {
+    const cache = XmlElements.C_PT_CONTAINERS.map((tag) =>
+      this.element.getElementsByTagName(tag).item(0),
+    ).find((candidate) => candidate !== null && candidate !== undefined);
+    if (!cache) {
+      return false;
+    }
+
+    const pt = this.document.createElement('c:pt');
+    pt.setAttribute('idx', '0');
+    const v = this.document.createElement('c:v');
+    v.appendChild(this.document.createTextNode(''));
+    pt.appendChild(v);
+
+    const extLst = Array.from(cache.childNodes).find(
+      (child) => child.nodeName === 'c:extLst',
+    );
+    cache.insertBefore(pt, extLst ?? null);
+    return true;
+  }
+
+  /**
+   * The chartex counterpart: a first `<cx:pt idx="0"/>` (text content, no
+   * `c:v`) inside the `cx:lvl` of a `cx:strDim`/`cx:numDim`. As with
+   * `point()`, the empty text node is what `ModifyXmlHelper.textContent`
+   * writes to.
+   */
+  extPoint(): boolean {
+    const lvl = this.element.getElementsByTagName('cx:lvl').item(0);
+    if (!lvl) {
+      return false;
+    }
+    const pt = this.document.createElement('cx:pt');
+    pt.setAttribute('idx', '0');
+    pt.appendChild(this.document.createTextNode(''));
+    lvl.appendChild(pt);
+    return true;
+  }
+
   tableCellBorder(tag: 'a:lnL' | 'a:lnR' | 'a:lnT' | 'a:lnB') {
     const doc = new DOMParser().parseFromString(lnLRTB, 'application/xml');
     const ele = doc.getElementsByTagName(tag)[0] as unknown as Node;
