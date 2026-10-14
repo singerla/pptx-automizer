@@ -6,6 +6,11 @@
 # Dependabot open a single PR per directory instead of one per package.
 # Grouping also needs the repository setting
 # Settings > Code security > Dependabot > "Grouped security updates".
+#
+# The github-actions entry is different: the workflow actions are pinned to
+# commit SHAs (see .github/workflows), so Dependabot has to open regular
+# version-update PRs to move those pins. One group keeps that to a single PR
+# per month.
 version: 2
 updates:
   - package-ecosystem: npm
@@ -26,5 +31,14 @@ updates:
     groups:
       website-security:
         applies-to: security-updates
+        patterns:
+          - "*"
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    groups:
+      actions:
         patterns:
           - "*"
