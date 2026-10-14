@@ -1,0 +1,30 @@
+# Dependabot: security fixes only, grouped into one PR per directory.
+#
+# open-pull-requests-limit: 0 turns off routine version-bump PRs for the
+# ecosystem; security-update PRs have their own fixed limit and are not
+# affected. The `groups` entries with `applies-to: security-updates` make
+# Dependabot open a single PR per directory instead of one per package.
+# Grouping also needs the repository setting
+# Settings > Code security > Dependabot > "Grouped security updates".
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    groups:
+      root-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+  - package-ecosystem: npm
+    directory: /website
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    groups:
+      website-security:
+        applies-to: security-updates
+        patterns:
+          - "*"

@@ -42,6 +42,27 @@ semver, with the pre-1.0 convention that **breaking changes bump the minor**.
   `c:numRef` holding only `c:f`) still logs the warning; the warning's
   wording and level are unchanged.
 
+### Security
+
+- The minimum `@xmldom/xmldom` version is now `^0.9.12` (was `^0.9.10`).
+  0.9.11 and 0.9.12 fix a series of advisories in the XML parser and
+  serializer: quadratic memory on deeply namespaced documents, quadratic
+  attribute de-duplication, ReDoS on an unterminated processing instruction,
+  and several `requireWellFormed` serializer bypasses. This library uses
+  neither `requireWellFormed` nor entity references, and upstream states the
+  serialized output of well-formed input is byte-identical. The SAX regex
+  cache in `xmldom-sax-patch.ts` still applies on 0.9.12 (the per-closing-tag
+  `g.reg(...)` call is unchanged upstream). Raising the minimum is what
+  propagates the fix to installs of this package.
+- The `image-size` resolution in `package.json` is raised to `^2.0.4`
+  (fixes two high advisories, patched in 2.0.3). This library does not call
+  `image-size` itself since 0.9.1 (`src/helper/image-dimensions.ts`); it is
+  pulled in by `pptxgenjs`, whose own range is `^1.0.0`. A Yarn `resolutions`
+  field only affects this repository's own install and is not published, so
+  downstream installs still get whatever their package manager resolves for
+  `pptxgenjs`'s range. Override it in your own project if you need the
+  patched version.
+
 ## [0.9.4] — 2026-09-28
 
 Table fill fidelity, a `cleanup: true` crash on fallback-less SVG pictures,

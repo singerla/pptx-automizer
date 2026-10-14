@@ -1,5 +1,5 @@
 /**
- * Performance patch for @xmldom/xmldom's SAX parser (verified on 0.9.10).
+ * Performance patch for @xmldom/xmldom's SAX parser (verified on 0.9.12).
  *
  * `lib/sax.js` compiles a fresh RegExp for every closing tag it parses
  * (`g.reg('^', g.QName_group, g.S_OPT, '$')`) and for every `getMatch`
