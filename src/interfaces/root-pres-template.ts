@@ -4,6 +4,7 @@ import { ITemplate } from './itemplate';
 import { ContentTracker } from '../helper/content-tracker';
 import Automizer from '../automizer';
 import { IMaster } from './imaster';
+import { PresTemplate } from './pres-template';
 import { ILayout } from './ilayout';
 import { MediaFile } from '../types/types';
 import { ContentMap } from '../types/xml-types';
@@ -12,6 +13,8 @@ import { MediaDeduplicator } from '../helper/media-deduplicator';
 export interface RootPresTemplate extends ITemplate {
   slides: ISlide[];
   masters: IMaster[];
+  /** Root layouts queued for in-place modification (`modifyLayout`). */
+  layouts?: ILayout[];
   counter: ICounter[];
   mediaFiles: MediaFile[];
   mediaDeduplicator: MediaDeduplicator;
@@ -36,6 +39,9 @@ export interface RootPresTemplate extends ITemplate {
   appendMasterSlide(slideMaster: IMaster): Promise<void>;
 
   appendLayout(slideLayout: ILayout): Promise<void>;
+
+  /** The root template acting as a source template (alias `'root'`). */
+  asSourceTemplate?(): PresTemplate;
 
   runExternalGenerator?(): Promise<void>;
 

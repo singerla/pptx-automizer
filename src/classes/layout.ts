@@ -9,21 +9,29 @@ import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import HasShapes from './has-shapes';
 import { ILayout } from '../interfaces/ilayout';
 import { log } from '../helper/logger';
+import { assertPartExists } from './has-shapes';
 
 export class Layout extends HasShapes implements ILayout {
   targetType: ShapeTargetType = 'slideLayout';
   targetMaster: number;
+  /**
+   * `true` for a layout of the root template that is modified in place
+   * (`Automizer.modifyLayout`); see `Master.inPlace`.
+   */
+  inPlace: boolean;
 
   constructor(params: {
     presentation: IPresentationProps;
     template: PresTemplate;
     sourceIdentifier: SourceIdentifier;
-    targetMaster: number;
+    targetMaster?: number;
+    inPlace?: boolean;
   }) {
     super(params);
 
     this.sourceNumber = Number(params.sourceIdentifier);
     this.targetMaster = params.targetMaster;
+    this.inPlace = params.inPlace === true;
 
     this.sourcePath = PptPaths.slideLayout(this.sourceNumber);
     this.relsPath = PptPaths.slideLayoutRels(this.sourceNumber);
@@ -36,6 +44,10 @@ export class Layout extends HasShapes implements ILayout {
    * @returns append
    */
   async append(targetTemplate: RootPresTemplate): Promise<void> {
+    if (this.inPlace) {
+      return this.applyInPlace(targetTemplate);
+    }
+
     this.targetTemplate = targetTemplate;
 
     this.targetArchive = targetTemplate.archive;
@@ -54,6 +66,33 @@ export class Layout extends HasShapes implements ILayout {
     await this.cleanSlide(this.targetPath);
     await this.cleanRelations(this.targetRelsPath);
     await this.checkIntegrity(true, true);
+
+    await this.flushTargetXml();
+  }
+
+  /**
+   * Applies the queued element actions and modifications to a layout that
+   * is already part of the root template; see `Master.applyInPlace`.
+   * @internal
+   */
+  async applyInPlace(targetTemplate: RootPresTemplate): Promise<void> {
+    this.targetTemplate = targetTemplate;
+    this.targetArchive = targetTemplate.archive;
+    this.sourceArchive = targetTemplate.archive;
+    this.targetNumber = this.sourceNumber;
+    this.targetPath = this.sourcePath;
+    this.targetRelsPath = this.relsPath;
+
+    await assertPartExists(this.targetArchive, this.targetPath, 'slide layout');
+
+    log.info('Modifying slideLayout ' + this.targetNumber + ' in place');
+
+    if (this.importElements.length) {
+      await this.importedSelectedElements();
+    }
+
+    await this.applyModifications();
+    await this.applyRelModifications();
 
     await this.flushTargetXml();
   }

@@ -1,4 +1,4 @@
-import { SlideNotFoundError } from '../errors';
+import { AutomizerError, SlideNotFoundError } from '../errors';
 import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import IArchive from '../interfaces/iarchive';
 import { PresTemplate } from '../interfaces/pres-template';
@@ -31,6 +31,27 @@ import { ElementImporter } from './element-importer';
 import { PlaceholderNormalizer } from './placeholder-normalizer';
 import { RelatedContentCopier } from './related-content-copier';
 import { SlideNotesCopier } from './slide-notes-copier';
+
+/**
+ * Throws a descriptive error if a part a user addressed by number is not in
+ * the archive (`Automizer.modifyMaster(n)` / `modifyLayout(n)`).
+ */
+export async function assertPartExists(
+  archive: IArchive,
+  path: string,
+  what: string,
+): Promise<void> {
+  // make sure the archive is open before fileExists() is consulted
+  await XmlHelper.getXmlFromArchive(archive, PptPaths.presentation);
+  if (!archive.fileExists(path)) {
+    throw new AutomizerError(
+      `Cannot modify ${what} in place: ${path} does not exist in the root ` +
+        `template. Masters and layouts are numbered 1-based by file name, as ` +
+        `loaded; use addMaster() to import and modify a master of another ` +
+        `template.`,
+    );
+  }
+}
 
 /**
  * Base class of Slide, Master and Layout: holds the source/target context

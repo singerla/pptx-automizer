@@ -10,17 +10,27 @@ import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import HasShapes from './has-shapes';
 import { Layout } from './layout';
 import { log } from '../helper/logger';
+import { assertPartExists } from './has-shapes';
 
 export class Master extends HasShapes implements IMaster {
   targetType: ShapeTargetType = 'slideMaster';
   key: string;
+  /**
+   * `true` for a master of the root template that is modified in place
+   * (`Automizer.modifyMaster`): nothing is copied, the queued element
+   * actions and modifications are applied to the root's own part.
+   */
+  inPlace: boolean;
 
   constructor(params: {
     presentation: IPresentationProps;
     template: PresTemplate;
     sourceIdentifier: SourceIdentifier;
+    inPlace?: boolean;
   }) {
     super(params);
+
+    this.inPlace = params.inPlace === true;
 
     // ToDo analogue for slideMasters
     // this.sourceNumber = this.getSlideNumber(
@@ -47,6 +57,10 @@ export class Master extends HasShapes implements IMaster {
    * @returns append
    */
   async append(targetTemplate: RootPresTemplate): Promise<void> {
+    if (this.inPlace) {
+      return this.applyInPlace(targetTemplate);
+    }
+
     this.targetTemplate = targetTemplate;
 
     this.targetArchive = targetTemplate.archive;
@@ -75,6 +89,35 @@ export class Master extends HasShapes implements IMaster {
     await this.checkIntegrity(info, assert);
 
     await this.cleanSlide(this.targetPath);
+
+    await this.flushTargetXml();
+  }
+
+  /**
+   * Applies the queued element actions and modifications to a master that
+   * is already part of the root template. Source and target are the same
+   * part of the output archive; no files are copied, no relationships or
+   * content types are registered and the master keeps its number.
+   * @internal
+   */
+  async applyInPlace(targetTemplate: RootPresTemplate): Promise<void> {
+    this.targetTemplate = targetTemplate;
+    this.targetArchive = targetTemplate.archive;
+    this.sourceArchive = targetTemplate.archive;
+    this.targetNumber = this.sourceNumber;
+    this.targetPath = this.sourcePath;
+    this.targetRelsPath = this.relsPath;
+
+    await assertPartExists(this.targetArchive, this.targetPath, 'slide master');
+
+    log.info('Modifying slideMaster ' + this.targetNumber + ' in place');
+
+    if (this.importElements.length) {
+      await this.importedSelectedElements();
+    }
+
+    await this.applyModifications();
+    await this.applyRelModifications();
 
     await this.flushTargetXml();
   }
