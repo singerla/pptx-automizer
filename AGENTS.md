@@ -273,3 +273,20 @@ renames/behavioral changes need a deprecation path and a ROADMAP entry.
 Internals (`XmlHelper`, `HasShapes`, shape classes) are exported or reachable but
 undocumented — refactoring them is allowed per the ROADMAP, but keep `modify.*`
 signatures intact.
+
+## Dependency updates
+
+Dependabot is configured for security fixes only (`.github/dependabot.yml`),
+one grouped PR per directory. How to handle them depends on where the
+package lives — the lockfile is **not published**, so only a `package.json`
+range change reaches npm users:
+
+- **`/website` group**: build-time only (static Docusaurus site). Merge if CI
+  is green.
+- **Root dev dependencies** (jest, eslint, typedoc, …): merge if `yarn test`
+  passes.
+- **Root runtime dependencies** (`dependencies` in `package.json`): raise the
+  minimum range in `package.json`, add a `### Security` entry under
+  `## [Unreleased]` in `CHANGELOG.md`, and release a patch version — a
+  lockfile-only bump protects this repo's install, not downstream installs.
+  The same applies to a `resolutions` entry: it is not published either.
