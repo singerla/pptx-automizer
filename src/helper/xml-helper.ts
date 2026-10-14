@@ -1,4 +1,3 @@
-import { ElementNotFoundError } from '../errors';
 import { Node, XMLSerializer } from '@xmldom/xmldom';
 import {
   DefaultAttribute,
@@ -11,11 +10,11 @@ import {
   XmlElementCollection,
   XmlNodeCollection,
 } from '../types/xml-types';
-import { TargetByRelIdMap } from '../constants/constants';
 import { XmlPrettyPrint } from './xml-pretty-print';
 import { GetRelationshipsCallback, Target } from '../types/types';
 import { log } from './logger';
 import IArchive from '../interfaces/iarchive';
+import { XmlRelationshipHelper } from './xml-relationship-helper';
 import {
   ContentTypeExtension,
   ContentTypeMap,
@@ -122,189 +121,78 @@ export class XmlHelper {
     return toRemove;
   }
 
+  /** @deprecated Use XmlRelationshipHelper.getNextRelId */
   static async getNextRelId(
     rootArchive: IArchive,
     file: string,
   ): Promise<string> {
-    const presentationRelsXml = await XmlHelper.getXmlFromArchive(
-      rootArchive,
-      file,
-    );
-    const increment = (max: number) => 'rId' + max;
-    const relationNodes = presentationRelsXml.documentElement.childNodes;
-    const rid = XmlHelper.getMaxId(relationNodes, 'Id', true);
-
-    return increment(rid) + '-created';
+    return XmlRelationshipHelper.getNextRelId(rootArchive, file);
   }
 
+  /** @deprecated Use XmlRelationshipHelper.getMaxId */
   static getMaxId(
     rels: XmlNodeCollection | XmlElementCollection,
     attribute: string,
     increment?: boolean,
     minId?: number,
   ): number {
-    let max = 0;
-    for (const i in rels) {
-      const rel = rels[i] as XmlElement;
-
-      if (rel.getAttribute !== undefined && rel.getAttribute(attribute)) {
-        const id = Number(
-          rel
-            .getAttribute(attribute)
-            .replace('rId', '')
-            .replace('-created', ''),
-        );
-        max = id > max ? id : max;
-      }
-    }
-
-    switch (typeof increment) {
-      case 'boolean':
-        ++max;
-        break;
-    }
-
-    if (max < minId) {
-      return minId;
-    }
-
-    return max;
+    return XmlRelationshipHelper.getMaxId(rels, attribute, increment, minId);
   }
 
+  /** @deprecated Use XmlRelationshipHelper.getRelationshipTargetsByPrefix */
   static async getRelationshipTargetsByPrefix(
     archive: IArchive,
     path: string,
     prefix: string | string[],
   ): Promise<Target[]> {
-    const prefixes = typeof prefix === 'string' ? [prefix] : prefix;
-    return XmlHelper.getRelationshipItems(
+    return XmlRelationshipHelper.getRelationshipTargetsByPrefix(
       archive,
       path,
-      (element: XmlElement, targets: Target[]) => {
-        prefixes.forEach((prefix) => {
-          const target = XmlHelper.parseRelationTarget(element, prefix);
-          if (target.prefix) {
-            targets.push(target);
-          }
-        });
-      },
+      prefix,
     );
   }
 
+  /** @deprecated Use XmlRelationshipHelper.parseRelationTarget */
   static parseRelationTarget(element: XmlElement, prefix?: string): Target {
-    const type = element.getAttribute('Type');
-    const file = element.getAttribute('Target');
-
-    const last = (arr: string[]): string => arr[arr.length - 1];
-    const filename = last(file.split('/'));
-
-    let subtype = last(prefix.split('/'));
-    const mapSubtype: Record<string, string> = {
-      data: 'diagramData',
-    };
-    subtype = mapSubtype[subtype] || subtype;
-
-    const relType = last(type.split('/'));
-    const rId = element.getAttribute('Id');
-    const filenameExt = last(filename.split('.'));
-    const filenameMatch = filename
-      .replace('.' + filenameExt, '')
-      .match(/^(.+?)(\d+)*$/);
-    const filenameBase =
-      filenameMatch && filenameMatch[1] ? filenameMatch[1] : filename;
-    const number =
-      filenameMatch && filenameMatch[2] ? Number(filenameMatch[2]) : 0;
-
-    const target = <Target>{
-      rId,
-      type,
-      file,
-      filename,
-      filenameBase,
-      number,
-      subtype,
-      relType,
-      element,
-    };
-
-    if (
-      prefix &&
-      XmlHelper.targetMatchesRelationship(relType, subtype, file, prefix)
-    ) {
-      return {
-        ...target,
-        prefix,
-      } as Target;
-    }
-
-    if (prefix && prefix.indexOf('../') === 0) {
-      // Try again with absolute path instead of relative
-      return XmlHelper.parseRelationTarget(
-        element,
-        prefix.replace('../', '/ppt/'),
-      );
-    }
-
-    return target;
+    return XmlRelationshipHelper.parseRelationTarget(element, prefix);
   }
 
+  /** @deprecated Use XmlRelationshipHelper.targetMatchesRelationship */
   static targetMatchesRelationship(
     relType: string,
     subtype: string,
     file: string,
     prefix: string,
-  ) {
-    if (relType === 'package') return true;
-
-    // pptgenjs uses absolute paths in "Target" attributes
-    if (file.indexOf('/ppt/') === 0) {
-      file = file.replace('/ppt/', '../');
-    }
-
-    return relType === subtype && file.indexOf(prefix) === 0;
+  ): boolean {
+    return XmlRelationshipHelper.targetMatchesRelationship(
+      relType,
+      subtype,
+      file,
+      prefix,
+    );
   }
 
+  /** @deprecated Use XmlRelationshipHelper.getTargetsByRelationshipType */
   static async getTargetsByRelationshipType(
     archive: IArchive,
     path: string,
     type: string,
   ): Promise<Target[]> {
-    return await XmlHelper.getRelationshipItems(
+    return XmlRelationshipHelper.getTargetsByRelationshipType(
       archive,
       path,
-      (element: XmlElement, rels: Target[]) => {
-        const target = element.getAttribute('Type');
-        if (target === type) {
-          rels.push({
-            file: element.getAttribute('Target'),
-            rId: element.getAttribute('Id'),
-            element: element,
-          } as Target);
-        }
-      },
+      type,
     );
   }
 
+  /** @deprecated Use XmlRelationshipHelper.getRelationshipItems */
   static async getRelationshipItems(
     archive: IArchive,
     path: string,
     cb: GetRelationshipsCallback,
     tag?: string,
   ): Promise<Target[]> {
-    tag = tag || 'Relationship';
-
-    const xml = await XmlHelper.getXmlFromArchive(archive, path);
-    const relationshipItems = xml.getElementsByTagName(tag);
-
-    const rels: Target[] = [];
-
-    for (const i in relationshipItems) {
-      if (relationshipItems[i].getAttribute) {
-        cb(relationshipItems[i], rels);
-      }
-    }
-
-    return rels;
+    return XmlRelationshipHelper.getRelationshipItems(archive, path, cb, tag);
   }
 
   static findByAttribute(
@@ -359,67 +247,19 @@ export class XmlHelper {
     XmlHelper.writeXmlToArchive(archive, path, xml);
   }
 
+  /** @deprecated Use XmlRelationshipHelper.resolveElementTarget */
   static async getTargetByRelId(
     archive: IArchive,
     relsPath: string,
     element: XmlElement,
     type: string,
   ): Promise<Target> {
-    const params = TargetByRelIdMap[type];
-
-    // For elements that need to search all instances (like hyperlinks)
-    if (params.findAll) {
-      // Find all hyperlink elements
-      const hyperlinks = element.getElementsByTagName(params.relRootTag);
-      if (hyperlinks.length > 0) {
-        // Use the first hyperlink found
-        const sourceRid = hyperlinks[0].getAttribute(params.relAttribute);
-
-        // Get all relationships
-        const allRels = await XmlHelper.getRelationshipItems(
-          archive,
-          relsPath,
-          (element: XmlElement, rels: Target[]) => {
-            rels.push({
-              rId: element.getAttribute('Id'),
-              type: element.getAttribute('Type'),
-              file: element.getAttribute('Target'),
-              filename: element.getAttribute('Target'),
-              element: element,
-              isExternal: element.getAttribute('TargetMode') === 'External',
-            } as Target);
-          },
-        );
-
-        // Find the matching relationship
-        const target = allRels.find((rel) => rel.rId === sourceRid);
-        return target;
-      }
-    } else {
-      // Standard behavior for other element types
-      const sourceRid = element
-        .getElementsByTagName(params.relRootTag)
-        .item(0)
-        ?.getAttribute(params.relAttribute);
-
-      if (!sourceRid) {
-        throw new ElementNotFoundError('No sourceRid for ' + params.relRootTag, {
-          selector: params.relRootTag,
-        });
-      }
-
-      const shapeRels = await XmlHelper.getRelationshipTargetsByPrefix(
-        archive,
-        relsPath,
-        params.prefix,
-      );
-
-      const target = shapeRels.find((rel) => {
-        return rel.rId === sourceRid;
-      });
-
-      return target;
-    }
+    return XmlRelationshipHelper.resolveElementTarget(
+      archive,
+      relsPath,
+      element,
+      type,
+    );
   }
 
   // Determine whether a given string is a creationId or a shape name
@@ -536,21 +376,17 @@ export class XmlHelper {
     };
   }
 
+  /** @deprecated Use XmlRelationshipHelper.createRelationshipChild */
   static createRelationshipChild(
     archive: IArchive,
     targetRelFile: string,
     attributes: RelationshipAttribute,
   ): HelperElement {
-    archive.contentTracker?.trackRelation(targetRelFile, attributes);
-
-    return {
+    return XmlRelationshipHelper.createRelationshipChild(
       archive,
-      file: targetRelFile,
-      // `Relationships` is the document element of a .rels part.
-      parent: (xml: XmlDocument) => xml.documentElement as XmlElement,
-      tag: 'Relationship',
+      targetRelFile,
       attributes,
-    };
+    );
   }
 
   static appendImageExtensionToContentType(

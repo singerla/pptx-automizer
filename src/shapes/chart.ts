@@ -1,6 +1,7 @@
 import { FileHelper } from '../helper/file-helper';
 import { PptPaths } from '../helper/ppt-paths';
 import { XmlHelper } from '../helper/xml-helper';
+import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import { Shape } from '../classes/shape';
 import path from 'path';
 
@@ -230,7 +231,7 @@ export class Chart extends Shape implements IChart, IShapeAction {
     );
 
     if (this.hasWorkbook) {
-      const worksheets = await XmlHelper.getRelationshipTargetsByPrefix(
+      const worksheets = await XmlRelationshipHelper.getRelationshipTargetsByPrefix(
         this.sourceArchive,
         this.wbRelsPath,
         `${this.wbEmbeddingsPath}${this.worksheetFilePrefix}`,
@@ -250,7 +251,7 @@ export class Chart extends Shape implements IChart, IShapeAction {
   }
 
   async getWorksheetFilePrefix(targetRelFile: string): Promise<string> {
-    const relationTargets = await XmlHelper.getRelationshipTargetsByPrefix(
+    const relationTargets = await XmlRelationshipHelper.getRelationshipTargetsByPrefix(
       this.sourceArchive,
       targetRelFile,
       this.wbEmbeddingsPath,
@@ -469,7 +470,7 @@ export class Chart extends Shape implements IChart, IShapeAction {
 
     for (const i in styleTypes) {
       const styleType = styleTypes[i];
-      const styleRelation = await XmlHelper.getTargetsByRelationshipType(
+      const styleRelation = await XmlRelationshipHelper.getTargetsByRelationshipType(
         this.sourceArchive,
         this.wbRelsPath,
         (this as unknown as Record<string, string>)[styleType],
@@ -486,7 +487,7 @@ export class Chart extends Shape implements IChart, IShapeAction {
   }
 
   async appendToSlideRels(): Promise<XmlElement> {
-    this.createdRid = await XmlHelper.getNextRelId(
+    this.createdRid = await XmlRelationshipHelper.getNextRelId(
       this.targetArchive,
       this.targetSlideRelFile,
     );
@@ -503,7 +504,7 @@ export class Chart extends Shape implements IChart, IShapeAction {
     } as RelationshipAttribute;
 
     return XmlHelper.append(
-      XmlHelper.createRelationshipChild(
+      XmlRelationshipHelper.createRelationshipChild(
         this.targetArchive,
         this.targetSlideRelFile,
         attributes,
@@ -704,7 +705,7 @@ export class Chart extends Shape implements IChart, IShapeAction {
     archive: IArchive,
     relsPath: string,
   ): Promise<Target[]> {
-    return await XmlHelper.getRelationshipTargetsByPrefix(archive, relsPath, [
+    return await XmlRelationshipHelper.getRelationshipTargetsByPrefix(archive, relsPath, [
       '../charts/chart',
       '../charts/chartEx',
     ]);

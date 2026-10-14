@@ -7,7 +7,7 @@ import {
   TrackedRelationTag,
 } from '../types/types';
 import { FileHelper } from './file-helper';
-import { XmlHelper } from './xml-helper';
+import { XmlRelationshipHelper } from './xml-relationship-helper';
 import { RelationshipAttribute } from '../types/xml-types';
 import { contentTrack } from '../constants/constants';
 import IArchive from '../interfaces/iarchive';
@@ -184,7 +184,7 @@ export class ContentTracker {
   ): Promise<void> {
     const attribute = relationTag.attribute || 'r:id';
 
-    const addTargets = await XmlHelper.getRelationshipItems(
+    const addTargets = await XmlRelationshipHelper.getRelationshipItems(
       this.archive,
       file,
       (element, rels) => {
@@ -255,7 +255,7 @@ export class ContentTracker {
           ? relationTagInfo.relationsKey + '/' + addTarget.filename + '.rels'
           : relationTagInfo.relationsKey;
 
-      const relationTarget = await XmlHelper.getRelationshipItems(
+      const relationTarget = await XmlRelationshipHelper.getRelationshipItems(
         this.archive,
         relationsFile,
         (element, rels) => {

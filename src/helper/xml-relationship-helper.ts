@@ -1,11 +1,38 @@
-import { XmlDocument, XmlElement } from '../types/xml-types';
-import { Target } from '../types/types';
+import {
+  HelperElement,
+  RelationshipAttribute,
+  XmlDocument,
+  XmlElement,
+  XmlElementCollection,
+  XmlNodeCollection,
+} from '../types/xml-types';
+import { GetRelationshipsCallback, Target } from '../types/types';
 import IArchive from '../interfaces/iarchive';
 import { XmlHelper } from './xml-helper';
 import { last } from './general-helper';
 import { ElementSubtype } from '../enums/element-type';
 import { FileHelper } from './file-helper';
 import { randomBytes } from 'crypto';
+import { TargetByRelIdMap } from '../constants/constants';
+import { ElementNotFoundError } from '../errors';
+
+/**
+ * Relationship subtypes that are spelled differently in the target prefix
+ * and in the relationship type: a `../diagrams/data` prefix refers to a
+ * `.../relationships/diagramData` relationship.
+ */
+const PREFIX_SUBTYPE_MAP: Record<string, string> = {
+  data: 'diagramData',
+};
+
+/**
+ * Relationship handling for `_rels` parts (ROADMAP: #55).
+ *
+ * Instance methods work on one parsed rels document (`initialize` /
+ * `setXml`, then `getTargetsByPrefix`, `getTargetsByType`, …). The static
+ * methods are the archive-level helpers that used to live on `XmlHelper`;
+ * the `XmlHelper` names remain as deprecated delegates.
+ */
 
 export class XmlRelationshipHelper {
   archive: IArchive;
@@ -177,6 +204,20 @@ export class XmlRelationshipHelper {
     }
   }
 
+  /**
+   * Parses one `<Relationship>` element into a `Target`.
+   *
+   * With a `prefix` (e.g. `../charts/chart`), the target is matched against
+   * it: the relationship type must end in the prefix's last path segment
+   * (`chart`; `data` is mapped to `diagramData`) and the `Target` attribute
+   * must start with the prefix. Absolute `/ppt/...` targets, as written by
+   * pptxgenjs, are matched as if they were relative. A matching target gets
+   * `prefix`, `subtype` and `updateTargetIndex()`; a non-matching one is
+   * returned without `prefix` — or as `undefined` if `matchByPrefix` is set.
+   *
+   * `number` is the trailing number of the target file name (`chart12.xml`
+   * → 12, `0` if there is none), `filenameBase` the part before it.
+   */
   static parseRelationTarget(
     element: XmlElement,
     prefix?: string,
@@ -223,20 +264,26 @@ export class XmlRelationshipHelper {
     };
 
     if (prefix) {
-      const subtype = last(prefix.split('/')) as ElementSubtype;
+      const prefixSubtype = last(prefix.split('/'));
+      const subtype = (PREFIX_SUBTYPE_MAP[prefixSubtype] ||
+        prefixSubtype) as ElementSubtype;
 
       if (
-        matchByPrefix &&
-        !XmlRelationshipHelper.targetMatchesRelationship(
+        XmlRelationshipHelper.targetMatchesRelationship(
           relType,
           subtype,
           file,
           prefix,
         )
       ) {
+        return XmlRelationshipHelper.extendTarget(prefix, subtype, target);
+      }
+
+      if (matchByPrefix) {
         return;
       }
-      return this.extendTarget(prefix, subtype, target);
+
+      return { ...target, subtype };
     }
 
     return target;
@@ -260,15 +307,243 @@ export class XmlRelationshipHelper {
     };
   }
 
+  /**
+   * `true` if a relationship of `relType` pointing at `file` is the kind of
+   * part addressed by `prefix` (see `parseRelationTarget`). Embedded
+   * packages (`relType === 'package'`) always match.
+   */
   static targetMatchesRelationship(
     relType: string,
     subtype: string,
-    target: string,
+    file: string,
     prefix: string,
-  ) {
+  ): boolean {
     if (relType === 'package') return true;
 
-    return relType === subtype && target.indexOf(prefix) === 0;
+    // pptxgenjs uses absolute paths in "Target" attributes
+    if (file.indexOf('/ppt/') === 0) {
+      file = file.replace('/ppt/', '../');
+    }
+
+    return relType === subtype && file.indexOf(prefix) === 0;
+  }
+
+  /**
+   * Iterates the `<Relationship>` elements of a rels part in `archive` and
+   * lets `cb` push `Target`s into the returned list.
+   */
+  static async getRelationshipItems(
+    archive: IArchive,
+    path: string,
+    cb: GetRelationshipsCallback,
+    tag?: string,
+  ): Promise<Target[]> {
+    tag = tag || 'Relationship';
+
+    const xml = await XmlHelper.getXmlFromArchive(archive, path);
+    const relationshipItems = xml.getElementsByTagName(tag);
+
+    const rels: Target[] = [];
+
+    for (const i in relationshipItems) {
+      if (relationshipItems[i].getAttribute) {
+        cb(relationshipItems[i], rels);
+      }
+    }
+
+    return rels;
+  }
+
+  /**
+   * All targets of a rels part in `archive` matching one of the given
+   * prefixes (see `parseRelationTarget`).
+   */
+  static async getRelationshipTargetsByPrefix(
+    archive: IArchive,
+    path: string,
+    prefix: string | string[],
+  ): Promise<Target[]> {
+    const prefixes = typeof prefix === 'string' ? [prefix] : prefix;
+    return XmlRelationshipHelper.getRelationshipItems(
+      archive,
+      path,
+      (element: XmlElement, targets: Target[]) => {
+        prefixes.forEach((prefix) => {
+          const target = XmlRelationshipHelper.parseRelationTarget(
+            element,
+            prefix,
+            true,
+          );
+          if (target) {
+            targets.push(target);
+          }
+        });
+      },
+    );
+  }
+
+  /**
+   * All targets of a rels part in `archive` with the given relationship
+   * `Type` URI.
+   */
+  static async getTargetsByRelationshipType(
+    archive: IArchive,
+    path: string,
+    type: string,
+  ): Promise<Target[]> {
+    return XmlRelationshipHelper.getRelationshipItems(
+      archive,
+      path,
+      (element: XmlElement, rels: Target[]) => {
+        if (element.getAttribute('Type') === type) {
+          rels.push(XmlRelationshipHelper.parseRelationTarget(element));
+        }
+      },
+    );
+  }
+
+  /**
+   * Resolves the relationship target a shape element refers to: reads the
+   * element's `r:id`-style attribute for the given `TargetByRelIdMap` key
+   * (`chart`, `image`, `hyperlink`, …) and looks it up in `relsPath`.
+   */
+  static async resolveElementTarget(
+    archive: IArchive,
+    relsPath: string,
+    element: XmlElement,
+    type: string,
+  ): Promise<Target> {
+    const params = TargetByRelIdMap[type];
+
+    // For elements that need to search all instances (like hyperlinks)
+    if (params.findAll) {
+      // Find all hyperlink elements
+      const hyperlinks = element.getElementsByTagName(params.relRootTag);
+      if (hyperlinks.length > 0) {
+        // Use the first hyperlink found
+        const sourceRid = hyperlinks[0].getAttribute(params.relAttribute);
+
+        // Get all relationships
+        const allRels = await XmlRelationshipHelper.getRelationshipItems(
+          archive,
+          relsPath,
+          (element: XmlElement, rels: Target[]) => {
+            rels.push({
+              rId: element.getAttribute('Id'),
+              type: element.getAttribute('Type'),
+              file: element.getAttribute('Target'),
+              filename: element.getAttribute('Target'),
+              element: element,
+              isExternal: element.getAttribute('TargetMode') === 'External',
+            } as Target);
+          },
+        );
+
+        // Find the matching relationship
+        return allRels.find((rel) => rel.rId === sourceRid);
+      }
+    } else {
+      // Standard behavior for other element types
+      const sourceRid = element
+        .getElementsByTagName(params.relRootTag)
+        .item(0)
+        ?.getAttribute(params.relAttribute);
+
+      if (!sourceRid) {
+        throw new ElementNotFoundError('No sourceRid for ' + params.relRootTag, {
+          selector: params.relRootTag,
+        });
+      }
+
+      const shapeRels =
+        await XmlRelationshipHelper.getRelationshipTargetsByPrefix(
+          archive,
+          relsPath,
+          params.prefix,
+        );
+
+      return shapeRels.find((rel) => rel.rId === sourceRid);
+    }
+  }
+
+  /**
+   * Next free relationship id of a rels part, suffixed with `-created`
+   * (`rId<max+1>-created`). The suffix marks relationships created by
+   * automizer; cleanup relies on it — do not change the format.
+   */
+  static async getNextRelId(
+    rootArchive: IArchive,
+    file: string,
+  ): Promise<string> {
+    const presentationRelsXml = await XmlHelper.getXmlFromArchive(
+      rootArchive,
+      file,
+    );
+    const increment = (max: number) => 'rId' + max;
+    const relationNodes = presentationRelsXml.documentElement.childNodes;
+    const rid = XmlRelationshipHelper.getMaxId(relationNodes, 'Id', true);
+
+    return increment(rid) + '-created';
+  }
+
+  /**
+   * Highest numeric `rId` among `rels` (ignoring the `-created` suffix),
+   * optionally incremented by one and raised to `minId`.
+   */
+  static getMaxId(
+    rels: XmlNodeCollection | XmlElementCollection,
+    attribute: string,
+    increment?: boolean,
+    minId?: number,
+  ): number {
+    let max = 0;
+    for (const i in rels) {
+      const rel = rels[i] as XmlElement;
+
+      if (rel.getAttribute !== undefined && rel.getAttribute(attribute)) {
+        const id = Number(
+          rel
+            .getAttribute(attribute)
+            .replace('rId', '')
+            .replace('-created', ''),
+        );
+        max = id > max ? id : max;
+      }
+    }
+
+    switch (typeof increment) {
+      case 'boolean':
+        ++max;
+        break;
+    }
+
+    if (max < minId) {
+      return minId;
+    }
+
+    return max;
+  }
+
+  /**
+   * `HelperElement` for `XmlHelper.append` that adds a `<Relationship>` to
+   * `targetRelFile`; the relation is recorded with the archive's content
+   * tracker.
+   */
+  static createRelationshipChild(
+    archive: IArchive,
+    targetRelFile: string,
+    attributes: RelationshipAttribute,
+  ): HelperElement {
+    archive.contentTracker?.trackRelation(targetRelFile, attributes);
+
+    return {
+      archive,
+      file: targetRelFile,
+      // `Relationships` is the document element of a .rels part.
+      parent: (xml: XmlDocument) => xml.documentElement as XmlElement,
+      tag: 'Relationship',
+      attributes,
+    };
   }
 
   static async getSlideLayoutNumber(sourceArchive: IArchive, slideId: number) {

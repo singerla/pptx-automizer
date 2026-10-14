@@ -114,7 +114,7 @@ export class Master extends HasShapes implements IMaster {
   }
 
   async copyThemeFiles() {
-    const targets = await XmlHelper.getRelationshipTargetsByPrefix(
+    const targets = await XmlRelationshipHelper.getRelationshipTargetsByPrefix(
       this.targetArchive,
       PptPaths.slideMasterRels(this.targetNumber),
       '../theme/theme',

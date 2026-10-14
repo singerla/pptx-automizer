@@ -1,4 +1,5 @@
 import { XmlHelper } from '../helper/xml-helper';
+import { XmlRelationshipHelper } from '../helper/xml-relationship-helper';
 import { Shape } from '../classes/shape';
 import {
   ImportedElement,
@@ -107,7 +108,7 @@ export class Hyperlink extends Shape implements IShapeAction {
     await this.setTarget(targetTemplate, targetSlideNumber);
 
     if (!this.createdRid) {
-      const baseId = await XmlHelper.getNextRelId(
+      const baseId = await XmlRelationshipHelper.getNextRelId(
         this.targetArchive,
         this.targetSlideRelFile,
       );
@@ -196,7 +197,7 @@ export class Hyperlink extends Shape implements IShapeAction {
     archive: IArchive,
     relsPath: string,
   ): Promise<Target[]> {
-    return XmlHelper.getRelationshipItems(
+    return XmlRelationshipHelper.getRelationshipItems(
       archive,
       relsPath,
       (element: XmlElement, rels: Target[]) => {
@@ -262,6 +263,6 @@ export class Hyperlink extends Shape implements IShapeAction {
     XmlHelper.writeXmlToArchive(archive, slideRelsPath, relXml);
     XmlHelper.writeXmlToArchive(archive, slidePath, slideXml);
 
-    return await XmlHelper.getNextRelId(archive, slideRelsPath);
+    return await XmlRelationshipHelper.getNextRelId(archive, slideRelsPath);
   }
 }

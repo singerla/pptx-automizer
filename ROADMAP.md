@@ -606,6 +606,13 @@ Collected from TODOs and limitations, ordered by user value:
    explicitly out of scope for now.
 8. ~~HTML → text conversion (`modify.htmlToMultiText`) is incomplete and partly
    incorrect~~ — done, see the feature track below.
+9. Remove the deprecated `XmlHelper` relationship delegates
+   (`parseRelationTarget`, `targetMatchesRelationship`, `getRelationshipItems`,
+   `getRelationshipTargetsByPrefix`, `getTargetsByRelationshipType`,
+   `getNextRelId`, `getMaxId`, `createRelationshipChild`, `getTargetByRelId`)
+   for 1.0 — they forward to `XmlRelationshipHelper` since #55 (2026-10-14)
+   and only exist so downstream code calling `XmlHelper.*` directly keeps
+   working.
 
 ---
 

@@ -37,7 +37,7 @@ export class XmlTemplateHelper {
 
   async getCreationIds(): Promise<SlideInfo[]> {
     const archive = this.archive;
-    const relationships = await XmlHelper.getTargetsByRelationshipType(
+    const relationships = await XmlRelationshipHelper.getTargetsByRelationshipType(
       archive,
       this.path,
       this.relType,
@@ -184,7 +184,7 @@ export class XmlTemplateHelper {
       const relPath = `ppt/slides/_rels${relFileName}.rels`;
 
       // Get the slide layout relationship using the existing getTargetsByRelationshipType
-      const layoutRels = await XmlHelper.getTargetsByRelationshipType(
+      const layoutRels = await XmlRelationshipHelper.getTargetsByRelationshipType(
         archive,
         relPath,
         this.relTypeLayout,
@@ -260,7 +260,7 @@ export class XmlTemplateHelper {
     slideRelFile: string,
   ): Promise<Target[]> {
     const relFileName = slideRelFile.replace('slides', '');
-    const slideRels = await XmlHelper.getTargetsByRelationshipType(
+    const slideRels = await XmlRelationshipHelper.getTargetsByRelationshipType(
       archive,
       `ppt/slides/_rels${relFileName}.rels`,
       this.relTypeNotes,
