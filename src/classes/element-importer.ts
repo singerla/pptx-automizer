@@ -180,33 +180,32 @@ export class ElementImporter {
    */
   async getElementInfo(importElement: ImportElement): Promise<ImportedElement> {
     const host = this.host;
-    const template = host.root.getTemplate(importElement.presName);
+    // The host's own source template is not necessarily registered with
+    // Automizer.templates: a master or layout modified in place has the
+    // root template as its source.
+    const template =
+      importElement.presName === host.sourceTemplate.name
+        ? host.sourceTemplate
+        : host.root.getTemplate(importElement.presName);
 
     const slideNumber =
       importElement.mode === 'append'
         ? host.getSlideNumber(template, importElement.slideNumber)
         : importElement.slideNumber;
 
-    let currentMode = 'slideToSlide';
-    if (host.targetType === 'slideMaster') {
-      if (importElement.mode === 'append') {
-        currentMode = 'slideToMaster';
-      } else {
-        currentMode = 'onMaster';
-      }
-    }
+    // Shapes are appended from loaded slides to a slide, master or layout;
+    // a modified or removed shape lives on the host's own part type
+    // (slide, slideMaster or slideLayout).
+    const onOwnPart =
+      importElement.mode !== 'append' && host.targetType !== 'slide';
 
-    // It is possible to import shapes from loaded slides to slideMaster,
-    // as well as to modify an existing shape on current slideMaster
-    const sourcePath =
-      currentMode === 'onMaster'
-        ? PptPaths.slideMaster(slideNumber)
-        : PptPaths.slide(slideNumber);
+    const sourcePath = onOwnPart
+      ? PptPaths.part(host.targetType, slideNumber)
+      : PptPaths.slide(slideNumber);
 
-    const sourceRelPath =
-      currentMode === 'onMaster'
-        ? PptPaths.slideMasterRels(slideNumber)
-        : PptPaths.slideRels(slideNumber);
+    const sourceRelPath = onOwnPart
+      ? PptPaths.partRels(host.targetType, slideNumber)
+      : PptPaths.slideRels(slideNumber);
 
     const sourceArchive = template.archive;
     const useCreationIds =

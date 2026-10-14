@@ -21,6 +21,10 @@ import { ModifyXmlCallback, TemplateInfo } from './types/xml-types';
 import { GeneralHelper } from './helper/general-helper';
 import { ConsoleLogger, ILogger, runWithLogger } from './helper/logger';
 import { Master } from './classes/master';
+import { Layout } from './classes/layout';
+import { SlideMasterRemover } from './classes/slide-master-remover';
+import { ROOT_TEMPLATE_ALIAS } from './constants/constants';
+import { ILayout } from './interfaces/ilayout';
 import path from 'path';
 import * as fs from 'fs';
 import { XmlHelper } from './helper/xml-helper';
@@ -107,6 +111,11 @@ export default class Automizer implements IPresentationProps {
 
   content: ContentTracker;
   modifyPresentation: ModifyXmlCallback[] = [];
+  /**
+   * Masters queued for removal (`removeMaster`), by number.
+   * @internal
+   */
+  mastersToRemove: number[] = [];
 
   /**
    * Creates an instance of `pptx-automizer`.
@@ -477,6 +486,107 @@ export default class Automizer implements IPresentationProps {
   }
 
   /**
+   * Modify a slide master that is already part of the root template, in
+   * place: no copy is made, the master keeps its number and every slide
+   * using it keeps using it. The callback gets the same
+   * `modifyElement` / `addElement` / `removeElement` vocabulary as
+   * `addMaster`. Deferred: applied on write, before the slides are
+   * written, in call order with `addMaster` imports.
+   *
+   * @param masterNumber - 1-based number of the master in the root
+   * template as loaded (`ppt/slideMasters/slideMaster<n>.xml`). Imported
+   * masters are modified through their `addMaster` callback instead.
+   * @param callback - Receives the master; queue element actions on it.
+   */
+  public modifyMaster(
+    masterNumber: number,
+    callback: (slideMaster: IMaster) => void,
+  ): this {
+    if (this.rootTemplate === undefined) {
+      throw new Error('You have to set a root template first.');
+    }
+
+    const key = Master.getKey(masterNumber, ROOT_TEMPLATE_ALIAS);
+    let master = this.rootTemplate.masters.find(
+      (candidate) => candidate.key === key,
+    );
+
+    if (!master) {
+      master = new Master({
+        presentation: this,
+        template: this.rootTemplate.asSourceTemplate(),
+        sourceIdentifier: masterNumber,
+        inPlace: true,
+      });
+      (master as Master).root = this;
+      this.rootTemplate.masters.push(master);
+    }
+
+    callback(master);
+
+    return this;
+  }
+
+  /**
+   * Modify a slide layout that is already part of the root template, in
+   * place (see `modifyMaster`).
+   *
+   * @param layoutNumber - 1-based number of the layout in the root template
+   * as loaded (`ppt/slideLayouts/slideLayout<n>.xml`).
+   * @param callback - Receives the layout; queue element actions on it.
+   */
+  public modifyLayout(
+    layoutNumber: number,
+    callback: (slideLayout: ILayout) => void,
+  ): this {
+    if (this.rootTemplate === undefined) {
+      throw new Error('You have to set a root template first.');
+    }
+
+    let layout = this.rootTemplate.layouts.find(
+      (candidate) => candidate.sourceNumber === layoutNumber,
+    );
+
+    if (!layout) {
+      layout = new Layout({
+        presentation: this,
+        template: this.rootTemplate.asSourceTemplate(),
+        sourceIdentifier: layoutNumber,
+        inPlace: true,
+      });
+      (layout as Layout).root = this;
+      this.rootTemplate.layouts.push(layout);
+    }
+
+    callback(layout);
+
+    return this;
+  }
+
+  /**
+   * Remove a slide master from the output together with its layouts, its
+   * theme (unless another part still uses it) and all entries referring
+   * to them. Deferred: applied on write after all slides have been
+   * written. Fails if a slide of the output still uses one of the
+   * master's layouts — switch those slides with `useSlideLayout()` first
+   * (or drop the root template's slides with `removeExistingSlides`).
+   *
+   * @param masterNumber - 1-based number of the master in the root
+   * template as loaded (`ppt/slideMasters/slideMaster<n>.xml`).
+   */
+  public removeMaster(masterNumber: number): this {
+    if (this.rootTemplate === undefined) {
+      throw new Error('You have to set a root template first.');
+    }
+
+    if (!this.mastersToRemove.includes(masterNumber)) {
+      this.mastersToRemove.push(masterNumber);
+    }
+
+    return this;
+  }
+
+  /**
    * Searches this.templates to find template by given name.
    * @internal
    * @param name Alias name if given to loaded template.
@@ -563,6 +673,7 @@ export default class Automizer implements IPresentationProps {
     return runWithLogger(this.logger, async () => {
       await this.writeMasterSlides();
       await this.writeSlides();
+      await this.removeSlideMasters();
       await this.writeMediaFiles();
       await this.normalizePresentation();
       await this.applyModifyPresentationCallbacks();
@@ -577,6 +688,24 @@ export default class Automizer implements IPresentationProps {
   public async writeMasterSlides(): Promise<void> {
     for (const slide of this.rootTemplate.masters) {
       await this.rootTemplate.appendMasterSlide(slide);
+    }
+    for (const layout of this.rootTemplate.layouts ?? []) {
+      await this.rootTemplate.appendLayout(layout);
+    }
+  }
+
+  /**
+   * Remove the masters queued by `removeMaster()`. Runs after the slides
+   * are written, so layout switches have been applied when the "still in
+   * use" check runs.
+   */
+  public async removeSlideMasters(): Promise<void> {
+    if (!this.mastersToRemove.length) {
+      return;
+    }
+    const remover = new SlideMasterRemover(this.rootTemplate);
+    for (const masterNumber of this.mastersToRemove) {
+      await remover.remove(masterNumber);
     }
   }
 

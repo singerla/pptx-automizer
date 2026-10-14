@@ -155,6 +155,8 @@ export default class ArchiveFs extends Archive implements IArchive {
     if (exists(path)) {
       await fsPromises.unlink(path);
     }
+    // a buffered DOM would be serialized back into the archive on output
+    this.buffer.delete(file);
   }
 
   async output(location: string, params: AutomizerParams): Promise<void> {

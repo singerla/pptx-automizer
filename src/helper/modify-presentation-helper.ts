@@ -1,4 +1,5 @@
 import { XmlHelper } from './xml-helper';
+import { XmlRelationshipHelper } from './xml-relationship-helper';
 import { PptPaths } from './ppt-paths';
 import { FileHelper } from './file-helper';
 import IArchive from '../interfaces/iarchive';
@@ -53,10 +54,17 @@ export default class ModifyPresentationHelper {
   };
 
   /**
+   * Smallest id PowerPoint accepts for `p:sldMasterId` / `p:sldLayoutId`
+   * (ids below 2^31 trigger the repair prompt; see #85).
+   */
+  static readonly MIN_SLIDE_MASTER_ID = 2147483648;
+
+  /**
    * Update slideMaster ids to prevent corrupted pptx.
-   * - Take first slideMaster id from presentation.xml to start,
-   * - then update incremental ids of each p:sldLayoutId in slideMaster[i].xml
-   *   (starting by slideMasterId + 1)
+   * - Take first slideMaster id from presentation.xml to start (raised to
+   *   `MIN_SLIDE_MASTER_ID` if it is lower),
+   * - then update incremental ids of each p:sldLayoutId in the master part
+   *   the entry's relationship points at (starting by slideMasterId + 1)
    * - and update next slideMaster id with previous p:sldLayoutId + 1
    *
    * p:sldMasterId-ids and p:sldLayoutId-ids need to be in a row, otherwise
@@ -69,13 +77,27 @@ export default class ModifyPresentationHelper {
     archive: IArchive,
   ) => {
     const slides = ModifyPresentationHelper.getSlideMastersCollection(xml);
+    // The list entries and the master part numbers do not line up once a
+    // master has been removed: resolve each entry through its relationship.
+    const masterTargets =
+      await XmlRelationshipHelper.getTargetsByRelationshipType(
+        archive,
+        PptPaths.presentationRels,
+        'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster',
+      );
     let currentId: number;
     await XmlHelper.modifyCollectionAsync(
       slides,
       async (slide: XmlElement, i) => {
-        const masterId = i + 1;
+        const masterTarget = masterTargets.find(
+          (target) => target.rId === slide.getAttribute('r:id'),
+        );
+        const masterId = masterTarget ? masterTarget.number : i + 1;
         if (i === 0) {
-          currentId = Number(slide.getAttribute('id'));
+          currentId = Math.max(
+            Number(slide.getAttribute('id')) || 0,
+            ModifyPresentationHelper.MIN_SLIDE_MASTER_ID,
+          );
         }
 
         slide.setAttribute('id', String(currentId));

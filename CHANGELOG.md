@@ -6,6 +6,34 @@ semver, with the pre-1.0 convention that **breaking changes bump the minor**.
 
 ## [Unreleased]
 
+### Added
+
+- `pres.modifyMaster(n, callback)` and `pres.modifyLayout(n, callback)`
+  modify a slide master or layout that is already part of the root
+  template in place (#85), with the `modifyElement` / `addElement` /
+  `removeElement` vocabulary of `addMaster`. No copy is made, the part
+  keeps its number and every slide using it keeps using it. `n` is the
+  1-based number of the part in the root template as loaded. Applied on
+  `write()` before the slides, in call order with `addMaster`.
+- `pres.removeMaster(n)` removes a slide master of the root template with
+  its layouts, its theme (if no other part refers to it), their
+  relationships and their `presentation.xml` / `[Content_Types].xml`
+  entries (#85). Applied on `write()` after the slides; a master whose
+  layout a slide still uses rejects `write()` with the slide and layout
+  named. The removal steps follow the manual recipe worked out by
+  @jhaase1 in the #85 discussion.
+- `ILayout` gained `modifyElement`, `addElement`, `removeElement` and
+  `modifyRelations`.
+
+### Fixed
+
+- `normalizeSlideMasterIds` resolves each `p:sldMasterId` entry to its
+  master part through the relationship instead of assuming
+  `slideMaster<i+1>.xml`, and raises a first id below 2147483648 to that
+  minimum (PowerPoint's repair prompt otherwise, see #85).
+- `archive.remove()` also drops the part's buffered DOM; previously a
+  removed part that had been read as XML was written back on output.
+
 ### Changed
 
 - Internal: relationship handling now has a single implementation in

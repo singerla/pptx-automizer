@@ -597,6 +597,15 @@ Collected from TODOs and limitations, ordered by user value:
 1. creationIds for slideMasters (`has-shapes.ts` TODO).
 2. Modify-in-place for existing slides of the root template (currently
    "add-only"; README documents loop-over-all-slides workaround).
+   ✅ Masters and layouts of the root template are modifiable in place
+   since 2026-10-14 (`modifyMaster` / `modifyLayout`, #85; the `Master` /
+   `Layout` classes got an `inPlace` mode that applies the element queue
+   to the root's own part). `removeMaster` landed with it. Slides are
+   still add-only. Not done for #85: the "slide backgrounds" side wish
+   (separate feature; `modify-master-background-*` helpers cover masters),
+   and the bug-track item 5 below (presentation rels to layouts written by
+   master auto-import) — `removeMaster` drops such rels for the removed
+   layouts but the auto-import still writes them.
 3. `removeDuplicatePlaceholders` can over-remove when >2 placeholders share a
    type (TODO at `has-shapes.ts:1234`) — match by id.
 4. `Slide.remove()` is documented broken (`targetNumber` undefined ToDo).

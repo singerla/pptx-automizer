@@ -94,6 +94,8 @@ export default class ArchiveJszip extends Archive implements IArchive {
   async remove(file: string): Promise<void> {
     await this.ensureOpen();
     this.archive.remove(file);
+    // a buffered DOM would be serialized back into the archive on output
+    this.buffer.delete(file);
   }
 
   async extract(file: string): Promise<ArchiveJszip> {

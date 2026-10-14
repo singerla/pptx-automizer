@@ -18,6 +18,7 @@ import Automizer from '../automizer';
 import { IMaster } from '../interfaces/imaster';
 import { ILayout } from '../interfaces/ilayout';
 import { IGenerator } from '../interfaces/igenerator';
+import { ROOT_TEMPLATE_ALIAS } from '../constants/constants';
 
 /**
  * Shared base for the two template roles: a source template provides
@@ -128,6 +129,12 @@ export class OutputTemplate extends Template implements RootPresTemplate {
   masters: IMaster[] = [];
 
   /**
+   * Layouts of the root template queued for in-place modification
+   * (`Automizer.modifyLayout`).
+   */
+  layouts: ILayout[] = [];
+
+  /**
    * Array containing all counters
    * @type: ICounter[]
    */
@@ -169,6 +176,30 @@ export class OutputTemplate extends Template implements RootPresTemplate {
     this.content = automizer?.content ?? new ContentTracker();
     this.archive.contentTracker = this.content;
     this.mediaDeduplicator = new MediaDeduplicator(this.archive);
+  }
+
+  private sourceView: PresTemplate;
+
+  /**
+   * The root template in the role of a source template, sharing this
+   * archive: masters and layouts modified in place read their shapes from
+   * it (`Automizer.modifyMaster` / `modifyLayout`). Its alias is `'root'`.
+   */
+  asSourceTemplate(): PresTemplate {
+    if (!this.sourceView) {
+      this.sourceView = {
+        name: ROOT_TEMPLATE_ALIAS,
+        location: this.location,
+        file: this.file,
+        archive: this.archive,
+        useCreationIds: false,
+        getSlideIdList: () => this.getSlideIdList(),
+        setCreationIds: async () => [],
+        getAllSlideNumbers: () =>
+          new XmlTemplateHelper(this.archive).getAllSlideNumbers(),
+      };
+    }
+    return this.sourceView;
   }
 
   mapContents(
