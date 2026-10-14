@@ -19,6 +19,7 @@ export class PptPaths {
   static readonly presentationRels = 'ppt/_rels/presentation.xml.rels';
   static readonly contentTypes = '[Content_Types].xml';
   static readonly mediaDir = 'ppt/media';
+  static readonly drawingsDir = 'ppt/drawings';
 
   /**
    * Generic numbered part: `ppt/<prefix>s/<prefix><n>.xml`.
@@ -88,6 +89,29 @@ export class PptPaths {
     return `ppt/media/${filename}`;
   }
 
+  /**
+   * Chart user shapes drawing (`chartUserShapes` relationship of a chart).
+   */
+  static drawing(n: number | string): string {
+    return `${PptPaths.drawingsDir}/drawing${n}.xml`;
+  }
+
+  static drawingRels(n: number | string): string {
+    return `${PptPaths.drawingsDir}/_rels/drawing${n}.xml.rels`;
+  }
+
+  /**
+   * Relationships file of any part: `<dir>/_rels/<file>.rels`.
+   * For parts whose name is taken from a source archive rather than built
+   * from a number (e.g. a chart's user shapes drawing).
+   */
+  static relsOf(partPath: string): string {
+    const slash = partPath.lastIndexOf('/');
+    const dir = partPath.substring(0, slash);
+    const file = partPath.substring(slash + 1);
+    return `${dir}/_rels/${file}.rels`;
+  }
+
   static embedding(filename: string): string {
     return `ppt/embeddings/${filename}`;
   }
@@ -109,5 +133,6 @@ export class PptPaths {
     slideLayout: (n: number): string => `../slideLayouts/slideLayout${n}.xml`,
     slideMaster: (n: number): string => `../slideMasters/slideMaster${n}.xml`,
     theme: (n: number | string): string => `../theme/theme${n}.xml`,
+    drawing: (n: number | string): string => `../drawings/drawing${n}.xml`,
   };
 }

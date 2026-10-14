@@ -137,7 +137,16 @@ export const contentTrack = (): TrackedRelationTag[] => {
           tag: 'c:externalData',
           role: 'externalData',
         },
+        ...imagesTrack(),
       ],
+    },
+    {
+      // chartUserShapes drawings of copied charts; a <cdr:pic> relates to
+      // an image through the drawing's own rels (#215).
+      source: 'ppt/drawings',
+      relationsKey: 'ppt/drawings/_rels',
+      isDir: true,
+      tags: [...imagesTrack()],
     },
     {
       source: 'ppt/slideMasters',

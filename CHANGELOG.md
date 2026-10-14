@@ -8,6 +8,23 @@ semver, with the pre-1.0 convention that **breaking changes bump the minor**.
 
 ### Fixed
 
+- Copying a chart now also copies the `_rels` file of its `chartUserShapes`
+  drawing (#215). Previously only the drawing's XML part was copied; if the
+  drawing itself had relationships — e.g. a picture embedded in a chart
+  annotation, as produced by think-cell — the copy's `r:embed` pointed at
+  nothing in the output archive. PowerPoint reports this as "The picture
+  can't be displayed" when the affected slide is opened, even though a
+  cached slide-panel thumbnail can still render correctly. Images referenced
+  from the drawing's rels are copied and renamed the same way
+  `relTypeChartImage` images on the chart itself already were; cloning the
+  same chart several times gives each copy its own drawing rels and image.
+  Other internal relationship types in such a drawing are copied unchanged
+  with a warning. New `PptPaths.drawing()`, `PptPaths.drawingRels()`,
+  `PptPaths.relsOf()` and `PptPaths.relative.drawing()`.
+- `cleanup: true` no longer removes images that are referenced only by a
+  copied chart (e.g. scatter point markers) or by its user shapes drawing.
+  The `ContentTracker` now collects image relations of `ppt/charts` and
+  `ppt/drawings` parts in addition to slides, masters and layouts.
 - `setChartData` fills a chart cache that holds no point at all. A chart
   saved with empty `c:numCache`/`c:strCache` caches (PowerPoint writes such
   "legend-only" charts, and a template may ship a stripped cache) could

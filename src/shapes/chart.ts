@@ -356,13 +356,16 @@ export class Chart extends Shape implements IChart, IShapeAction {
           '../drawings/',
           '',
         );
+      const sourceDrawing = `${PptPaths.drawingsDir}/${sourceFile}`;
 
       await FileHelper.zipCopy(
         this.sourceArchive,
-        `ppt/drawings/${sourceFile}`,
+        sourceDrawing,
         this.targetArchive,
-        `ppt/drawings/drawing${this.targetNumber}.xml`,
+        PptPaths.drawing(this.targetNumber),
       );
+
+      await this.copyChartUserShapesRels(sourceDrawing);
     }
 
     if (this.styleRelationFiles.relTypeChartThemeOverride?.length) {
@@ -378,6 +381,81 @@ export class Chart extends Shape implements IChart, IShapeAction {
         `ppt/theme/themeOverride${this.targetNumber}.xml`,
       );
     }
+  }
+
+  /**
+   * Copies the `_rels` file of a chart's `chartUserShapes` drawing, if it has
+   * one, and copies+renames any image it relates to — e.g. a picture embedded
+   * in a chart annotation, as think-cell produces — the same way
+   * `editTargetWorksheetRel` handles the chart's own `relTypeChartImage`
+   * relations. Without it, the copied drawing's `r:embed` resolves to nothing
+   * and PowerPoint reports "The picture can't be displayed" (#215).
+   *
+   * The rels file is zip-copied to the target first and the *target* copy is
+   * rewritten. The source archive caches one parsed DOM per path, so editing
+   * the source rels in place would leak the renamed targets into every later
+   * clone of the same chart.
+   *
+   * Only image relations are renamed. External relations (hyperlinks to URLs)
+   * need no rewrite. Any other internal relation type is copied as-is with a
+   * warning: its target is still relative to the source archive and may not
+   * exist or may point at a different part in the output.
+   *
+   * @param sourceDrawing Path of the drawing part inside the source archive
+   */
+  private async copyChartUserShapesRels(sourceDrawing: string): Promise<void> {
+    const sourceRels = PptPaths.relsOf(sourceDrawing);
+    if (!FileHelper.fileExistsInArchive(this.sourceArchive, sourceRels)) {
+      return;
+    }
+
+    const targetRels = PptPaths.drawingRels(this.targetNumber);
+    await FileHelper.zipCopy(
+      this.sourceArchive,
+      sourceRels,
+      this.targetArchive,
+      targetRels,
+    );
+
+    const relsXml = await XmlHelper.getXmlFromArchive(
+      this.targetArchive,
+      targetRels,
+    );
+    const relationships = relsXml.getElementsByTagName('Relationship');
+
+    for (let i = 0; i < relationships.length; i++) {
+      const relationship = relationships[i];
+      const type = relationship.getAttribute('Type');
+      const isExternal = relationship.getAttribute('TargetMode') === 'External';
+
+      if (!isExternal && type === this.relTypeChartImage) {
+        const imageInfo = this.getTargetChartImageUri(
+          relationship.getAttribute('Target'),
+        );
+        await this.appendImageExtensionToContentType(imageInfo.extension);
+        await FileHelper.zipCopy(
+          this.sourceArchive,
+          imageInfo.source,
+          this.targetArchive,
+          imageInfo.target,
+        );
+        relationship.setAttribute('Target', imageInfo.rel);
+      } else if (!isExternal) {
+        log.warn(
+          `Chart user shapes drawing ${sourceDrawing} relates to ` +
+            `${relationship.getAttribute('Target')} (${type}); this ` +
+            `relationship type is copied unchanged and may not resolve in the output.`,
+        );
+      }
+
+      this.targetArchive.contentTracker?.trackRelation(targetRels, {
+        Id: relationship.getAttribute('Id'),
+        Target: relationship.getAttribute('Target'),
+        Type: type,
+      });
+    }
+
+    XmlHelper.writeXmlToArchive(this.targetArchive, targetRels, relsXml);
   }
 
   async getChartStyles(): Promise<void> {
@@ -492,7 +570,7 @@ export class Chart extends Shape implements IChart, IShapeAction {
               targetRelFile,
               element,
               'Target',
-              `../drawings/drawing${this.targetNumber}.xml`,
+              PptPaths.relative.drawing(this.targetNumber),
             );
             break;
         }
@@ -616,7 +694,7 @@ export class Chart extends Shape implements IChart, IShapeAction {
   appendChartUserShapesToContentType(): Promise<XmlElement> {
     return XmlHelper.append(
       XmlHelper.createContentTypeChild(this.targetArchive, {
-        PartName: `/ppt/drawings/drawing${this.targetNumber}.xml`,
+        PartName: PptPaths.partName(PptPaths.drawing(this.targetNumber)),
         ContentType: `application/vnd.openxmlformats-officedocument.drawingml.chartshapes+xml`,
       }),
     );

@@ -109,12 +109,16 @@ export default class ModifyPresentationHelper {
     if (!tracker) {
       return;
     }
-    // Need to skip some dirs until masters and layouts are handled properly
+    // Need to skip some dirs until masters and layouts are handled properly.
+    // ppt/drawings is tracked for image collection only (see
+    // removedUnusedImages); it also holds vml drawings that may belong to
+    // masters and layouts, so it is left alone here.
     const skipDirs = [
       'ppt/slideMasters',
       'ppt/slideMasters/_rels',
       'ppt/slideLayouts',
       'ppt/slideLayouts/_rels',
+      'ppt/drawings',
     ];
     for (const dir in tracker.files) {
       if (skipDirs.includes(dir)) {
@@ -166,6 +170,10 @@ export default class ModifyPresentationHelper {
     await tracker.collect('ppt/slides', 'image', keepFiles);
     await tracker.collect('ppt/slideMasters', 'image', keepFiles);
     await tracker.collect('ppt/slideLayouts', 'image', keepFiles);
+    // Images referenced by copied charts (e.g. scatter point markers) and by
+    // their user shapes drawings (e.g. a picture in a chart annotation).
+    await tracker.collect('ppt/charts', 'image', keepFiles);
+    await tracker.collect('ppt/drawings', 'image', keepFiles);
 
     await FileHelper.removeFromDirectory(archive, 'ppt/media', (file) => {
       const info = FileHelper.getFileInfo(file.name);
