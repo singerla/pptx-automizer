@@ -8,19 +8,19 @@ semver, with the pre-1.0 convention that **breaking changes bump the minor**.
 
 ### Fixed
 
-- `Chart.copyChartStyleFiles()` now copies a `chartUserShapes` drawing's own
-  `_rels` file (and the images it relates to) when a chart is copied onto a
-  new slide. Previously only the drawing's XML part was copied; if the
+- Copying a chart now also copies the `_rels` file of its `chartUserShapes`
+  drawing (#215). Previously only the drawing's XML part was copied; if the
   drawing itself had relationships — e.g. a picture embedded in a chart
   annotation, as produced by think-cell — the copy's `r:embed` pointed at
   nothing in the output archive. PowerPoint reports this as "The picture
   can't be displayed" when the affected slide is opened, even though a
   cached slide-panel thumbnail can still render correctly. Images referenced
-  from the drawing's rels are now copied and renamed the same way
-  `relTypeChartImage` images on the chart itself already were. New regression
-  test: `__tests__/chart-user-shape-rels.test.ts`, with `__tests__/pptx-templates/ChartUserShapeWithImage.pptx`
-  (derived from `ChartUserShape.pptx`, with a `<cdr:pic>` added to the user
-  shapes drawing).
+  from the drawing's rels are copied and renamed the same way
+  `relTypeChartImage` images on the chart itself already were; cloning the
+  same chart several times gives each copy its own drawing rels and image.
+  Other internal relationship types in such a drawing are copied unchanged
+  with a warning. New `PptPaths.drawing()`, `PptPaths.drawingRels()`,
+  `PptPaths.relsOf()` and `PptPaths.relative.drawing()`.
 
 ## [0.9.4] — 2026-09-28
 
