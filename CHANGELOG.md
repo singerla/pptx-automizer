@@ -6,6 +6,20 @@ semver, with the pre-1.0 convention that **breaking changes bump the minor**.
 
 ## [Unreleased]
 
+### Security
+
+- Added a `SECURITY.md` security policy: the latest published 0.9.x release
+  is supported, vulnerabilities go through GitHub's private vulnerability
+  reporting, and reports should be reproduced against this library (#203).
+
+### Changed
+
+- CI hardening (#204): both GitHub Actions workflows declare least-privilege
+  `permissions:` for `GITHUB_TOKEN` (`contents: read` at the top level, the
+  Pages write scopes only on the docs deploy job), every action is pinned to
+  a full commit SHA with a version comment, and Dependabot keeps those pins
+  current in one monthly grouped PR.
+
 ### Fixed
 
 - Copying a chart now also copies the `_rels` file of its `chartUserShapes`
