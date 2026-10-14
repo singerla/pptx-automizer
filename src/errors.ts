@@ -1,3 +1,6 @@
+import type { SlideLayoutSelector } from './types/types';
+import type { SlideLayoutInfo } from './helper/layout-index';
+
 /**
  * Base class for all errors thrown by pptx-automizer.
  * Allows consumers to catch library errors with `instanceof AutomizerError`.
@@ -59,6 +62,26 @@ export class ElementNotFoundError extends AutomizerError {
     super(message);
     this.selector = info?.selector;
     this.file = info?.file;
+  }
+}
+
+/**
+ * Thrown by `slide.useSlideLayout(selector)` when no layout of the output
+ * presentation matches the selector, or when more than one does
+ * (`candidates` lists them). The message names the available layouts as
+ * `"<master> / <layout>"`.
+ */
+export class SlideLayoutNotFoundError extends AutomizerError {
+  readonly selector: SlideLayoutSelector;
+  readonly candidates: SlideLayoutInfo[];
+
+  constructor(
+    message: string,
+    info: { selector: SlideLayoutSelector; candidates: SlideLayoutInfo[] },
+  ) {
+    super(message);
+    this.selector = info.selector;
+    this.candidates = info.candidates;
   }
 }
 

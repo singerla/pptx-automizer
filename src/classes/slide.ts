@@ -1,7 +1,11 @@
 import { FileHelper } from '../helper/file-helper';
 import { XmlDocument } from '../types/xml-types';
 import { PptPaths } from '../helper/ppt-paths';
-import { ShapeTargetType, SourceIdentifier } from '../types/types';
+import {
+  ShapeTargetType,
+  SlideLayoutSelector,
+  SourceIdentifier,
+} from '../types/types';
 import { ISlide } from '../interfaces/islide';
 import { IPresentationProps } from '../interfaces/ipresentation-props';
 import { PresTemplate } from '../interfaces/pres-template';
@@ -14,6 +18,8 @@ import HasShapes from './has-shapes';
 import { Master } from './master';
 import ModifyPresentationHelper from '../helper/modify-presentation-helper';
 import XmlPlaceholderHelper from '../helper/xml-placeholder-helper';
+import { LayoutIndex } from '../helper/layout-index';
+import { SlideLayoutNotFoundError } from '../errors';
 
 export class Slide extends HasShapes implements ISlide {
   targetType: ShapeTargetType = 'slide';
@@ -93,27 +99,45 @@ export class Slide extends HasShapes implements ISlide {
   }
 
   /**
-   * Use another slide layout.
+   * Use another slide layout of the output presentation.
+   *
+   * - a number: the 1-based layout number in the output
+   * - a string: a layout name; the source slide's master is auto-imported
+   *   first, then the name is looked up among imported layouts and — if
+   *   not found there — among all layouts of the output (root template
+   *   included)
+   * - a `SlideLayoutSelector` (`{ layout, master?, template? }`): resolved
+   *   against the masters and layouts of the output at write time, nothing
+   *   is imported; no match or an ambiguous name rejects `write()` with a
+   *   `SlideLayoutNotFoundError` (a warning with `continueOnError`)
+   * - no argument: import and use the source slide's own layout
+   *
    * @param layoutId
    */
-  useSlideLayout(layoutId?: number | string): this {
+  useSlideLayout(layoutId?: number | string | SlideLayoutSelector): this {
     this.relModifications.push(async (slideRelXml: XmlDocument) => {
       let targetLayoutId: number;
 
-      if (typeof layoutId === 'string') {
-        targetLayoutId = await this.useNamedSlideLayout(layoutId as string);
+      if (layoutId && typeof layoutId === 'object') {
+        targetLayoutId = await this.useSelectedSlideLayout(layoutId);
+      } else {
+        if (typeof layoutId === 'string') {
+          targetLayoutId = await this.useNamedSlideLayout(layoutId as string);
 
-        if (!targetLayoutId) {
-          layoutId = null;
+          if (!targetLayoutId) {
+            layoutId = null;
+          }
+        }
+
+        if (!layoutId || typeof layoutId === 'number') {
+          targetLayoutId = await this.useIndexedSlideLayout(
+            layoutId as number,
+          );
         }
       }
 
-      if (!layoutId || typeof layoutId === 'number') {
-        targetLayoutId = await this.useIndexedSlideLayout(layoutId as number);
-      }
-
       if (targetLayoutId) {
-        this.targetLayoutId = targetLayoutId
+        this.targetLayoutId = targetLayoutId;
         const slideLayouts = new XmlRelationshipHelper(slideRelXml)
           .readTargets()
           .getTargetsByPrefix('../slideLayouts/slideLayout');
@@ -122,7 +146,12 @@ export class Slide extends HasShapes implements ISlide {
           slideLayouts[0].updateTargetIndex(targetLayoutId as number);
         }
       } else {
-        log.warn('Unable to use slide layout ' + layoutId);
+        log.warn(
+          'Unable to use slide layout ' +
+            (typeof layoutId === 'object'
+              ? JSON.stringify(layoutId)
+              : layoutId),
+        );
       }
     });
 
@@ -138,7 +167,7 @@ export class Slide extends HasShapes implements ISlide {
    * @param targetLayout - Name or identifier of the target slide layout to merge into
    * @returns Promise<this> - Returns the slide instance for method chaining
    */
-  mergeIntoSlideLayout(targetLayout: number | string): this {
+  mergeIntoSlideLayout(targetLayout: number | string | SlideLayoutSelector): this {
     // Disabling concurring cleanup function for this slide:
     this.cleanupPlaceholders = false
 
@@ -196,19 +225,62 @@ export class Slide extends HasShapes implements ISlide {
       targetLayoutName,
     );
 
-    if (!alreadyImported) {
-      log.error(
-        'Could not find "' +
-          targetLayoutName +
-          '"@' +
-          templateName +
-          '@' +
-          'sourceLayoutId:' +
-          sourceLayoutId,
-      );
+    if (alreadyImported) {
+      return alreadyImported.targetId;
     }
 
-    return alreadyImported?.targetId;
+    // Not among the imported layouts: fall back to the name index of the
+    // output, which also covers the root template's own layouts.
+    const fallback = LayoutIndex.select(
+      await LayoutIndex.read(this.targetTemplate),
+      { layout: targetLayoutName },
+    );
+    if (fallback.length) {
+      if (fallback.length > 1) {
+        log.warn(
+          `Slide layout "${targetLayoutName}" is ambiguous, using ` +
+            `${LayoutIndex.describeLayout(fallback[0])}. Pass ` +
+            `{ layout, master } to useSlideLayout() to pick one of: ` +
+            LayoutIndex.describeLayouts(fallback),
+        );
+      }
+      return fallback[0].layoutNumber;
+    }
+
+    log.error(
+      'Could not find "' +
+        targetLayoutName +
+        '"@' +
+        templateName +
+        '@' +
+        'sourceLayoutId:' +
+        sourceLayoutId,
+    );
+    return undefined;
+  }
+
+  /**
+   * Resolve a `SlideLayoutSelector` against the output's masters and
+   * layouts. Nothing is imported. Throws `SlideLayoutNotFoundError` on no
+   * or ambiguous match; with `continueOnError` it warns and keeps the
+   * slide's current layout.
+   */
+  async useSelectedSlideLayout(
+    selector: SlideLayoutSelector,
+  ): Promise<number | undefined> {
+    const layouts = await LayoutIndex.read(this.targetTemplate);
+    try {
+      return LayoutIndex.resolve(layouts, selector).layoutNumber;
+    } catch (e) {
+      if (
+        e instanceof SlideLayoutNotFoundError &&
+        this.targetTemplate.automizer?.params.continueOnError === true
+      ) {
+        log.warn(e.message);
+        return undefined;
+      }
+      throw e;
+    }
   }
 
   /**

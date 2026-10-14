@@ -19,6 +19,7 @@ import {
   FindElementSelector,
   ShapeModificationCallback,
   StatusTracker,
+  SlideLayoutSelector,
 } from './types/types';
 import ModifyPresentationHelper from './helper/modify-presentation-helper';
 import { XmlSlideHelper } from './helper/xml-slide-helper';
@@ -128,6 +129,7 @@ export type {
   ShapeCoordinates,
   ReplaceText,
   HyperlinkInfo,
+  SlideLayoutSelector,
 };
 
 export {
@@ -213,6 +215,7 @@ export {
   TemplateNotFoundError,
   SlideNotFoundError,
   ElementNotFoundError,
+  SlideLayoutNotFoundError,
   ArchiveError,
   OutputError,
   CallbackError,
@@ -220,5 +223,6 @@ export {
 export { ConsoleLogger, NullLogger } from './helper/logger';
 export type { ILogger, Verbosity } from './helper/logger';
 
+export type { SlideLayoutInfo } from './helper/layout-index';
 export { ITemplate, IMaster, ISlide, IPptxGenJSSlide };
 export default Automizer;
