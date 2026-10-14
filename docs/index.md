@@ -79,3 +79,5 @@ you pass. Nothing is applied until `await pres.write(...)` (or `.stream()` /
 ## Support
 
 Thanks to all contributors! You are always welcome to share code, tipps and ideas. We appreciate all levels of expertise and encourage everyone to get involved. [Get started](https://github.com/singerla/pptx-automizer/issues/new)
+
+Found a security problem? Please follow the [security policy](https://github.com/singerla/pptx-automizer/blob/main/SECURITY.md) instead of opening a public issue.
