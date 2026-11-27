@@ -22,6 +22,11 @@ export class Diagram extends Shape implements IShapeAction {
   relTypeLayout: string;
   relTypeQuickStyle: string;
   relTypeDrawing: string;
+  /**
+   * The drawing part is a cached rendering of the diagram (PowerPoint 2010
+   * and later). Diagrams written by older versions or other tools lack it.
+   */
+  hasDrawing: boolean;
   callbacks: ShapeModificationCallback[];
   createdRids: Record<string, string> = {};
 
@@ -97,6 +102,9 @@ export class Diagram extends Shape implements IShapeAction {
   ): Promise<void> {
     await this.setTarget(targetTemplate, targetSlideNumber);
     this.targetNumber = this.targetTemplate.incrementCounter('diagrams');
+    this.hasDrawing = this.sourceArchive.fileExists(
+      `ppt/diagrams/drawing${this.sourceNumber}.xml`,
+    );
 
     await this.copyFiles();
     await this.appendTypes();
@@ -119,10 +127,12 @@ export class Diagram extends Shape implements IShapeAction {
     );
 
     // drawing xml will be copied, but it has no explicit relation attribute in slide.xml
-    await this.appendToSlideRels(
-      this.relTypeDrawing,
-      `../diagrams/drawing${this.targetNumber}.xml`,
-    );
+    if (this.hasDrawing) {
+      await this.appendToSlideRels(
+        this.relTypeDrawing,
+        `../diagrams/drawing${this.targetNumber}.xml`,
+      );
+    }
   }
 
   async clone(): Promise<void> {
@@ -155,12 +165,14 @@ export class Diagram extends Shape implements IShapeAction {
       this.targetArchive,
       `ppt/diagrams/colors${this.targetNumber}.xml`,
     );
-    await FileHelper.zipCopy(
-      this.sourceArchive,
-      `ppt/diagrams/drawing${this.sourceNumber}.xml`,
-      this.targetArchive,
-      `ppt/diagrams/drawing${this.targetNumber}.xml`,
-    );
+    if (this.hasDrawing) {
+      await FileHelper.zipCopy(
+        this.sourceArchive,
+        `ppt/diagrams/drawing${this.sourceNumber}.xml`,
+        this.targetArchive,
+        `ppt/diagrams/drawing${this.targetNumber}.xml`,
+      );
+    }
     await FileHelper.zipCopy(
       this.sourceArchive,
       `ppt/diagrams/layout${this.sourceNumber}.xml`,
@@ -180,7 +192,9 @@ export class Diagram extends Shape implements IShapeAction {
     await this.appendColorsToContentType();
     await this.appendLyoutToContentType();
     await this.appendQuickStyleToContentType();
-    await this.appendDrawingToContentType();
+    if (this.hasDrawing) {
+      await this.appendDrawingToContentType();
+    }
   }
 
   async appendToSlideRels(type: string, target: string): Promise<XmlElement> {
