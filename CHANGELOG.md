@@ -134,6 +134,13 @@ semver, with the pre-1.0 convention that **breaking changes bump the minor**.
   that were passed to `setChartData`. A wrapper with no cache at all (a
   `c:numRef` holding only `c:f`) still logs the warning; the warning's
   wording and level are unchanged.
+- A slide with a picture or an OLE object that is linked to a file
+  outside of the presentation (relationship with `TargetMode="External"`,
+  e.g. `file:///C:/logo.png`) can be copied. `Image.getAllOnSlide()` and
+  `OLEObject.getAllOnSlide()` returned linked targets as well, and copying
+  them failed with `Could not find file ppt/media/file:///…`. Linked
+  targets are skipped now; their relationships are copied with the slide
+  unchanged.
 
 ## [0.9.4] — 2026-09-28
 

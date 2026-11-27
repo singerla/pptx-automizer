@@ -311,7 +311,12 @@ export class OLEObject extends Shape implements IShapeAction {
       (element: XmlElement, rels: Target[]) => {
         const type = element.getAttribute('Type');
 
-        if (type === oleObjectType) {
+        // A linked object (TargetMode="External") has no embedded file
+        // to copy; its relationship is copied with the slide as it is.
+        if (
+          type === oleObjectType &&
+          element.getAttribute('TargetMode') !== 'External'
+        ) {
           rels.push({
             rId: element.getAttribute('Id'),
             type: element.getAttribute('Type'),

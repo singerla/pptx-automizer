@@ -350,14 +350,22 @@ export class Image extends Shape implements IImage, IShapeAction {
     return this.targetElement.getElementsByTagName('a:videoFile').length > 0;
   }
 
+  /**
+   * All images of a slide that are part of the presentation. A linked
+   * picture (TargetMode="External") has no media file to copy; its
+   * relationship is copied with the slide as it is.
+   */
   static async getAllOnSlide(
     archive: IArchive,
     relsPath: string,
   ): Promise<Target[]> {
-    return await XmlRelationshipHelper.getTargetsByRelationshipType(
+    const images = await XmlRelationshipHelper.getTargetsByRelationshipType(
       archive,
       relsPath,
       'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image',
+    );
+    return images.filter(
+      (image) => image.element.getAttribute('TargetMode') !== 'External',
     );
   }
 }
