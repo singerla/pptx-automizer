@@ -97,6 +97,9 @@ export class OLEObject extends Shape implements IShapeAction {
       this.targetArchive,
       this.targetSlideRelFile,
     );
+    // The embedding needs a name that is unique in the presentation; the
+    // created rel id is only unique on its slide.
+    this.targetNumber = this.targetTemplate.incrementCounter('oleObjects');
 
     await this.copyOleObjectFile(sourceFilePath);
     await this.appendToContentTypes();
@@ -106,7 +109,7 @@ export class OLEObject extends Shape implements IShapeAction {
 
   private async copyOleObjectFile(sourceFilePath: string): Promise<void> {
     const fileExtension = this.getFileExtension(sourceFilePath);
-    const targetFileName = PptPaths.embedding(`oleObject${this.createdRid}${fileExtension}`);
+    const targetFileName = PptPaths.embedding(`oleObject${this.targetNumber}${fileExtension}`);
 
     try {
       await FileHelper.zipCopy(
@@ -131,7 +134,7 @@ export class OLEObject extends Shape implements IShapeAction {
     const types = contentTypesXml.getElementsByTagName('Types')[0];
     const fileExtension = this.getFileExtension(this.oleObjectPath);
     const partName = PptPaths.partName(
-      PptPaths.embedding(`oleObject${this.createdRid}${fileExtension}`),
+      PptPaths.embedding(`oleObject${this.targetNumber}${fileExtension}`),
     );
     const existingOverride = Array.from(
       types.getElementsByTagName('Override'),
@@ -163,7 +166,7 @@ export class OLEObject extends Shape implements IShapeAction {
     const relationships = relXml.getElementsByTagName('Relationship');
 
     const fileExtension = this.getFileExtension(this.oleObjectPath);
-    const newTarget = `../embeddings/oleObject${this.createdRid}${fileExtension}`;
+    const newTarget = `../embeddings/oleObject${this.targetNumber}${fileExtension}`;
 
     // Update or create the relationship
     let relationshipUpdated = false;
@@ -246,7 +249,7 @@ export class OLEObject extends Shape implements IShapeAction {
 
   private async removeOleObjectFile(): Promise<void> {
     const fileExtension = this.getFileExtension(this.oleObjectPath);
-    const fileName = PptPaths.embedding(`oleObject${this.createdRid}${fileExtension}`);
+    const fileName = PptPaths.embedding(`oleObject${this.targetNumber}${fileExtension}`);
     await this.targetArchive.remove(fileName);
   }
 
@@ -260,7 +263,7 @@ export class OLEObject extends Shape implements IShapeAction {
     const types = contentTypesXml.getElementsByTagName('Types')[0];
     const fileExtension = this.getFileExtension(this.oleObjectPath);
     const partName = PptPaths.partName(
-      PptPaths.embedding(`oleObject${this.createdRid}${fileExtension}`),
+      PptPaths.embedding(`oleObject${this.targetNumber}${fileExtension}`),
     );
     const overrideToRemove = Array.from(
       types.getElementsByTagName('Override'),
