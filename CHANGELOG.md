@@ -134,6 +134,12 @@ semver, with the pre-1.0 convention that **breaking changes bump the minor**.
   that were passed to `setChartData`. A wrapper with no cache at all (a
   `c:numRef` holding only `c:f`) still logs the warning; the warning's
   wording and level are unchanged.
+- A SmartArt diagram without a drawing part can be copied. The drawing
+  part (`ppt/diagrams/drawing<n>.xml`) is a cached rendering written by
+  PowerPoint 2010 and later; diagrams from older versions or other tools
+  do not have it, and copying them failed with `Could not find file
+  ppt/diagrams/drawing<n>.xml`. The drawing is now copied — along with
+  its relationship and content type — only if the source has one.
 
 ## [0.9.4] — 2026-09-28
 
