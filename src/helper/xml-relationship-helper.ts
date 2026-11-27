@@ -310,7 +310,10 @@ export class XmlRelationshipHelper {
   /**
    * `true` if a relationship of `relType` pointing at `file` is the kind of
    * part addressed by `prefix` (see `parseRelationTarget`). Embedded
-   * packages (`relType === 'package'`) always match.
+   * packages (`relType === 'package'`, e.g. a chart's workbook) match any
+   * `../embeddings/` prefix, but nothing else: an Excel object embedded
+   * on a slide is related the same way and is neither a chart, a diagram
+   * nor a slide layout.
    */
   static targetMatchesRelationship(
     relType: string,
@@ -318,7 +321,7 @@ export class XmlRelationshipHelper {
     file: string,
     prefix: string,
   ): boolean {
-    if (relType === 'package') return true;
+    if (relType === 'package') return prefix.indexOf('../embeddings/') === 0;
 
     // pptxgenjs uses absolute paths in "Target" attributes
     if (file.indexOf('/ppt/') === 0) {

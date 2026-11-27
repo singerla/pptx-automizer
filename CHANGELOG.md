@@ -134,6 +134,14 @@ semver, with the pre-1.0 convention that **breaking changes bump the minor**.
   that were passed to `setChartData`. A wrapper with no cache at all (a
   `c:numRef` holding only `c:f`) still logs the warning; the warning's
   wording and level are unchanged.
+- A slide with an embedded Excel workbook (Insert > Object) can be
+  copied. The workbook is related by a `package` relationship, and
+  `XmlRelationshipHelper.targetMatchesRelationship()` let every `package`
+  relationship match any prefix — meant for the workbook of a chart, it
+  made the slide's workbook pass for a chart (`Could not find file
+  ppt/charts/chart0.xml`), a SmartArt diagram, or the slide layout, whose
+  relationship target was then rewritten. A `package` relationship now
+  matches an `../embeddings/` prefix only.
 
 ## [0.9.4] — 2026-09-28
 
