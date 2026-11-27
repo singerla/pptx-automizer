@@ -134,6 +134,13 @@ semver, with the pre-1.0 convention that **breaking changes bump the minor**.
   that were passed to `setChartData`. A wrapper with no cache at all (a
   `c:numRef` holding only `c:f`) still logs the warning; the warning's
   wording and level are unchanged.
+- XML parts that start with a UTF-8 byte order mark (written by some
+  .NET based tools such as Aspose.Slides, and in some of PowerPoint's
+  built-in themes) are parsed in every archive mode. xmldom rejected them
+  (`processing instruction at position 1 is an xml declaration which is
+  only at the start of the document`) unless `archiveType.decodeText`
+  was set, which only exists for the `jszip` mode (#164).
+  `Archive.parseXml()` now drops a leading BOM.
 
 ## [0.9.4] — 2026-09-28
 
