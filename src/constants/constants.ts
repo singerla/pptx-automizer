@@ -27,15 +27,21 @@ export const TargetByRelIdMap: Record<string, TargetByRelIdMapParam> = {
     relAttribute: 'r:dm',
     prefix: '../diagrams/data',
   },
+  // Media files are not named consistently (PowerPoint: image<n>,
+  // automizer: media<n>), pictures are resolved by relType instead.
   image: {
     relRootTag: 'a:blip',
     relAttribute: 'r:embed',
     prefix: '../media/image',
+    relType:
+      'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image',
   },
   'image:svg': {
     relRootTag: 'asvg:svgBlip',
     relAttribute: 'r:embed',
     prefix: '../media/image',
+    relType:
+      'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image',
   },
   'image:media': {
     relRootTag: 'p14:media',

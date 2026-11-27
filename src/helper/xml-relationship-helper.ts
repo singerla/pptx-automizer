@@ -405,7 +405,9 @@ export class XmlRelationshipHelper {
   /**
    * Resolves the relationship target a shape element refers to: reads the
    * element's `r:id`-style attribute for the given `TargetByRelIdMap` key
-   * (`chart`, `image`, `hyperlink`, …) and looks it up in `relsPath`.
+   * (`chart`, `image`, `hyperlink`, …) and looks it up in `relsPath`
+   * among the relationships of its `relType` or, if it has none, among
+   * those matching its `prefix`.
    */
   static async resolveElementTarget(
     archive: IArchive,
@@ -455,12 +457,17 @@ export class XmlRelationshipHelper {
         });
       }
 
-      const shapeRels =
-        await XmlRelationshipHelper.getRelationshipTargetsByPrefix(
-          archive,
-          relsPath,
-          params.prefix,
-        );
+      const shapeRels = params.relType
+        ? await XmlRelationshipHelper.getTargetsByRelationshipType(
+            archive,
+            relsPath,
+            params.relType,
+          )
+        : await XmlRelationshipHelper.getRelationshipTargetsByPrefix(
+            archive,
+            relsPath,
+            params.prefix,
+          );
 
       return shapeRels.find((rel) => rel.rId === sourceRid);
     }

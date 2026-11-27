@@ -134,6 +134,14 @@ semver, with the pre-1.0 convention that **breaking changes bump the minor**.
   that were passed to `setChartData`. A wrapper with no cache at all (a
   `c:numRef` holding only `c:f`) still logs the warning; the warning's
   wording and level are unchanged.
+- A picture whose media file is not named `image<n>` can be modified,
+  added with `addElement` and removed. `resolveElementTarget()` only
+  accepted image relationships with a target starting with
+  `../media/image`, but automizer names the media it copies `media<n>`
+  itself — so on a slide of an automizer output used as template, these
+  calls failed with `Cannot read properties of undefined (reading
+  'file')`. Pictures are now resolved by their relationship type, like
+  `Image.getAllOnSlide()` already did.
 
 ## [0.9.4] — 2026-09-28
 
