@@ -290,13 +290,14 @@ export async function checkPptxInvariants(
 }
 
 function parseStrict(content: string): XmlDocument {
+  // A leading byte order mark is well-formed XML, but xmldom rejects it.
   return new DOMParser({
     onError: (level, message) => {
       if (level === 'fatalError' || level === 'error') {
         throw new Error(message);
       }
     },
-  }).parseFromString(content, 'application/xml');
+  }).parseFromString(content.replace(/^\uFEFF/, ''), 'application/xml');
 }
 
 /** `ppt/slides/_rels/slide1.xml.rels` → `ppt/slides/slide1.xml` */

@@ -24,10 +24,15 @@ export default class Archive {
     this.params = params;
   }
 
+  /**
+   * Parses an XML part. A leading byte order mark (written by some .NET
+   * based tools and in some of PowerPoint's built-in themes) is dropped:
+   * xmldom does not accept anything before the XML declaration (#164).
+   */
   parseXml(xmlString: string): XmlDocument {
     const dom = new DOMParser();
     return dom.parseFromString(
-      xmlString,
+      xmlString.replace(/^\uFEFF/, ''),
       'application/xml',
     ) as unknown as XmlDocument;
   }
