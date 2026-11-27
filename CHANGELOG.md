@@ -134,6 +134,20 @@ semver, with the pre-1.0 convention that **breaking changes bump the minor**.
   that were passed to `setChartData`. A wrapper with no cache at all (a
   `c:numRef` holding only `c:f`) still logs the warning; the warning's
   wording and level are unchanged.
+- Charts, images, diagrams and OLE objects copied into a root template
+  no longer overwrite parts of the root template that are still in use.
+  New parts are numbered after a counter that started at the *number* of
+  existing parts (`image*` files, chart and diagram content types), while
+  automizer itself names media `media<n>` and the numbering of a root
+  template can have gaps — e.g. an output of automizer loaded as root
+  again. A new image, chart (with its workbook, style, colors, theme
+  override, …) or SmartArt could then be written to a name that is taken,
+  and another slide showed the new content. Numbering now continues above
+  the highest number in use; the counts reported by `write()` are
+  unchanged. OLE embeddings were named after the slide-local relationship
+  id (`oleObjectrId3-created.bin`), so the objects of two slides could
+  collapse into one file; they are now named `oleObject<n>` from the
+  `oleObjects` counter.
 
 ## [0.9.4] — 2026-09-28
 
